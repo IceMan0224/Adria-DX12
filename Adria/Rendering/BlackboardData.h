@@ -24,4 +24,12 @@ namespace adria
 		D3D12_CPU_DESCRIPTOR_HANDLE lights_buffer_cpu_srv;
 		D3D12_GPU_DESCRIPTOR_HANDLE lights_buffer_gpu_srv;
 	};
+
+	struct DoFData
+	{
+		float32 dof_params_x;
+		float32 dof_params_y;
+		float32 dof_params_z;
+		float32 dof_params_w;
+	};
 }
