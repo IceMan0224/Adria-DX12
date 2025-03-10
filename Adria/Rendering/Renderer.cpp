@@ -67,9 +67,6 @@ namespace adria
 	void Renderer::SetDebugView(RendererDebugView debug_view)
 	{
 		renderer_debug_view_pass.SetDebugView(debug_view);
-		//renderer_debug_view = type;
-		//gbuffer_pass.OnDebugViewChanged(type);
-		//gpu_driven_renderer.OnDebugViewChanged(type);
 	}
 
 	void Renderer::SetLightingPath(LightingPath path)
