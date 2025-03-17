@@ -1,21 +1,21 @@
 #include "UpscalerPassGroup.h"
 #include "FSR2Pass.h"
 #include "FSR3Pass.h"
-#include "XeSSPass.h"
+#include "XeSS2Pass.h"
 #include "DLSS3Pass.h"
 #include "Core/ConsoleManager.h"
 #include "Editor/GUICommand.h"
 
 namespace adria
 {
-	static TAutoConsoleVariable<Int>  Upscaler("r.Upscaler", 0, "0 - No Upscaler, 1 - FSR2, 2 - FSR3, 3 - XeSS, 4 - DLSS3");
+	static TAutoConsoleVariable<Int>  Upscaler("r.Upscaler", 0, "0 - No Upscaler, 1 - FSR2, 2 - FSR3, 3 - XeSS2, 4 - DLSS3");
 	
 	enum class UpscalerType : Uint8
 	{
 		None,
 		FSR2,
 		FSR3,
-		XeSS,
+		XeSS2,
 		DLSS3,
 		Count
 	};
@@ -34,7 +34,7 @@ namespace adria
 		post_effects[(Uint32)None]  = std::make_unique<EmptyUpscalerPass>();
 		post_effects[(Uint32)FSR2]  = std::make_unique<FSR2Pass>(gfx, width, height);
 		post_effects[(Uint32)FSR3]  = std::make_unique<FSR3Pass>(gfx, width, height);
-		post_effects[(Uint32)XeSS]  = std::make_unique<XeSSPass>(gfx, width, height);
+		post_effects[(Uint32)XeSS2]  = std::make_unique<XeSS2Pass>(gfx, width, height);
 		post_effects[(Uint32)DLSS3] = std::make_unique<DLSS3Pass>(gfx, width, height);
 	}
 
@@ -56,7 +56,7 @@ namespace adria
 		QueueGUI([&]()
 			{
 				static Int current_upscaler = (Int)upscaler_type;
-				if (ImGui::Combo("Upscaler", &current_upscaler, "None\0FSR2\0FSR3\0XeSS\0DLSS3\0", 5))
+				if (ImGui::Combo("Upscaler", &current_upscaler, "None\0FSR2\0FSR3\0XeSS2\0DLSS3\0", 5))
 				{
 					upscaler_type = static_cast<UpscalerType>(current_upscaler);
 					if (upscaler_type == UpscalerType::DLSS3 && !post_effects[(Uint32)UpscalerType::DLSS3]->IsSupported())
