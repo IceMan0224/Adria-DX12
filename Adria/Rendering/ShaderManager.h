@@ -118,6 +118,8 @@ namespace adria
 		LIB_AmbientOcclusion,
 		LIB_Reflections,
 		LIB_PathTracing,
+		CS_TensorToTexture,
+		CS_TextureToTensor,
 		ShaderId_Count
 	};
 

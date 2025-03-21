@@ -21,6 +21,8 @@ namespace adria
 
 	std::string const paths::TexturesDir = ResourcesDir + "Textures/";
 
+	std::string const paths::MLDir = ResourcesDir + "ML/";
+
 	std::string const paths::ScreenshotsDir = SavedDir + "Screenshots/";
 
 	std::string const paths::LogDir = SavedDir + "Log/";

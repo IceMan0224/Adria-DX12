@@ -144,6 +144,8 @@ namespace adria
 			case CS_DepthOfField_BokehSecondPass:
 			case CS_DepthOfField_ComputePostfilteredTexture:
 			case CS_DepthOfField_Combine:
+			case CS_TensorToTexture:
+			case CS_TextureToTensor:
 				return GfxShaderStage::CS;
 			case HS_OceanLOD:
 				return GfxShaderStage::HS;
@@ -236,7 +238,7 @@ namespace adria
 			case CS_OceanNormals:
 				return "Ocean/OceanNormals.hlsl";
 			case VS_Ocean:
-		    case PS_Ocean:
+			case PS_Ocean:
 				return "Ocean/Ocean.hlsl";
 			case VS_OceanLOD:
 			case HS_OceanLOD:
@@ -345,6 +347,9 @@ namespace adria
 				return "Postprocess/DepthOfField/Bokeh.hlsl";
 			case PS_VRSOverlay:
 				return "Other/VRSOverlay.hlsl";
+			case CS_TensorToTexture:
+			case CS_TextureToTensor:
+				return "Other/TensorTextureConversions.hlsl";
 			case ShaderId_Count:
 			default:
 				return "";
@@ -560,6 +565,10 @@ namespace adria
 				return "CombineCS";
 			case PS_VRSOverlay:
 				return "VRSOverlayPS";
+			case CS_TensorToTexture:
+				return "TensorToTextureCS";
+			case CS_TextureToTensor:
+				return "TextureToTensorCS";
 			}
 			return "main";
 		}

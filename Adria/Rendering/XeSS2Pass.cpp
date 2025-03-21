@@ -9,11 +9,11 @@
 
 namespace adria
 {
-	static TAutoConsoleVariable<Bool> XeSS("r.XeSS", true, "Enable or Disable XeSS");
+	static TAutoConsoleVariable<Bool> XeSS2("r.XeSS2", true, "Enable or Disable XeSS2");
 
 	namespace
 	{
-		void XeSSLog(Char const* message, xess_logging_level_t logging_level)
+		void XeSS2Log(Char const* message, xess_logging_level_t logging_level)
 		{
 			switch (logging_level)
 			{
@@ -44,7 +44,7 @@ namespace adria
 		xess_result_t result = xessD3D12CreateContext(gfx->GetDevice(), &context);
 		ADRIA_ASSERT(result == XESS_RESULT_SUCCESS);
 		
-		xessSetLoggingCallback(context, XESS_LOGGING_LEVEL_DEBUG, XeSSLog);
+		xessSetLoggingCallback(context, XESS_LOGGING_LEVEL_DEBUG, XeSS2Log);
 
 		xess_version_t version;
 		xessGetVersion(&version);
@@ -66,7 +66,7 @@ namespace adria
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
-		struct XeSSPassData
+		struct XeSS2PassData
 		{
 			RGTextureReadOnlyId input;
 			RGTextureReadOnlyId depth;
@@ -75,22 +75,22 @@ namespace adria
 			RGTextureReadWriteId output;
 		};
 
-		rg.AddPass<XeSSPassData>(name_version,
-			[=](XeSSPassData& data, RenderGraphBuilder& builder)
+		rg.AddPass<XeSS2PassData>(name_version,
+			[=](XeSS2PassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc xess_desc{};
 				xess_desc.format = GfxFormat::R16G16B16A16_FLOAT;
 				xess_desc.width = display_width;
 				xess_desc.height = display_height;
 				xess_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
-				builder.DeclareTexture(RG_NAME(XeSSOutput), xess_desc);
+				builder.DeclareTexture(RG_NAME(XeSS2Output), xess_desc);
 
-				data.output = builder.WriteTexture(RG_NAME(XeSSOutput));
+				data.output = builder.WriteTexture(RG_NAME(XeSS2Output));
 				data.input = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](XeSSPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](XeSS2PassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
 			{
 				if (needs_init) XeSSInit();
 
@@ -121,12 +121,12 @@ namespace adria
 				cmd_list->ResetState();
 			}, RGPassType::Compute);
 
-		postprocessor->SetFinalResource(RG_NAME(XeSSOutput));
+		postprocessor->SetFinalResource(RG_NAME(XeSS2Output));
 	}
 
 	Bool XeSS2Pass::IsEnabled(PostProcessor const*) const
 	{
-		return XeSS.Get();
+		return XeSS2.Get();
 	}
 
 	void XeSS2Pass::GUI()
@@ -135,8 +135,8 @@ namespace adria
 			{
 				if (ImGui::TreeNodeEx(name_version, ImGuiTreeNodeFlags_None))
 				{
-					ImGui::Checkbox("Enable", XeSS.GetPtr());
-					if (XeSS.Get())
+					ImGui::Checkbox("Enable", XeSS2.GetPtr());
+					if (XeSS2.Get())
 					{
 						Int _quality = quality_setting - XESS_QUALITY_SETTING_ULTRA_PERFORMANCE;
 						if (ImGui::Combo("Quality Mode", &_quality, "Ultra Performance (3.0x)\0Performance (2.3x)\0Balanced (2.0x)\0Quality (1.7x)\0Ultra Quality (1.5x)\0Ultra Quality Plus (1.3x)\0AA (1.0x)\0", 7))
