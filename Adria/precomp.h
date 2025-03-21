@@ -19,9 +19,12 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <windows.h>
-
+#define DML_TARGET_VERSION_USE_LATEST
+#include <DirectML.h>
 #include <DirectXMath.h>
+
 #include "d3dx12.h"
+#include "DirectMLX.h"
 #include "D3D12MemAlloc.h"
 #include "nfd.h"
 #include "entt/entt.hpp"
