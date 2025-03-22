@@ -623,19 +623,13 @@ namespace adria
 
 	void DirectMLUpscalerPass::AddUpscalingPass(RenderGraph& rg)
 	{
-		struct MLUpscalerPassData
-		{
-			RGBufferReadOnlyId  input;
-			RGBufferReadWriteId output;
-		};
-
-		rg.AddPass<MLUpscalerPassData>("DirectML Upscaler Pass",
-			[=](MLUpscalerPassData& data, RenderGraphBuilder& builder) 
+		rg.AddPass<void>("DirectML Upscaler Pass",
+			[=](RenderGraphBuilder& builder) 
 			{
 				builder.DummyReadBuffer(RG_NAME(ModelInput));
 				builder.DummyWriteBuffer(RG_NAME(ModelOutput));
 			},
-			[=](MLUpscalerPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](RenderGraphContext& ctx, GfxCommandList* cmd_list)
 			{
 				cmd_list->SetHeap(dml_heap.get());
 				dml_command_recorder->RecordDispatch(cmd_list->GetNative(), dml_graph.Get(), dml_binding_table.Get());

@@ -9,7 +9,7 @@ struct TensorTextureConversionsConstants
 };
 ConstantBuffer<TensorTextureConversionsConstants> TensorTextureConversionsPassCB : register(b1);
 
-void ConvertRGB8(uint3 DTid, float2 outputResolution, RWTexture2D<float4> outputTexture, RWBuffer<half> inputTensor)
+void ConvertRGB(uint3 DTid, float2 outputResolution, RWTexture2D<float4> outputTexture, RWBuffer<half> inputTensor)
 {
     uint index = DTid.y * (uint)outputResolution.x + DTid.x;
     float4 color;
@@ -34,7 +34,7 @@ void ConvertRGB8(uint3 DTid, float2 outputResolution, RWTexture2D<float4> output
 }
 
 // BGR conversion
-void ConvertBGR8(uint3 DTid, float2 outputResolution, RWTexture2D<float4> outputTexture, RWBuffer<half> inputTensor)
+void ConvertBGR(uint3 DTid, float2 outputResolution, RWTexture2D<float4> outputTexture, RWBuffer<half> inputTensor)
 {
     uint index = DTid.y * (uint)outputResolution.x + DTid.x;
     float4 color;
@@ -59,7 +59,7 @@ void ConvertBGR8(uint3 DTid, float2 outputResolution, RWTexture2D<float4> output
 }
 
 // Grayscale conversion
-void ConvertGRAY8(uint3 DTid, float2 outputResolution, RWTexture2D<float4> outputTexture, RWBuffer<half> inputTensor)
+void ConvertGRAY(uint3 DTid, float2 outputResolution, RWTexture2D<float4> outputTexture, RWBuffer<half> inputTensor)
 {
     uint index = DTid.y * (uint)outputResolution.x + DTid.x;
     float4 color;
@@ -82,9 +82,9 @@ void TensorToTextureCS(uint3 DTid : SV_DispatchThreadID)
     RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[TensorTextureConversionsPassCB.outputIdx];
     RWBuffer<half> inputTensor = ResourceDescriptorHeap[TensorTextureConversionsPassCB.inputIdx];
 
-    ConvertRGB8(DTid, outputResolution, outputTexture, inputTensor);
-    // ConvertBGR8(DTid, outputResolution, outputTexture, inputTensor);
-    // ConvertGRAY8(DTid, outputResolution, outputTexture, inputTensor);
+    ConvertRGB(DTid, outputResolution, outputTexture, inputTensor);
+    // ConvertBGR(DTid, outputResolution, outputTexture, inputTensor);
+    // ConvertGRAY(DTid, outputResolution, outputTexture, inputTensor);
 }
 
 [numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]

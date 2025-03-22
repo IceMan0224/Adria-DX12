@@ -42,9 +42,9 @@ namespace adria
 		Uint32 render_height;
 		Bool supported = false;
 
+		TensorLayout				 tensor_layout;
 		std::unique_ptr<GfxComputePipelineState> tensor_to_texture_pso;
 		std::unique_ptr<GfxComputePipelineState> texture_to_tensor_pso;
-		TensorLayout				 tensor_layout;
 
 		Ref<IDMLDevice>              dml_device;
 		Ref<IDMLCommandRecorder>     dml_command_recorder;
@@ -62,7 +62,7 @@ namespace adria
 		Ref<IDMLBindingTable>        dml_binding_table;
 		Ref<IDMLOperatorInitializer> dml_op_initializer;
 
-		Bool dml_managed_weights = false;
+		Bool dml_managed_weights = true;
 
 	private:
 		void CreatePSOs();
