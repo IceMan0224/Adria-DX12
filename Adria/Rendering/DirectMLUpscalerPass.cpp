@@ -177,10 +177,10 @@ namespace adria
 	DirectMLUpscalerPass::DirectMLUpscalerPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), display_width(0), display_height(0), render_width(0), render_height(0)
 	{
 		ADRIA_TODO("Add cmd line option for debug dml device");
-		Bool const DEBUG_DML_DEVICE = false;
+		Bool const DEBUG_DML_DEVICE = true;
 		GFX_CHECK_HR(DMLCreateDevice(gfx->GetDevice(), DEBUG_DML_DEVICE ? DML_CREATE_DEVICE_FLAG_DEBUG : DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(dml_device.GetAddressOf())));
 	
-		tensor_layout = gfx->GetVendor() == GfxVendor::Nvidia ? TensorLayout::NHWC : TensorLayout::Default;
+		tensor_layout = TensorLayout::Default;// gfx->GetVendor() == GfxVendor::Nvidia ? TensorLayout::NHWC : TensorLayout::Default;
 
 		DML_FEATURE_QUERY_TENSOR_DATA_TYPE_SUPPORT fp16_query = { DML_TENSOR_DATA_TYPE_FLOAT16 };
 		DML_FEATURE_DATA_TENSOR_DATA_TYPE_SUPPORT fp16_supported = {};
@@ -216,12 +216,13 @@ namespace adria
 			ADRIA_ASSERT_MSG(false, "DirectMLUpscaler is not supported on this device");
 			return;
 		}
+		RG_SCOPE(rg, "DML Upscaling");
 
-		AddImageToTensorPass(rg);
+		rg.ImportBuffer(RG_NAME(ModelInput), model_input.get());
+		rg.ImportBuffer(RG_NAME(ModelOutput), model_output.get());
+		AddTextureToTensorPass(rg, postprocessor);
 		AddUpscalingPass(rg);
-		AddTensorToImagePass(rg);
-
-		postprocessor->SetFinalResource(RG_NAME(DirectMLOutput));
+		AddTensorToTexturePass(rg, postprocessor);
 	}
 
 	Bool DirectMLUpscalerPass::IsEnabled(PostProcessor const*) const
@@ -384,7 +385,7 @@ namespace adria
 		model_input_buffer_desc.resource_usage = GfxResourceUsage::Default;
 		model_input_buffer_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
 		model_input_buffer_desc.size = model_input_buffer_size;
-		model_input_buffer_desc.stride = sizeof(Uint16);
+		model_input_buffer_desc.format = GfxFormat::R16_FLOAT;
 		model_input = gfx->CreateBuffer(model_input_buffer_desc);
 
 		GfxBufferDesc model_output_buffer_desc = model_input_buffer_desc;
@@ -400,8 +401,7 @@ namespace adria
 		DML_BINDING_PROPERTIES init_binding_props = dml_op_initializer->GetBindingProperties();
 		DML_BINDING_PROPERTIES execute_binding_props = dml_graph->GetBindingProperties();
 
-		using DMLDescriptorAllocator = GfxRingDescriptorAllocator<false>;
-		std::unique_ptr<DMLDescriptorAllocator> dml_heap = std::make_unique<GUIDescriptorAllocator>(gfx, std::max(init_binding_props.RequiredDescriptorCount, execute_binding_props.RequiredDescriptorCount), 0);
+		std::unique_ptr<GfxOnlineDescriptorAllocator> dml_heap = std::make_unique<GfxOnlineDescriptorAllocator>(gfx, std::max(init_binding_props.RequiredDescriptorCount, execute_binding_props.RequiredDescriptorCount), 0);
 		cmd_list->SetHeap(dml_heap.get());
 
 		// Create any persistent resources required for the operators.
@@ -459,13 +459,17 @@ namespace adria
 			{ model_conv_filter_weights[6]->GetNative(), 0, model_conv_filter_weights[6]->GetSize() }, 
 		};
 		// Bind inputs for initialization, which is only necessary if we're using OWNED_BY_DML
-#if DML_MANAGED_WEIGHTS
-		DML_BUFFER_ARRAY_BINDING init_input_binding = { ARRAYSIZE(buffer_bindings), buffer_bindings };
-		DML_BINDING_DESC binding_desc{ DML_BINDING_TYPE_BUFFER_ARRAY, &init_input_binding };
-		init_binding_table->BindInputs(1, &binding_desc);
-#else
-		init_binding_table->BindInputs(0, nullptr);
-#endif
+		if (dml_managed_weights)
+		{
+			DML_BUFFER_ARRAY_BINDING init_input_binding = { ARRAYSIZE(buffer_bindings), buffer_bindings };
+			DML_BINDING_DESC binding_desc{ DML_BINDING_TYPE_BUFFER_ARRAY, &init_input_binding };
+			init_binding_table->BindInputs(1, &binding_desc);
+		}
+		else
+		{
+			init_binding_table->BindInputs(0, nullptr);
+		}
+
 		if (init_temporary_resource)
 		{
 			DML_BUFFER_BINDING binding = { init_temporary_resource->GetNative(), 0, init_temporary_resource->GetSize() };
@@ -481,24 +485,21 @@ namespace adria
 			init_binding_table->BindOutputs(1, &binding_desc);
 		}
 
-		// Record the initialization
 		dml_command_recorder->RecordDispatch(cmd_list->GetNative(), dml_op_initializer.Get(), init_binding_table.Get());
 
 		cmd_list->End();
 		cmd_list->Submit();
 		gfx->WaitForGPU();
 
-#if DML_MANAGED_WEIGHTS
-		// These have been copied to DML-managed resources and are no longer needed.
-		for (Uint32 i = 0; i < CONV_LAYER_COUNT; i++)
+		if (dml_managed_weights)
 		{
-			model_conv_filter_weights[i].reset();
-			if (i < CONV_LAYER_COUNT - 1)    // Last layer has no bias
+			for (Uint32 i = 0; i < CONV_LAYER_COUNT; i++)
 			{
+				model_conv_filter_weights[i].reset();
 				model_conv_bias_weights[i].reset();
 			}
 		}
-#endif
+		
 		table_desc.Dispatchable = dml_graph.Get();
 		table_desc.SizeInDescriptors = execute_binding_props.RequiredDescriptorCount;
 		GFX_CHECK_HR(dml_device->CreateBindingTable(&table_desc, IID_PPV_ARGS(dml_binding_table.GetAddressOf())));
@@ -519,35 +520,38 @@ namespace adria
 
 		// Bind model inputs and outputs
 		buffer_bindings[0] = DML_BUFFER_BINDING{ model_input->GetNative() };
-#if DML_MANAGED_WEIGHTS
-		// Bind only the model input
-		DML_BINDING_DESC input_bindings[] =
+		if (dml_managed_weights)
 		{
-			{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[0] }, // model input
-			{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
-			{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
-			{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
-			{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
-			{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
-			{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
-			{ DML_BINDING_TYPE_NONE, nullptr }, // last layer has no bias
-		};
-		dml_binding_table->BindInputs(ARRAYSIZE(input_bindings), input_bindings);
-#else
-		// Bind everything
-		DML_BINDING_DESC input_bindings[] =
+			// Bind only the model input
+			DML_BINDING_DESC input_bindings[] =
+			{
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[0] },
+				{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
+				{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
+				{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
+				{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
+				{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
+				{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
+				{ DML_BINDING_TYPE_NONE, nullptr }, // last layer has no bias
+			};
+			dml_binding_table->BindInputs(ARRAYSIZE(input_bindings), input_bindings);
+		}
+		else
 		{
-			{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[0] }, // model input
-			{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[1] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[2] },
-			{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[3] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[4] },
-			{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[5] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[6] },
-			{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[7] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[8] },
-			{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[9] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[10] },
-			{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[11] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[12] },
-			{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[13] }, // last layer has no bias
-		};
-		dml_binding_table->BindInputs(ARRAYSIZE(input_bindings), input_bindings);
-#endif
+			// Bind everything
+			DML_BINDING_DESC input_bindings[] =
+			{
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[0] }, // model input
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[1] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[2] },
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[3] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[4] },
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[5] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[6] },
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[7] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[8] },
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[9] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[10] },
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[11] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[12] },
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[13] }, // last layer has no bias
+			};
+			dml_binding_table->BindInputs(ARRAYSIZE(input_bindings), input_bindings);
+		}
 
 		DML_BUFFER_BINDING output_binding = { model_output->GetNative(), 0, model_output->GetSize() };
 		DML_BINDING_DESC binding_desc{ DML_BINDING_TYPE_BUFFER, &output_binding };
@@ -556,32 +560,132 @@ namespace adria
 		cmd_list->Begin();
 	}
 
-	void DirectMLUpscalerPass::AddImageToTensorPass(RenderGraph& rg)
+	void DirectMLUpscalerPass::AddTextureToTensorPass(RenderGraph& rg, PostProcessor const* postprocessor)
 	{
+		struct TextureToTensorPassData
+		{
+			RGBufferReadWriteId tensor;
+			RGTextureReadOnlyId texture;
+		};
 
+		rg.AddPass<TextureToTensorPassData>("Texture To Tensor Pass",
+			[=](TextureToTensorPassData& data, RenderGraphBuilder& builder)
+			{
+				data.tensor = builder.WriteBuffer(RG_NAME(ModelInput));
+				data.texture = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
+			},
+			[=](TextureToTensorPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			{
+				GfxDevice* gfx = cmd_list->GetDevice();
+
+				GfxDescriptor src_descriptors[] =
+				{
+					ctx.GetReadWriteBuffer(data.tensor),
+					ctx.GetReadOnlyTexture(data.texture),
+				};
+				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
+				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
+				Uint32 const i = dst_descriptor.GetIndex();
+
+				GfxTextureDesc texture_desc = ctx.GetTexture(*data.texture).GetDesc();
+
+				struct  TextureToTensorConstants
+				{
+					Vector2  resolution;
+					Bool32   nhwc;
+					Uint32   output_idx;
+					Uint32   input_idx;
+				} constants =
+				{
+					.resolution = Vector2((Float)texture_desc.width, (Float)texture_desc.height),
+					.nhwc = tensor_layout == TensorLayout::NHWC,
+					.output_idx = i,
+					.input_idx = i + 1,
+				};
+
+				cmd_list->SetPipelineState(texture_to_tensor_pso.get());
+				cmd_list->SetRootConstants(1, constants);
+				cmd_list->Dispatch(DivideAndRoundUp(texture_desc.width, 16), DivideAndRoundUp(texture_desc.height, 16), 1);
+			}, RGPassType::Compute);
 	}
 
 	void DirectMLUpscalerPass::AddUpscalingPass(RenderGraph& rg)
 	{
-		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
-
-		struct DirectMLUpscalerPassData
+		struct MLUpscalerPassData
 		{
-
+			RGBufferReadOnlyId  input;
+			RGBufferReadWriteId output;
 		};
 
-		rg.AddPass<DirectMLUpscalerPassData>("DirectML Upscaler Pass",
-			[=](DirectMLUpscalerPassData& data, RenderGraphBuilder& builder)
+		rg.AddPass<MLUpscalerPassData>("DirectML Upscaler Pass",
+			[=](MLUpscalerPassData& data, RenderGraphBuilder& builder) 
 			{
+				builder.DummyReadBuffer(RG_NAME(ModelInput));
+				builder.DummyWriteBuffer(RG_NAME(ModelOutput));
 			},
-			[=](DirectMLUpscalerPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](MLUpscalerPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
 			{
+				cmd_list->SetHeap(dml_heap.get());
+				dml_command_recorder->RecordDispatch(cmd_list->GetNative(), dml_graph.Get(), dml_binding_table.Get());
+				cmd_list->ResetState();
 			}, RGPassType::Compute);
 	}
 
-	void DirectMLUpscalerPass::AddTensorToImagePass(RenderGraph& rg)
+	void DirectMLUpscalerPass::AddTensorToTexturePass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
+		struct TensorToTexturePassData
+		{
+			RGBufferReadOnlyId tensor;
+			RGTextureReadWriteId texture;
+		};
 
+		rg.AddPass<TensorToTexturePassData>("Texture To Tensor Pass",
+			[=](TensorToTexturePassData& data, RenderGraphBuilder& builder)
+			{
+				RGTextureDesc dml_desc{};
+				dml_desc.format = GfxFormat::R16G16B16A16_FLOAT;
+				dml_desc.width = display_width;
+				dml_desc.height = display_height;
+				dml_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
+				builder.DeclareTexture(RG_NAME(DMLUpscalerOutput), dml_desc);
+
+				data.tensor = builder.ReadBuffer(RG_NAME(ModelOutput));
+				data.texture = builder.WriteTexture(RG_NAME(DMLUpscalerOutput));
+			},
+			[=](TensorToTexturePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			{
+				GfxDevice* gfx = cmd_list->GetDevice();
+
+				GfxDescriptor src_descriptors[] =
+				{
+					ctx.GetReadWriteTexture(data.texture),
+					ctx.GetReadOnlyBuffer(data.tensor),
+				};
+				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
+				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
+				Uint32 const i = dst_descriptor.GetIndex();
+				GfxTextureDesc texture_desc = ctx.GetTexture(*data.texture).GetDesc();
+
+				struct  TextureToTensorConstants
+				{
+					Vector2  resolution;
+					Bool32   nhwc;
+					Uint32   output_idx;
+					Uint32   input_idx;
+				} constants =
+				{
+					.resolution = Vector2((Float)texture_desc.width, (Float)texture_desc.height),
+					.nhwc = tensor_layout == TensorLayout::NHWC,
+					.output_idx = i,
+					.input_idx = i + 1,
+				};
+
+				cmd_list->SetPipelineState(texture_to_tensor_pso.get());
+				cmd_list->SetRootConstants(1, constants);
+				cmd_list->Dispatch(DivideAndRoundUp(texture_desc.width, 16), DivideAndRoundUp(texture_desc.height, 16), 1);
+			}, RGPassType::Compute);
+
+		postprocessor->SetFinalResource(RG_NAME(DMLUpscalerOutput));
 	}
 
 }

@@ -6,6 +6,9 @@ namespace adria
 	class GfxDevice;
 	class GfxBuffer;
 	class GfxComputePipelineState;
+	template<Bool>
+	class GfxRingDescriptorAllocator;
+	using GfxOnlineDescriptorAllocator = GfxRingDescriptorAllocator<GFX_MULTITHREADED>;
 	class RenderGraph;
 	class PostProcessor;
 
@@ -54,6 +57,7 @@ namespace adria
 		std::unique_ptr<GfxBuffer>   model_persistent_resource;
 		std::unique_ptr<GfxBuffer>   model_temporary_resource;
 
+		std::unique_ptr<GfxOnlineDescriptorAllocator> dml_heap;
 		Ref<IDMLCompiledOperator>    dml_graph;
 		Ref<IDMLBindingTable>        dml_binding_table;
 		Ref<IDMLOperatorInitializer> dml_op_initializer;
@@ -65,8 +69,8 @@ namespace adria
 		void CreateDirectMLResources();
 		void InitializeDirectMLResources();
 
-		void AddImageToTensorPass(RenderGraph&);
+		void AddTextureToTensorPass(RenderGraph&, PostProcessor const*);
 		void AddUpscalingPass(RenderGraph&);
-		void AddTensorToImagePass(RenderGraph&);
+		void AddTensorToTexturePass(RenderGraph&, PostProcessor*);
 	};
 }
