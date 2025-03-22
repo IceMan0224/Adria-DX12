@@ -90,7 +90,6 @@ namespace adria
 				strides[2] = sizes[1] * sizes[3];
 				strides[3] = sizes[1];
 				break;
-
 			default:
 				strides[0] = sizes[1] * sizes[2] * sizes[3];
 				strides[1] = sizes[2] * sizes[3];
@@ -98,23 +97,40 @@ namespace adria
 				strides[3] = 1;
 			}
 		}
-		std::pair<std::vector<Uint16>, Uint64> ConvertWeights(std::vector<Float> const& filter_weights, std::vector<Float> const& scale_weights, std::vector<Float> const& shift_weights, std::span<const Uint32> sizes, Bool is_filter)
+		std::pair<std::vector<Uint16>, Uint64> CompressWeights(TensorLayout layout, std::vector<Float> const& filter_weights, std::vector<Float> const& scale_weights, std::vector<Float> const& shift_weights, std::span<const Uint32> sizes, Bool is_filter)
 		{
 			std::vector<Uint16> result;
 			Uint32 N = sizes[0], C = sizes[1], H = sizes[2], W = sizes[3];
 			Uint64 total_size = N * C * H * W;
+			Bool const use_scale_shift = !scale_weights.empty();
 			if (is_filter)
 			{
 				result.reserve(total_size);
 				for (Uint32 n = 0; n < N; ++n)
 				{
-					for (Uint32 i = 0; i < C * H * W; ++i)
+					if (layout == TensorLayout::Default)
 					{
-						Uint32 idx = n * C * H * W + i;
-						Float scaled_weight = scale_weights.empty() ?
-							filter_weights[idx] :
-							filter_weights[idx] * scale_weights[n];
-						result.push_back(FloatCompressor::Compress(scaled_weight));
+						for (Uint32 i = 0; i < C * H * W; ++i)
+						{
+							Uint32 idx = n * C * H * W + i;
+							Float scaled_weight = use_scale_shift ? filter_weights[idx] * scale_weights[n] : filter_weights[idx];
+							result.push_back(FloatCompressor::Compress(scaled_weight));
+						}
+					}
+					else
+					{
+						for (Uint32 h = 0; h < H; h++)
+						{
+							for (Uint32 w = 0; w < W; w++)
+							{
+								for (Uint32 c = 0; c < C; c++)
+								{
+									Uint32 idx = w + h * W + c * H * W + n * C * H * W;
+									Float scaled_weight = use_scale_shift ? filter_weights[idx] * scale_weights[n] : filter_weights[idx];
+									result.push_back(FloatCompressor::Compress(scaled_weight));
+								}
+							}
+						}
 					}
 				}
 			}
@@ -136,7 +152,7 @@ namespace adria
 			std::unique_ptr<GfxBuffer>& filter_tensor, std::unique_ptr<GfxBuffer>& bias_tensor)
 		{
 			Bool const use_scale_shift = !scale_layer_weights.empty();
-			auto [filter_data, filter_size] = ConvertWeights(conv_layer_weights,
+			auto [filter_data, filter_size] = CompressWeights(layout, conv_layer_weights,
 				use_scale_shift ? scale_layer_weights : std::vector<Float>{},
 				use_scale_shift ? shift_layer_weights : std::vector<Float>{},
 				filter_sizes, true);
@@ -155,7 +171,7 @@ namespace adria
 			if (use_scale_shift)
 			{
 				Uint32 bias_sizes[] = { 1, filter_sizes[0], 1, 1 };
-				auto [bias_data, bias_size] = ConvertWeights({}, {}, shift_layer_weights, bias_sizes, false);
+				auto [bias_data, bias_size] = CompressWeights(layout, {}, {}, shift_layer_weights, filter_sizes, false);
 
 				Uint32 bias_strides[4];
 				GetStrides(bias_sizes, layout, bias_strides);
@@ -180,10 +196,10 @@ namespace adria
 		Bool const DEBUG_DML_DEVICE = true;
 		GFX_CHECK_HR(DMLCreateDevice(gfx->GetDevice(), DEBUG_DML_DEVICE ? DML_CREATE_DEVICE_FLAG_DEBUG : DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(dml_device.GetAddressOf())));
 	
-		tensor_layout = TensorLayout::Default;// gfx->GetVendor() == GfxVendor::Nvidia ? TensorLayout::NHWC : TensorLayout::Default;
+		tensor_layout = gfx->GetVendor() == GfxVendor::Nvidia ? TensorLayout::NHWC : TensorLayout::Default;
 
-		DML_FEATURE_QUERY_TENSOR_DATA_TYPE_SUPPORT fp16_query = { DML_TENSOR_DATA_TYPE_FLOAT16 };
-		DML_FEATURE_DATA_TENSOR_DATA_TYPE_SUPPORT fp16_supported = {};
+		DML_FEATURE_QUERY_TENSOR_DATA_TYPE_SUPPORT fp16_query{ DML_TENSOR_DATA_TYPE_FLOAT16 };
+		DML_FEATURE_DATA_TENSOR_DATA_TYPE_SUPPORT fp16_supported{};
 		GFX_CHECK_HR(dml_device->CheckFeatureSupport(DML_FEATURE_TENSOR_DATA_TYPE_SUPPORT, sizeof(fp16_query), &fp16_query, sizeof(fp16_supported), &fp16_supported));
 		if (!fp16_supported.IsSupported)
 		{
@@ -401,7 +417,7 @@ namespace adria
 		DML_BINDING_PROPERTIES init_binding_props = dml_op_initializer->GetBindingProperties();
 		DML_BINDING_PROPERTIES execute_binding_props = dml_graph->GetBindingProperties();
 
-		std::unique_ptr<GfxOnlineDescriptorAllocator> dml_heap = std::make_unique<GfxOnlineDescriptorAllocator>(gfx, std::max(init_binding_props.RequiredDescriptorCount, execute_binding_props.RequiredDescriptorCount), 0);
+		dml_heap = std::make_unique<GfxOnlineDescriptorAllocator>(gfx, std::max(init_binding_props.RequiredDescriptorCount, execute_binding_props.RequiredDescriptorCount), 0);
 		cmd_list->SetHeap(dml_heap.get());
 
 		// Create any persistent resources required for the operators.
@@ -490,6 +506,7 @@ namespace adria
 		cmd_list->End();
 		cmd_list->Submit();
 		gfx->WaitForGPU();
+		cmd_list->Begin();
 
 		if (dml_managed_weights)
 		{
@@ -556,8 +573,6 @@ namespace adria
 		DML_BUFFER_BINDING output_binding = { model_output->GetNative(), 0, model_output->GetSize() };
 		DML_BINDING_DESC binding_desc{ DML_BINDING_TYPE_BUFFER, &output_binding };
 		dml_binding_table->BindOutputs(1, &binding_desc);
-
-		cmd_list->Begin();
 	}
 
 	void DirectMLUpscalerPass::AddTextureToTensorPass(RenderGraph& rg, PostProcessor const* postprocessor)

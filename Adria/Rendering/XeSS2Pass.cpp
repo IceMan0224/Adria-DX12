@@ -135,6 +135,10 @@ namespace adria
 				if (ImGui::TreeNodeEx(name_version, ImGuiTreeNodeFlags_None))
 				{
 					ImGui::Checkbox("Enable", XeSS2.GetPtr());
+					//if (ImGui::Checkbox("Enable", XeSS2.GetPtr()) && XeSS2.Get())
+					//{
+					//	ups
+					//}
 					if (XeSS2.Get())
 					{
 						Int _quality = quality_setting - XESS_QUALITY_SETTING_ULTRA_PERFORMANCE;
