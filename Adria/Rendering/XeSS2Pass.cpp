@@ -9,8 +9,6 @@
 
 namespace adria
 {
-	static TAutoConsoleVariable<Bool> XeSS2("r.XeSS2", true, "Enable or Disable XeSS2");
-
 	namespace
 	{
 		void XeSS2Log(Char const* message, xess_logging_level_t logging_level)
@@ -125,7 +123,7 @@ namespace adria
 
 	Bool XeSS2Pass::IsEnabled(PostProcessor const*) const
 	{
-		return XeSS2.Get();
+		return true; 
 	}
 
 	void XeSS2Pass::GUI()
@@ -134,20 +132,12 @@ namespace adria
 			{
 				if (ImGui::TreeNodeEx(name_version, ImGuiTreeNodeFlags_None))
 				{
-					ImGui::Checkbox("Enable", XeSS2.GetPtr());
-					//if (ImGui::Checkbox("Enable", XeSS2.GetPtr()) && XeSS2.Get())
-					//{
-					//	ups
-					//}
-					if (XeSS2.Get())
+					Int _quality = quality_setting - XESS_QUALITY_SETTING_ULTRA_PERFORMANCE;
+					if (ImGui::Combo("Quality Mode", &_quality, "Ultra Performance (3.0x)\0Performance (2.3x)\0Balanced (2.0x)\0Quality (1.7x)\0Ultra Quality (1.5x)\0Ultra Quality Plus (1.3x)\0AA (1.0x)\0", 7))
 					{
-						Int _quality = quality_setting - XESS_QUALITY_SETTING_ULTRA_PERFORMANCE;
-						if (ImGui::Combo("Quality Mode", &_quality, "Ultra Performance (3.0x)\0Performance (2.3x)\0Balanced (2.0x)\0Quality (1.7x)\0Ultra Quality (1.5x)\0Ultra Quality Plus (1.3x)\0AA (1.0x)\0", 7))
-						{
-							quality_setting = (xess_quality_settings_t)(_quality + XESS_QUALITY_SETTING_ULTRA_PERFORMANCE);
-							RecreateRenderResolution();
-							needs_init = true;
-						}
+						quality_setting = (xess_quality_settings_t)(_quality + XESS_QUALITY_SETTING_ULTRA_PERFORMANCE);
+						RecreateRenderResolution();
+						needs_init = true;
 					}
 					ImGui::TreePop();
 				}

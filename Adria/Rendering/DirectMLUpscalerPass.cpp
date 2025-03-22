@@ -188,8 +188,6 @@ namespace adria
 		}
 	}
 
-	static TAutoConsoleVariable<Bool> DirectML("r.DirectML", true, "Enable or Disable DirectML Upscaler");
-
 	DirectMLUpscalerPass::DirectMLUpscalerPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), display_width(0), display_height(0), render_width(0), render_height(0)
 	{
 		ADRIA_TODO("Add cmd line option for debug dml device");
@@ -243,7 +241,7 @@ namespace adria
 
 	Bool DirectMLUpscalerPass::IsEnabled(PostProcessor const*) const
 	{
-		return DirectML.Get();
+		return true;
 	}
 
 	Bool DirectMLUpscalerPass::IsSupported() const
@@ -257,7 +255,6 @@ namespace adria
 			{
 				if (ImGui::TreeNodeEx("DirectML Upscaler", ImGuiTreeNodeFlags_None))
 				{
-					ImGui::Checkbox("Enable", DirectML.GetPtr());
 					ImGui::TreePop();
 				}
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_Upscaler);
