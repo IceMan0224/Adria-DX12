@@ -4,7 +4,7 @@
 namespace adria
 {
 	class GfxDevice;
-	class MLDevice;
+	class GfxBuffer;
 	class GfxComputePipelineState;
 	class RenderGraph;
 	class PostProcessor;
@@ -35,31 +35,38 @@ namespace adria
 		GfxDevice* gfx;
 		Uint32 display_width;
 		Uint32 display_height;
+		Uint32 render_width;
+		Uint32 render_height;
 		Bool supported = false;
+
 		std::unique_ptr<GfxComputePipelineState> tensor_to_texture_pso;
 		std::unique_ptr<GfxComputePipelineState> texture_to_tensor_pso;
+		TensorLayout				 tensor_layout;
 
-		Ref<IDMLDevice>              m_dmlDevice;
-		Ref<IDMLCommandRecorder>     m_dmlCommandRecorder;
+		Ref<IDMLDevice>              dml_device;
+		Ref<IDMLCommandRecorder>     dml_command_recorder;
 
-		TensorLayout				 m_tensorLayout;
-		Ref<ID3D12Resource>          m_modelInput;
-		Ref<ID3D12Resource>          m_modelOutput;
-		// DirectMLX Model Resources
-		Ref<ID3D12Resource>          m_modelConvFilterWeights[CONV_LAYER_COUNT];
-		Ref<ID3D12Resource>          m_modelConvBiasWeights[CONV_LAYER_COUNT];
+		std::unique_ptr<GfxBuffer>   model_input;
+		std::unique_ptr<GfxBuffer>   model_output;
+		std::unique_ptr<GfxBuffer>   model_conv_filter_weights[CONV_LAYER_COUNT];
+		std::unique_ptr<GfxBuffer>   model_conv_bias_weights[CONV_LAYER_COUNT];
 
-		Ref<ID3D12Resource>          m_modelPersistentResource;
-		Ref<ID3D12Resource>          m_modelTemporaryResource;
+		std::unique_ptr<GfxBuffer>   model_persistent_resource;
+		std::unique_ptr<GfxBuffer>   model_temporary_resource;
 
-		// DirectMLX operations
-		Ref<IDMLCompiledOperator>    m_dmlGraph;
-		Ref<IDMLBindingTable>        m_dmlBindingTable;
-		Ref<IDMLOperatorInitializer> m_dmlOpInitializer;
+		Ref<IDMLCompiledOperator>    dml_graph;
+		Ref<IDMLBindingTable>        dml_binding_table;
+		Ref<IDMLOperatorInitializer> dml_op_initializer;
+
+		Bool dml_managed_weights = false;
 
 	private:
 		void CreatePSOs();
 		void CreateDirectMLResources();
 		void InitializeDirectMLResources();
+
+		void AddImageToTensorPass(RenderGraph&);
+		void AddUpscalingPass(RenderGraph&);
+		void AddTensorToImagePass(RenderGraph&);
 	};
 }

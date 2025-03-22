@@ -51,7 +51,6 @@ namespace adria
 		sprintf(name_version, "XeSS %d.%d.%d", version.major, version.minor, version.patch);
 
 		OnResize(w, h);
-
 	}
 
 	XeSS2Pass::~XeSS2Pass()

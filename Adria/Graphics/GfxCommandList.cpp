@@ -208,7 +208,7 @@ namespace adria
 
 		if (type == GfxCommandListType::Graphics || type == GfxCommandListType::Compute)
 		{
-			auto* descriptor_allocator = gfx->GetDescriptorAllocator();
+			GfxOnlineDescriptorAllocator* descriptor_allocator = gfx->GetDescriptorAllocator();
 			if (descriptor_allocator)
 			{
 				ID3D12DescriptorHeap* heaps[] = { descriptor_allocator->GetHeap() };
@@ -216,8 +216,30 @@ namespace adria
 
 				ID3D12RootSignature* common_rs = gfx->GetCommonRootSignature();
 				cmd_list->SetComputeRootSignature(common_rs);
-				if (type == GfxCommandListType::Graphics) cmd_list->SetGraphicsRootSignature(common_rs);
+				if (type == GfxCommandListType::Graphics)
+				{
+					cmd_list->SetGraphicsRootSignature(common_rs);
+				}
 			}
+		}
+	}
+
+	void GfxCommandList::SetHeap(GfxOnlineDescriptorAllocator* heap)
+	{
+		if (heap && (type == GfxCommandListType::Graphics || type == GfxCommandListType::Compute))
+		{
+			ID3D12DescriptorHeap* heaps[] = { heap->GetHeap() };
+			cmd_list->SetDescriptorHeaps(1, heaps);
+		}
+	}
+
+	void GfxCommandList::ResetHeap()
+	{
+		GfxOnlineDescriptorAllocator* default_heap = gfx->GetDescriptorAllocator();
+		if (default_heap && (type == GfxCommandListType::Graphics || type == GfxCommandListType::Compute))
+		{
+			ID3D12DescriptorHeap* heaps[] = { default_heap->GetHeap() };
+			cmd_list->SetDescriptorHeaps(1, heaps);
 		}
 	}
 

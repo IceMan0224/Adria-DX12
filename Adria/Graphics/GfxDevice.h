@@ -69,11 +69,7 @@ namespace adria
 
 	class GfxNsightAftermathGpuCrashTracker;
 	class GfxNsightPerfManager;
-#if GFX_MULTITHREADED
-	using GfxOnlineDescriptorAllocator = GfxRingDescriptorAllocator<true>;
-#else
-	using GfxOnlineDescriptorAllocator = GfxRingDescriptorAllocator<false>;
-#endif
+	using GfxOnlineDescriptorAllocator = GfxRingDescriptorAllocator<GFX_MULTITHREADED>;
 
 	struct GPUMemoryUsage
 	{

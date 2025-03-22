@@ -36,5 +36,6 @@
 #include "Core/Types.h"
 #include "Core/Macros.h"
 #include "Core/Log.h"
+#include "Graphics/GfxMacros.h"
 #include "Math/MathCommon.h"
 #include "Utilities/Ref.h"

@@ -41,7 +41,11 @@ namespace adria
 
 	RGResourceName DLSS3Pass::AddPass(RenderGraph& rg, RGResourceName input)
 	{
-		if(!IsSupported()) ADRIA_ASSERT_MSG(false, "DLSS is not supported on this device");
+		if (!IsSupported())
+		{
+			ADRIA_ASSERT_MSG(false, "DLSS is not supported on this device");
+			return RGResourceName{};
+		}
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 

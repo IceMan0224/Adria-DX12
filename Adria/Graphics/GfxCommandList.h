@@ -21,6 +21,9 @@ namespace adria
 	struct GfxRenderPassDesc;
 	struct GfxShadingRateInfo;
 	class GfxRayTracingShaderTable;
+	template<Bool>
+	class GfxRingDescriptorAllocator;
+	using GfxOnlineDescriptorAllocator = GfxRingDescriptorAllocator<GFX_MULTITHREADED>;
 
 	enum class GfxCommandListType : Uint8
 	{
@@ -56,6 +59,8 @@ namespace adria
 		void Submit();
 		void SignalAll();
 		void ResetState();
+		void SetHeap(GfxOnlineDescriptorAllocator* heap);
+		void ResetHeap();
 
 		void BeginEvent(Char const* event_name);
 		void BeginEvent(Char const* event_name, Uint32 event_color);
