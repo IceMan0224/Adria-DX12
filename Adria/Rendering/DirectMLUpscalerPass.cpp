@@ -270,6 +270,129 @@ namespace adria
 		texture_to_tensor_pso = gfx->CreateComputePipelineState(pso_desc);
 	}
 
+	void DirectMLUpscalerPass::AddTextureToTensorPass(RenderGraph& rg, PostProcessor const* postprocessor)
+	{
+		struct TextureToTensorPassData
+		{
+			RGBufferReadWriteId tensor;
+			RGTextureReadOnlyId texture;
+		};
+
+		rg.AddPass<TextureToTensorPassData>("Texture To Tensor Pass",
+			[=](TextureToTensorPassData& data, RenderGraphBuilder& builder)
+			{
+				data.tensor = builder.WriteBuffer(RG_NAME(ModelInput));
+				data.texture = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
+			},
+			[=](TextureToTensorPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			{
+				GfxDevice* gfx = cmd_list->GetDevice();
+
+				GfxDescriptor src_descriptors[] =
+				{
+					ctx.GetReadWriteBuffer(data.tensor),
+					ctx.GetReadOnlyTexture(data.texture),
+				};
+				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
+				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
+				Uint32 const i = dst_descriptor.GetIndex();
+
+				GfxTextureDesc texture_desc = ctx.GetTexture(*data.texture).GetDesc();
+
+				struct  TextureToTensorConstants
+				{
+					Vector2  resolution;
+					Bool32   nhwc;
+					Uint32   output_idx;
+					Uint32   input_idx;
+				} constants =
+				{
+					.resolution = Vector2((Float)texture_desc.width, (Float)texture_desc.height),
+					.nhwc = tensor_layout == TensorLayout::NHWC,
+					.output_idx = i,
+					.input_idx = i + 1,
+				};
+
+				cmd_list->SetPipelineState(texture_to_tensor_pso.get());
+				cmd_list->SetRootConstants(1, constants);
+				cmd_list->Dispatch(DivideAndRoundUp(texture_desc.width, 16), DivideAndRoundUp(texture_desc.height, 16), 1);
+			}, RGPassType::Compute);
+	}
+
+	void DirectMLUpscalerPass::AddUpscalingPass(RenderGraph& rg)
+	{
+		rg.AddPass<void>("DirectML Upscaler Pass",
+			[=](RenderGraphBuilder& builder) 
+			{
+				builder.DummyReadBuffer(RG_NAME(ModelInput));
+				builder.DummyWriteBuffer(RG_NAME(ModelOutput));
+			},
+			[=](RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			{
+				cmd_list->SetHeap(dml_heap.get());
+				dml_command_recorder->RecordDispatch(cmd_list->GetNative(), dml_graph.Get(), dml_binding_table.Get());
+				cmd_list->ResetState();
+			}, RGPassType::Compute);
+	}
+
+	void DirectMLUpscalerPass::AddTensorToTexturePass(RenderGraph& rg, PostProcessor* postprocessor)
+	{
+		struct TensorToTexturePassData
+		{
+			RGBufferReadOnlyId tensor;
+			RGTextureReadWriteId texture;
+		};
+
+		rg.AddPass<TensorToTexturePassData>("Tensor To Texture Pass",
+			[=](TensorToTexturePassData& data, RenderGraphBuilder& builder)
+			{
+				RGTextureDesc dml_desc{};
+				dml_desc.format = GfxFormat::R16G16B16A16_FLOAT;
+				dml_desc.width = display_width;
+				dml_desc.height = display_height;
+				dml_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
+				builder.DeclareTexture(RG_NAME(DMLUpscalerOutput), dml_desc);
+
+				data.tensor = builder.ReadBuffer(RG_NAME(ModelOutput));
+				data.texture = builder.WriteTexture(RG_NAME(DMLUpscalerOutput));
+			},
+			[=](TensorToTexturePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			{
+				GfxDevice* gfx = cmd_list->GetDevice();
+
+				GfxDescriptor src_descriptors[] =
+				{
+					ctx.GetReadWriteTexture(data.texture),
+					ctx.GetReadOnlyBuffer(data.tensor),
+				};
+				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
+				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
+				Uint32 const i = dst_descriptor.GetIndex();
+				GfxTextureDesc texture_desc = ctx.GetTexture(*data.texture).GetDesc();
+
+				struct  TextureToTensorConstants
+				{
+					Vector2  resolution;
+					Bool32   nhwc;
+					Uint32   output_idx;
+					Uint32   input_idx;
+				} constants =
+				{
+					.resolution = Vector2((Float)texture_desc.width, (Float)texture_desc.height),
+					.nhwc = tensor_layout == TensorLayout::NHWC,
+					.output_idx = i,
+					.input_idx = i + 1,
+				};
+
+				cmd_list->SetPipelineState(tensor_to_texture_pso.get());
+				cmd_list->SetRootConstants(1, constants);
+				cmd_list->Dispatch(DivideAndRoundUp(texture_desc.width, 16), DivideAndRoundUp(texture_desc.height, 16), 1);
+			}, RGPassType::Compute);
+
+		postprocessor->SetFinalResource(RG_NAME(DMLUpscalerOutput));
+	}
+
+
 	void DirectMLUpscalerPass::CreateDirectMLResources()
 	{
 		std::unordered_map<std::string, std::vector<Float>> weights;
@@ -280,27 +403,27 @@ namespace adria
 
 		Uint32 filter_sizes1[4] = { 32, 3, 5, 5 };
 		util::CreateWeightTensors(gfx, tensor_layout, weights["conv1/weights"], weights["conv1/BatchNorm/scale"], weights["conv1/BatchNorm/shift"],
-								  filter_sizes1, model_conv_filter_weights[0], model_conv_bias_weights[0]);
+			filter_sizes1, model_conv_filter_weights[0], model_conv_bias_weights[0]);
 
 		Uint32 filter_sizes2[4] = { 64, 32, 3, 3 };
 		util::CreateWeightTensors(gfx, tensor_layout, weights["conv2/weights"], weights["conv2/BatchNorm/scale"], weights["conv2/BatchNorm/shift"],
-								  filter_sizes2, model_conv_filter_weights[1], model_conv_bias_weights[1]);
+			filter_sizes2, model_conv_filter_weights[1], model_conv_bias_weights[1]);
 
 		Uint32 filter_sizes3[4] = { 64, 64, 3, 3 };
 		util::CreateWeightTensors(gfx, tensor_layout, weights["conv3/weights"], weights["conv3/BatchNorm/scale"], weights["conv3/BatchNorm/shift"],
-								  filter_sizes3, model_conv_filter_weights[2], model_conv_bias_weights[2]);
+			filter_sizes3, model_conv_filter_weights[2], model_conv_bias_weights[2]);
 
 		Uint32 filter_sizes4[4] = { 32, 64, 5, 5 };
 		util::CreateWeightTensors(gfx, tensor_layout, weights["conv_up1/conv/weights"], weights["conv_up1/conv/BatchNorm/scale"], weights["conv_up1/conv/BatchNorm/shift"],
-								  filter_sizes4, model_conv_filter_weights[3], model_conv_bias_weights[3]);
+			filter_sizes4, model_conv_filter_weights[3], model_conv_bias_weights[3]);
 
 		Uint32 filter_sizes5[4] = { 32, 32, 3, 3 };
 		util::CreateWeightTensors(gfx, tensor_layout, weights["conv4/weights"], weights["conv4/BatchNorm/scale"], weights["conv4/BatchNorm/shift"],
-								  filter_sizes5, model_conv_filter_weights[4], model_conv_bias_weights[4]);
+			filter_sizes5, model_conv_filter_weights[4], model_conv_bias_weights[4]);
 
 		Uint32 filter_sizes6[4] = { 32, 32, 3, 3 };
 		util::CreateWeightTensors(gfx, tensor_layout, weights["conv5/weights"], weights["conv5/BatchNorm/scale"], weights["conv5/BatchNorm/shift"],
-								  filter_sizes6, model_conv_filter_weights[5], model_conv_bias_weights[5]);
+			filter_sizes6, model_conv_filter_weights[5], model_conv_bias_weights[5]);
 
 		Uint32 filter_sizes7[4] = { 3, 32, 3, 3 };
 		util::CreateWeightTensors(gfx, tensor_layout, weights["conv6/weights"], {}, {}, filter_sizes7, model_conv_filter_weights[6], model_conv_bias_weights[6]);
@@ -309,7 +432,7 @@ namespace adria
 
 		DML_TENSOR_DATA_TYPE data_type = DML_TENSOR_DATA_TYPE_FLOAT16;
 		DML_TENSOR_FLAGS flags = dml_managed_weights ? DML_TENSOR_FLAG_OWNED_BY_DML : DML_TENSOR_FLAG_NONE;
-		
+
 		dml::TensorPolicy policy = tensor_layout == TensorLayout::Default ? dml::TensorPolicy::Default() : dml::TensorPolicy::InterleavedChannel();
 		dml::Graph graph(dml_device.Get(), policy);
 
@@ -321,28 +444,28 @@ namespace adria
 		dml::Expression conv1_filter = dml::InputTensor(graph, 1, dml::TensorDesc(data_type, flags, { 32,  3, 5, 5 }, policy));
 		dml::Expression conv1_bias = dml::InputTensor(graph, 2, dml::TensorDesc(data_type, flags, { 1, 32, 1, 1 }, policy));
 		dml::Expression conv1 = dml::ConvolutionBuilder(input_model, conv1_filter, conv1_bias)
-					    .StartPadding(std::array<Uint32, 2>{ 2u, 2u })
-					    .EndPadding(std::array<Uint32, 2>{ 2u, 2u })
-					    .FusedActivation(dml::FusedActivation::Relu())
-					    .Build();
+			.StartPadding(std::array<Uint32, 2>{ 2u, 2u })
+			.EndPadding(std::array<Uint32, 2>{ 2u, 2u })
+			.FusedActivation(dml::FusedActivation::Relu())
+			.Build();
 
 		// conv2
 		dml::Expression conv2_filter = dml::InputTensor(graph, 3, dml::TensorDesc(data_type, flags, { 64, 32, 3, 3 }, policy));
 		dml::Expression conv2_bias = dml::InputTensor(graph, 4, dml::TensorDesc(data_type, flags, { 1, 64, 1, 1 }, policy));
 		dml::Expression conv2 = dml::ConvolutionBuilder(conv1, conv2_filter, conv2_bias)
-						.StartPadding(std::array<Uint32, 2>{ 1u, 1u })
-						.EndPadding(std::array<Uint32, 2>{ 1u, 1u })
-						.FusedActivation(dml::FusedActivation::Relu())
-						.Build();
+			.StartPadding(std::array<Uint32, 2>{ 1u, 1u })
+			.EndPadding(std::array<Uint32, 2>{ 1u, 1u })
+			.FusedActivation(dml::FusedActivation::Relu())
+			.Build();
 
 		// conv3
 		dml::Expression conv3_filter = dml::InputTensor(graph, 5, dml::TensorDesc(data_type, flags, { 64, 64, 3, 3 }, policy));
 		dml::Expression conv3_bias = dml::InputTensor(graph, 6, dml::TensorDesc(data_type, flags, { 1, 64, 1, 1 }, policy));
 		dml::Expression conv3 = dml::ConvolutionBuilder(conv2, conv3_filter, conv3_bias)
-						.StartPadding(std::array<Uint32, 2>{ 1u, 1u })
-						.EndPadding(std::array<Uint32, 2>{ 1u, 1u })
-						.FusedActivation(dml::FusedActivation::Relu())
-						.Build();
+			.StartPadding(std::array<Uint32, 2>{ 1u, 1u })
+			.EndPadding(std::array<Uint32, 2>{ 1u, 1u })
+			.FusedActivation(dml::FusedActivation::Relu())
+			.Build();
 
 		// up1 (2x nearest-neighbor upsample)
 		dml::Expression up1 = dml::Upsample2D(conv3, DML_SIZE_2D{ 2, 2 }, DML_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
@@ -351,10 +474,10 @@ namespace adria
 		dml::Expression conv_up1_filter = dml::InputTensor(graph, 7, dml::TensorDesc(data_type, flags, { 32, 64, 5, 5 }, policy));
 		dml::Expression conv_up1_bias = dml::InputTensor(graph, 8, dml::TensorDesc(data_type, flags, { 1, 32, 1, 1 }, policy));
 		dml::Expression conv_up1 = dml::ConvolutionBuilder(up1, conv_up1_filter, conv_up1_bias)
-						.StartPadding(std::array<Uint32, 2>{ 2u, 2u })
-						.EndPadding(std::array<Uint32, 2>{ 2u, 2u })
-						.FusedActivation(dml::FusedActivation::Relu())
-						.Build();
+			.StartPadding(std::array<Uint32, 2>{ 2u, 2u })
+			.EndPadding(std::array<Uint32, 2>{ 2u, 2u })
+			.FusedActivation(dml::FusedActivation::Relu())
+			.Build();
 
 		// conv4
 		dml::Expression conv4_filter = dml::InputTensor(graph, 9, dml::TensorDesc(data_type, flags, { 32, 32, 3, 3 }, policy));
@@ -369,17 +492,17 @@ namespace adria
 		dml::Expression conv5_filter = dml::InputTensor(graph, 11, dml::TensorDesc(data_type, flags, { 32, 32, 3, 3 }, policy));
 		dml::Expression conv5_bias = dml::InputTensor(graph, 12, dml::TensorDesc(data_type, flags, { 1, 32, 1, 1 }, policy));
 		dml::Expression conv5 = dml::ConvolutionBuilder(conv4, conv5_filter, conv5_bias)
-						.StartPadding(std::array<Uint32, 2>{ 1u, 1u })
-						.EndPadding(std::array<Uint32, 2>{ 1u, 1u })
-						.FusedActivation(dml::FusedActivation::Relu())
-						.Build();
+			.StartPadding(std::array<Uint32, 2>{ 1u, 1u })
+			.EndPadding(std::array<Uint32, 2>{ 1u, 1u })
+			.FusedActivation(dml::FusedActivation::Relu())
+			.Build();
 
 		// conv6 (no bias or activation)
 		dml::Expression conv6_filter = dml::InputTensor(graph, 13, dml::TensorDesc(data_type, flags, { 3, 32, 3, 3 }, policy));
 		dml::Expression conv6 = dml::ConvolutionBuilder(conv5, conv6_filter)
-						.StartPadding(std::array<Uint32, 2>{ 1u, 1u })
-						.EndPadding(std::array<Uint32, 2>{ 1u, 1u })
-						.Build();
+			.StartPadding(std::array<Uint32, 2>{ 1u, 1u })
+			.EndPadding(std::array<Uint32, 2>{ 1u, 1u })
+			.Build();
 
 		// Add the output of the convolutions to an upscaled version of the original image
 		dml::Expression up2 = dml::Upsample2D(input_model, DML_SIZE_2D{ 2, 2 }, DML_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
@@ -469,7 +592,7 @@ namespace adria
 			{ model_conv_filter_weights[3]->GetNative(), 0, model_conv_filter_weights[3]->GetSize() }, { model_conv_bias_weights[3]->GetNative(), 0, model_conv_bias_weights[3]->GetSize() },
 			{ model_conv_filter_weights[4]->GetNative(), 0, model_conv_filter_weights[4]->GetSize() }, { model_conv_bias_weights[4]->GetNative(), 0, model_conv_bias_weights[4]->GetSize() },
 			{ model_conv_filter_weights[5]->GetNative(), 0, model_conv_filter_weights[5]->GetSize() }, { model_conv_bias_weights[5]->GetNative(), 0, model_conv_bias_weights[5]->GetSize() },
-			{ model_conv_filter_weights[6]->GetNative(), 0, model_conv_filter_weights[6]->GetSize() }, 
+			{ model_conv_filter_weights[6]->GetNative(), 0, model_conv_filter_weights[6]->GetSize() },
 		};
 		// Bind inputs for initialization, which is only necessary if we're using OWNED_BY_DML
 		if (dml_managed_weights)
@@ -513,7 +636,7 @@ namespace adria
 				model_conv_bias_weights[i].reset();
 			}
 		}
-		
+
 		table_desc.Dispatchable = dml_graph.Get();
 		table_desc.SizeInDescriptors = execute_binding_props.RequiredDescriptorCount;
 		GFX_CHECK_HR(dml_device->CreateBindingTable(&table_desc, IID_PPV_ARGS(dml_binding_table.GetAddressOf())));
@@ -570,128 +693,6 @@ namespace adria
 		DML_BUFFER_BINDING output_binding = { model_output->GetNative(), 0, model_output->GetSize() };
 		DML_BINDING_DESC binding_desc{ DML_BINDING_TYPE_BUFFER, &output_binding };
 		dml_binding_table->BindOutputs(1, &binding_desc);
-	}
-
-	void DirectMLUpscalerPass::AddTextureToTensorPass(RenderGraph& rg, PostProcessor const* postprocessor)
-	{
-		struct TextureToTensorPassData
-		{
-			RGBufferReadWriteId tensor;
-			RGTextureReadOnlyId texture;
-		};
-
-		rg.AddPass<TextureToTensorPassData>("Texture To Tensor Pass",
-			[=](TextureToTensorPassData& data, RenderGraphBuilder& builder)
-			{
-				data.tensor = builder.WriteBuffer(RG_NAME(ModelInput));
-				data.texture = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
-			},
-			[=](TextureToTensorPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
-			{
-				GfxDevice* gfx = cmd_list->GetDevice();
-
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadWriteBuffer(data.tensor),
-					ctx.GetReadOnlyTexture(data.texture),
-				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
-
-				GfxTextureDesc texture_desc = ctx.GetTexture(*data.texture).GetDesc();
-
-				struct  TextureToTensorConstants
-				{
-					Vector2  resolution;
-					Bool32   nhwc;
-					Uint32   output_idx;
-					Uint32   input_idx;
-				} constants =
-				{
-					.resolution = Vector2((Float)texture_desc.width, (Float)texture_desc.height),
-					.nhwc = tensor_layout == TensorLayout::NHWC,
-					.output_idx = i,
-					.input_idx = i + 1,
-				};
-
-				cmd_list->SetPipelineState(texture_to_tensor_pso.get());
-				cmd_list->SetRootConstants(1, constants);
-				cmd_list->Dispatch(DivideAndRoundUp(texture_desc.width, 16), DivideAndRoundUp(texture_desc.height, 16), 1);
-			}, RGPassType::Compute);
-	}
-
-	void DirectMLUpscalerPass::AddUpscalingPass(RenderGraph& rg)
-	{
-		rg.AddPass<void>("DirectML Upscaler Pass",
-			[=](RenderGraphBuilder& builder) 
-			{
-				builder.DummyReadBuffer(RG_NAME(ModelInput));
-				builder.DummyWriteBuffer(RG_NAME(ModelOutput));
-			},
-			[=](RenderGraphContext& ctx, GfxCommandList* cmd_list)
-			{
-				cmd_list->SetHeap(dml_heap.get());
-				dml_command_recorder->RecordDispatch(cmd_list->GetNative(), dml_graph.Get(), dml_binding_table.Get());
-				cmd_list->ResetState();
-			}, RGPassType::Compute);
-	}
-
-	void DirectMLUpscalerPass::AddTensorToTexturePass(RenderGraph& rg, PostProcessor* postprocessor)
-	{
-		struct TensorToTexturePassData
-		{
-			RGBufferReadOnlyId tensor;
-			RGTextureReadWriteId texture;
-		};
-
-		rg.AddPass<TensorToTexturePassData>("Texture To Tensor Pass",
-			[=](TensorToTexturePassData& data, RenderGraphBuilder& builder)
-			{
-				RGTextureDesc dml_desc{};
-				dml_desc.format = GfxFormat::R16G16B16A16_FLOAT;
-				dml_desc.width = display_width;
-				dml_desc.height = display_height;
-				dml_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
-				builder.DeclareTexture(RG_NAME(DMLUpscalerOutput), dml_desc);
-
-				data.tensor = builder.ReadBuffer(RG_NAME(ModelOutput));
-				data.texture = builder.WriteTexture(RG_NAME(DMLUpscalerOutput));
-			},
-			[=](TensorToTexturePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
-			{
-				GfxDevice* gfx = cmd_list->GetDevice();
-
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadWriteTexture(data.texture),
-					ctx.GetReadOnlyBuffer(data.tensor),
-				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
-				GfxTextureDesc texture_desc = ctx.GetTexture(*data.texture).GetDesc();
-
-				struct  TextureToTensorConstants
-				{
-					Vector2  resolution;
-					Bool32   nhwc;
-					Uint32   output_idx;
-					Uint32   input_idx;
-				} constants =
-				{
-					.resolution = Vector2((Float)texture_desc.width, (Float)texture_desc.height),
-					.nhwc = tensor_layout == TensorLayout::NHWC,
-					.output_idx = i,
-					.input_idx = i + 1,
-				};
-
-				cmd_list->SetPipelineState(texture_to_tensor_pso.get());
-				cmd_list->SetRootConstants(1, constants);
-				cmd_list->Dispatch(DivideAndRoundUp(texture_desc.width, 16), DivideAndRoundUp(texture_desc.height, 16), 1);
-			}, RGPassType::Compute);
-
-		postprocessor->SetFinalResource(RG_NAME(DMLUpscalerOutput));
 	}
 
 }
