@@ -146,7 +146,6 @@ namespace adria
 			}
 			return { std::move(result), total_size * sizeof(Uint16) };
 		}
-
 		void CreateWeightTensors(GfxDevice* gfx, TensorLayout layout, 
 			std::vector<Float> const& conv_layer_weights, std::vector<Float> const& scale_layer_weights, 
 			std::vector<Float> const& shift_layer_weights, std::span<Uint32 const> filter_sizes, 
@@ -213,12 +212,7 @@ namespace adria
 		render_width = static_cast<Uint32>(display_width * 0.5f);
 		render_height = static_cast<Uint32>(display_height * 0.5f);
 		BroadcastRenderResolutionChanged(render_width, render_height);
-	}
-
-	void DirectMLUpscalerPass::OnSceneInitialized()
-	{
-		CreateDirectMLResources();
-		InitializeDirectMLResources();
+		needs_init = true;
 	}
 
 	void DirectMLUpscalerPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
@@ -228,8 +222,14 @@ namespace adria
 			ADRIA_ASSERT_MSG(false, "DirectMLUpscaler is not supported on this device");
 			return;
 		}
-		RG_SCOPE(rg, "DML Upscaling");
 
+		RG_SCOPE(rg, "DML Upscaling");
+		if (needs_init)
+		{
+			CreateDirectMLResources();
+			InitializeDirectMLResources();
+			needs_init = false;
+		}
 		rg.ImportBuffer(RG_NAME(ModelInput), model_input.get());
 		rg.ImportBuffer(RG_NAME(ModelOutput), model_output.get());
 		AddTextureToTensorPass(rg, postprocessor);
@@ -389,7 +389,6 @@ namespace adria
 
 		postprocessor->SetFinalResource(RG_NAME(DMLUpscalerOutput));
 	}
-
 
 	void DirectMLUpscalerPass::CreateDirectMLResources()
 	{

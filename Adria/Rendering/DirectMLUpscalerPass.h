@@ -28,7 +28,6 @@ namespace adria
 		explicit DirectMLUpscalerPass(GfxDevice* gfx, Uint32 w, Uint32 h);
 
 		virtual void OnResize(Uint32 w, Uint32 h) override;
-		virtual void OnSceneInitialized() override;
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual Bool IsEnabled(PostProcessor const*) const override;
 		virtual Bool IsSupported() const override;
@@ -41,6 +40,7 @@ namespace adria
 		Uint32 render_width;
 		Uint32 render_height;
 		Bool supported = false;
+		Bool needs_init = true;
 
 		TensorLayout				 tensor_layout;
 		std::unique_ptr<GfxComputePipelineState> tensor_to_texture_pso;
@@ -66,11 +66,12 @@ namespace adria
 
 	private:
 		void CreatePSOs();
-		void CreateDirectMLResources();
-		void InitializeDirectMLResources();
 
 		void AddTextureToTensorPass(RenderGraph&, PostProcessor const*);
 		void AddUpscalingPass(RenderGraph&);
 		void AddTensorToTexturePass(RenderGraph&, PostProcessor*);
+
+		void CreateDirectMLResources();
+		void InitializeDirectMLResources();
 	};
 }

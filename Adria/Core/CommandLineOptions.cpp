@@ -118,7 +118,7 @@ namespace adria::CommandLineOptions
 
 	Bool GetDebugDML()
 	{
-
+		return debug_dml;
 	}
 
 	Bool GetShaderDebug()
