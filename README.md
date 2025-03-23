@@ -11,7 +11,7 @@ Graphics engine written in C++ using DirectX12.
 * DDGI
 * GPU-Driven Rendering : GPU frustum culling + 2 phase GPU occlusion culling
 * Reference path tracer + OIDN denoiser
-* Temporal upscalers : FSR2, FSR3, XeSS, DLSS3
+* Temporal upscalers : FSR2, FSR3, XeSS, DLSS3, DirectML 
 * Ultimate Bindless resource binding
 * Variable Rate Shading (FFX)
 * Volumetric lighting: Raymarching, Fog volumes
@@ -43,10 +43,6 @@ Graphics engine written in C++ using DirectX12.
     - Nsight Aftermath SDK, Nsight Perf SDK
     - Debug Outputs: Diffuse, Normal, Depth, Roughness, Metallic, Emissive, AO, GI, \
       Custom, Shading Extension, View Mipmaps, Triangle Overdraw, Material and Meshlet ID, Motion Vectors
-
-## TODO
-* ReSTIR DI
-* ReSTIR GI
 
 ## Screenshots
 

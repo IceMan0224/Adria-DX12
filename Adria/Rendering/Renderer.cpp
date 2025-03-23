@@ -387,8 +387,14 @@ namespace adria
 		rain_pass.Update(dt);
 
 		camera_jitter = Vector2(0.0f, 0.0f);
-		if (postprocessor.NeedsJitter()) camera_jitter = camera->Jitter(gfx->GetFrameIndex());
-		if (camera->IsChanged()) path_tracer.Reset();
+		if (postprocessor.NeedsJitter())
+		{
+			camera_jitter = camera->Jitter(gfx->GetFrameIndex());
+		}
+		if (camera->IsChanged())
+		{
+			path_tracer.Reset();
+		}
 
 		frame_cbuf_data.camera_near = camera->Near();
 		frame_cbuf_data.camera_far = camera->Far();

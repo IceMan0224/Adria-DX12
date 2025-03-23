@@ -62,7 +62,7 @@ namespace adria
 		void OnRenderResolutionChanged(Uint32 w, Uint32 h);
 		void OnSceneInitialized();
 
-		Bool NeedsJitter() const { return HasTAA() || HasUpscaler(); }
+		Bool NeedsJitter() const;
 		Bool NeedsVelocityBuffer() const;
 		Bool NeedsHistoryBuffer() const;
 		Bool HasUpscaler() const;

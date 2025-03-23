@@ -18,9 +18,9 @@ namespace adria
 {
 	namespace util
 	{
-		constexpr Uint32 BUFFER_LENGTH = 256;
 		Bool LoadWeights(std::string const& weights_file_name, std::unordered_map<std::string, std::vector<Float>>& weight_map)
 		{
+			static constexpr Uint32 BUFFER_LENGTH = 256;
 			std::ifstream input(weights_file_name, std::ifstream::binary);
 			if (!(input) || !(input.good()) || !(input.is_open()))
 			{
@@ -46,7 +46,7 @@ namespace adria
 
 			Uint32 name_length;
 			Uint32 w_length;
-			Char name_buf[BUFFER_LENGTH];
+			Char name_buffer[BUFFER_LENGTH];
 			try
 			{
 				while (weight_tensor_count--)
@@ -57,9 +57,9 @@ namespace adria
 						ADRIA_ERROR("[DirectML] name_len exceeds BUFFER_LENGTH");
 						return false;
 					}
-					input.read(name_buf, name_length);
-					name_buf[name_length] = '\0';
-					std::string name(name_buf);
+					input.read(name_buffer, name_length);
+					name_buffer[name_length] = '\0';
+					std::string name(name_buffer);
 
 					input.read(reinterpret_cast<Char*>(&w_length), sizeof(Uint32));
 					weight_map[name] = std::vector<Float>(w_length);
@@ -80,23 +80,6 @@ namespace adria
 			}
 
 			return true;
-		}
-		void GetStrides(Uint32 const* sizes, TensorLayout layout, Uint32* strides)
-		{
-			switch (layout)
-			{
-			case TensorLayout::NHWC:
-				strides[0] = sizes[1] * sizes[2] * sizes[3];
-				strides[1] = 1;
-				strides[2] = sizes[1] * sizes[3];
-				strides[3] = sizes[1];
-				break;
-			default:
-				strides[0] = sizes[1] * sizes[2] * sizes[3];
-				strides[1] = sizes[2] * sizes[3];
-				strides[2] = sizes[3];
-				strides[3] = 1;
-			}
 		}
 		std::pair<std::vector<Uint16>, Uint64> CompressWeights(TensorLayout layout, std::vector<Float> const& filter_weights, std::vector<Float> const& scale_weights, std::vector<Float> const& shift_weights, std::span<const Uint32> sizes, Bool is_filter)
 		{
@@ -151,6 +134,23 @@ namespace adria
 			std::vector<Float> const& shift_layer_weights, std::span<Uint32 const> filter_sizes, 
 			std::unique_ptr<GfxBuffer>& filter_tensor, std::unique_ptr<GfxBuffer>& bias_tensor)
 		{
+			auto GetStrides = [](TensorLayout layout, Uint32 const* sizes, Uint32* strides) {
+				switch (layout)
+				{
+				case TensorLayout::NHWC:
+					strides[0] = sizes[1] * sizes[2] * sizes[3];
+					strides[1] = 1;
+					strides[2] = sizes[1] * sizes[3];
+					strides[3] = sizes[1];
+					break;
+				default:
+					strides[0] = sizes[1] * sizes[2] * sizes[3];
+					strides[1] = sizes[2] * sizes[3];
+					strides[2] = sizes[3];
+					strides[3] = 1;
+				}
+				};
+
 			Bool const use_scale_shift = !scale_layer_weights.empty();
 			auto [filter_data, filter_size] = CompressWeights(layout, conv_layer_weights,
 				use_scale_shift ? scale_layer_weights : std::vector<Float>{},
@@ -158,7 +158,7 @@ namespace adria
 				filter_sizes, true);
 
 			Uint32 filter_strides[4];
-			GetStrides(filter_sizes.data(), layout, filter_strides);
+			GetStrides(layout, filter_sizes.data(), filter_strides);
 			Uint64 filter_buffer_size = DMLCalcBufferTensorSize(DML_TENSOR_DATA_TYPE_FLOAT16, 4, filter_sizes.data(), filter_strides);
 
 			GfxBufferDesc filter_tensor_desc{};
@@ -174,7 +174,7 @@ namespace adria
 				auto [bias_data, bias_size] = CompressWeights(layout, {}, {}, shift_layer_weights, filter_sizes, false);
 
 				Uint32 bias_strides[4];
-				GetStrides(bias_sizes, layout, bias_strides);
+				GetStrides(layout, bias_sizes, bias_strides);
 				Uint64 bias_buffer_size = DMLCalcBufferTensorSize(DML_TENSOR_DATA_TYPE_FLOAT16, 4, bias_sizes, bias_strides);
 
 				GfxBufferDesc bias_tensor_desc{};
@@ -425,8 +425,6 @@ namespace adria
 		Uint32 filter_sizes7[4] = { 3, 32, 3, 3 };
 		util::CreateWeightTensors(gfx, tensor_layout, weights["conv6/weights"], {}, {}, filter_sizes7, model_conv_filter_weights[6], model_conv_bias_weights[6]);
 
-		// Construct a DML graph of operators
-
 		DML_TENSOR_DATA_TYPE data_type = DML_TENSOR_DATA_TYPE_FLOAT16;
 		DML_TENSOR_FLAGS flags = dml_managed_weights ? DML_TENSOR_FLAG_OWNED_BY_DML : DML_TENSOR_FLAG_NONE;
 
@@ -437,7 +435,6 @@ namespace adria
 		Dimensions model_input_sizes = { 1, 3, render_height, render_width };
 		auto input_model = dml::InputTensor(graph, 0, dml::TensorDesc(data_type, model_input_sizes, policy));
 
-		// conv1
 		dml::Expression conv1_filter = dml::InputTensor(graph, 1, dml::TensorDesc(data_type, flags, { 32,  3, 5, 5 }, policy));
 		dml::Expression conv1_bias = dml::InputTensor(graph, 2, dml::TensorDesc(data_type, flags, { 1, 32, 1, 1 }, policy));
 		dml::Expression conv1 = dml::ConvolutionBuilder(input_model, conv1_filter, conv1_bias)
@@ -446,7 +443,6 @@ namespace adria
 			.FusedActivation(dml::FusedActivation::Relu())
 			.Build();
 
-		// conv2
 		dml::Expression conv2_filter = dml::InputTensor(graph, 3, dml::TensorDesc(data_type, flags, { 64, 32, 3, 3 }, policy));
 		dml::Expression conv2_bias = dml::InputTensor(graph, 4, dml::TensorDesc(data_type, flags, { 1, 64, 1, 1 }, policy));
 		dml::Expression conv2 = dml::ConvolutionBuilder(conv1, conv2_filter, conv2_bias)
@@ -455,7 +451,6 @@ namespace adria
 			.FusedActivation(dml::FusedActivation::Relu())
 			.Build();
 
-		// conv3
 		dml::Expression conv3_filter = dml::InputTensor(graph, 5, dml::TensorDesc(data_type, flags, { 64, 64, 3, 3 }, policy));
 		dml::Expression conv3_bias = dml::InputTensor(graph, 6, dml::TensorDesc(data_type, flags, { 1, 64, 1, 1 }, policy));
 		dml::Expression conv3 = dml::ConvolutionBuilder(conv2, conv3_filter, conv3_bias)
@@ -464,10 +459,8 @@ namespace adria
 			.FusedActivation(dml::FusedActivation::Relu())
 			.Build();
 
-		// up1 (2x nearest-neighbor upsample)
 		dml::Expression up1 = dml::Upsample2D(conv3, DML_SIZE_2D{ 2, 2 }, DML_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
 
-		// conv_up1
 		dml::Expression conv_up1_filter = dml::InputTensor(graph, 7, dml::TensorDesc(data_type, flags, { 32, 64, 5, 5 }, policy));
 		dml::Expression conv_up1_bias = dml::InputTensor(graph, 8, dml::TensorDesc(data_type, flags, { 1, 32, 1, 1 }, policy));
 		dml::Expression conv_up1 = dml::ConvolutionBuilder(up1, conv_up1_filter, conv_up1_bias)
@@ -476,7 +469,6 @@ namespace adria
 			.FusedActivation(dml::FusedActivation::Relu())
 			.Build();
 
-		// conv4
 		dml::Expression conv4_filter = dml::InputTensor(graph, 9, dml::TensorDesc(data_type, flags, { 32, 32, 3, 3 }, policy));
 		dml::Expression conv4_bias = dml::InputTensor(graph, 10, dml::TensorDesc(data_type, flags, { 1, 32, 1, 1 }, policy));
 		dml::Expression conv4 = dml::ConvolutionBuilder(conv_up1, conv4_filter, conv4_bias)
@@ -485,7 +477,6 @@ namespace adria
 			.FusedActivation(dml::FusedActivation::Relu())
 			.Build();
 
-		// conv5
 		dml::Expression conv5_filter = dml::InputTensor(graph, 11, dml::TensorDesc(data_type, flags, { 32, 32, 3, 3 }, policy));
 		dml::Expression conv5_bias = dml::InputTensor(graph, 12, dml::TensorDesc(data_type, flags, { 1, 32, 1, 1 }, policy));
 		dml::Expression conv5 = dml::ConvolutionBuilder(conv4, conv5_filter, conv5_bias)
@@ -494,26 +485,22 @@ namespace adria
 			.FusedActivation(dml::FusedActivation::Relu())
 			.Build();
 
-		// conv6 (no bias or activation)
 		dml::Expression conv6_filter = dml::InputTensor(graph, 13, dml::TensorDesc(data_type, flags, { 3, 32, 3, 3 }, policy));
 		dml::Expression conv6 = dml::ConvolutionBuilder(conv5, conv6_filter)
 			.StartPadding(std::array<Uint32, 2>{ 1u, 1u })
 			.EndPadding(std::array<Uint32, 2>{ 1u, 1u })
 			.Build();
 
-		// Add the output of the convolutions to an upscaled version of the original image
 		dml::Expression up2 = dml::Upsample2D(input_model, DML_SIZE_2D{ 2, 2 }, DML_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
 		dml::Expression output_model = up2 + conv6;
 
 		Uint64 model_input_buffer_size = input_model.GetOutputDesc().totalTensorSizeInBytes;
 		Uint64 model_output_buffer_size = output_model.GetOutputDesc().totalTensorSizeInBytes;
 
-		// Compile the graph
 		DML_EXECUTION_FLAGS execution_flags = DML_EXECUTION_FLAG_ALLOW_HALF_PRECISION_COMPUTATION;
 		auto compiled_graph = graph.Compile(execution_flags, std::array<dml::Expression, 1>{ output_model });
 		dml_graph.Attach(compiled_graph.Detach());
 
-		// Resource for input tensor
 		GfxBufferDesc model_input_buffer_desc{};
 		model_input_buffer_desc.resource_usage = GfxResourceUsage::Default;
 		model_input_buffer_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
@@ -537,7 +524,6 @@ namespace adria
 		dml_heap = std::make_unique<GfxOnlineDescriptorAllocator>(gfx, std::max(init_binding_props.RequiredDescriptorCount, execute_binding_props.RequiredDescriptorCount), 0);
 		cmd_list->SetHeap(dml_heap.get());
 
-		// Create any persistent resources required for the operators.
 		if (execute_binding_props.PersistentResourceSize > 0)
 		{
 			GfxBufferDesc model_persistent_buffer_desc{};
@@ -547,7 +533,6 @@ namespace adria
 			model_persistent_resource = gfx->CreateBuffer(model_persistent_buffer_desc);
 		}
 
-		// Temporary resource for execution
 		if (execute_binding_props.TemporaryResourceSize > 0)
 		{
 			GfxBufferDesc model_temporary_buffer_desc{};
@@ -557,7 +542,6 @@ namespace adria
 			model_temporary_resource = gfx->CreateBuffer(model_temporary_buffer_desc);
 		}
 
-		// If the execute temporary resource isn't big enough for initialization, create a bigger buffer
 		std::unique_ptr<GfxBuffer> init_temporary_resource = nullptr;
 		if (init_binding_props.TemporaryResourceSize > 0)
 		{
@@ -582,7 +566,7 @@ namespace adria
 
 		DML_BUFFER_BINDING buffer_bindings[] =
 		{
-			{}, // model input
+			{},
 			{ model_conv_filter_weights[0]->GetNative(), 0, model_conv_filter_weights[0]->GetSize() }, { model_conv_bias_weights[0]->GetNative(), 0, model_conv_bias_weights[0]->GetSize() },
 			{ model_conv_filter_weights[1]->GetNative(), 0, model_conv_filter_weights[1]->GetSize() }, { model_conv_bias_weights[1]->GetNative(), 0, model_conv_bias_weights[1]->GetSize() },
 			{ model_conv_filter_weights[2]->GetNative(), 0, model_conv_filter_weights[2]->GetSize() }, { model_conv_bias_weights[2]->GetNative(), 0, model_conv_bias_weights[2]->GetSize() },
@@ -591,7 +575,7 @@ namespace adria
 			{ model_conv_filter_weights[5]->GetNative(), 0, model_conv_filter_weights[5]->GetSize() }, { model_conv_bias_weights[5]->GetNative(), 0, model_conv_bias_weights[5]->GetSize() },
 			{ model_conv_filter_weights[6]->GetNative(), 0, model_conv_filter_weights[6]->GetSize() },
 		};
-		// Bind inputs for initialization, which is only necessary if we're using OWNED_BY_DML
+
 		if (dml_managed_weights)
 		{
 			DML_BUFFER_ARRAY_BINDING init_input_binding = { ARRAYSIZE(buffer_bindings), buffer_bindings };
@@ -610,7 +594,6 @@ namespace adria
 			init_binding_table->BindTemporaryResource(&binding_desc);
 		}
 
-		// If the operator requires a persistent resource, it must be bound as output for the initializer.
 		if (model_persistent_resource)
 		{
 			DML_BUFFER_BINDING binding = { model_persistent_resource->GetNative(), 0, model_persistent_resource->GetSize() };
@@ -652,11 +635,9 @@ namespace adria
 			dml_binding_table->BindTemporaryResource(&binding_desc);
 		}
 
-		// Bind model inputs and outputs
 		buffer_bindings[0] = DML_BUFFER_BINDING{ model_input->GetNative() };
 		if (dml_managed_weights)
 		{
-			// Bind only the model input
 			DML_BINDING_DESC input_bindings[] =
 			{
 				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[0] },
@@ -666,23 +647,22 @@ namespace adria
 				{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
 				{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
 				{ DML_BINDING_TYPE_NONE, nullptr }, { DML_BINDING_TYPE_NONE, nullptr },
-				{ DML_BINDING_TYPE_NONE, nullptr }, // last layer has no bias
+				{ DML_BINDING_TYPE_NONE, nullptr }, 
 			};
 			dml_binding_table->BindInputs(ARRAYSIZE(input_bindings), input_bindings);
 		}
 		else
 		{
-			// Bind everything
 			DML_BINDING_DESC input_bindings[] =
 			{
-				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[0] }, // model input
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[0] }, 
 				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[1] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[2] },
 				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[3] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[4] },
 				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[5] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[6] },
 				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[7] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[8] },
 				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[9] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[10] },
 				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[11] }, { DML_BINDING_TYPE_BUFFER, &buffer_bindings[12] },
-				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[13] }, // last layer has no bias
+				{ DML_BINDING_TYPE_BUFFER, &buffer_bindings[13] }, 
 			};
 			dml_binding_table->BindInputs(ARRAYSIZE(input_bindings), input_bindings);
 		}

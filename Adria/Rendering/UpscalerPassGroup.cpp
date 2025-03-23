@@ -62,6 +62,17 @@ namespace adria
 		}
 	}
 
+	Bool UpscalerPassGroup::NeedsJitter() const
+	{
+		switch (upscaler_type)
+		{
+		case UpscalerType::None:
+		case UpscalerType::DirectML:
+			return false;
+		}
+		return true;
+	}
+
 	void UpscalerPassGroup::GroupGUI()
 	{
 		QueueGUI([&]()

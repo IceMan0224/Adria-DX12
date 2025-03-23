@@ -164,6 +164,11 @@ namespace adria
 		return is_path_tracing_path;
 	}
 
+	Bool PostProcessor::NeedsJitter() const
+	{
+		return HasTAA() || (HasUpscaler() && GetPostEffect<UpscalerPassGroup>()->NeedsJitter());
+	}
+
 	Bool PostProcessor::NeedsVelocityBuffer() const
 	{
 		return HasTAA() || HasUpscaler() || post_effects[PostEffectType_Clouds]->IsEnabled(this) || post_effects[PostEffectType_MotionBlur]->IsEnabled(this);
