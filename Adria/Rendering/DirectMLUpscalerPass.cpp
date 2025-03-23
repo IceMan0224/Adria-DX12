@@ -64,7 +64,6 @@ namespace adria
 					input.read(reinterpret_cast<Char*>(&w_length), sizeof(Uint32));
 					weight_map[name] = std::vector<Float>(w_length);
 					input.read(reinterpret_cast<Char*>(weight_map[name].data()), sizeof(Float) * w_length);
-					ADRIA_DEBUG("[DirectML] Loaded Tensor: %s -> %d", name.c_str(), w_length);
 				}
 				input.close();
 			}
@@ -81,109 +80,21 @@ namespace adria
 
 			return true;
 		}
-		std::pair<std::vector<Uint16>, Uint64> CompressWeights(TensorLayout layout, std::vector<Float> const& filter_weights, std::vector<Float> const& scale_weights, std::vector<Float> const& shift_weights, std::span<const Uint32> sizes, Bool is_filter)
+		void GetTensorStrides(TensorLayout layout, std::span<Uint32 const> sizes, std::span<Uint32> strides)
 		{
-			std::vector<Uint16> result;
-			Uint32 N = sizes[0], C = sizes[1], H = sizes[2], W = sizes[3];
-			Uint64 total_size = N * C * H * W;
-			Bool const use_scale_shift = !scale_weights.empty();
-			if (is_filter)
+			switch (layout)
 			{
-				result.reserve(total_size);
-				for (Uint32 n = 0; n < N; ++n)
-				{
-					if (layout == TensorLayout::Default)
-					{
-						for (Uint32 i = 0; i < C * H * W; ++i)
-						{
-							Uint32 idx = n * C * H * W + i;
-							Float scaled_weight = use_scale_shift ? filter_weights[idx] * scale_weights[n] : filter_weights[idx];
-							result.push_back(FloatCompressor::Compress(scaled_weight));
-						}
-					}
-					else
-					{
-						for (Uint32 h = 0; h < H; h++)
-						{
-							for (Uint32 w = 0; w < W; w++)
-							{
-								for (Uint32 c = 0; c < C; c++)
-								{
-									Uint32 idx = w + h * W + c * H * W + n * C * H * W;
-									Float scaled_weight = use_scale_shift ? filter_weights[idx] * scale_weights[n] : filter_weights[idx];
-									result.push_back(FloatCompressor::Compress(scaled_weight));
-								}
-							}
-						}
-					}
-				}
-			}
-			else  // bias
-			{
-				result.reserve(N);
-				for (Uint32 n = 0; n < N; ++n)
-				{
-					result.push_back(FloatCompressor::Compress(shift_weights[n]));
-				}
-				total_size = N;
-			}
-			return { std::move(result), total_size * sizeof(Uint16) };
-		}
-		void CreateWeightTensors(GfxDevice* gfx, TensorLayout layout, 
-			std::vector<Float> const& conv_layer_weights, std::vector<Float> const& scale_layer_weights, 
-			std::vector<Float> const& shift_layer_weights, std::span<Uint32 const> filter_sizes, 
-			std::unique_ptr<GfxBuffer>& filter_tensor, std::unique_ptr<GfxBuffer>& bias_tensor)
-		{
-			auto GetStrides = [](TensorLayout layout, Uint32 const* sizes, Uint32* strides) {
-				switch (layout)
-				{
-				case TensorLayout::NHWC:
-					strides[0] = sizes[1] * sizes[2] * sizes[3];
-					strides[1] = 1;
-					strides[2] = sizes[1] * sizes[3];
-					strides[3] = sizes[1];
-					break;
-				default:
-					strides[0] = sizes[1] * sizes[2] * sizes[3];
-					strides[1] = sizes[2] * sizes[3];
-					strides[2] = sizes[3];
-					strides[3] = 1;
-				}
-				};
-
-			Bool const use_scale_shift = !scale_layer_weights.empty();
-			auto [filter_data, filter_size] = CompressWeights(layout, conv_layer_weights,
-				use_scale_shift ? scale_layer_weights : std::vector<Float>{},
-				use_scale_shift ? shift_layer_weights : std::vector<Float>{},
-				filter_sizes, true);
-
-			Uint32 filter_strides[4];
-			GetStrides(layout, filter_sizes.data(), filter_strides);
-			Uint64 filter_buffer_size = DMLCalcBufferTensorSize(DML_TENSOR_DATA_TYPE_FLOAT16, 4, filter_sizes.data(), filter_strides);
-
-			GfxBufferDesc filter_tensor_desc{};
-			filter_tensor_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
-			filter_tensor_desc.size = filter_buffer_size;
-			filter_tensor_desc.resource_usage = GfxResourceUsage::Default;
-			GfxBufferData gfx_filter_data(filter_data.data());
-
-			filter_tensor = gfx->CreateBuffer(filter_tensor_desc, gfx_filter_data);
-			if (use_scale_shift)
-			{
-				Uint32 bias_sizes[] = { 1, filter_sizes[0], 1, 1 };
-				auto [bias_data, bias_size] = CompressWeights(layout, {}, {}, shift_layer_weights, filter_sizes, false);
-
-				Uint32 bias_strides[4];
-				GetStrides(layout, bias_sizes, bias_strides);
-				Uint64 bias_buffer_size = DMLCalcBufferTensorSize(DML_TENSOR_DATA_TYPE_FLOAT16, 4, bias_sizes, bias_strides);
-
-				GfxBufferDesc bias_tensor_desc{};
-				bias_tensor_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
-				bias_tensor_desc.size = bias_buffer_size;
-				bias_tensor_desc.resource_usage = GfxResourceUsage::Default;
-				GfxBufferData gfx_bias_data(bias_data.data());
-
-				bias_tensor = gfx->CreateBuffer(bias_tensor_desc, gfx_bias_data);
+			case TensorLayout::NHWC:
+				strides[0] = sizes[1] * sizes[2] * sizes[3];
+				strides[1] = 1;
+				strides[2] = sizes[1] * sizes[3];
+				strides[3] = sizes[1];
+				break;
+			default:
+				strides[0] = sizes[1] * sizes[2] * sizes[3];
+				strides[1] = sizes[2] * sizes[3];
+				strides[2] = sizes[3];
+				strides[3] = 1;
 			}
 		}
 	}
@@ -399,31 +310,31 @@ namespace adria
 		}
 
 		Uint32 filter_sizes1[4] = { 32, 3, 5, 5 };
-		util::CreateWeightTensors(gfx, tensor_layout, weights["conv1/weights"], weights["conv1/BatchNorm/scale"], weights["conv1/BatchNorm/shift"],
-			filter_sizes1, model_conv_filter_weights[0], model_conv_bias_weights[0]);
+		model_conv_filter_weights[0] = CreateFilterTensor(weights["conv1/weights"], weights["conv1/BatchNorm/scale"], filter_sizes1);
+		model_conv_bias_weights[0] = CreateBiasTensor(weights["conv1/BatchNorm/shift"],  filter_sizes1);
 
 		Uint32 filter_sizes2[4] = { 64, 32, 3, 3 };
-		util::CreateWeightTensors(gfx, tensor_layout, weights["conv2/weights"], weights["conv2/BatchNorm/scale"], weights["conv2/BatchNorm/shift"],
-			filter_sizes2, model_conv_filter_weights[1], model_conv_bias_weights[1]);
+		model_conv_filter_weights[1] = CreateFilterTensor(weights["conv2/weights"], weights["conv2/BatchNorm/scale"], filter_sizes2);
+		model_conv_bias_weights[1] = CreateBiasTensor(weights["conv2/BatchNorm/shift"], filter_sizes2);
 
 		Uint32 filter_sizes3[4] = { 64, 64, 3, 3 };
-		util::CreateWeightTensors(gfx, tensor_layout, weights["conv3/weights"], weights["conv3/BatchNorm/scale"], weights["conv3/BatchNorm/shift"],
-			filter_sizes3, model_conv_filter_weights[2], model_conv_bias_weights[2]);
+		model_conv_filter_weights[2] = CreateFilterTensor(weights["conv3/weights"], weights["conv3/BatchNorm/scale"], filter_sizes3);
+		model_conv_bias_weights[2] = CreateBiasTensor(weights["conv3/BatchNorm/shift"], filter_sizes3);
 
 		Uint32 filter_sizes4[4] = { 32, 64, 5, 5 };
-		util::CreateWeightTensors(gfx, tensor_layout, weights["conv_up1/conv/weights"], weights["conv_up1/conv/BatchNorm/scale"], weights["conv_up1/conv/BatchNorm/shift"],
-			filter_sizes4, model_conv_filter_weights[3], model_conv_bias_weights[3]);
+		model_conv_filter_weights[3] = CreateFilterTensor(weights["conv_up1/conv/weights"], weights["conv_up1/conv/BatchNorm/scale"], filter_sizes4);
+		model_conv_bias_weights[3] = CreateBiasTensor(weights["conv_up1/conv/BatchNorm/shift"], filter_sizes4);
 
 		Uint32 filter_sizes5[4] = { 32, 32, 3, 3 };
-		util::CreateWeightTensors(gfx, tensor_layout, weights["conv4/weights"], weights["conv4/BatchNorm/scale"], weights["conv4/BatchNorm/shift"],
-			filter_sizes5, model_conv_filter_weights[4], model_conv_bias_weights[4]);
+		model_conv_filter_weights[4] = CreateFilterTensor(weights["conv4/weights"], weights["conv4/BatchNorm/scale"], filter_sizes5);
+		model_conv_bias_weights[4] = CreateBiasTensor(weights["conv4/BatchNorm/shift"], filter_sizes5);
 
 		Uint32 filter_sizes6[4] = { 32, 32, 3, 3 };
-		util::CreateWeightTensors(gfx, tensor_layout, weights["conv5/weights"], weights["conv5/BatchNorm/scale"], weights["conv5/BatchNorm/shift"],
-			filter_sizes6, model_conv_filter_weights[5], model_conv_bias_weights[5]);
+		model_conv_filter_weights[5] = CreateFilterTensor(weights["conv5/weights"], weights["conv5/BatchNorm/scale"], filter_sizes6);
+		model_conv_bias_weights[5] = CreateBiasTensor(weights["conv5/BatchNorm/shift"], filter_sizes6);
 
 		Uint32 filter_sizes7[4] = { 3, 32, 3, 3 };
-		util::CreateWeightTensors(gfx, tensor_layout, weights["conv6/weights"], {}, {}, filter_sizes7, model_conv_filter_weights[6], model_conv_bias_weights[6]);
+		model_conv_filter_weights[6] = CreateFilterTensor(weights["conv6/weights"], {}, filter_sizes7);
 
 		DML_TENSOR_DATA_TYPE data_type = DML_TENSOR_DATA_TYPE_FLOAT16;
 		DML_TENSOR_FLAGS flags = dml_managed_weights ? DML_TENSOR_FLAG_OWNED_BY_DML : DML_TENSOR_FLAG_NONE;
@@ -552,7 +463,7 @@ namespace adria
 			init_temporary_resource = gfx->CreateBuffer(model_temporary_buffer_desc);
 		}
 
-		Microsoft::WRL::ComPtr<IDMLBindingTable> init_binding_table;
+		Ref<IDMLBindingTable> init_binding_table;
 		ADRIA_ASSERT(init_binding_props.PersistentResourceSize == 0);
 
 		DML_BINDING_TABLE_DESC table_desc =
@@ -562,7 +473,7 @@ namespace adria
 			dml_heap->GetHandle(0),
 			init_binding_props.RequiredDescriptorCount
 		};
-		GFX_CHECK_HR(dml_device->CreateBindingTable(&table_desc, IID_PPV_ARGS(&init_binding_table)));
+		GFX_CHECK_HR(dml_device->CreateBindingTable(&table_desc, IID_PPV_ARGS(init_binding_table.GetAddressOf())));
 
 		DML_BUFFER_BINDING buffer_bindings[] =
 		{
@@ -670,6 +581,89 @@ namespace adria
 		DML_BUFFER_BINDING output_binding = { model_output->GetNative(), 0, model_output->GetSize() };
 		DML_BINDING_DESC binding_desc{ DML_BINDING_TYPE_BUFFER, &output_binding };
 		dml_binding_table->BindOutputs(1, &binding_desc);
+	}
+
+	std::unique_ptr<GfxBuffer> DirectMLUpscalerPass::CreateFilterTensor(std::vector<Float> const& filter_weights, std::vector<Float> const& scale_weights, std::span<const Uint32> filter_sizes)
+	{
+		Bool const use_scale_shift = !scale_weights.empty();
+		std::vector<Uint16> compressed_filter_weights = CompressFilterWeights(filter_weights, scale_weights, filter_sizes);
+		Uint32 filter_strides[4];
+		util::GetTensorStrides(tensor_layout, filter_sizes, filter_strides);
+		Uint64 filter_buffer_size = DMLCalcBufferTensorSize(DML_TENSOR_DATA_TYPE_FLOAT16, 4, filter_sizes.data(), filter_strides);
+
+		GfxBufferDesc filter_tensor_desc{};
+		filter_tensor_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
+		filter_tensor_desc.size = filter_buffer_size;
+		filter_tensor_desc.resource_usage = GfxResourceUsage::Default;
+		GfxBufferData gfx_filter_data(compressed_filter_weights.data());
+		return gfx->CreateBuffer(filter_tensor_desc, gfx_filter_data);
+	}
+
+	std::unique_ptr<GfxBuffer> DirectMLUpscalerPass::CreateBiasTensor(std::vector<Float> const& shift_weights, std::span<const Uint32> filter_sizes)
+	{
+		Uint32 bias_sizes[] = { 1, filter_sizes[0], 1, 1 };
+		std::vector<Uint16> compressed_bias_weights = CompressBiasWeights(shift_weights, filter_sizes);
+
+		Uint32 bias_strides[4];
+		util::GetTensorStrides(tensor_layout, bias_sizes, bias_strides);
+		Uint64 bias_buffer_size = DMLCalcBufferTensorSize(DML_TENSOR_DATA_TYPE_FLOAT16, 4, bias_sizes, bias_strides);
+
+		GfxBufferDesc bias_tensor_desc{};
+		bias_tensor_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
+		bias_tensor_desc.size = bias_buffer_size;
+		bias_tensor_desc.resource_usage = GfxResourceUsage::Default;
+		GfxBufferData gfx_bias_data(compressed_bias_weights.data());
+		return gfx->CreateBuffer(bias_tensor_desc, gfx_bias_data);
+	}
+
+	std::vector<Uint16> DirectMLUpscalerPass::CompressFilterWeights(std::vector<Float> const& filter_weights, std::vector<Float> const& scale_weights, std::span<const Uint32> sizes)
+	{
+		std::vector<Uint16> result;
+		Uint32 N = sizes[0], C = sizes[1], H = sizes[2], W = sizes[3];
+		Uint64 total_size = N * C * H * W;
+		Bool const use_scale_shift = !scale_weights.empty();
+		result.reserve(total_size);
+		for (Uint32 n = 0; n < N; ++n)
+		{
+			if (tensor_layout == TensorLayout::Default)
+			{
+				for (Uint32 i = 0; i < C * H * W; ++i)
+				{
+					Uint32 idx = n * C * H * W + i;
+					Float scaled_weight = use_scale_shift ? filter_weights[idx] * scale_weights[n] : filter_weights[idx];
+					result.push_back(FloatCompressor::Compress(scaled_weight));
+				}
+			}
+			else
+			{
+				for (Uint32 h = 0; h < H; h++)
+				{
+					for (Uint32 w = 0; w < W; w++)
+					{
+						for (Uint32 c = 0; c < C; c++)
+						{
+							Uint32 idx = w + h * W + c * H * W + n * C * H * W;
+							Float scaled_weight = use_scale_shift ? filter_weights[idx] * scale_weights[n] : filter_weights[idx];
+							result.push_back(FloatCompressor::Compress(scaled_weight));
+						}
+					}
+				}
+			}
+		}
+		return result;
+	}
+
+	std::vector<Uint16> DirectMLUpscalerPass::CompressBiasWeights(std::vector<Float> const& shift_weights, std::span<const Uint32> sizes)
+	{
+		std::vector<Uint16> result;
+		Uint32 N = sizes[0], C = sizes[1], H = sizes[2], W = sizes[3];
+		Uint64 total_size = N * C * H * W;
+		result.reserve(N);
+		for (Uint32 n = 0; n < N; ++n)
+		{
+			result.push_back(FloatCompressor::Compress(shift_weights[n]));
+		}
+		return result;
 	}
 
 }

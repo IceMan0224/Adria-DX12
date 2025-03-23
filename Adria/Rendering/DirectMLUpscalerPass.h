@@ -73,5 +73,10 @@ namespace adria
 
 		void CreateDirectMLResources();
 		void InitializeDirectMLResources();
+
+		std::unique_ptr<GfxBuffer> CreateFilterTensor(std::vector<Float> const&, std::vector<Float> const&, std::span<const Uint32>);
+		std::unique_ptr<GfxBuffer> CreateBiasTensor(std::vector<Float> const&, std::span<const Uint32>);
+		std::vector<Uint16> CompressFilterWeights(std::vector<Float> const&, std::vector<Float> const&, std::span<const Uint32>);
+		std::vector<Uint16> CompressBiasWeights(std::vector<Float> const&, std::span<const Uint32>);
 	};
 }
