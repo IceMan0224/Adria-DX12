@@ -14,6 +14,7 @@ namespace adria::CommandLineOptions
 		std::string scene_file{};
 		Bool vsync = false;
 		Bool debug_device = false;
+		Bool debug_dml = false;
 		Bool shader_debug = false;
 		Bool dred = false;
 		Bool gpu_validation = false;
@@ -34,6 +35,7 @@ namespace adria::CommandLineOptions
 			cli_parser.AddArg(false, "-max", "--maximize");
 			cli_parser.AddArg(false, "-vsync");
 			cli_parser.AddArg(false, "-debugdevice");
+			cli_parser.AddArg(false, "--debugdml");
 			cli_parser.AddArg(false, "-shaderdebug");
 			cli_parser.AddArg(false, "-dred");
 			cli_parser.AddArg(false, "-gpuvalidation");
@@ -59,6 +61,7 @@ namespace adria::CommandLineOptions
 		scene_file = parse_result["-scene"].AsStringOr("sponza.json");
 		vsync = parse_result["-vsync"];
 		debug_device = parse_result["-debugdevice"];
+		debug_dml = parse_result["-debugdml"];
 		shader_debug = parse_result["-shaderdebug"];
 		dred = parse_result["-dred"];
 		gpu_validation = parse_result["-gpuvalidation"];
@@ -113,6 +116,11 @@ namespace adria::CommandLineOptions
 		return debug_device;
 	}
 
+	Bool GetDebugDML()
+	{
+
+	}
+
 	Bool GetShaderDebug()
 	{
 		return shader_debug;
@@ -147,6 +155,5 @@ namespace adria::CommandLineOptions
 	{
 		return perf_hud;
 	}
-
 }
 

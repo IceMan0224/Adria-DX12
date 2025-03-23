@@ -16,6 +16,7 @@ namespace adria
 		std::string const& GetSceneFile();
 		Bool GetVsync();
 		Bool GetDebugDevice();
+		Bool GetDebugDML();
 		Bool GetShaderDebug();
 		Bool GetDRED();
 		Bool GetGpuValidation();

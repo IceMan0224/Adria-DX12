@@ -9,6 +9,7 @@
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 #include "Core/ConsoleManager.h"
+#include "Core/CommandLineOptions.h"
 #include "Utilities/FloatCompressor.h"
 
 #pragma comment(lib, "DirectML.lib")
@@ -190,10 +191,7 @@ namespace adria
 
 	DirectMLUpscalerPass::DirectMLUpscalerPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), display_width(0), display_height(0), render_width(0), render_height(0)
 	{
-		ADRIA_TODO("Add cmd line option for debug dml device");
-		Bool const DEBUG_DML_DEVICE = true;
-		GFX_CHECK_HR(DMLCreateDevice(gfx->GetDevice(), DEBUG_DML_DEVICE ? DML_CREATE_DEVICE_FLAG_DEBUG : DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(dml_device.GetAddressOf())));
-	
+		GFX_CHECK_HR(DMLCreateDevice(gfx->GetDevice(), CommandLineOptions::GetDebugDML() ? DML_CREATE_DEVICE_FLAG_DEBUG : DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(dml_device.GetAddressOf())));
 		tensor_layout = gfx->GetVendor() == GfxVendor::Nvidia ? TensorLayout::NHWC : TensorLayout::Default;
 
 		DML_FEATURE_QUERY_TENSOR_DATA_TYPE_SUPPORT fp16_query{ DML_TENSOR_DATA_TYPE_FLOAT16 };
