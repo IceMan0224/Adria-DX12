@@ -48,7 +48,9 @@ namespace adria
 
 		oidnSetDeviceErrorFunction(oidn_device, OIDNErrorCallback, nullptr);
 		oidnCommitDevice(oidn_device);
+		OIDNCheck(oidn_device);
 		oidn_filter = oidnNewFilter(oidn_device, "RT");
+		OIDNCheck(oidn_device);
 
 		oidn_fence.Create(gfx, "OIDN Fence");
 		supported = true;
@@ -128,7 +130,7 @@ namespace adria
 			ReleaseBuffers();
 
 			GfxBufferDesc oidn_buffer_desc{};
-			oidn_buffer_desc.size = gfx->GetLinearBufferSize(&color_texture); 
+			oidn_buffer_desc.size = gfx->GetLinearBufferSize(&color_texture);
 			oidn_buffer_desc.resource_usage = GfxResourceUsage::Default;
 			oidn_buffer_desc.bind_flags = GfxBindFlag::None;
 			oidn_buffer_desc.misc_flags = GfxBufferMiscFlag::Shared;
@@ -141,6 +143,7 @@ namespace adria
 			oidn_color_buffer = oidnNewSharedBufferFromWin32Handle(oidn_device, flag, color_buffer->GetSharedHandle(), nullptr, oidn_buffer_desc.size);
 			oidn_albedo_buffer = oidnNewSharedBufferFromWin32Handle(oidn_device, flag, albedo_buffer->GetSharedHandle(), nullptr, oidn_buffer_desc.size);
 			oidn_normal_buffer = oidnNewSharedBufferFromWin32Handle(oidn_device, flag, normal_buffer->GetSharedHandle(), nullptr, oidn_buffer_desc.size);
+			OIDNCheck(oidn_device);
 
 			oidnSetFilterImage(oidn_filter, "color", oidn_color_buffer, OIDN_FORMAT_HALF3, width, height, 0, 8, color_texture.GetRowPitch());
 			oidnSetFilterImage(oidn_filter, "albedo", oidn_albedo_buffer, OIDN_FORMAT_HALF3, width, height, 0, 8, albedo_texture.GetRowPitch());
@@ -149,6 +152,7 @@ namespace adria
 			oidnSetFilterBool(oidn_filter, "hdr", true);
 			oidnSetFilterBool(oidn_filter, "cleanAux", true);
 			oidnCommitFilter(oidn_filter);
+			OIDNCheck(oidn_device);
 		}
 	}
 
@@ -173,6 +177,7 @@ namespace adria
 			cmd_list->Submit();
 			oidn_fence.Wait(oidn_fence_value);
 			oidnExecuteFilter(oidn_filter);
+			OIDNCheck(oidn_device);
 			cmd_list->Begin();
 		}
 	}
