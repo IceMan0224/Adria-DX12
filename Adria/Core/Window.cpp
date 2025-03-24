@@ -36,9 +36,9 @@ namespace adria
     {
         HINSTANCE hinstance = GetModuleHandle(NULL);
         const std::wstring window_title = ToWideString(init.title);
-        const Uint32  window_width = init.width;
-        const Uint32  window_height = init.height;
-        const LPCWSTR class_name = L"AdriaClass";
+		const LPCWSTR class_name = L"AdriaClass";
+		Uint32  window_width = init.width;
+		Uint32  window_height = init.height;
 
         WNDCLASSEX wcex{};
         wcex.cbSize = sizeof(WNDCLASSEX);
@@ -53,6 +53,11 @@ namespace adria
         wcex.lpszMenuName = nullptr;
         wcex.lpszClassName = class_name;
         wcex.hIconSm = nullptr;
+
+		RECT rect = { 0, 0, window_width, window_height };
+		AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+        window_width = rect.right - rect.left;
+        window_height = rect.bottom - rect.top;
 
         if (!RegisterClassExW(&wcex)) MessageBoxA(nullptr, "Window class registration failed!", "Fatal Error!", MB_ICONEXCLAMATION | MB_OK);
         hwnd = CreateWindowExW
