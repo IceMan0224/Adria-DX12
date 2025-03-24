@@ -35,7 +35,7 @@ namespace adria::CommandLineOptions
 			cli_parser.AddArg(false, "-max", "--maximize");
 			cli_parser.AddArg(false, "-vsync");
 			cli_parser.AddArg(false, "-debugdevice");
-			cli_parser.AddArg(false, "--debugdml");
+			cli_parser.AddArg(false, "-debugdml");
 			cli_parser.AddArg(false, "-shaderdebug");
 			cli_parser.AddArg(false, "-dred");
 			cli_parser.AddArg(false, "-gpuvalidation");

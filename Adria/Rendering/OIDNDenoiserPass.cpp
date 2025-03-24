@@ -76,25 +76,42 @@ namespace adria
 
 		struct OIDNDenoiserPassData
 		{
-			RGTextureReadWriteId color;
-			RGTextureReadOnlyId albedo;
-			RGTextureReadOnlyId normal;
+			RGTextureCopySrcId color;
+			RGTextureCopySrcId albedo;
+			RGTextureCopySrcId normal;
 		};
 
 		rg.AddPass<OIDNDenoiserPassData>("OIDN Denoiser Pass",
 			[=](OIDNDenoiserPassData& data, RenderGraphBuilder& builder)
 			{
-				data.color = builder.WriteTexture(RG_NAME(PT_Output));
-				data.albedo = builder.ReadTexture(RG_NAME(PT_Albedo));
-				data.normal = builder.ReadTexture(RG_NAME(PT_Normal));
+				data.color =  builder.ReadCopySrcTexture(RG_NAME(PT_Output));
+				data.albedo = builder.ReadCopySrcTexture(RG_NAME(PT_Albedo));
+				data.normal = builder.ReadCopySrcTexture(RG_NAME(PT_Normal));
 			},
 			[&](OIDNDenoiserPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
 			{
-				GfxTexture& color  = ctx.GetTexture(*data.color);
-				GfxTexture const& albedo = ctx.GetTexture(*data.albedo);
-				GfxTexture const& normal = ctx.GetTexture(*data.normal);
+				GfxTexture& color  = ctx.GetTexture(data.color);
+				GfxTexture const& albedo = ctx.GetTexture(data.albedo);
+				GfxTexture const& normal = ctx.GetTexture(data.normal);
 				Denoise(cmd_list, color, albedo, normal);
-			}, RGPassType::Compute);
+			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
+
+		struct OIDNCopyPassData
+		{
+			RGTextureCopyDstId color;
+		};
+
+		rg.AddPass<OIDNCopyPassData>("OIDN Copy Pass",
+			[=](OIDNCopyPassData& data, RenderGraphBuilder& builder)
+			{
+				data.color = builder.WriteCopyDstTexture(RG_NAME(PT_Output));
+			},
+			[=](OIDNCopyPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			{
+				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxTexture& color_texture = ctx.GetTexture(data.color);
+				cmd_list->CopyBufferToTexture(color_texture, 0, 0, *color_buffer, 0);
+			}, RGPassType::Copy);
 	}
 
 	void OIDNDenoiserPass::Reset()
@@ -102,7 +119,7 @@ namespace adria
 		denoised = false;
 	}
 
-	void OIDNDenoiserPass::CreateBuffers(GfxTexture& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture)
+	void OIDNDenoiserPass::CreateBuffers(GfxTexture const& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture)
 	{
 		Uint32 width = color_texture.GetWidth();
 		Uint32 height = color_texture.GetHeight();
@@ -142,13 +159,12 @@ namespace adria
 		if (oidn_normal_buffer) oidnReleaseBuffer(oidn_normal_buffer);
 	}
 
-	void OIDNDenoiserPass::Denoise(GfxCommandList* cmd_list, GfxTexture& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture)
+	void OIDNDenoiserPass::Denoise(GfxCommandList* cmd_list, GfxTexture const& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture)
 	{
 		CreateBuffers(color_texture, albedo_texture, normal_texture);
 		if (!denoised)
 		{
 			denoised = true;
-			cmd_list->TextureBarrier(color_texture, GfxResourceState::CopyDst, GfxResourceState::CopySrc);
 			cmd_list->CopyTextureToBuffer(*color_buffer, 0, color_texture, 0, 0);
 			cmd_list->CopyTextureToBuffer(*albedo_buffer, 0, albedo_texture, 0, 0);
 			cmd_list->CopyTextureToBuffer(*normal_buffer, 0, normal_texture, 0, 0);
@@ -158,9 +174,7 @@ namespace adria
 			oidn_fence.Wait(oidn_fence_value);
 			oidnExecuteFilter(oidn_filter);
 			cmd_list->Begin();
-			cmd_list->TextureBarrier(color_texture, GfxResourceState::CopySrc, GfxResourceState::CopyDst);
 		}
-		cmd_list->CopyBufferToTexture(color_texture, 0, 0, *color_buffer, 0);
 	}
 
 }

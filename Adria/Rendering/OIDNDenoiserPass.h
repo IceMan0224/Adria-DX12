@@ -38,9 +38,9 @@ namespace adria
 		Bool supported = false;
 
 	private:
-		void CreateBuffers(GfxTexture& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture);
+		void CreateBuffers(GfxTexture const& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture);
 		void ReleaseBuffers();
 
-		void Denoise(GfxCommandList* cmd_list, GfxTexture& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture);
+		void Denoise(GfxCommandList* cmd_list, GfxTexture const& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture);
 	};
 }
