@@ -17,7 +17,9 @@ namespace adria
 		DenoiserType_None,
 		DenoiserType_OIDN
 	};
+	static TAutoConsoleVariable<Int> MaxBounces("r.PathTracing.MaxBounces", 3, "Maximum number of bounces in a path tracer");
 	static TAutoConsoleVariable<Int> Denoiser("r.PathTracing.Denoiser", DenoiserType_None, "What denoiser will path tracer use: 0 - None, 1 - OIDN, 2 - SVGF");
+	static TAutoConsoleVariable<Int> DenoiserThreshold("r.PathTracing.Denoiser.AccumulationThreshold", 8, "After how many accumulation frames we stop using denoiser");
 
 	PathTracingPass::PathTracingPass(GfxDevice* gfx, Uint32 width, Uint32 height)
 		: gfx(gfx), width(width), height(height)
@@ -37,13 +39,13 @@ namespace adria
 	{
 		if (!IsSupported()) return;
 
-		if (reset_denoiser)
+		Bool const denoiser_active = Denoiser.Get() != DenoiserType_None && (DenoiserThreshold.Get() == 0 || accumulated_frames < DenoiserThreshold.Get());
+		if (denoiser_active)
 		{
 			oidn_denoiser_pass->Reset();
 			CreateDenoiserTextures();
 			reset_denoiser = false;
 		}
-		Bool const denoiser_active = Denoiser.Get() != DenoiserType_None;
 		
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		struct PathTracingPassData
@@ -102,7 +104,7 @@ namespace adria
 					Uint32  normal_idx;
 				} constants =
 				{
-					.bounce_count = max_bounces, .accumulated_frames = accumulated_frames,
+					.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
 					.accum_idx = i + 0, .output_idx = i + 1, .albedo_idx = i + 2, .normal_idx = i + 3
 				};
 
@@ -147,11 +149,12 @@ namespace adria
 			{
 				if (ImGui::TreeNodeEx("Path Tracing Settings", ImGuiTreeNodeFlags_None))
 				{
+					ImGui::SliderInt("Max Bounces", MaxBounces.GetPtr(), 1, 8);
 					if (ImGui::Combo("Denoiser Type", Denoiser.GetPtr(), "None\0OIDN\0", 2))
 					{
 						reset_denoiser = (Denoiser.Get() != DenoiserType_None);
 					}
-					ImGui::SliderInt("Max bounces", &max_bounces, 1, 8);
+					ImGui::SliderInt("Denoiser Threshold", DenoiserThreshold.GetPtr(), 0, 32);
 					ImGui::TreePop();
 					ImGui::Separator();
 				}

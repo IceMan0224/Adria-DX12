@@ -34,7 +34,6 @@ namespace adria
 		std::unique_ptr<GfxTexture> denoiser_albedo_texture = nullptr;
 		std::unique_ptr<GfxTexture> denoiser_normal_texture = nullptr;
 		Int32 accumulated_frames = 1;
-		Int32 max_bounces = 3;
 		std::unique_ptr<OIDNDenoiserPass> oidn_denoiser_pass;
 		Bool reset_denoiser = false;
 

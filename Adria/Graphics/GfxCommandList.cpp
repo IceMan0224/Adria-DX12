@@ -285,7 +285,7 @@ namespace adria
 		cmd_list->ResolveQueryData(query_heap, ToD3D12QueryType(query_heap.GetDesc().type), start, count, dst_buffer.GetNative(), dst_offset);
 	}
 
-	void GfxCommandList::Draw(Uint32 vertex_count, Uint32 instance_count /*= 1*/, Uint32 start_vertex_location /*= 0*/, Uint32 start_instance_location /*= 0*/)
+	void GfxCommandList::Draw(Uint32 vertex_count, Uint32 instance_count, Uint32 start_vertex_location, Uint32 start_instance_location)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
 		if (vertex_count == 0 || instance_count == 0) return;
@@ -293,7 +293,7 @@ namespace adria
 		++command_count;
 	}
 
-	void GfxCommandList::DrawIndexed(Uint32 index_count, Uint32 instance_count /*= 1*/, Uint32 index_offset /*= 0*/, Uint32 base_vertex_location /*= 0*/, Uint32 start_instance_location /*= 0*/)
+	void GfxCommandList::DrawIndexed(Uint32 index_count, Uint32 instance_count, Uint32 index_offset, Uint32 base_vertex_location, Uint32 start_instance_location)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
 		if (index_count == 0 || instance_count == 0) return;
@@ -301,7 +301,7 @@ namespace adria
 		++command_count;
 	}
 
-	void GfxCommandList::Dispatch(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z /* = 1*/)
+	void GfxCommandList::Dispatch(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z)
 	{
 		ADRIA_ASSERT(current_context == Context::Compute);
 		if (group_count_x == 0 || group_count_y == 0 || group_count_z == 0) return;
@@ -309,7 +309,7 @@ namespace adria
 		++command_count;
 	}
 
-	void GfxCommandList::DispatchMesh(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z /*= 1*/)
+	void GfxCommandList::DispatchMesh(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
 		if (group_count_x == 0 || group_count_y == 0 || group_count_z == 0) return;
@@ -345,7 +345,7 @@ namespace adria
 		++command_count;
 	}
 
-	void GfxCommandList::DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth /*= 1*/)
+	void GfxCommandList::DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth)
 	{
 		ADRIA_ASSERT(current_context == Context::Compute);
 		if (dispatch_width == 0 || dispatch_height == 0 || dispatch_depth == 0) return;
@@ -763,7 +763,7 @@ namespace adria
 		}
 	}
 
-	void GfxCommandList::SetVertexBuffer(GfxVertexBufferView const& vertex_buffer_view, Uint32 start_slot /*= 0*/)
+	void GfxCommandList::SetVertexBuffer(GfxVertexBufferView const& vertex_buffer_view, Uint32 start_slot)
 	{
 		D3D12_VERTEX_BUFFER_VIEW vbv{};
 		vbv.BufferLocation = vertex_buffer_view.buffer_location;
@@ -772,7 +772,7 @@ namespace adria
 		cmd_list->IASetVertexBuffers(start_slot, 1, &vbv);
 	}
 
-	void GfxCommandList::SetVertexBuffers(std::span<GfxVertexBufferView const> vertex_buffer_views, Uint32 start_slot /*= 0*/)
+	void GfxCommandList::SetVertexBuffers(std::span<GfxVertexBufferView const> vertex_buffer_views, Uint32 start_slot)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
 
@@ -963,7 +963,7 @@ namespace adria
 		}
 	}
 
-	GfxDynamicAllocation GfxCommandList::AllocateTransient(Uint32 size, Uint32 align /*= 0*/)
+	GfxDynamicAllocation GfxCommandList::AllocateTransient(Uint32 size, Uint32 align)
 	{
 		return gfx->GetDynamicAllocator()->Allocate(size, align);
 	}
@@ -973,14 +973,14 @@ namespace adria
 		cmd_list->ClearRenderTargetView(rtv, clear_color, 0, nullptr);
 	}
 
-	void GfxCommandList::ClearDepth(GfxDescriptor dsv, Float depth /*= 1.0f*/, Uint8 stencil /*= 0*/, Bool clear_stencil /*= false*/)
+	void GfxCommandList::ClearDepth(GfxDescriptor dsv, Float depth, Uint8 stencil, Bool clear_stencil)
 	{
 		D3D12_CLEAR_FLAGS d3d12_clear_flags = D3D12_CLEAR_FLAG_DEPTH;
 		if (clear_stencil) d3d12_clear_flags |= D3D12_CLEAR_FLAG_STENCIL;
 		cmd_list->ClearDepthStencilView(dsv, d3d12_clear_flags, depth, stencil, 0, nullptr);
 	}
 
-	void GfxCommandList::SetRenderTargets(std::span<GfxDescriptor const> rtvs, GfxDescriptor const* dsv /*= nullptr*/, Bool single_rt /*= false*/)
+	void GfxCommandList::SetRenderTargets(std::span<GfxDescriptor const> rtvs, GfxDescriptor const* dsv, Bool single_rt)
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE* d3d12_dsv = nullptr;
 		if (dsv)
