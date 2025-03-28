@@ -429,7 +429,6 @@
     <ClCompile Include="Rendering\DepthOfFieldPassGroup.cpp" />
     <ClCompile Include="Rendering\DirectMLUpscalerPass.cpp" />
     <ClCompile Include="Rendering\FFXVRSPass.cpp" />
-    <ClCompile Include="Rendering\IDenoiserPass.cpp" />
     <ClCompile Include="Rendering\OIDNDenoiserPass.cpp" />
     <ClCompile Include="Rendering\ReflectionPassGroup.cpp" />
     <ClCompile Include="Rendering\RendererDebugViewPass.cpp" />
@@ -768,7 +767,6 @@
     <ClInclude Include="Rendering\DepthOfFieldPass.h" />
     <ClInclude Include="Rendering\DirectMLUpscalerPass.h" />
     <ClInclude Include="Rendering\FFXVRSPass.h" />
-    <ClInclude Include="Rendering\IDenoiserPass.h" />
     <ClInclude Include="Rendering\OIDNDenoiserPass.h" />
     <ClInclude Include="Rendering\SceneConfig.h" />
     <ClInclude Include="Rendering\TransparentPass.h" />

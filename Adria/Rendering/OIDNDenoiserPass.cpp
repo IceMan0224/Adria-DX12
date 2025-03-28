@@ -168,7 +168,6 @@ namespace adria
 		CreateBuffers(color_texture, albedo_texture, normal_texture);
 		if (!denoised)
 		{
-			denoised = true;
 			cmd_list->CopyTextureToBuffer(*color_buffer, 0, color_texture, 0, 0);
 			cmd_list->CopyTextureToBuffer(*albedo_buffer, 0, albedo_texture, 0, 0);
 			cmd_list->CopyTextureToBuffer(*normal_buffer, 0, normal_texture, 0, 0);
@@ -179,6 +178,7 @@ namespace adria
 			oidnExecuteFilter(oidn_filter);
 			OIDNCheck(oidn_device);
 			cmd_list->Begin();
+			denoised = true;
 		}
 	}
 

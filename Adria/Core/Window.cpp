@@ -37,8 +37,8 @@ namespace adria
         HINSTANCE hinstance = GetModuleHandle(NULL);
         const std::wstring window_title = ToWideString(init.title);
 		const LPCWSTR class_name = L"AdriaClass";
-		Uint32  window_width = init.width;
-		Uint32  window_height = init.height;
+		LONG  window_width = (LONG)init.width;
+        LONG  window_height = (LONG)init.height;
 
         WNDCLASSEX wcex{};
         wcex.cbSize = sizeof(WNDCLASSEX);

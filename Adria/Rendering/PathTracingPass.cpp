@@ -12,16 +12,21 @@
 
 namespace adria
 {
+	enum DenoiserType : Uint8
+	{
+		DenoiserType_None,
+		DenoiserType_OIDN
+	};
 	static TAutoConsoleVariable<Int> Denoiser("r.PathTracing.Denoiser", DenoiserType_None, "What denoiser will path tracer use: 0 - None, 1 - OIDN, 2 - SVGF");
 
 	PathTracingPass::PathTracingPass(GfxDevice* gfx, Uint32 width, Uint32 height)
 		: gfx(gfx), width(width), height(height)
 	{
 		is_supported = gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1);
-		if (IsSupported())
+		if (is_supported)
 		{
 			CreateStateObject();
-			denoiser_pass.reset(CreateDenoiser(gfx, (DenoiserType)Denoiser.Get()));
+			oidn_denoiser_pass = std::make_unique<OIDNDenoiserPass>(gfx);
 			OnResize(width, height);
 			ShaderManager::GetLibraryRecompiledEvent().AddMember(&PathTracingPass::OnLibraryRecompiled, *this);
 		}
@@ -34,11 +39,11 @@ namespace adria
 
 		if (reset_denoiser)
 		{
-			denoiser_pass.reset(CreateDenoiser(gfx, (DenoiserType)Denoiser.Get()));
-			OnResize(width, height);
+			oidn_denoiser_pass->Reset();
+			CreateDenoiserTextures();
 			reset_denoiser = false;
 		}
-		Bool const denoiser_active = denoiser_pass->GetType() != DenoiserType_None;
+		Bool const denoiser_active = Denoiser.Get() != DenoiserType_None;
 		
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		struct PathTracingPassData
@@ -111,7 +116,7 @@ namespace adria
 
 		if (denoiser_active)
 		{
-			denoiser_pass->AddPass(rg);
+			oidn_denoiser_pass->AddPass(rg);
 		}
 		++accumulated_frames;
 	}
@@ -133,7 +138,7 @@ namespace adria
 	void PathTracingPass::Reset()
 	{
 		accumulated_frames = 0;
-		denoiser_pass->Reset();
+		oidn_denoiser_pass->Reset();
 	}
 
 	void PathTracingPass::GUI()
@@ -142,9 +147,9 @@ namespace adria
 			{
 				if (ImGui::TreeNodeEx("Path Tracing Settings", ImGuiTreeNodeFlags_None))
 				{
-					if (ImGui::Combo("Denoiser Type", Denoiser.GetPtr(), "None\0OIDN\0SVGF\0", 3))
+					if (ImGui::Combo("Denoiser Type", Denoiser.GetPtr(), "None\0OIDN\0", 2))
 					{
-						reset_denoiser = true;
+						reset_denoiser = (Denoiser.Get() != DenoiserType_None);
 					}
 					ImGui::SliderInt("Max bounces", &max_bounces, 1, 8);
 					ImGui::TreePop();
@@ -219,7 +224,7 @@ namespace adria
 
 	void PathTracingPass::CreateDenoiserTextures()
 	{
-		if (denoiser_pass->GetType() != DenoiserType_None && (!denoiser_albedo_texture || denoiser_albedo_texture->GetWidth() != width || denoiser_albedo_texture->GetHeight() != height))
+		if (Denoiser.Get() != DenoiserType_None && (!denoiser_albedo_texture || denoiser_albedo_texture->GetWidth() != width || denoiser_albedo_texture->GetHeight() != height))
 		{
 			GfxTextureDesc history_desc{};
 			history_desc.width = width;
@@ -230,7 +235,7 @@ namespace adria
 			denoiser_albedo_texture = gfx->CreateTexture(history_desc);
 			denoiser_normal_texture = gfx->CreateTexture(history_desc);
 		}
-		else if (denoiser_pass->GetType() == DenoiserType_None)
+		else if (Denoiser.Get() == DenoiserType_None)
 		{
 			denoiser_albedo_texture.reset();
 			denoiser_normal_texture.reset();

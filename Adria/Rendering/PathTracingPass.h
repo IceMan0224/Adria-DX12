@@ -1,5 +1,4 @@
 #pragma once
-#include "IDenoiserPass.h"
 #include "Graphics/GfxRayTracingShaderTable.h"
 #include "RenderGraph/RenderGraphResourceName.h"
 
@@ -10,6 +9,7 @@ namespace adria
 	class GfxDevice;
 	class GfxShaderKey;
 	class GfxStateObject;
+	class OIDNDenoiserPass;
 
 	class PathTracingPass
 	{
@@ -35,7 +35,7 @@ namespace adria
 		std::unique_ptr<GfxTexture> denoiser_normal_texture = nullptr;
 		Int32 accumulated_frames = 1;
 		Int32 max_bounces = 3;
-		std::unique_ptr<IDenoiserPass> denoiser_pass;
+		std::unique_ptr<OIDNDenoiserPass> oidn_denoiser_pass;
 		Bool reset_denoiser = false;
 
 	private:

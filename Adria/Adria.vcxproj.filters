@@ -585,9 +585,6 @@
     <ClCompile Include="Rendering\OIDNDenoiserPass.cpp">
       <Filter>Rendering\Passes</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering\IDenoiserPass.cpp">
-      <Filter>Rendering\Passes</Filter>
-    </ClCompile>
     <ClCompile Include="Rendering\ReSTIR_DI.cpp">
       <Filter>Rendering\Passes</Filter>
     </ClCompile>
@@ -1636,9 +1633,6 @@
       <Filter>Rendering\Passes</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\OIDNDenoiserPass.h">
-      <Filter>Rendering\Passes</Filter>
-    </ClInclude>
-    <ClInclude Include="Rendering\IDenoiserPass.h">
       <Filter>Rendering\Passes</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\ReSTIR_DI.h">
