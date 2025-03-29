@@ -14,7 +14,7 @@ namespace adria
 		Int GetWindowHeight();
 		Bool GetMaximizeWindow();
 		std::string const& GetSceneFile();
-		Bool GetVsync();
+		Bool GetVSync();
 		Bool GetDebugDevice();
 		Bool GetDebugDML();
 		Bool GetShaderDebug();

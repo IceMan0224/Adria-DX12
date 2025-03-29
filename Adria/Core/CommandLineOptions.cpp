@@ -106,7 +106,7 @@ namespace adria::CommandLineOptions
 		return scene_file;
 	}
 
-	Bool GetVsync()
+	Bool GetVSync()
 	{
 		return vsync;
 	}

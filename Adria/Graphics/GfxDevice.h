@@ -1,17 +1,4 @@
 #pragma once
-#pragma comment(lib,"d3d12.lib")
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "dxguid.lib")
-
-#include <memory>
-#include <mutex>
-#include <vector>
-#include <array>
-#include <queue>
-
-#include <d3d12.h>
-#include <dxgi1_6.h>
-
 #define D3D12MA_D3D12_HEADERS_ALREADY_INCLUDED
 #include "D3D12MemAlloc.h"
 
@@ -85,10 +72,12 @@ namespace adria
 		Microsoft,
 		Unknown
 	};
+	struct DRED;
 
 	class GfxDevice
 	{
 		friend class GfxCommandList;
+
 	public:
 		explicit GfxDevice(Window* window);
 		ADRIA_NONCOPYABLE(GfxDevice)
@@ -110,6 +99,8 @@ namespace adria
 
 		IDXGIFactory4* GetFactory() const;
 		ID3D12Device5* GetDevice() const;
+		IDMLDevice* GetDMLDevice() const;
+		IDMLCommandRecorder* GetDMLCommandRecorder() const;
 		ID3D12RootSignature* GetCommonRootSignature() const;
 		D3D12MA::Allocator* GetAllocator() const;
 		void* GetHwnd() const { return hwnd; }
@@ -271,14 +262,6 @@ namespace adria
 
 		GfxShadingRateInfo shading_rate_info;
 
-		struct DRED
-		{
-			explicit DRED(GfxDevice* gfx);
-			~DRED();
-
-			GfxFence dred_fence;
-			HANDLE   dred_wait_handle;
-		};
 		std::unique_ptr<DRED> dred;
 		Bool rendering_not_started = true;
 		Bool first_frame = false;
@@ -286,6 +269,9 @@ namespace adria
 
 		std::unique_ptr<GfxNsightAftermathGpuCrashTracker> nsight_aftermath;
 		std::unique_ptr<GfxNsightPerfManager> nsight_perf_manager;
+
+		Ref<IDMLDevice>              dml_device;
+		Ref<IDMLCommandRecorder>     dml_command_recorder;
 
 	private:
 		void SetupOptions(Uint32& dxgi_factory_flags);

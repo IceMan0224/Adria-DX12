@@ -615,6 +615,12 @@
     <ClCompile Include="Rendering\XeSS2Pass.cpp">
       <Filter>Rendering\Passes\Post Effects</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\DirectMLDenoiserPass.cpp">
+      <Filter>Rendering\Passes</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\DirectMLPassBase.cpp">
+      <Filter>Rendering\Passes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utilities\RingBuffer.h">
@@ -1664,6 +1670,12 @@
     </ClInclude>
     <ClInclude Include="Rendering\XeSS2Pass.h">
       <Filter>Rendering\Passes\Post Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\DirectMLPassBase.h">
+      <Filter>Rendering\Passes</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\DirectMLDenoiserPass.h">
+      <Filter>Rendering\Passes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

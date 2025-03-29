@@ -1,5 +1,4 @@
 #include "DirectMLUpscalerPass.h"
-#include "ShaderManager.h"
 #include "BlackboardData.h"
 #include "Postprocessor.h"
 #include "Core/Paths.h"
@@ -8,101 +7,74 @@
 #include "Graphics/GfxRingDescriptorAllocator.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
-#include "Core/ConsoleManager.h"
-#include "Core/CommandLineOptions.h"
-#include "Utilities/FloatCompressor.h"
-
-#pragma comment(lib, "DirectML.lib")
 
 namespace adria
 {
-	namespace util
+	Bool DirectMLUpscalerPass::LoadWeights(std::string const& weights_file_name, std::unordered_map<std::string, std::vector<Float>>& weight_map)
 	{
-		Bool LoadWeights(std::string const& weights_file_name, std::unordered_map<std::string, std::vector<Float>>& weight_map)
+		static constexpr Uint32 BUFFER_LENGTH = 256;
+		std::ifstream input(weights_file_name, std::ifstream::binary);
+		if (!(input) || !(input.good()) || !(input.is_open()))
 		{
-			static constexpr Uint32 BUFFER_LENGTH = 256;
-			std::ifstream input(weights_file_name, std::ifstream::binary);
-			if (!(input) || !(input.good()) || !(input.is_open()))
-			{
-				ADRIA_ERROR("[DirectML] Unable to open weight file: %s", weights_file_name.c_str());
-				return false;
-			}
+			ADRIA_ERROR("[DirectML] Unable to open weight file: %s", weights_file_name.c_str());
+			return false;
+		}
 
-			Int32 weight_tensor_count;
-			try
-			{
-				input.read(reinterpret_cast<char*>(&weight_tensor_count), 4);
-			}
-			catch (const std::ifstream::failure&)
-			{
-				ADRIA_ERROR("[DirectML] Invalid weight file: %s", weights_file_name.c_str());
-				return false;
-			}
-			if (weight_tensor_count < 0)
-			{
-				ADRIA_ERROR("[DirectML] Invalid weight file: %s", weights_file_name.c_str());
-				return false;
-			}
+		Int32 weight_tensor_count;
+		try
+		{
+			input.read(reinterpret_cast<char*>(&weight_tensor_count), 4);
+		}
+		catch (const std::ifstream::failure&)
+		{
+			ADRIA_ERROR("[DirectML] Invalid weight file: %s", weights_file_name.c_str());
+			return false;
+		}
+		if (weight_tensor_count < 0)
+		{
+			ADRIA_ERROR("[DirectML] Invalid weight file: %s", weights_file_name.c_str());
+			return false;
+		}
 
-			Uint32 name_length;
-			Uint32 w_length;
-			Char name_buffer[BUFFER_LENGTH];
-			try
+		Uint32 name_length;
+		Uint32 w_length;
+		Char name_buffer[BUFFER_LENGTH];
+		try
+		{
+			while (weight_tensor_count--)
 			{
-				while (weight_tensor_count--)
+				input.read(reinterpret_cast<Char*>(&name_length), sizeof(name_length));
+				if (name_length > BUFFER_LENGTH - 1)
 				{
-					input.read(reinterpret_cast<Char*>(&name_length), sizeof(name_length));
-					if (name_length > BUFFER_LENGTH - 1)
-					{
-						ADRIA_ERROR("[DirectML] name_len exceeds BUFFER_LENGTH");
-						return false;
-					}
-					input.read(name_buffer, name_length);
-					name_buffer[name_length] = '\0';
-					std::string name(name_buffer);
-
-					input.read(reinterpret_cast<Char*>(&w_length), sizeof(Uint32));
-					weight_map[name] = std::vector<Float>(w_length);
-					input.read(reinterpret_cast<Char*>(weight_map[name].data()), sizeof(Float) * w_length);
+					ADRIA_ERROR("[DirectML] name_len exceeds BUFFER_LENGTH");
+					return false;
 				}
-				input.close();
-			}
-			catch (std::ifstream::failure const&)
-			{
-				ADRIA_ERROR("[DirectML] Invalid tensor data");
-				return false;
-			}
-			catch (std::out_of_range const&)
-			{
-				ADRIA_ERROR("[DirectML] Invalid tensor format");
-				return false;
-			}
+				input.read(name_buffer, name_length);
+				name_buffer[name_length] = '\0';
+				std::string name(name_buffer);
 
-			return true;
-		}
-		void GetTensorStrides(TensorLayout layout, std::span<Uint32 const> sizes, std::span<Uint32> strides)
-		{
-			switch (layout)
-			{
-			case TensorLayout::NHWC:
-				strides[0] = sizes[1] * sizes[2] * sizes[3];
-				strides[1] = 1;
-				strides[2] = sizes[1] * sizes[3];
-				strides[3] = sizes[1];
-				break;
-			default:
-				strides[0] = sizes[1] * sizes[2] * sizes[3];
-				strides[1] = sizes[2] * sizes[3];
-				strides[2] = sizes[3];
-				strides[3] = 1;
+				input.read(reinterpret_cast<Char*>(&w_length), sizeof(Uint32));
+				weight_map[name] = std::vector<Float>(w_length);
+				input.read(reinterpret_cast<Char*>(weight_map[name].data()), sizeof(Float) * w_length);
 			}
+			input.close();
 		}
+		catch (std::ifstream::failure const&)
+		{
+			ADRIA_ERROR("[DirectML] Invalid tensor data");
+			return false;
+		}
+		catch (std::out_of_range const&)
+		{
+			ADRIA_ERROR("[DirectML] Invalid tensor format");
+			return false;
+		}
+		return true;
 	}
 
-	DirectMLUpscalerPass::DirectMLUpscalerPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), display_width(0), display_height(0), render_width(0), render_height(0)
+	DirectMLUpscalerPass::DirectMLUpscalerPass(GfxDevice* gfx, Uint32 w, Uint32 h) : DirectMLPassBase(gfx),
+		display_width(0), display_height(0), render_width(0), render_height(0)
 	{
-		GFX_CHECK_HR(DMLCreateDevice(gfx->GetDevice(), CommandLineOptions::GetDebugDML() ? DML_CREATE_DEVICE_FLAG_DEBUG : DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(dml_device.GetAddressOf())));
-		tensor_layout = gfx->GetVendor() == GfxVendor::Nvidia ? TensorLayout::NHWC : TensorLayout::Default;
 
 		DML_FEATURE_QUERY_TENSOR_DATA_TYPE_SUPPORT fp16_query{ DML_TENSOR_DATA_TYPE_FLOAT16 };
 		DML_FEATURE_DATA_TENSOR_DATA_TYPE_SUPPORT fp16_supported{};
@@ -112,8 +84,6 @@ namespace adria
 			return;
 		}
 		supported = true;
-		GFX_CHECK_HR(dml_device->CreateCommandRecorder(IID_PPV_ARGS(dml_command_recorder.GetAddressOf())));
-		CreatePSOs();
 		OnResize(w, h);
 	}
 
@@ -167,16 +137,6 @@ namespace adria
 					ImGui::TreePop();
 				}
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_Upscaler);
-	}
-
-	void DirectMLUpscalerPass::CreatePSOs()
-	{
-		GfxComputePipelineStateDesc pso_desc{};
-		pso_desc.CS = CS_TensorToTexture;
-		tensor_to_texture_pso = gfx->CreateComputePipelineState(pso_desc);
-
-		pso_desc.CS = CS_TextureToTensor;
-		texture_to_tensor_pso = gfx->CreateComputePipelineState(pso_desc);
 	}
 
 	void DirectMLUpscalerPass::AddTextureToTensorPass(RenderGraph& rg, PostProcessor const* postprocessor)
@@ -304,7 +264,7 @@ namespace adria
 	void DirectMLUpscalerPass::CreateDirectMLResources()
 	{
 		std::unordered_map<std::string, std::vector<Float>> weights;
-		if (!util::LoadWeights(paths::MLDir + "weights.bin", weights))
+		if (!LoadWeights(paths::MLDir + "weights.bin", weights))
 		{
 			ADRIA_ASSERT_MSG(false, "[DIRECT ML] Weight loading failed!");
 		}
@@ -340,11 +300,11 @@ namespace adria
 		DML_TENSOR_FLAGS flags = dml_managed_weights ? DML_TENSOR_FLAG_OWNED_BY_DML : DML_TENSOR_FLAG_NONE;
 
 		dml::TensorPolicy policy = tensor_layout == TensorLayout::Default ? dml::TensorPolicy::Default() : dml::TensorPolicy::InterleavedChannel();
-		dml::Graph graph(dml_device.Get(), policy);
+		dml::Graph graph(dml_device, policy);
 
 		using Dimensions = dml::TensorDesc::Dimensions;
 		Dimensions model_input_sizes = { 1, 3, render_height, render_width };
-		auto input_model = dml::InputTensor(graph, 0, dml::TensorDesc(data_type, model_input_sizes, policy));
+		dml::Expression input_model = dml::InputTensor(graph, 0, dml::TensorDesc(data_type, model_input_sizes, policy));
 
 		dml::Expression conv1_filter = dml::InputTensor(graph, 1, dml::TensorDesc(data_type, flags, { 32,  3, 5, 5 }, policy));
 		dml::Expression conv1_bias = dml::InputTensor(graph, 2, dml::TensorDesc(data_type, flags, { 1, 32, 1, 1 }, policy));
@@ -581,89 +541,6 @@ namespace adria
 		DML_BUFFER_BINDING output_binding = { model_output->GetNative(), 0, model_output->GetSize() };
 		DML_BINDING_DESC binding_desc{ DML_BINDING_TYPE_BUFFER, &output_binding };
 		dml_binding_table->BindOutputs(1, &binding_desc);
-	}
-
-	std::unique_ptr<GfxBuffer> DirectMLUpscalerPass::CreateFilterTensor(std::vector<Float> const& filter_weights, std::vector<Float> const& scale_weights, std::span<const Uint32> filter_sizes)
-	{
-		Bool const use_scale_shift = !scale_weights.empty();
-		std::vector<Uint16> compressed_filter_weights = CompressFilterWeights(filter_weights, scale_weights, filter_sizes);
-		Uint32 filter_strides[4];
-		util::GetTensorStrides(tensor_layout, filter_sizes, filter_strides);
-		Uint64 filter_buffer_size = DMLCalcBufferTensorSize(DML_TENSOR_DATA_TYPE_FLOAT16, 4, filter_sizes.data(), filter_strides);
-
-		GfxBufferDesc filter_tensor_desc{};
-		filter_tensor_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
-		filter_tensor_desc.size = filter_buffer_size;
-		filter_tensor_desc.resource_usage = GfxResourceUsage::Default;
-		GfxBufferData gfx_filter_data(compressed_filter_weights.data());
-		return gfx->CreateBuffer(filter_tensor_desc, gfx_filter_data);
-	}
-
-	std::unique_ptr<GfxBuffer> DirectMLUpscalerPass::CreateBiasTensor(std::vector<Float> const& shift_weights, std::span<const Uint32> filter_sizes)
-	{
-		Uint32 bias_sizes[] = { 1, filter_sizes[0], 1, 1 };
-		std::vector<Uint16> compressed_bias_weights = CompressBiasWeights(shift_weights, filter_sizes);
-
-		Uint32 bias_strides[4];
-		util::GetTensorStrides(tensor_layout, bias_sizes, bias_strides);
-		Uint64 bias_buffer_size = DMLCalcBufferTensorSize(DML_TENSOR_DATA_TYPE_FLOAT16, 4, bias_sizes, bias_strides);
-
-		GfxBufferDesc bias_tensor_desc{};
-		bias_tensor_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
-		bias_tensor_desc.size = bias_buffer_size;
-		bias_tensor_desc.resource_usage = GfxResourceUsage::Default;
-		GfxBufferData gfx_bias_data(compressed_bias_weights.data());
-		return gfx->CreateBuffer(bias_tensor_desc, gfx_bias_data);
-	}
-
-	std::vector<Uint16> DirectMLUpscalerPass::CompressFilterWeights(std::vector<Float> const& filter_weights, std::vector<Float> const& scale_weights, std::span<const Uint32> sizes)
-	{
-		std::vector<Uint16> result;
-		Uint32 N = sizes[0], C = sizes[1], H = sizes[2], W = sizes[3];
-		Uint64 total_size = N * C * H * W;
-		Bool const use_scale_shift = !scale_weights.empty();
-		result.reserve(total_size);
-		for (Uint32 n = 0; n < N; ++n)
-		{
-			if (tensor_layout == TensorLayout::Default)
-			{
-				for (Uint32 i = 0; i < C * H * W; ++i)
-				{
-					Uint32 idx = n * C * H * W + i;
-					Float scaled_weight = use_scale_shift ? filter_weights[idx] * scale_weights[n] : filter_weights[idx];
-					result.push_back(FloatCompressor::Compress(scaled_weight));
-				}
-			}
-			else
-			{
-				for (Uint32 h = 0; h < H; h++)
-				{
-					for (Uint32 w = 0; w < W; w++)
-					{
-						for (Uint32 c = 0; c < C; c++)
-						{
-							Uint32 idx = w + h * W + c * H * W + n * C * H * W;
-							Float scaled_weight = use_scale_shift ? filter_weights[idx] * scale_weights[n] : filter_weights[idx];
-							result.push_back(FloatCompressor::Compress(scaled_weight));
-						}
-					}
-				}
-			}
-		}
-		return result;
-	}
-
-	std::vector<Uint16> DirectMLUpscalerPass::CompressBiasWeights(std::vector<Float> const& shift_weights, std::span<const Uint32> sizes)
-	{
-		std::vector<Uint16> result;
-		Uint32 N = sizes[0], C = sizes[1], H = sizes[2], W = sizes[3];
-		Uint64 total_size = N * C * H * W;
-		result.reserve(N);
-		for (Uint32 n = 0; n < N; ++n)
-		{
-			result.push_back(FloatCompressor::Compress(shift_weights[n]));
-		}
-		return result;
 	}
 
 }
