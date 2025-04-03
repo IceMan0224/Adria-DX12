@@ -427,7 +427,6 @@
     <ClCompile Include="Rendering\AmbientOcclusionManager.cpp" />
     <ClCompile Include="Rendering\DepthOfFieldPass.cpp" />
     <ClCompile Include="Rendering\DepthOfFieldPassGroup.cpp" />
-    <ClCompile Include="Rendering\DirectMLDenoiserPass.cpp" />
     <ClCompile Include="Rendering\DirectMLPassBase.cpp" />
     <ClCompile Include="Rendering\DirectMLUpscalerPass.cpp" />
     <ClCompile Include="Rendering\FFXVRSPass.cpp" />
@@ -767,7 +766,6 @@
     </ClInclude>
     <ClInclude Include="Rendering\AmbientOcclusionManager.h" />
     <ClInclude Include="Rendering\DepthOfFieldPass.h" />
-    <ClInclude Include="Rendering\DirectMLDenoiserPass.h" />
     <ClInclude Include="Rendering\DirectMLPassBase.h" />
     <ClInclude Include="Rendering\DirectMLUpscalerPass.h" />
     <ClInclude Include="Rendering\FFXVRSPass.h" />
@@ -890,7 +888,6 @@
     <None Include="..\External\ImPlot\README.md" />
     <None Include="..\External\ImPlot\TODO.md" />
     <None Include="..\External\SimpleMath\SimpleMath.inl" />
-    <None Include="..\README.md" />
     <None Include="packages.config" />
     <None Include="Resources\Shaders\Atmosphere.hlsli" />
     <None Include="Resources\Shaders\BRDF.hlsli" />

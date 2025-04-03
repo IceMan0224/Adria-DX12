@@ -615,9 +615,6 @@
     <ClCompile Include="Rendering\XeSS2Pass.cpp">
       <Filter>Rendering\Passes\Post Effects</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering\DirectMLDenoiserPass.cpp">
-      <Filter>Rendering\Passes</Filter>
-    </ClCompile>
     <ClCompile Include="Rendering\DirectMLPassBase.cpp">
       <Filter>Rendering\Passes</Filter>
     </ClCompile>
@@ -1674,9 +1671,6 @@
     <ClInclude Include="Rendering\DirectMLPassBase.h">
       <Filter>Rendering\Passes</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\DirectMLDenoiserPass.h">
-      <Filter>Rendering\Passes</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Adria.rc">
@@ -1748,7 +1742,6 @@
     <None Include="Resources\Shaders\Weather\RainUtil.hlsli">
       <Filter>Shaders\Weather</Filter>
     </None>
-    <None Include="..\README.md" />
     <None Include="Resources\Shaders\Postprocess\AutoExposure\ExposureUtil.hlsli">
       <Filter>Shaders\Postprocess\AutoExposure</Filter>
     </None>

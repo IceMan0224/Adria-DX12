@@ -4,7 +4,7 @@
 #include "Graphics/GfxBuffer.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
-#include "Logging/Log.h"
+#include "Core/Log.h"
 #include "RenderGraph/RenderGraph.h"
 #endif
 
@@ -209,7 +209,7 @@ namespace adria
 		srv_descriptor = gfx->CreateBufferSRV(printf_buffer.get());
 		uav_descriptor = gfx->CreateBufferUAV(printf_buffer.get());
 
-		gfx->GetCommandList()->BufferBarrier(*printf_buffer, GfxResourceState::Common, GfxResourceState::ComputeUAV);
+		gfx->GetGraphicsCommandList()->BufferBarrier(*printf_buffer, GfxResourceState::Common, GfxResourceState::ComputeUAV);
 
 		for (auto& readback_buffer : readback_buffers)
 			readback_buffer = gfx->CreateBuffer(ReadBackBufferDesc(printf_buffer_desc.size));
