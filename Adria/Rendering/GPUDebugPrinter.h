@@ -1,7 +1,5 @@
 #pragma once
-#include <memory>
-#include "Graphics/GfxMacros.h"
-#include "Graphics/GfxDescriptor.h"
+#include "GPUDebugFeature.h"
 
 namespace adria
 {
@@ -9,7 +7,7 @@ namespace adria
 	class GfxBuffer;
 	class RenderGraph;
 
-	class GPUDebugPrinter
+	class GPUDebugPrinter : public GPUDebugFeature
 	{
 	public:
 		explicit GPUDebugPrinter(GfxDevice* gfx);
@@ -22,13 +20,6 @@ namespace adria
 		void AddPrintPass(RenderGraph& rg);
 
 	private:
-#if GFX_SHADER_PRINTF
-		GfxDevice* gfx;
-		std::unique_ptr<GfxBuffer> printf_buffer;
-		std::unique_ptr<GfxBuffer> readback_buffers[GFX_BACKBUFFER_COUNT];
-		GfxDescriptor srv_descriptor;
-		GfxDescriptor uav_descriptor;
-		GfxDescriptor gpu_uav_descriptor;
-#endif
+		virtual void ProcessBufferData(GfxBuffer&) override;
 	};
 }

@@ -618,6 +618,9 @@
     <ClCompile Include="Rendering\DirectMLPassBase.cpp">
       <Filter>Rendering\Passes</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\GPUDebugFeature.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utilities\RingBuffer.h">
@@ -1670,6 +1673,9 @@
     </ClInclude>
     <ClInclude Include="Rendering\DirectMLPassBase.h">
       <Filter>Rendering\Passes</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\GPUDebugFeature.h">
+      <Filter>Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

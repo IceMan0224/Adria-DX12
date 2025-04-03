@@ -21,6 +21,11 @@
 #define ADRIA_DEPRECATED_MSG(msg)	[[deprecated(#msg)]]
 #define ADRIA_DEBUGZONE_BEGIN       __pragma(optimize("", off))
 #define ADRIA_DEBUGZONE_END         __pragma(optimize("", on))
+#define ADRIA_FATAL_ASSERT(expr) do \
+{ \
+   if(!expr) \
+        *(volatile unsigned long long*)0x2 = 0xDEADBEEFDEADBEEF;    \
+}while(0)
 
 
 #define ADRIA_NONCOPYABLE(Class)                 \

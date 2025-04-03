@@ -4,7 +4,7 @@
 
 #define GFX_BACKBUFFER_COUNT 3
 #define GFX_MULTITHREADED 0
-#define GFX_SHADER_PRINTF 0
+#define GFX_SHADER_PRINTF 0 //broken since the newest DXC (1.8): string literal arguments not allowed in all optimization levels (previously was working with optimizations)
 #define GFX_ASYNC_COMPUTE 1
 #define USE_PIX
 

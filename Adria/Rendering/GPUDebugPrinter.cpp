@@ -1,11 +1,10 @@
 #include "GPUDebugPrinter.h"
-#include "Graphics/GfxMacros.h"
 #if GFX_SHADER_PRINTF
 #include "Graphics/GfxBuffer.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
-#include "Core/Log.h"
 #include "RenderGraph/RenderGraph.h"
+#include "Core/Log.h"
 #endif
 
 namespace adria
@@ -28,7 +27,6 @@ namespace adria
 		DebugPrint_Float4,
 		NumDebugPrintArgCodes
 	};
-
 	constexpr Uint32 ArgCodeSizes[NumDebugPrintArgCodes] =
 	{
 		4, 8, 12, 16,
@@ -68,7 +66,6 @@ namespace adria
 		Uint32 const size;
 		Uint32 current_offset;
 	};
-
 	static std::string MakeArgString(DebugPrintReader& reader, ArgCode arg_code)
 	{
 		switch (arg_code)
@@ -194,124 +191,75 @@ namespace adria
 		return "";
 	}
 
-
-	GPUDebugPrinter::GPUDebugPrinter(GfxDevice* gfx) : gfx(gfx)
-	{
-		GfxBufferDesc printf_buffer_desc{};
-		printf_buffer_desc.stride = sizeof(Uint32);
-		printf_buffer_desc.resource_usage = GfxResourceUsage::Default;
-		printf_buffer_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
-		printf_buffer_desc.misc_flags = GfxBufferMiscFlag::BufferRaw;
-		printf_buffer_desc.size = printf_buffer_desc.stride * 1024 * 1024;
-		printf_buffer = std::make_unique<GfxBuffer>(gfx, printf_buffer_desc);
-		printf_buffer->SetName("Printf Buffer");
-
-		srv_descriptor = gfx->CreateBufferSRV(printf_buffer.get());
-		uav_descriptor = gfx->CreateBufferUAV(printf_buffer.get());
-
-		gfx->GetGraphicsCommandList()->BufferBarrier(*printf_buffer, GfxResourceState::Common, GfxResourceState::ComputeUAV);
-
-		for (auto& readback_buffer : readback_buffers)
-			readback_buffer = gfx->CreateBuffer(ReadBackBufferDesc(printf_buffer_desc.size));
-}
+	GPUDebugPrinter::GPUDebugPrinter(GfxDevice* gfx) : GPUDebugFeature(gfx, RG_NAME(PrintfBuffer))
+	{}
 	Int32 GPUDebugPrinter::GetPrintfBufferIndex()
 	{
-		gpu_uav_descriptor = gfx->AllocateDescriptorsGPU();
-		gfx->CopyDescriptors(1, gpu_uav_descriptor, uav_descriptor);
-		return (Int32)gpu_uav_descriptor.GetIndex();
+		return GetBufferIndex();
 	}
 
 	void GPUDebugPrinter::AddClearPass(RenderGraph& rg)
 	{
-		rg.ImportBuffer(RG_NAME(PrintfBuffer), printf_buffer.get());
-		struct ClearPrintfBufferPassData
-		{
-			RGBufferReadWriteId printf_buffer;
-		};
-		rg.AddPass<ClearPrintfBufferPassData>("Clear Printf Buffer Pass",
-			[=](ClearPrintfBufferPassData& data, RenderGraphBuilder& builder)
-			{
-				data.printf_buffer = builder.WriteBuffer(RG_NAME(PrintfBuffer));
-			},
-			[=](ClearPrintfBufferPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
-			{
-				Uint32 clear[] = { 0,0,0,0 };
-				cmd_list->ClearUAV(*printf_buffer, gpu_uav_descriptor, uav_descriptor, clear);
-			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
+		return GPUDebugFeature::AddClearPass(rg, "Clear Printf Buffer Pass");
 	}
 
 	void GPUDebugPrinter::AddPrintPass(RenderGraph& rg)
 	{
-		struct CopyPrintfBufferPassData
-		{
-			RGBufferCopySrcId printf_buffer;
-		};
-		rg.AddPass<CopyPrintfBufferPassData>("Copy Printf Buffer Pass",
-			[=](CopyPrintfBufferPassData& data, RenderGraphBuilder& builder)
-			{
-				data.printf_buffer = builder.ReadCopySrcBuffer(RG_NAME(PrintfBuffer));
-				std::ignore = builder.ReadCopySrcTexture(RG_NAME(FinalTexture)); //forcing dependency with the final texture so the printf pass doesn't run before some other pass
-			},
-			[&](CopyPrintfBufferPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
-			{
-				GfxDevice* gfx = cmd_list->GetDevice();
-				Uint64 current_backbuffer_index = gfx->GetBackbufferIndex();
-				GfxBuffer& readback_buffer = *readback_buffers[current_backbuffer_index];
-				cmd_list->CopyBuffer(readback_buffer, *printf_buffer);
-
-				Uint64 old_backbuffer_index = (current_backbuffer_index + 1) % gfx->GetBackbufferCount();
-				GfxBuffer& old_readback_buffer = *readback_buffers[old_backbuffer_index];
-
-				static constexpr Uint32 MaxDebugPrintArgs = 4;
-				DebugPrintReader print_reader(old_readback_buffer.GetMappedData<Uint8>() + sizeof(Uint32), (Uint32)old_readback_buffer.GetSize() - sizeof(Uint32));
-
-				while (print_reader.HasMoreData(sizeof(DebugPrintHeader)))
-				{
-					DebugPrintHeader const* header = print_reader.Consume<DebugPrintHeader>();
-					if (header->NumBytes == 0 || !print_reader.HasMoreData(header->NumBytes))
-						break;
-
-					std::string fmt = print_reader.ConsumeString(header->StringSize);
-					if (fmt.length() == 0) break;
-
-					if (header->NumArgs > MaxDebugPrintArgs) break;
-
-					std::vector<std::string> arg_strings;
-					arg_strings.reserve(header->NumArgs);
-					for (Uint32 arg_idx = 0; arg_idx < header->NumArgs; ++arg_idx)
-					{
-						ArgCode const arg_code = (ArgCode)*print_reader.Consume<Uint8>();
-						if (arg_code >= NumDebugPrintArgCodes || arg_code < 0) break;
-
-						Uint32 const arg_size = ArgCodeSizes[arg_code];
-						if (!print_reader.HasMoreData(arg_size)) break;
-
-						std::string const arg_string = MakeArgString(print_reader, arg_code);
-						arg_strings.push_back(arg_string);
-					}
-
-					if (header->NumArgs > 0)
-					{
-						for (Uint64 i = 0; i < arg_strings.size(); ++i)
-						{
-							std::string placeholder = "{" + std::to_string(i) + "}";
-							Uint64 pos = fmt.find(placeholder);
-							while (pos != std::string::npos)
-							{
-								fmt.replace(pos, placeholder.length(), arg_strings[i]);
-								pos = fmt.find(placeholder, pos + arg_strings[i].length());
-							}
-						}
-					}
-					ADRIA_LOG(DEBUG, fmt.c_str());
-				}
-			}, RGPassType::Copy, RGPassFlags::ForceNoCull);
+		return GPUDebugFeature::AddFeaturePass(rg, "Copy Printf Buffer Pass");
 	}
+
+	void GPUDebugPrinter::ProcessBufferData(GfxBuffer& old_readback_buffer)
+	{
+		static constexpr Uint32 MaxDebugPrintArgs = 4;
+		DebugPrintReader print_reader(old_readback_buffer.GetMappedData<Uint8>() + sizeof(Uint32), (Uint32)old_readback_buffer.GetSize() - sizeof(Uint32));
+		while (print_reader.HasMoreData(sizeof(DebugPrintHeader)))
+		{
+			DebugPrintHeader const* header = print_reader.Consume<DebugPrintHeader>();
+			if (header->NumBytes == 0 || !print_reader.HasMoreData(header->NumBytes))
+				break;
+
+			std::string fmt = print_reader.ConsumeString(header->StringSize);
+			if (fmt.length() == 0) break;
+
+			if (header->NumArgs > MaxDebugPrintArgs) break;
+
+			std::vector<std::string> arg_strings;
+			arg_strings.reserve(header->NumArgs);
+			for (Uint32 arg_idx = 0; arg_idx < header->NumArgs; ++arg_idx)
+			{
+				ArgCode const arg_code = (ArgCode)*print_reader.Consume<Uint8>();
+				if (arg_code >= NumDebugPrintArgCodes || arg_code < 0) break;
+
+				Uint32 const arg_size = ArgCodeSizes[arg_code];
+				if (!print_reader.HasMoreData(arg_size)) break;
+
+				std::string const arg_string = MakeArgString(print_reader, arg_code);
+				arg_strings.push_back(arg_string);
+			}
+
+			if (header->NumArgs > 0)
+			{
+				for (Uint64 i = 0; i < arg_strings.size(); ++i)
+				{
+					std::string placeholder = "{" + std::to_string(i) + "}";
+					Uint64 pos = fmt.find(placeholder);
+					while (pos != std::string::npos)
+					{
+						fmt.replace(pos, placeholder.length(), arg_strings[i]);
+						pos = fmt.find(placeholder, pos + arg_strings[i].length());
+					}
+				}
+			}
+			ADRIA_LOG(INFO, fmt.c_str());
+		}
+	}
+
 #else
 	GPUDebugPrinter::GPUDebugPrinter(GfxDevice* gfx) {}
 	Int32 GPUDebugPrinter::GetPrintfBufferIndex() { return -1; }
 	void GPUDebugPrinter::AddClearPass(RenderGraph& rg) {}
 	void GPUDebugPrinter::AddPrintPass(RenderGraph& rg) {}
+	void GPUDebugPrinter::ProcessBufferData(GfxBuffer&) {}
 #endif
 	GPUDebugPrinter::~GPUDebugPrinter() = default;
 }
