@@ -1,4 +1,4 @@
-#include "GPUDebugFeature.h"
+#include "GpuDebugFeature.h"
 #include "Graphics/GfxBuffer.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
@@ -7,7 +7,7 @@
 
 namespace adria
 {
-	GPUDebugFeature::GPUDebugFeature(GfxDevice* gfx, RGResourceName gpu_buffer_name) : gfx(gfx), gpu_buffer_name(gpu_buffer_name)
+	GpuDebugFeature::GpuDebugFeature(GfxDevice* gfx, RGResourceName gpu_buffer_name) : gfx(gfx), gpu_buffer_name(gpu_buffer_name)
 	{
 		GfxBufferDesc gpu_buffer_desc{};
 		gpu_buffer_desc.stride = sizeof(Uint32);
@@ -24,14 +24,14 @@ namespace adria
 
 		for (auto& readback_buffer : cpu_readback_buffers) readback_buffer = gfx->CreateBuffer(ReadBackBufferDesc(gpu_buffer_desc.size));
 	}
-	Int32 GPUDebugFeature::GetBufferIndex()
+	Int32 GpuDebugFeature::GetBufferIndex()
 	{
 		gpu_uav_descriptor = gfx->AllocateDescriptorsGPU();
 		gfx->CopyDescriptors(1, gpu_uav_descriptor, uav_descriptor);
 		return (Int32)gpu_uav_descriptor.GetIndex();
 	}
 
-	void GPUDebugFeature::AddClearPass(RenderGraph& rg, Char const* pass_name)
+	void GpuDebugFeature::AddClearPass(RenderGraph& rg, Char const* pass_name)
 	{
 		rg.ImportBuffer(gpu_buffer_name, gpu_buffer.get());
 		struct ClearBufferPassData
@@ -50,7 +50,7 @@ namespace adria
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
 	}
 
-	void GPUDebugFeature::AddFeaturePass(RenderGraph& rg, Char const* pass_name)
+	void GpuDebugFeature::AddFeaturePass(RenderGraph& rg, Char const* pass_name)
 	{
 		struct CopyBufferPassData
 		{
@@ -74,6 +74,6 @@ namespace adria
 				ProcessBufferData(old_readback_buffer);
 			}, RGPassType::Copy, RGPassFlags::ForceNoCull);
 	}
-	GPUDebugFeature::~GPUDebugFeature() = default;
+	GpuDebugFeature::~GpuDebugFeature() = default;
 }
 

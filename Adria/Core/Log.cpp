@@ -34,11 +34,28 @@ namespace adria
 		{
 			log_queue.Push(QueueEntry{ level, str, filename, line });
 		}
+		void LogSync(LogLevel level, Char const* str, Char const* filename, Uint32 line)
+		{
+			for (auto& logger : loggers)
+			{
+				if (logger)
+				{
+					logger->Log(level, str, filename, line);
+				}
+			}
+		}
+		void Flush()
+		{
+			pause.store(true);
+			for (auto& logger : loggers) logger->Flush();
+			pause.store(false);
+		}
 
 		std::vector<std::unique_ptr<ILogger>> loggers;
 		ConcurrentQueue<QueueEntry> log_queue;
 		std::thread log_thread;
 		std::atomic_bool exit = false;
+		std::atomic_bool pause = false;
 
 	private:
 		void ProcessLogs()
@@ -46,10 +63,18 @@ namespace adria
 			QueueEntry entry{};
 			while (true)
 			{
+				if (pause.load()) continue;
+
 				Bool success = log_queue.TryPop(entry);
 				if (success)
 				{
-					for (auto&& logger : loggers) if (logger) logger->Log(entry.level, entry.str.c_str(), entry.filename.c_str(), entry.line);
+					for (auto& logger : loggers)
+					{
+						if (logger)
+						{
+							logger->Log(entry.level, entry.str.c_str(), entry.filename.c_str(), entry.line);
+						}
+					}
 				}
 				if (exit.load() && log_queue.Empty()) break;
 			}
@@ -96,8 +121,15 @@ namespace adria
 	{
 		pimpl->Log(level, str, filename, line);
 	}
-	void LogManager::Log(LogLevel level, Char const* str, std::source_location location /*= std::source_location::current()*/)
+
+	void LogManager::LogSync(LogLevel level, Char const* str, Char const* filename, Uint32 line)
 	{
-		Log(level, str, location.file_name(), location.line());
+		pimpl->LogSync(level, str, filename, line);
 	}
+
+	void LogManager::Flush()
+	{
+		pimpl->Flush();
+	}
+
 }

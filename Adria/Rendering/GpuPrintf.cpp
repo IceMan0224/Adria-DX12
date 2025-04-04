@@ -1,4 +1,4 @@
-#include "GPUDebugPrinter.h"
+#include "GpuPrintf.h"
 #if GFX_SHADER_PRINTF
 #include "Graphics/GfxBuffer.h"
 #include "Graphics/GfxDevice.h"
@@ -191,24 +191,24 @@ namespace adria
 		return "";
 	}
 
-	GPUDebugPrinter::GPUDebugPrinter(GfxDevice* gfx) : GPUDebugFeature(gfx, RG_NAME(PrintfBuffer))
-	{}
-	Int32 GPUDebugPrinter::GetPrintfBufferIndex()
+	GpuPrintf::GpuPrintf(GfxDevice* gfx) : GpuDebugFeature(gfx, RG_NAME(GpuPrintfBuffer)) {}
+
+	Int32 GpuPrintf::GetPrintfBufferIndex()
 	{
 		return GetBufferIndex();
 	}
 
-	void GPUDebugPrinter::AddClearPass(RenderGraph& rg)
+	void GpuPrintf::AddClearPass(RenderGraph& rg)
 	{
-		return GPUDebugFeature::AddClearPass(rg, "Clear Printf Buffer Pass");
+		return GpuDebugFeature::AddClearPass(rg, "Clear Printf Buffer Pass");
 	}
 
-	void GPUDebugPrinter::AddPrintPass(RenderGraph& rg)
+	void GpuPrintf::AddPrintPass(RenderGraph& rg)
 	{
-		return GPUDebugFeature::AddFeaturePass(rg, "Copy Printf Buffer Pass");
+		return GpuDebugFeature::AddFeaturePass(rg, "Copy Printf Buffer Pass");
 	}
 
-	void GPUDebugPrinter::ProcessBufferData(GfxBuffer& old_readback_buffer)
+	void GpuPrintf::ProcessBufferData(GfxBuffer& old_readback_buffer)
 	{
 		static constexpr Uint32 MaxDebugPrintArgs = 4;
 		DebugPrintReader print_reader(old_readback_buffer.GetMappedData<Uint8>() + sizeof(Uint32), (Uint32)old_readback_buffer.GetSize() - sizeof(Uint32));
@@ -255,12 +255,12 @@ namespace adria
 	}
 
 #else
-	GPUDebugPrinter::GPUDebugPrinter(GfxDevice* gfx) {}
-	Int32 GPUDebugPrinter::GetPrintfBufferIndex() { return -1; }
-	void GPUDebugPrinter::AddClearPass(RenderGraph& rg) {}
-	void GPUDebugPrinter::AddPrintPass(RenderGraph& rg) {}
-	void GPUDebugPrinter::ProcessBufferData(GfxBuffer&) {}
+	GpuPrintf::GpuPrintf(GfxDevice* gfx) : GpuDebugFeature(gfx, RG_NAME(PrintfBuffer)) {}
+	Int32 GpuPrintf::GetPrintfBufferIndex() { return -1; }
+	void GpuPrintf::AddClearPass(RenderGraph& rg) {}
+	void GpuPrintf::AddPrintPass(RenderGraph& rg) {}
+	void GpuPrintf::ProcessBufferData(GfxBuffer&) {}
 #endif
-	GPUDebugPrinter::~GPUDebugPrinter() = default;
+	GpuPrintf::~GpuPrintf() = default;
 }
 

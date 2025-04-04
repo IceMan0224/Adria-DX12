@@ -414,7 +414,7 @@
     <ClCompile Include="Utilities\FilesUtil.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering\GPUDebugPrinter.cpp">
+    <ClCompile Include="Rendering\GpuPrintf.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\RainPass.cpp">
@@ -600,7 +600,7 @@
     <ClCompile Include="Core\Loggers\OutputDebugStringLogger.cpp">
       <Filter>Core\Loggers</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Loggers\OutputStreamLogger.cpp">
+    <ClCompile Include="Core\Loggers\ConsoleLogger.cpp">
       <Filter>Core\Loggers</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\AmbientOcclusionManager.cpp">
@@ -618,7 +618,10 @@
     <ClCompile Include="Rendering\DirectMLPassBase.cpp">
       <Filter>Rendering\Passes</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering\GPUDebugFeature.cpp">
+    <ClCompile Include="Rendering\GpuDebugFeature.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\GpuAssert.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1035,7 +1038,7 @@
     <ClInclude Include="Core\Paths.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\GPUDebugPrinter.h">
+    <ClInclude Include="Rendering\GpuPrintf.h">
       <Filter>Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Resources\Shaders\SPD\ffx_a.h">
@@ -1656,7 +1659,7 @@
     <ClInclude Include="Core\Loggers\OutputDebugStringLogger.h">
       <Filter>Core\Loggers</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Loggers\OutputStreamLogger.h">
+    <ClInclude Include="Core\Loggers\ConsoleLogger.h">
       <Filter>Core\Loggers</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\AmbientOcclusionManager.h">
@@ -1674,8 +1677,14 @@
     <ClInclude Include="Rendering\DirectMLPassBase.h">
       <Filter>Rendering\Passes</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\GPUDebugFeature.h">
+    <ClInclude Include="Rendering\GpuDebugFeature.h">
       <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\GpuAssert.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\FatalAssert.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1709,7 +1718,7 @@
     <None Include="Resources\Shaders\Constants.hlsli">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Resources\Shaders\DebugPrint.hlsli">
+    <None Include="Resources\Shaders\GpuPrintf.hlsli">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Resources\Shaders\DitherUtil.hlsli">
@@ -1814,6 +1823,10 @@
     <None Include="Resources\Shaders\Postprocess\SSRCommon.hlsli">
       <Filter>Shaders\Postprocess</Filter>
     </None>
+    <None Include="Resources\Shaders\GpuAssert.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\README.md" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\Shaders\DDGI\DDGIRayTrace.hlsl">

@@ -1,5 +1,5 @@
 #pragma once
-#include "GPUDebugFeature.h"
+#include "GpuDebugFeature.h"
 
 namespace adria
 {
@@ -7,13 +7,13 @@ namespace adria
 	class GfxBuffer;
 	class RenderGraph;
 
-	class GPUDebugPrinter : public GPUDebugFeature
+	class GpuPrintf : public GpuDebugFeature
 	{
 	public:
-		explicit GPUDebugPrinter(GfxDevice* gfx);
-		ADRIA_NONCOPYABLE(GPUDebugPrinter)
-		ADRIA_DEFAULT_MOVABLE(GPUDebugPrinter)
-		~GPUDebugPrinter();
+		explicit GpuPrintf(GfxDevice* gfx);
+		ADRIA_NONCOPYABLE(GpuPrintf)
+		ADRIA_DEFAULT_MOVABLE(GpuPrintf)
+		~GpuPrintf();
 
 		Int32 GetPrintfBufferIndex();
 		void AddClearPass(RenderGraph& rg);

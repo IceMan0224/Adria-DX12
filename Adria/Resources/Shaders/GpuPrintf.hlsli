@@ -1,5 +1,5 @@
-#ifndef _DEBUG_PRINT_
-#define _DEBUG_PRINT_
+#ifndef _GPU_PRINTF_
+#define _GPU_PRINTF_
 
 #include "CommonResources.hlsli"
 

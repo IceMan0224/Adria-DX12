@@ -57,6 +57,7 @@ namespace adria
 		Int32  instances_idx;
 		Int32  ddgi_volumes_idx;
 		Int32  printf_buffer_idx;
+		Int32  assert_buffer_idx;
 
 		Int32  rain_splash_diffuse_idx;
 		Int32  rain_splash_bump_idx;

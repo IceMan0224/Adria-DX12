@@ -23,6 +23,7 @@ namespace adria
 	public:
 		virtual ~ILogger() = default;
 		virtual void Log(LogLevel level, Char const* entry, Char const* file, Uint32 line) = 0;
+		virtual void Flush() {}
 	};
 
 	class LogManager
@@ -34,7 +35,8 @@ namespace adria
 
 		void Register(ILogger* logger);
 		void Log(LogLevel level, Char const* str, Char const* file, Uint32 line);
-		void Log(LogLevel level, Char const* str, std::source_location location = std::source_location::current());
+		void LogSync(LogLevel level, Char const* str, Char const* file, Uint32 line);
+		void Flush();
 
 	private:
 		std::unique_ptr<class LogManagerImpl> pimpl;
@@ -52,4 +54,18 @@ namespace adria
 	#define ADRIA_INFO(...)		ADRIA_LOG(INFO, __VA_ARGS__)
 	#define ADRIA_WARNING(...)  ADRIA_LOG(WARNING, __VA_ARGS__)
 	#define ADRIA_ERROR(...)	ADRIA_LOG(ERROR, __VA_ARGS__)
+
+	#define ADRIA_LOG_SYNC(level, ... ) [&]()  \
+		{ \
+			Uint64 const size = snprintf(nullptr, 0, __VA_ARGS__) + 1; \
+			std::unique_ptr<Char[]> buf = std::make_unique<Char[]>(size); \
+			snprintf(buf.get(), size, __VA_ARGS__); \
+			g_Log.LogSync(LogLevel::LOG_##level, buf.get(), __FILE__, __LINE__);  \
+		}()
+	#define ADRIA_DEBUG_SYNC(...)	ADRIA_LOG_SYNC(DEBUG, __VA_ARGS__)
+	#define ADRIA_INFO_SYNC(...)		ADRIA_LOG_SYNC(INFO, __VA_ARGS__)
+	#define ADRIA_WARNING_SYNC(...)  ADRIA_LOG_SYNC(WARNING, __VA_ARGS__)
+	#define ADRIA_ERROR_SYNC(...)	ADRIA_LOG_SYNC(ERROR, __VA_ARGS__)
+
+	#define ADRIA_LOG_FLUSH()   (g_Log.Flush())
 }

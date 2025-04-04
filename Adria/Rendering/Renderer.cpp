@@ -35,14 +35,12 @@ namespace adria
 		accel_structure(gfx), camera(nullptr), display_width(width), display_height(height), render_width(width), render_height(height),
 		backbuffer_count(gfx->GetBackbufferCount()), backbuffer_index(gfx->GetBackbufferIndex()), final_texture(nullptr),
 		frame_cbuffer(gfx, backbuffer_count), gpu_driven_renderer(reg, gfx, width, height),
-		gbuffer_pass(reg, gfx, width, height),
-		sky_pass(reg, gfx, width, height), deferred_lighting_pass(gfx, width, height),
+		gbuffer_pass(reg, gfx, width, height), sky_pass(reg, gfx, width, height), deferred_lighting_pass(gfx, width, height),
 		tiled_deferred_lighting_pass(reg, gfx, width, height) , copy_to_texture_pass(gfx, width, height), add_textures_pass(gfx, width, height),
-		postprocessor(gfx, reg, width, height), picking_pass(gfx, width, height),
-		clustered_deferred_lighting_pass(reg, gfx, width, height),
+		postprocessor(gfx, reg, width, height), picking_pass(gfx, width, height), clustered_deferred_lighting_pass(reg, gfx, width, height),
 		decals_pass(reg, gfx, width, height), rain_pass(reg, gfx, width, height), ocean_renderer(reg, gfx, width, height),
 		shadow_renderer(reg, gfx, width, height), renderer_debug_view_pass(gfx, width, height),
-		path_tracer(gfx, width, height), ddgi(gfx, reg, width, height), restir_di(gfx, width, height), gpu_debug_printer(gfx),
+		path_tracer(gfx, width, height), ddgi(gfx, reg, width, height), restir_di(gfx, width, height), gpu_printf(gfx), gpu_assert(gfx),
 		transparent_pass(reg, gfx, width, height), ray_tracing_supported(gfx->GetCapabilities().SupportsRayTracing()),
 		volumetric_fog_manager(gfx, reg, width, height)
 	{
@@ -426,7 +424,8 @@ namespace adria
 		frame_cbuf_data.light_count = (Int32)scene_buffers[SceneBuffer_Light].buffer->GetCount();
 		shadow_renderer.FillFrameCBuffer(frame_cbuf_data);
 		frame_cbuf_data.ddgi_volumes_idx = ddgi.IsEnabled() ? ddgi.GetDDGIVolumeIndex() : -1;
-		frame_cbuf_data.printf_buffer_idx = gpu_debug_printer.GetPrintfBufferIndex();
+		frame_cbuf_data.printf_buffer_idx = gpu_printf.GetPrintfBufferIndex();
+		frame_cbuf_data.assert_buffer_idx = gpu_assert.GetAssertBufferIndex();
 		frame_cbuf_data.rain_splash_diffuse_idx = rain_pass.GetRainSplashDiffuseIndex();
 		frame_cbuf_data.rain_splash_bump_idx = rain_pass.GetRainSplashBumpIndex();
 		frame_cbuf_data.rain_blocker_map_idx = rain_pass.GetRainBlockerMapIndex();
@@ -507,11 +506,23 @@ namespace adria
 		render_graph.ImportTexture(RG_NAME(FinalTexture), final_texture.get());
 		postprocessor.ImportHistoryResources(render_graph);
 
-		gpu_debug_printer.AddClearPass(render_graph);
-		if (lighting_path == LightingPath::PathTracing) Render_PathTracing(render_graph);
-		else Render_Deferred(render_graph);
-		if (take_screenshot) TakeScreenshot(render_graph);
-		gpu_debug_printer.AddPrintPass(render_graph);
+		gpu_printf.AddClearPass(render_graph);
+		gpu_assert.AddClearPass(render_graph);
+		if (lighting_path == LightingPath::PathTracing)
+		{
+			Render_PathTracing(render_graph);
+		}
+		else
+		{
+			Render_Deferred(render_graph);
+		}
+		if (take_screenshot)
+		{
+			TakeScreenshot(render_graph);
+		}
+		gpu_printf.AddPrintPass(render_graph);
+		gpu_assert.AddAssertPass(render_graph);
+
 		if (!g_Editor.IsActive())
 		{
 			CopyToBackbuffer(render_graph);
@@ -520,7 +531,6 @@ namespace adria
 		{
 			g_Editor.AddRenderPass(render_graph);
 		}
-
 		GUI();
 	}
 	void Renderer::Render_Deferred(RenderGraph& render_graph)

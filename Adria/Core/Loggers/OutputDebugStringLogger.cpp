@@ -15,5 +15,11 @@ namespace adria
 		std::string log = GetLogTime() + LineInfoToString(file, line) + LevelToString(level) + std::string(entry) + "\n";
 		OutputDebugStringA(log.c_str());
 	}
+
+	void OutputDebugStringLogger::Flush()
+	{
+		
+	}
+
 }
 

@@ -44,6 +44,7 @@ struct FrameCBuffer
 	int    instancesIdx;
 	int    ddgiVolumesIdx;
 	int    printfBufferIdx;
+	int    assertBufferIdx;
 
 	int	   rainSplashDiffuseIdx;
 	int	   rainSplashBumpIdx;

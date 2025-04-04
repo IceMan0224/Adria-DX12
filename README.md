@@ -39,7 +39,7 @@ Graphics engine written in C++ using DirectX12.
     - Debug renderer
     - Shader hot reloading
     - Render graph graphviz visualization
-    - GPU printf
+    - GPU printf, GPU assert
     - Nsight Aftermath SDK, Nsight Perf SDK
     - Debug Outputs: Diffuse, Normal, Depth, Roughness, Metallic, Emissive, AO, GI, \
       Custom, Shading Extension, View Mipmaps, Triangle Overdraw, Material and Meshlet ID, Motion Vectors

@@ -9,13 +9,13 @@ namespace adria
 	class GfxBuffer;
 	class RenderGraph;
 
-	class GPUDebugFeature
+	class GpuDebugFeature
 	{
 	protected:
-		explicit GPUDebugFeature(GfxDevice* gfx, RGResourceName gpu_buffer_name);
-		ADRIA_NONCOPYABLE(GPUDebugFeature)
-		ADRIA_DEFAULT_MOVABLE(GPUDebugFeature)
-		~GPUDebugFeature();
+		explicit GpuDebugFeature(GfxDevice* gfx, RGResourceName gpu_buffer_name);
+		ADRIA_NONCOPYABLE(GpuDebugFeature)
+		ADRIA_DEFAULT_MOVABLE(GpuDebugFeature)
+		virtual ~GpuDebugFeature();
 
 		Int32 GetBufferIndex();
 		void AddClearPass(RenderGraph& rg, Char const* pass_name);

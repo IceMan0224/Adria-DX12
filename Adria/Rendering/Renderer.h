@@ -12,7 +12,8 @@
 #include "ClusteredDeferredLightingPass.h"
 #include "DDGIPass.h"
 #include "ReSTIR_DI.h"
-#include "GPUDebugPrinter.h"
+#include "GpuPrintf.h"
+#include "GpuAssert.h"
 #include "HelperPasses.h"
 #include "PickingPass.h"
 #include "DecalsPass.h"
@@ -128,7 +129,8 @@ namespace adria
 		ReSTIR_DI		  restir_di;
 		PathTracingPass path_tracer;
 		RendererDebugViewPass renderer_debug_view_pass;
-		GPUDebugPrinter gpu_debug_printer;
+		GpuPrintf gpu_printf;
+		GpuAssert gpu_assert;
 		TransparentPass transparent_pass;
 		VolumetricFogManager volumetric_fog_manager;
 
