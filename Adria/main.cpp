@@ -20,8 +20,8 @@ int APIENTRY wWinMain(
     
     std::string log_file = CommandLineOptions::GetLogFile();  
     LogLevel log_level = static_cast<LogLevel>(CommandLineOptions::GetLogLevel());
-    g_Log.Register(new FileLogger(log_file.c_str(), log_level));
-    g_Log.Register(new OutputDebugStringLogger(log_level));
+    ADRIA_LOGGER(FileLogger, log_file.c_str(), log_level);
+    ADRIA_LOGGER(OutputDebugStringLogger, log_level);
 
     WindowInit window_init{};
     window_init.width = CommandLineOptions::GetWindowWidth();

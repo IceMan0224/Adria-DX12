@@ -33,13 +33,22 @@ namespace adria
 		ADRIA_NONCOPYABLE_NONMOVABLE(LogManager)
 		~LogManager();
 
-		void Register(ILogger* logger);
+		template<typename LoggerT, typename... Args> requires std::is_base_of_v<ILogger, LoggerT>
+		ADRIA_MAYBE_UNUSED LoggerT* Register(Args&&... args)
+		{
+			Register(new LoggerT(std::forward<Args>(args)...));
+			return static_cast<LoggerT*>(GetLastLogger());
+		}
 		void Log(LogLevel level, Char const* str, Char const* file, Uint32 line);
 		void LogSync(LogLevel level, Char const* str, Char const* file, Uint32 line);
 		void Flush();
 
 	private:
 		std::unique_ptr<class LogManagerImpl> pimpl;
+
+	private:
+		void Register(ILogger* logger);
+		ILogger* GetLastLogger();
 	};
 	inline LogManager g_Log{};
 
@@ -56,16 +65,12 @@ namespace adria
 	#define ADRIA_ERROR(...)	ADRIA_LOG(ERROR, __VA_ARGS__)
 
 	#define ADRIA_LOG_SYNC(level, ... ) [&]()  \
-		{ \
-			Uint64 const size = snprintf(nullptr, 0, __VA_ARGS__) + 1; \
-			std::unique_ptr<Char[]> buf = std::make_unique<Char[]>(size); \
-			snprintf(buf.get(), size, __VA_ARGS__); \
-			g_Log.LogSync(LogLevel::LOG_##level, buf.get(), __FILE__, __LINE__);  \
-		}()
-	#define ADRIA_DEBUG_SYNC(...)	ADRIA_LOG_SYNC(DEBUG, __VA_ARGS__)
-	#define ADRIA_INFO_SYNC(...)		ADRIA_LOG_SYNC(INFO, __VA_ARGS__)
-	#define ADRIA_WARNING_SYNC(...)  ADRIA_LOG_SYNC(WARNING, __VA_ARGS__)
-	#define ADRIA_ERROR_SYNC(...)	ADRIA_LOG_SYNC(ERROR, __VA_ARGS__)
-
+	{ \
+		Uint64 const size = snprintf(nullptr, 0, __VA_ARGS__) + 1; \
+		std::unique_ptr<Char[]> buf = std::make_unique<Char[]>(size); \
+		snprintf(buf.get(), size, __VA_ARGS__); \
+		g_Log.LogSync(LogLevel::LOG_##level, buf.get(), __FILE__, __LINE__);  \
+	}()
 	#define ADRIA_LOG_FLUSH()   (g_Log.Flush())
+	#define ADRIA_LOGGER(LogClass, ...) g_Log.Register<LogClass>(__VA_ARGS__);
 }

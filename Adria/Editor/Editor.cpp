@@ -57,8 +57,7 @@ namespace adria
 	Editor::~Editor() = default;
 	void Editor::Init(EditorInit&& init)
 	{
-		logger = new EditorLogger();
-		g_Log.Register(logger);
+		logger = ADRIA_LOGGER(EditorLogger);
 		engine = std::make_unique<Engine>(init.window, init.scene_file);
 		gfx = engine->gfx.get();
 		gui = std::make_unique<ImGuiManager>(gfx);

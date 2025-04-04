@@ -30,6 +30,10 @@ namespace adria
 		{
 			loggers.emplace_back(logger);
 		}
+		ILogger* GetLastLogger() const
+		{
+			return loggers.back().get();
+		}
 		void Log(LogLevel level, Char const* str, Char const* filename, Uint32 line)
 		{
 			log_queue.Push(QueueEntry{ level, str, filename, line });
@@ -115,6 +119,11 @@ namespace adria
 	void LogManager::Register(ILogger* logger)
 	{
 		pimpl->RegisterLogger(logger);
+	}
+
+	ILogger* LogManager::GetLastLogger()
+	{
+		return pimpl->GetLastLogger();
 	}
 
 	void LogManager::Log(LogLevel level, Char const* str, Char const* filename, Uint32 line)
