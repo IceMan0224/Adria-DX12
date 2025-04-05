@@ -1686,6 +1686,9 @@
     <ClInclude Include="Core\FatalAssert.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Utilities\BufferReader.h">
+      <Filter>Utilities</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Adria.rc">

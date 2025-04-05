@@ -5,6 +5,7 @@
 #include "Graphics/GfxCommandList.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Core/Log.h"
+#include "Utilities/BufferReader.h"
 #endif
 
 namespace adria
@@ -39,34 +40,8 @@ namespace adria
 		Uint32 StringSize;
 		Uint32 NumArgs;
 	};
-	struct DebugPrintReader
-	{
-		DebugPrintReader(Uint8* data, Uint32 size) : data(data), size(size), current_offset(0) {}
-
-		Bool HasMoreData(Uint32 count) const
-		{
-			return current_offset + count <= size;
-		}
-		template<typename T>
-		T* Consume()
-		{
-			T* consumed_data = reinterpret_cast<T*>(data + current_offset);
-			current_offset += sizeof(T);
-			return consumed_data;
-		}
-		std::string ConsumeString(Uint32 char_count)
-		{
-			Char* char_data = (Char*)data;
-			std::string consumed_string(char_data + current_offset, char_count);
-			current_offset += char_count;
-			return consumed_string;
-		}
-
-		Uint8* data;
-		Uint32 const size;
-		Uint32 current_offset;
-	};
-	static std::string MakeArgString(DebugPrintReader& reader, ArgCode arg_code)
+	
+	static std::string MakeArgString(BufferReader& reader, ArgCode arg_code)
 	{
 		switch (arg_code)
 		{
@@ -211,29 +186,27 @@ namespace adria
 	void GpuPrintf::ProcessBufferData(GfxBuffer& old_readback_buffer)
 	{
 		static constexpr Uint32 MaxDebugPrintArgs = 4;
-		DebugPrintReader print_reader(old_readback_buffer.GetMappedData<Uint8>() + sizeof(Uint32), (Uint32)old_readback_buffer.GetSize() - sizeof(Uint32));
-		while (print_reader.HasMoreData(sizeof(DebugPrintHeader)))
+		BufferReader printf_reader(old_readback_buffer.GetMappedData<Uint8>() + sizeof(Uint32), (Uint32)old_readback_buffer.GetSize() - sizeof(Uint32));
+		while (printf_reader.HasMoreData(sizeof(DebugPrintHeader)))
 		{
-			DebugPrintHeader const* header = print_reader.Consume<DebugPrintHeader>();
-			if (header->NumBytes == 0 || !print_reader.HasMoreData(header->NumBytes))
+			DebugPrintHeader const* header = printf_reader.Consume<DebugPrintHeader>();
+			if (header->NumBytes == 0 || header->NumArgs > MaxDebugPrintArgs || !printf_reader.HasMoreData(header->NumBytes))
 				break;
 
-			std::string fmt = print_reader.ConsumeString(header->StringSize);
+			std::string fmt = printf_reader.ConsumeString(header->StringSize);
 			if (fmt.length() == 0) break;
-
-			if (header->NumArgs > MaxDebugPrintArgs) break;
 
 			std::vector<std::string> arg_strings;
 			arg_strings.reserve(header->NumArgs);
 			for (Uint32 arg_idx = 0; arg_idx < header->NumArgs; ++arg_idx)
 			{
-				ArgCode const arg_code = (ArgCode)*print_reader.Consume<Uint8>();
+				ArgCode const arg_code = (ArgCode)*printf_reader.Consume<Uint8>();
 				if (arg_code >= NumDebugPrintArgCodes || arg_code < 0) break;
 
 				Uint32 const arg_size = ArgCodeSizes[arg_code];
-				if (!print_reader.HasMoreData(arg_size)) break;
+				if (!printf_reader.HasMoreData(arg_size)) break;
 
-				std::string const arg_string = MakeArgString(print_reader, arg_code);
+				std::string const arg_string = MakeArgString(printf_reader, arg_code);
 				arg_strings.push_back(arg_string);
 			}
 

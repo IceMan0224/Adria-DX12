@@ -5,9 +5,8 @@
 #include "Graphics/GfxCommandList.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Core/FatalAssert.h"
+#include "Utilities/BufferReader.h"
 #endif
-
-ADRIA_DEBUGZONE_BEGIN
 
 namespace adria
 {
@@ -42,35 +41,7 @@ namespace adria
 		Uint32 arg0, arg1, arg2, arg3;
 	};
 
-	struct AssertBufferReader
-	{
-		AssertBufferReader(Uint8* data, Uint32 size) : data(data), size(size), current_offset(0) {}
-
-		Bool HasMoreData(Uint32 count) const
-		{
-			return current_offset + count <= size;
-		}
-		template<typename T>
-		T* Consume()
-		{
-			T* consumed_data = reinterpret_cast<T*>(data + current_offset);
-			current_offset += sizeof(T);
-			return consumed_data;
-		}
-		std::string ConsumeString(Uint32 char_count)
-		{
-			Char* char_data = (Char*)data;
-			std::string consumed_string(char_data + current_offset, char_count);
-			current_offset += char_count;
-			return consumed_string;
-		}
-
-		Uint8* data;
-		Uint32 const size;
-		Uint32 current_offset;
-	};
-
-	std::string GetAssertArgs(AssertBufferReader& reader, Uint32 arg_count)
+	std::string GetAssertArgs(BufferReader& reader, Uint32 arg_count)
 	{
 		switch (arg_count)
 		{
@@ -99,7 +70,7 @@ namespace adria
 		ADRIA_UNREACHABLE();
 		return "";
 	}
-	static std::string GetAssertMessage(AssertBufferReader& reader, Uint32 arg_count, GpuAssertType type)
+	static std::string GetAssertMessage(BufferReader& reader, Uint32 arg_count, GpuAssertType type)
 	{
 		switch (type)
 		{
@@ -122,7 +93,7 @@ namespace adria
 	void GpuAssert::ProcessBufferData(GfxBuffer& old_readback_buffer)
 	{
 		static constexpr Uint32 MaxGpuAssertArgs = 4;
-		AssertBufferReader assert_reader(old_readback_buffer.GetMappedData<Uint8>() + sizeof(Uint32), (Uint32)old_readback_buffer.GetSize() - sizeof(Uint32));
+		BufferReader assert_reader(old_readback_buffer.GetMappedData<Uint8>() + sizeof(Uint32), (Uint32)old_readback_buffer.GetSize() - sizeof(Uint32));
 		while (assert_reader.HasMoreData(sizeof(GpuAssertHeader)))
 		{
 			GpuAssertHeader const* header = assert_reader.Consume<GpuAssertHeader>();

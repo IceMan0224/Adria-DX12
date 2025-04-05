@@ -40,7 +40,6 @@ int APIENTRY wWinMain(
         g_Editor.Run();
     }
     g_Editor.Destroy();
-    
 }
 
 
