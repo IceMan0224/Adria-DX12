@@ -41,9 +41,9 @@ namespace adria
 	}
 	SSAOPass::~SSAOPass() = default;
 
-	void SSAOPass::AddPass(RenderGraph& rendergraph)
+	void SSAOPass::AddPass(RenderGraph& rg)
 	{
-		RG_SCOPE(rendergraph, "SSAO");
+		RG_SCOPE(rg, "SSAO");
 
 		struct SSAOPassData
 		{
@@ -52,8 +52,8 @@ namespace adria
 			RGTextureReadWriteId output;
 		};
 
-		FrameBlackboardData const& frame_data = rendergraph.GetBlackboard().Get<FrameBlackboardData>();
-		rendergraph.AddPass<SSAOPassData>("SSAO Pass",
+		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
+		rg.AddPass<SSAOPassData>("SSAO Pass",
 			[=](SSAOPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc ssao_desc{};
@@ -111,7 +111,7 @@ namespace adria
 			}, RGPassType::AsyncCompute);
 
 		blur_pass.SetAsyncCompute(true);
-		blur_pass.AddPass(rendergraph, RG_NAME(SSAO_Output), RG_NAME(AmbientOcclusion), " SSAO");
+		blur_pass.AddPass(rg, RG_NAME(SSAO_Output), RG_NAME(AmbientOcclusion), " SSAO");
 	}
 
 	void SSAOPass::GUI()

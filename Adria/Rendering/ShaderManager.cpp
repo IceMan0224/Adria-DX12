@@ -95,6 +95,7 @@ namespace adria
 			case CS_HistogramReduction:
 			case CS_Ssao:
 			case CS_Hbao:
+			case CS_Nnao:
 			case CS_Ssr:
 			case CS_ExponentialHeightFog:
 			case CS_Tonemap:
@@ -256,6 +257,8 @@ namespace adria
 				return "Postprocess/SSAO.hlsl";
 			case CS_Hbao:
 				return "Postprocess/HBAO.hlsl";
+			case CS_Nnao:
+				return "Postprocess/NNAO.hlsl";
 			case CS_Ssr:
 				return "Postprocess/SSR.hlsl";
 			case CS_ExponentialHeightFog:
@@ -387,6 +390,8 @@ namespace adria
 				return "SSAO_CS";
 			case CS_Hbao:
 				return "HBAO_CS";
+			case CS_Nnao:
+				return "NNAO_CS";
 			case CS_Ssr:
 				return "SSR_CS";
 			case CS_ExponentialHeightFog:

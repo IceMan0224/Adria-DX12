@@ -1,6 +1,7 @@
 #pragma once
 #include "SSAOPass.h"
 #include "HBAOPass.h"
+#include "NNAOPass.h"
 #include "RayTracedAmbientOcclusionPass.h"
 #include "FFXCACAOPass.h"
 
@@ -22,6 +23,7 @@ namespace adria
 		GfxDevice*	 gfx;
 		SSAOPass	 ssao_pass;
 		HBAOPass     hbao_pass;
+		NNAOPass     nnao_pass;
 		FFXCACAOPass cacao_pass;
 		RayTracedAmbientOcclusionPass rtao_pass;
 	};

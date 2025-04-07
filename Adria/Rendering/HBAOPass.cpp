@@ -18,9 +18,9 @@ namespace adria
 	}
 	HBAOPass::~HBAOPass() = default;
 
-	void HBAOPass::AddPass(RenderGraph& rendergraph)
+	void HBAOPass::AddPass(RenderGraph& rg)
 	{
-		RG_SCOPE(rendergraph, "HBAO");
+		RG_SCOPE(rg, "HBAO");
 
 		struct HBAOPassData
 		{
@@ -29,8 +29,8 @@ namespace adria
 			RGTextureReadWriteId output_uav;
 		};
 
-		FrameBlackboardData const& frame_data = rendergraph.GetBlackboard().Get<FrameBlackboardData>();
-		rendergraph.AddPass<HBAOPassData>("HBAO Pass",
+		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
+		rg.AddPass<HBAOPassData>("HBAO Pass",
 			[=](HBAOPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc hbao_desc{};
@@ -83,7 +83,7 @@ namespace adria
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::AsyncCompute);
 
-		blur_pass.AddPass(rendergraph, RG_NAME(HBAO_Output), RG_NAME(AmbientOcclusion), " HBAO");
+		blur_pass.AddPass(rg, RG_NAME(HBAO_Output), RG_NAME(AmbientOcclusion), " HBAO");
 	}
 
 	void HBAOPass::GUI()

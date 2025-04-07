@@ -60,6 +60,7 @@ namespace adria
 		CS_HistogramReduction,
 		CS_Ssao,
 		CS_Hbao,
+		CS_Nnao,
 		CS_Ssr,
 		CS_ExponentialHeightFog,
 		CS_Tonemap,

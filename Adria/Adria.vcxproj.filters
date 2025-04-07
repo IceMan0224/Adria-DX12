@@ -624,6 +624,9 @@
     <ClCompile Include="Rendering\GpuAssert.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\NNAOPass.cpp">
+      <Filter>Rendering\Passes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utilities\RingBuffer.h">
@@ -1689,6 +1692,9 @@
     <ClInclude Include="Utilities\BufferReader.h">
       <Filter>Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\NNAOPass.h">
+      <Filter>Rendering\Passes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Adria.rc">
@@ -2047,6 +2053,9 @@
     </FxCompile>
     <FxCompile Include="Resources\Shaders\Other\TensorTextureConversions.hlsl">
       <Filter>Shaders\Other</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\Shaders\Postprocess\NNAO.hlsl">
+      <Filter>Shaders\Postprocess</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

@@ -299,7 +299,6 @@ namespace adria
 				batch.world_transform = instance.world_transform;
 				submesh.bounding_box.Transform(batch.bounding_box, batch.world_transform);
 				
-
 				InstanceGPU& instance_gpu = instances.emplace_back();
 				instance_gpu.instance_id = instanceID;
 				instance_gpu.material_idx = static_cast<Uint32>(materials.size() + submesh.material_index);
