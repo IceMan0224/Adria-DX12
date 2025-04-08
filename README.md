@@ -27,7 +27,7 @@ Graphics engine written in C++ using DirectX12.
 * Rain
 * Tony McMapface tonemapping
 * Depth of field + Bokeh: Custom, FFX
-* Ambient occlusion: SSAO, HBAO, CACAO (FFX), RTAO (DXR)
+* Ambient occlusion: SSAO, HBAO, NNAO, RTAO (DXR), CACAO (FFX)
 * Reflections: SSR, RTR (DXR)
 * Antialiasing: FXAA, TAA
 * Contrast Adaptive Sharpening (FFX)

@@ -5,9 +5,9 @@
 //https://theorangeduck.com/page/neural-network-ambient-occlusion
 
 #define BLOCK_SIZE 16
-#define FW 31
-#define HW ((FW-1)/2)
-#define NSAMPLES 16
+#define FILTER_WIDTH 31
+#define HALF_WIDTH ((FILTER_WIDTH-1)/2)
+#define SAMPLE_COUNT 16
 
 static const float4 F0a = float4( 2.364370,  2.399485,  0.889055,  4.055205);
 static const float4 F0b = float4(-1.296360, -0.926747, -0.441784, -3.308158);
@@ -24,15 +24,15 @@ static const float Ymean =  0.000000;
 static const float Ystd  =  0.116180;
 
 static const float4x4 W1 = float4x4(
- -0.147624,  0.303306,  0.009158, -0.111847, 
- -0.150471,  0.057305, -0.371759, -0.183312, 
-  0.154306, -0.240071, -0.259837,  0.044680, 
+ -0.147624,  0.303306,  0.009158, -0.111847,
+ -0.150471,  0.057305, -0.371759, -0.183312,
+  0.154306, -0.240071, -0.259837,  0.044680,
  -0.006904,  0.036727,  0.302215, -0.190296);
 
 static const float4x4 W2 = float4x4(
-  0.212815,  0.316173,  0.135707, -0.097283, 
-  0.028991, -0.166099, -0.478362,  0.189983, 
-  0.105671,  0.058121, -0.156021,  0.019879, 
+  0.212815,  0.316173,  0.135707, -0.097283,
+  0.028991, -0.166099, -0.478362,  0.189983,
+  0.105671,  0.058121, -0.156021,  0.019879,
  -0.111834, -0.170316, -0.413203, -0.260882);
 
 static const float4 W3 = float4( 0.774455,  0.778138, -0.318566, -0.523377);
@@ -52,22 +52,22 @@ static const float4 beta1 = float4( 0.670060,  1.090481,  0.461880,  0.322837);
 static const float4 beta2 = float4( 0.760696,  1.016398,  1.686991,  1.744554);
 static const float beta3  =  0.777760;
 
-float3 rand(float3 seed)
+float3 Rand(float3 seed)
 {
   return 2.0 * frac(sin(dot(seed, float3(12.9898, 78.233, 21.317))) * float3(43758.5453, 21383.21227, 20431.20563))-1.0;
 }
 
-float4 prelu(float4 x, float4 alpha, float4 beta) 
+float4 Prelu(float4 x, float4 alpha, float4 beta)
 {
   return beta * max(x, 0.0) + alpha * min(x, 0.0);
 }
 
-float prelu(float x, float alpha, float beta) 
+float Prelu(float x, float alpha, float beta)
 {
   return beta * max(x, 0.0) + alpha * min(x, 0.0);
 }
 
-float2 spiral(float t, float l, float o)
+float2 Spiral(float t, float l, float o)
 {
   float angle = l * 2 * M_PI * (t + o);
   float s, c;
@@ -77,7 +77,7 @@ float2 spiral(float t, float l, float o)
 
 struct NNAOConstants
 {
-    float radius;
+    uint nnaoParamsPacked;
     uint depthIdx;
     uint normalIdx;
     uint outputIdx;
@@ -104,6 +104,10 @@ void NNAO_CS(CSInput input)
     Texture2D<float4> F2 = ResourceDescriptorHeap[NNAOPassCB.F2Idx];
     Texture2D<float4> F3 = ResourceDescriptorHeap[NNAOPassCB.F3Idx];
 
+    float2 nnaoParams = UnpackHalf2(NNAOPassCB.nnaoParamsPacked);
+    float nnaoRadius = nnaoParams.x;
+    float nnaoPower = nnaoParams.y;
+
     Texture2D normalRT = ResourceDescriptorHeap[NNAOPassCB.normalIdx];
     Texture2D<float> depthTexture = ResourceDescriptorHeap[NNAOPassCB.depthIdx];
     RWTexture2D<float> outputTexture = ResourceDescriptorHeap[NNAOPassCB.outputIdx];
@@ -111,20 +115,21 @@ void NNAO_CS(CSInput input)
     uint2 resolution = uint2(FrameCB.renderResolution);
     float2 uv = ((float2)input.DispatchThreadId.xy + 0.5f) * 1.0f / resolution;
     float3 viewNormal = DecodeNormalOctahedron(normalRT.Sample(LinearBorderSampler, uv).xy * 2.0f - 1.0f);
-    
+
     float depth = depthTexture.Sample(LinearBorderSampler, uv);
     float3 viewPosition = GetViewPosition(uv, depth);
-    float3 seed = rand(viewPosition);
-  
-    float4 H0 = 0.0f;
-    for (uint i = 0; i < NSAMPLES; i++)
-    {    
-        float scale = (M_PI/4) * (FW*FW) * ((float(i+1)/float(NSAMPLES+1))/(NSAMPLES/2));
-        float2 sampleOffsetDir = spiral(float(i+1)/float(NSAMPLES+1), 2.5, 2*M_PI*seed.x);
+    float3 seed = Rand(viewPosition);
 
-        float3 neighborProjectedViewPos = viewPosition + float3(sampleOffsetDir * NNAOPassCB.radius, 0.0f);
+    float4 H0 = 0.0f;
+    for (uint i = 0; i < SAMPLE_COUNT; i++)
+    {
+        float t = float(i + 1)/float(SAMPLE_COUNT + 1);
+        float scale = (M_PI / 2.0f) * (FILTER_WIDTH * FILTER_WIDTH) * t / float(SAMPLE_COUNT);
+        float2 neighbourOffsetDir = Spiral(t, 2.5, 2 * M_PI * seed.x);
+
+        float3 neighborProjectedViewPos = viewPosition + float3(neighbourOffsetDir * nnaoRadius, 0.0f);
         float4 neighborClipPos = mul(float4(neighborProjectedViewPos, 1.0f), FrameCB.projection);
-        float2 neighborScreenPos = neighborClipPos.xy / neighborClipPos.w; 
+        float2 neighborScreenPos = neighborClipPos.xy / neighborClipPos.w;
         neighborScreenPos.y = -neighborScreenPos.y;
         float2 neighborUv = (neighborScreenPos * 0.5f) + 0.5f;
         neighborUv = saturate(neighborUv);
@@ -134,35 +139,35 @@ void NNAO_CS(CSInput input)
         float3 neighborActualViewPos = GetViewPosition(neighborUv, neighborDepth);
         float3 neighborViewNormal = DecodeNormalOctahedron(encodedNeighborNormal * 2.0f - 1.0f);
 
-        float2 filterUV = (sampleOffsetDir * (NNAOPassCB.radius / length(sampleOffsetDir + 1e-6)) * HW + HW + 0.5) / (HW * 2 + 2);
+        float2 filterUV = (neighbourOffsetDir * HALF_WIDTH + HALF_WIDTH + 0.5) / (float)(FILTER_WIDTH + 1);
 
         float4 F0value = F0.SampleLevel(LinearBorderSampler, filterUV, 0);
         float4 F1value = F1.SampleLevel(LinearBorderSampler, filterUV, 0);
         float4 F2value = F2.SampleLevel(LinearBorderSampler, filterUV, 0);
         float4 F3value = F3.SampleLevel(LinearBorderSampler, filterUV, 0);
-    
-        float distAtten = saturate(1.0f - length(neighborActualViewPos - viewPosition) / NNAOPassCB.radius);
-        float4 X = distAtten * float4(
-            neighborViewNormal - viewNormal,
-            (neighborActualViewPos.z - viewPosition.z) / NNAOPassCB.radius
-        );  
 
-        float4 X_norm = (X - Xmean) / Xstd;
+        float distanceAttenuation = saturate(1.0f - length(neighborActualViewPos - viewPosition) / nnaoRadius);
+        float4 X = distanceAttenuation * float4(
+            neighborViewNormal - viewNormal,
+            (neighborActualViewPos.z - viewPosition.z) / nnaoRadius);
+        X.xzw = -X.xzw;
+
+        float4 Xnorm = (X - Xmean) / Xstd;
         float4x4 FilterMatrix = float4x4(
             F0value * F0a + F0b,
             F1value * F1a + F1b,
             F2value * F2a + F2b,
-            F3value * F3a + F3b 
+            F3value * F3a + F3b
         );
-        H0 += scale * mul(X_norm, FilterMatrix);
+        H0 += scale * mul(FilterMatrix, Xnorm);
     }
 
-    H0 = prelu(H0 + b0, alpha0, beta0);
+    H0 = Prelu(H0 + b0, alpha0, beta0);
 
-    float4 H1 = prelu(mul(H0, W1) + b1, alpha1, beta1); 
-    float4 H2 = prelu(mul(H1, W2) + b2, alpha2, beta2); 
-    float  Y  = prelu(dot(H2, W3) + b3, alpha3, beta3);
+    float4 H1 = Prelu(mul(W1, H0) + b1, alpha1, beta1);
+    float4 H2 = Prelu(mul(W2, H1) + b2, alpha2, beta2);
+    float  Y  = Prelu(dot(H2, W3) + b3, alpha3, beta3);
 
     float ambientOcclusion = 1.0 - saturate(Y * Ystd + Ymean);
-    outputTexture[input.DispatchThreadId.xy] = ambientOcclusion;
+    outputTexture[input.DispatchThreadId.xy] = pow(abs(ambientOcclusion), nnaoPower);
 }

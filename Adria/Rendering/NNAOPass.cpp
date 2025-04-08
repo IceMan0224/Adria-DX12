@@ -5,6 +5,7 @@
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"
+#include "Math/Packing.h"
 #include "Core/ConsoleManager.h"
 #include "Core/Paths.h"
 #include "Editor/GUICommand.h"
@@ -12,8 +13,9 @@
 namespace adria
 {
 	static TAutoConsoleVariable<Float> NNAORadius("r.NNAO.Radius", 1.0f, "Controls the radius of NNAO");
+	static TAutoConsoleVariable<Float> NNAOPower("r.NNAO.Power", 1.5f, "Controls the radius of NNAO");
 
-	NNAOPass::NNAOPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h)
+	NNAOPass::NNAOPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), blur_pass(gfx)
 	{
 		CreatePSO();
 	}
@@ -39,8 +41,8 @@ namespace adria
 				nnao_desc.width = width;
 				nnao_desc.height = height;
 
-				builder.DeclareTexture(RG_NAME(AmbientOcclusion), nnao_desc);
-				data.output = builder.WriteTexture(RG_NAME(AmbientOcclusion));
+				builder.DeclareTexture(RG_NAME(NNAO_Output), nnao_desc);
+				data.output = builder.WriteTexture(RG_NAME(NNAO_Output));
 				data.gbuffer_normal = builder.ReadTexture(RG_NAME(GBufferNormal), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
@@ -61,7 +63,7 @@ namespace adria
 				ADRIA_ASSERT(F_texture_handles.size() == 4);
 				struct NNAOConstants
 				{
-					Float	 radius;
+					Uint32	 nnao_params_packed;
 					Uint32   depth_idx;
 					Uint32   normal_idx;
 					Uint32   output_idx;
@@ -71,10 +73,10 @@ namespace adria
 					Uint32	 F3_idx;
 				} constants =
 				{
-					.radius = NNAORadius.Get(),
+					.nnao_params_packed = PackTwoFloatsToUint32(NNAORadius.Get(), NNAOPower.Get()),
 					.depth_idx = i, .normal_idx = i + 1, .output_idx = i + 2,
 					.F0_idx = (Uint32)F_texture_handles[0], .F1_idx = (Uint32)F_texture_handles[1],
-					.F2_idx = (Uint32)F_texture_handles[2], .F3_idx = (Uint32)F_texture_handles[3]
+					.F2_idx = (Uint32)F_texture_handles[2], .F3_idx = (Uint32)F_texture_handles[3],
 				};
 
 				cmd_list->SetPipelineState(nnao_pso.get());
@@ -82,6 +84,9 @@ namespace adria
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::AsyncCompute);
+
+		blur_pass.SetAsyncCompute(true);
+		blur_pass.AddPass(rg, RG_NAME(NNAO_Output), RG_NAME(AmbientOcclusion), " NNAO");
 	}
 
 	void NNAOPass::GUI()
@@ -90,6 +95,7 @@ namespace adria
 			{
 				if (ImGui::TreeNodeEx("NNAO", ImGuiTreeNodeFlags_None))
 				{
+					ImGui::SliderFloat("Power",  NNAOPower.GetPtr(), 1.0f, 16.0f);
 					ImGui::SliderFloat("Radius", NNAORadius.GetPtr(), 0.5f, 4.0f);
 					ImGui::TreePop();
 					ImGui::Separator();

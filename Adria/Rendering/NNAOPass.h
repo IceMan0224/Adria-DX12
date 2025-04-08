@@ -1,4 +1,5 @@
 #pragma once
+#include "BlurPass.h"
 #include "TextureHandle.h"
 #include "Graphics/GfxDescriptor.h"
 #include "RenderGraph/RenderGraphResourceId.h"
@@ -28,6 +29,7 @@ namespace adria
 		Uint32 width, height;
 		std::unique_ptr<GfxComputePipelineState> nnao_pso;
 		std::vector<TextureHandle> F_texture_handles;
+		BlurPass blur_pass;
 
 	private:
 		void CreatePSO();

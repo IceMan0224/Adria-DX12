@@ -154,15 +154,11 @@ namespace adria
 					light_ss.z = light_pos.z / light_pos.w;
 				}
 
-				std::vector<GfxDescriptor> lens_flare_descriptors{};
-				for (Uint64 i = 0; i < lens_flare_textures.size(); ++i)
-					lens_flare_descriptors.push_back(g_TextureManager.GetSRV(lens_flare_textures[i]));
-				lens_flare_descriptors.push_back(context.GetReadOnlyTexture(data.depth));
-
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(8);
-				gfx->CopyDescriptors(dst_descriptor, lens_flare_descriptors);
+				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(1);
+				gfx->CopyDescriptors(1, dst_descriptor, context.GetReadOnlyTexture(data.depth));
 				Uint32 i = dst_descriptor.GetIndex();
 
+				ADRIA_ASSERT(lens_flare_textures.size() == 7);
 				struct LensFlareConstants
 				{
 					Uint32   lens_idx0;
@@ -175,8 +171,10 @@ namespace adria
 					Uint32   depth_idx;
 				} constants =
 				{
-					.lens_idx0 = i, .lens_idx1 = i + 1, .lens_idx2 = i + 2, .lens_idx3 = i + 3,
-					.lens_idx4 = i + 4, .lens_idx5 = i + 5, .lens_idx6 = i + 6, .depth_idx = i + 7
+					.lens_idx0 = (Uint32)lens_flare_textures[0], .lens_idx1 = (Uint32)lens_flare_textures[1],
+					.lens_idx2 = (Uint32)lens_flare_textures[2], .lens_idx3 = (Uint32)lens_flare_textures[3],
+					.lens_idx4 = (Uint32)lens_flare_textures[4], .lens_idx5 = (Uint32)lens_flare_textures[5],
+					.lens_idx6 = (Uint32)lens_flare_textures[6], .depth_idx = i
 				};
 
 				struct LensFlareConstants2
