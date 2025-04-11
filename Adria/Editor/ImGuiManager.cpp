@@ -34,7 +34,7 @@ namespace adria
 		io.ConfigViewportsNoTaskBarIcon = true;
 
 		ImFontConfig font_config{};
-		std::string font_path = paths::FontsDir + "roboto/Roboto-Light.ttf";
+		std::string font_path = paths::FontsDir + "ComicMono/ComicMono.ttf";
 		io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f, &font_config);
 		font_config.MergeMode = true;
 		ImWchar const icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
