@@ -217,6 +217,7 @@ namespace adria
 		overdraw_texture_desc.initial_state = GfxResourceState::ComputeUAV;
 		overdraw_texture = gfx->CreateTexture(overdraw_texture_desc);
 		overdraw_texture_uav = gfx->CreateTextureUAV(overdraw_texture.get());
+		overdraw_texture->SetName("Overdraw Texture");
 	}
 
 	void Renderer::CreateAS()

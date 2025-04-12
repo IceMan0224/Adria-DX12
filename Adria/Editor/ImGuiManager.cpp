@@ -68,8 +68,8 @@ namespace adria
 		ImGui::Render();
 		if (visible)
 		{
-			ID3D12DescriptorHeap* pp_heaps[] = { imgui_allocator->GetHeap() };
-			cmd_list->GetNative()->SetDescriptorHeaps(ARRAYSIZE(pp_heaps), pp_heaps);
+			ID3D12DescriptorHeap* imgui_heap[] = { imgui_allocator->GetHeap() };
+			cmd_list->GetNative()->SetDescriptorHeaps(ARRAYSIZE(imgui_heap), imgui_heap);
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmd_list->GetNative());
 		}
 

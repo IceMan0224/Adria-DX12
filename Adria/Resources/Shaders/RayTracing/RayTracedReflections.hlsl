@@ -2,6 +2,7 @@
 #include "Scene.hlsli"
 #include "Lighting.hlsli"
 #include "RayTracingUtil.hlsli"
+#include "Packing.hlsli"
 
 struct RayTracedReflectionsConstants
 {
@@ -32,13 +33,17 @@ void RTR_RayGen()
 
 	float2 uv = (launchIndex + 0.5f) / FrameCB.renderResolution;
 	float depth = depthTexture.Load(int3(launchIndex.xy, 0));
+
 	float4 normalMetallic = normalMetallicTexture.Load(int3(launchIndex.xy, 0));
+	float3 viewNormal; 
+	float metallic; 
+	uint shadingExtension;
+	DecodeGBufferNormalRT(normalMetallic, viewNormal, metallic, shadingExtension);
+
 	float roughness = albedoRoughnessTexture.Load(int3(launchIndex.xy, 0)).a;
 	float reflectivity = saturate((1 - roughness) * (1 - roughness));
 	if (depth > 0.00001f && reflectivity > 0.0f)
 	{
-		float3 viewNormal = normalMetallic.xyz;
-		viewNormal = 2.0f * viewNormal - 1.0f;
 		float3 worldNormal = normalize(mul(viewNormal, (float3x3) transpose(FrameCB.view)));
 		float3 worldPosition = GetWorldPosition(uv, depth);
 

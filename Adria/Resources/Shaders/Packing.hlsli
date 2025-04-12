@@ -56,7 +56,7 @@ float2 EncodeNormalOctahedron(float3 n)
 
 float3 DecodeNormalOctahedron(float2 f)
 {
-	 float3 n = float3(f.x, f.y, 1.0 - abs(f.x) - abs(f.y));
+	float3 n = float3(f.x, f.y, 1.0 - abs(f.x) - abs(f.y));
     float t = saturate(-n.z);
     n.xy += lerp(t, -t, n.xy >= 0.0);
     return normalize(n);

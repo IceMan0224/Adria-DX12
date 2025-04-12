@@ -247,7 +247,6 @@ namespace adria
 	private:
 	};
 
-
 	class AutoConsoleCommand : private AutoConsoleObject
 	{
 	public:
@@ -260,5 +259,4 @@ namespace adria
 		{
 		}
 	};
-
 }

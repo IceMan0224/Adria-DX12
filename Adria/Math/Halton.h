@@ -6,14 +6,14 @@ namespace adria
 	{
 		static constexpr Int FloorConstExpr(Float val)
 		{
-			const auto val_int = (Int64)val;
+			const Int64 val_int = (Int64)val;
 			const Float fval_int = (Float)val_int;
 			return (Int)(val >= (Float)0 ? fval_int : (val == fval_int ? val : fval_int - (Float)1));
 		}
 		constexpr Float operator()(Int index, Int base) const
 		{
-			Float f = 1;
-			Float r = 0;
+			Float f = 1.0f;
+			Float r = 0.0f;
 			while (index > 0)
 			{
 				f = f / base;

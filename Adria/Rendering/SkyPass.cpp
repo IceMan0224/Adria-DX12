@@ -279,6 +279,7 @@ namespace adria
 		vb_desc.size = sizeof(cube_vertices);
 		vb_desc.stride = sizeof(SimpleVertex);
 		cube_vb = gfx->CreateBuffer(vb_desc, cube_vertices);
+		cube_vb->SetName("Cube Vertex Buffer");
 
 		GfxBufferDesc ib_desc{};
 		ib_desc.bind_flags = GfxBindFlag::None;
@@ -286,6 +287,7 @@ namespace adria
 		ib_desc.stride = sizeof(Uint16);
 		ib_desc.size = sizeof(cube_indices);
 		cube_ib = gfx->CreateBuffer(ib_desc, cube_indices);
+		cube_ib->SetName("Cube Index Buffer");
 	}
 
 }

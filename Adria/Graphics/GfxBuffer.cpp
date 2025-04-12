@@ -186,7 +186,10 @@ namespace adria
 
 	void* GfxBuffer::Map()
 	{
-		if (mapped_data) return mapped_data;
+		if (mapped_data)
+		{
+			return mapped_data;
+		}
 
 		HRESULT hr;
 		if (desc.resource_usage == GfxResourceUsage::Readback)
@@ -226,6 +229,8 @@ namespace adria
 
 	void GfxBuffer::SetName(Char const* name)
 	{
+#if defined(_DEBUG) || defined(_PROFILE)
 		resource->SetName(ToWideString(name).c_str());
+#endif
 	}
 }

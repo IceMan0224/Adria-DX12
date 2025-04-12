@@ -29,7 +29,7 @@ namespace adria
 	template<typename Allocator, typename T>
 	concept IsAllocator = requires(Allocator a, void* ptr, Uint64 n, Uint64 align)
 	{
-		{ a.Allocate(n, align) } -> std::same_as<void*>;  // Generic allocate returning void*
+		{ a.Allocate(n, align) } -> std::same_as<void*>;   // Generic allocate returning void*
 		{ a.template Allocate<T>(n) } -> std::same_as<T*>; // Typed allocate returning T*
 		{ a.Deallocate(ptr, n) };
 	};

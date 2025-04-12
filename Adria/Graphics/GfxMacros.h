@@ -10,10 +10,8 @@
 #define USE_PIX
 
 
-#if defined(_DEBUG)
-	#ifndef GFX_PROFILING
+#if defined(_DEBUG) || defined(_PROFILE)
 	#define GFX_PROFILING 1
-	#endif
 #endif
 
 #if GFX_PROFILING

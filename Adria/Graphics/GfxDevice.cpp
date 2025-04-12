@@ -1257,7 +1257,7 @@ namespace adria
 #if defined(_DEBUG)
 				ADRIA_LOG(INFO, "D3D12 Debug Layer Enabled!");
 #else
-				ADRIA_LOG(WARNING, "D3D12 Debug Layer Enabled! (Release)");
+				ADRIA_LOG(WARNING, "D3D12 Debug Layer Enabled! (Non-debug build)");
 #endif
 			}
 			else ADRIA_LOG(WARNING, "Debug Layer setup failed!");
@@ -1274,7 +1274,7 @@ namespace adria
 #if defined(_DEBUG)
 				ADRIA_LOG(INFO, "D3D12 DRED Enabled!");
 #else
-				ADRIA_LOG(WARNING, "D3D12 DRED Enabled! (Release)");
+				ADRIA_LOG(WARNING, "D3D12 DRED Enabled! (Non-Debug build)");
 #endif
 			}
 			else ADRIA_LOG(WARNING, "DRED setup failed!");

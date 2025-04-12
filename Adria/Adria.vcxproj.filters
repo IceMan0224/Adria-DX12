@@ -1836,6 +1836,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="..\README.md" />
+    <None Include="Saved\Ini\bistro_cvars.ini">
+      <Filter>Saved\Ini Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\Shaders\DDGI\DDGIRayTrace.hlsl">

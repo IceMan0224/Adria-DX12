@@ -101,6 +101,4 @@ namespace adria
 		template<typename PostEffectT> requires std::is_base_of_v<PostEffect, PostEffectT>
 		PostEffectT* GetPostEffect() const;
 	};
-
-
 }

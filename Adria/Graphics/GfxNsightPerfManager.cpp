@@ -97,7 +97,7 @@ namespace adria
 
 	class GfxNsightPerfHUD
 	{
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(_PROFILE)
 		static constexpr Uint32 SamplingFrequency = 30;
 #else
 		static constexpr Uint32 SamplingFrequency = 60;

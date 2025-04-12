@@ -85,7 +85,7 @@ namespace adria
 		Int32 shadow_texture_index;
 		Int32 shadow_matrix_index;
 		Int32 shadow_mask_index;
-		Int32 padd;
+		PAD;
 	};
 
 	struct MeshGPU

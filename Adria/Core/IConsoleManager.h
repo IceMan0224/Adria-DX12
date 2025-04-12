@@ -1,5 +1,4 @@
 #pragma once
-#include <string>
 #include <type_traits>
 #include "Utilities/Delegate.h"
 

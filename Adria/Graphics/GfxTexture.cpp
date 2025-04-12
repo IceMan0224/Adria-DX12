@@ -305,7 +305,9 @@ namespace adria
 
 	void GfxTexture::SetName(Char const* name)
 	{
+#if defined(_DEBUG) || defined(_PROFILE)
 		resource->SetName(ToWideString(name).c_str());
+#endif
 	}
 }
 

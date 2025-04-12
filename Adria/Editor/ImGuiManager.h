@@ -4,7 +4,6 @@
 
 namespace adria
 {
-
 	class GfxDevice;
 	template<Bool>
 	class GfxRingDescriptorAllocator;

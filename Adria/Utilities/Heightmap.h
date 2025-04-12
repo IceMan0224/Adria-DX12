@@ -33,7 +33,6 @@ namespace adria
 		Int32 octaves = 3;
 		Float noise_scale = 10;
 	};
-
 	
 	class Heightmap
 	{

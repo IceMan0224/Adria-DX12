@@ -17,8 +17,6 @@
 #define RG_MULTITHREADED 0
 #endif
 
-ADRIA_DEBUGZONE_BEGIN
-
 namespace adria
 {
 	extern Bool g_DumpRenderGraph = false;

@@ -241,5 +241,4 @@ namespace adria
 	private:
 		std::vector<HandleDelegatePair> delegate_array;
 	};
-
 }

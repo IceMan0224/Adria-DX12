@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/HashUtil.h"
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(_PROFILE)
 #define RG_DEBUG 1
 #else
 #define RG_DEBUG 0

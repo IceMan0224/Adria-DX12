@@ -22,7 +22,6 @@ namespace adria
 			json _return_json = _json.value(name, json::object());
 			return _return_json.is_object() ? _return_json : json::object();
 		}
-
 		json FindJsonArray(std::string const& name)
 		{
 			json _return_json = _json.value(name, json::array());
@@ -99,7 +98,6 @@ namespace adria
 		json _json;
 
 	private:
-
 		template<typename T>
 		static constexpr Bool CheckValueTypeAndAssign(json const& key_value_json, T& return_value)
 		{
@@ -152,6 +150,5 @@ namespace adria
 			}
 			else return false;
 		}
-
 	};
 }
