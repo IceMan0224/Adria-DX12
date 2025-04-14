@@ -91,7 +91,7 @@ namespace adria
 			resource_description.type = FFX_RESOURCE_TYPE_TEXTURE1D;
 			break;
 		case GfxTextureType_2D:
-			if (texture_desc.misc_flags == GfxTextureMiscFlag::TextureCube)
+			if (HasFlag(texture_desc.misc_flags, GfxTextureMiscFlag::TextureCube))
 			{
 				resource_description.type = FFX_RESOURCE_TYPE_TEXTURE_CUBE;
 			}
@@ -116,10 +116,17 @@ namespace adria
 		Uint64 const scratch_buffer_size = ffxGetScratchMemorySizeDX12(context_count);
 		void* scratch_buffer = malloc(scratch_buffer_size);
 		ADRIA_ASSERT(scratch_buffer);
-		memset(scratch_buffer, 0, scratch_buffer_size);
-		FfxErrorCode error_code = ffxGetInterfaceDX12(ffx_interface, gfx->GetDevice(), scratch_buffer, scratch_buffer_size, context_count);
-		ADRIA_ASSERT(error_code == FFX_OK);
-		return ffx_interface;
+		if (scratch_buffer)
+		{
+			memset(scratch_buffer, 0, scratch_buffer_size);
+			FfxErrorCode error_code = ffxGetInterfaceDX12(ffx_interface, gfx->GetDevice(), scratch_buffer, scratch_buffer_size, context_count);
+			ADRIA_ASSERT(error_code == FFX_OK);
+			return ffx_interface;
+		}
+		else
+		{
+			return nullptr;
+		}
 	}
 
 	void DestroyFfxInterface(FfxInterface* ffx_interface)
