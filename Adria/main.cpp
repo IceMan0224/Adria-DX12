@@ -2,8 +2,8 @@
 #include "Core/Engine.h"
 #include "Core/Input.h"
 #include "Core/CommandLineOptions.h"
-#include "Core/Loggers/FileLogger.h"
-#include "Core/Loggers/OutputDebugStringLogger.h"
+#include "Core/LogSinks/FileSink.h"
+#include "Core/LogSinks/DebuggerSink.h"
 #include "Editor/Editor.h"
 #include "Utilities/MemoryDebugger.h"
 #include "Utilities/CLIParser.h"
@@ -20,8 +20,8 @@ int APIENTRY wWinMain(
     
     std::string log_file = CommandLineOptions::GetLogFile();  
     LogLevel log_level = static_cast<LogLevel>(CommandLineOptions::GetLogLevel());
-    ADRIA_LOGGER(FileLogger, log_file.c_str(), log_level);
-    ADRIA_LOGGER(OutputDebugStringLogger, log_level);
+    ADRIA_SINK(FileSink, log_file.c_str(), log_level);
+    ADRIA_SINK(DebuggerSink, log_level);
 
     WindowInit window_init{};
     window_init.width = CommandLineOptions::GetWindowWidth();

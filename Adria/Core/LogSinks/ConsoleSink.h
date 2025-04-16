@@ -2,12 +2,12 @@
 
 namespace adria
 {
-	class ConsoleLogger : public ILogger
+	class ConsoleSink : public ILogSink
 	{
 	public:
-		ConsoleLogger(Bool use_cerr = false, LogLevel logger_level = LogLevel::LOG_DEBUG);
-		virtual ~ConsoleLogger() override;
-		ADRIA_NONCOPYABLE_NONMOVABLE(ConsoleLogger)
+		ConsoleSink(Bool use_cerr = false, LogLevel logger_level = LogLevel::LOG_DEBUG);
+		virtual ~ConsoleSink() override;
+		ADRIA_NONCOPYABLE_NONMOVABLE(ConsoleSink)
 
 		virtual void Log(LogLevel level, Char const* entry, Char const* file, Uint32 line) override;
 		virtual void Flush() override;

@@ -3,11 +3,11 @@
 namespace adria
 {
 
-	class OutputDebugStringLogger : public ILogger
+	class DebuggerSink : public ILogSink
 	{
 	public:
-		OutputDebugStringLogger(LogLevel logger_level = LogLevel::LOG_DEBUG);
-		virtual ~OutputDebugStringLogger() override;
+		DebuggerSink(LogLevel logger_level = LogLevel::LOG_DEBUG);
+		virtual ~DebuggerSink() override;
 		virtual void Log(LogLevel level, Char const* entry, Char const* file, uint32_t line) override;
 		virtual void Flush() override;
 

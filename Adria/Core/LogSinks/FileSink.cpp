@@ -1,10 +1,10 @@
-#include "FileLogger.h"
+#include "FileSink.h"
 #include "Core/Paths.h"      
 
 namespace adria
 {
 
-	FileLogger::FileLogger(Char const* log_file, LogLevel logger_level, bool append_mode)
+	FileSink::FileSink(Char const* log_file, LogLevel logger_level, bool append_mode)
 		: logger_level{ logger_level }
 	{
 		std::string full_path = paths::LogDir + log_file;
@@ -12,7 +12,7 @@ namespace adria
 		log_handle = fopen(full_path.c_str(), mode);
 	}
 
-	FileLogger::~FileLogger()
+	FileSink::~FileSink()
 	{
 		if (log_handle)
 		{
@@ -22,7 +22,7 @@ namespace adria
 		}
 	}
 
-	void FileLogger::Log(LogLevel level, Char const* entry, Char const* file, uint32_t line)
+	void FileSink::Log(LogLevel level, Char const* entry, Char const* file, uint32_t line)
 	{
 		if (level < logger_level || !log_handle)
 		{
@@ -39,7 +39,7 @@ namespace adria
 			entry); 
 	}
 
-	void FileLogger::Flush()
+	void FileSink::Flush()
 	{
 		if (log_handle)
 		{

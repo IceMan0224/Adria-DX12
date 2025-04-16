@@ -18,10 +18,10 @@ namespace adria
 	std::string GetLogTime();
 	std::string LineInfoToString(Char const* file, Uint32 line);
 
-	class ILogger
+	class ILogSink
 	{
 	public:
-		virtual ~ILogger() = default;
+		virtual ~ILogSink() = default;
 		virtual void Log(LogLevel level, Char const* entry, Char const* file, Uint32 line) = 0;
 		virtual void Flush() {}
 	};
@@ -33,11 +33,11 @@ namespace adria
 		ADRIA_NONCOPYABLE_NONMOVABLE(LogManager)
 		~LogManager();
 
-		template<typename LoggerT, typename... Args> requires std::is_base_of_v<ILogger, LoggerT>
-		ADRIA_MAYBE_UNUSED LoggerT* Register(Args&&... args)
+		template<typename LogSinkT, typename... Args> requires std::is_base_of_v<ILogSink, LogSinkT>
+		ADRIA_MAYBE_UNUSED LogSinkT* Register(Args&&... args)
 		{
-			Register(new LoggerT(std::forward<Args>(args)...));
-			return static_cast<LoggerT*>(GetLastLogger());
+			Register(new LogSinkT(std::forward<Args>(args)...));
+			return static_cast<LogSinkT*>(GetLastSink());
 		}
 		void Log(LogLevel level, Char const* str, Char const* file, Uint32 line);
 		void LogSync(LogLevel level, Char const* str, Char const* file, Uint32 line);
@@ -47,8 +47,8 @@ namespace adria
 		std::unique_ptr<class LogManagerImpl> pimpl;
 
 	private:
-		void Register(ILogger* logger);
-		ILogger* GetLastLogger();
+		void Register(ILogSink* logger);
+		ILogSink* GetLastSink();
 	};
 	inline LogManager g_Log{};
 
@@ -72,5 +72,5 @@ namespace adria
 		g_Log.LogSync(LogLevel::LOG_##level, buf.get(), __FILE__, __LINE__);  \
 	}()
 	#define ADRIA_LOG_FLUSH()   (g_Log.Flush())
-	#define ADRIA_LOGGER(LogClass, ...) g_Log.Register<LogClass>(__VA_ARGS__);
+	#define ADRIA_SINK(SinkClass, ...) g_Log.Register<SinkClass>(__VA_ARGS__);
 }

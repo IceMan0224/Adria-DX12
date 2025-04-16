@@ -26,13 +26,13 @@ namespace adria
 			log_thread.join();
 		}
 
-		void RegisterLogger(ILogger* logger)
+		void RegisterLogger(ILogSink* logger)
 		{
-			loggers.emplace_back(logger);
+			log_sinks.emplace_back(logger);
 		}
-		ILogger* GetLastLogger() const
+		ILogSink* GetLastSink() const
 		{
-			return loggers.back().get();
+			return log_sinks.back().get();
 		}
 		void Log(LogLevel level, Char const* str, Char const* filename, Uint32 line)
 		{
@@ -40,22 +40,22 @@ namespace adria
 		}
 		void LogSync(LogLevel level, Char const* str, Char const* filename, Uint32 line)
 		{
-			for (auto& logger : loggers)
+			for (auto& log_sink : log_sinks)
 			{
-				if (logger)
+				if (log_sink)
 				{
-					logger->Log(level, str, filename, line);
+					log_sink->Log(level, str, filename, line);
 				}
 			}
 		}
 		void Flush()
 		{
 			pause.store(true);
-			for (auto& logger : loggers) logger->Flush();
+			for (auto& logger : log_sinks) logger->Flush();
 			pause.store(false);
 		}
 
-		std::vector<std::unique_ptr<ILogger>> loggers;
+		std::vector<std::unique_ptr<ILogSink>> log_sinks;
 		ConcurrentQueue<QueueEntry> log_queue;
 		std::thread log_thread;
 		std::atomic_bool exit = false;
@@ -67,20 +67,26 @@ namespace adria
 			QueueEntry entry{};
 			while (true)
 			{
-				if (pause.load()) continue;
+				if (pause.load())
+				{
+					continue;
+				}
 
 				Bool success = log_queue.TryPop(entry);
 				if (success)
 				{
-					for (auto& logger : loggers)
+					for (auto& log_sink : log_sinks)
 					{
-						if (logger)
+						if (log_sink)
 						{
-							logger->Log(entry.level, entry.str.c_str(), entry.filename.c_str(), entry.line);
+							log_sink->Log(entry.level, entry.str.c_str(), entry.filename.c_str(), entry.line);
 						}
 					}
 				}
-				if (exit.load() && log_queue.Empty()) break;
+				if (exit.load() && log_queue.Empty())
+				{
+					break;
+				}
 			}
 		}
 	};
@@ -116,14 +122,14 @@ namespace adria
 	LogManager::LogManager() : pimpl(new LogManagerImpl) {}
 	LogManager::~LogManager() = default;
 
-	void LogManager::Register(ILogger* logger)
+	void LogManager::Register(ILogSink* logger)
 	{
 		pimpl->RegisterLogger(logger);
 	}
 
-	ILogger* LogManager::GetLastLogger()
+	ILogSink* LogManager::GetLastSink()
 	{
-		return pimpl->GetLastLogger();
+		return pimpl->GetLastSink();
 	}
 
 	void LogManager::Log(LogLevel level, Char const* str, Char const* filename, Uint32 line)

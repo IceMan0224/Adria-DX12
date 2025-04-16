@@ -1,20 +1,20 @@
-#include "ConsoleLogger.h"
+#include "ConsoleSink.h"
 #include <cstdio>             
 
 namespace adria
 {
 
-	ConsoleLogger::ConsoleLogger(Bool use_cerr, LogLevel logger_level)
+	ConsoleSink::ConsoleSink(Bool use_cerr, LogLevel logger_level)
 		: use_cerr{ use_cerr }, logger_level{ logger_level }
 	{
 	}
 
-	ConsoleLogger::~ConsoleLogger()
+	ConsoleSink::~ConsoleSink()
 	{
 		Flush(); 
 	}
 
-	void ConsoleLogger::Log(LogLevel level, Char const* entry, Char const* file, uint32_t line)
+	void ConsoleSink::Log(LogLevel level, Char const* entry, Char const* file, uint32_t line)
 	{
 		if (level < logger_level)
 		{
@@ -32,7 +32,7 @@ namespace adria
 			entry); 
 	}
 
-	void ConsoleLogger::Flush()
+	void ConsoleSink::Flush()
 	{
 		FILE* target_stream = use_cerr ? stderr : stdout;
 		fflush(target_stream);

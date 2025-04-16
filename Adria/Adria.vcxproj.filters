@@ -152,7 +152,7 @@
     <Filter Include="External\ImPlot">
       <UniqueIdentifier>{cadfcff4-f3ad-4fcb-aab0-5b61c7f672f9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Core\Loggers">
+    <Filter Include="Core\LogSinks">
       <UniqueIdentifier>{a79d8c43-94f1-4487-9b50-cf1c104c0265}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -254,7 +254,7 @@
     <ClCompile Include="Core\ConsoleManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\EditorLogger.cpp">
+    <ClCompile Include="Editor\EditorSink.cpp">
       <Filter>Editor</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\SceneLoader.cpp">
@@ -594,15 +594,6 @@
     <ClCompile Include="Core\Log.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Loggers\FileLogger.cpp">
-      <Filter>Core\Loggers</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Loggers\OutputDebugStringLogger.cpp">
-      <Filter>Core\Loggers</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Loggers\ConsoleLogger.cpp">
-      <Filter>Core\Loggers</Filter>
-    </ClCompile>
     <ClCompile Include="Rendering\AmbientOcclusionManager.cpp">
       <Filter>Rendering\Passes</Filter>
     </ClCompile>
@@ -626,6 +617,15 @@
     </ClCompile>
     <ClCompile Include="Rendering\NNAOPass.cpp">
       <Filter>Rendering\Passes</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\LogSinks\ConsoleSink.cpp">
+      <Filter>Core\LogSinks</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\LogSinks\DebuggerSink.cpp">
+      <Filter>Core\LogSinks</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\LogSinks\FileSink.cpp">
+      <Filter>Core\LogSinks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -848,7 +848,7 @@
     <ClInclude Include="Utilities\Heightmap.h">
       <Filter>Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\EditorLogger.h">
+    <ClInclude Include="Editor\EditorSink.h">
       <Filter>Editor</Filter>
     </ClInclude>
     <ClInclude Include="Core\IConsoleManager.h">
@@ -1656,15 +1656,6 @@
     <ClInclude Include="Core\Log.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Loggers\FileLogger.h">
-      <Filter>Core\Loggers</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Loggers\OutputDebugStringLogger.h">
-      <Filter>Core\Loggers</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Loggers\ConsoleLogger.h">
-      <Filter>Core\Loggers</Filter>
-    </ClInclude>
     <ClInclude Include="Rendering\AmbientOcclusionManager.h">
       <Filter>Rendering\Passes</Filter>
     </ClInclude>
@@ -1694,6 +1685,15 @@
     </ClInclude>
     <ClInclude Include="Rendering\NNAOPass.h">
       <Filter>Rendering\Passes</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\LogSinks\ConsoleSink.h">
+      <Filter>Core\LogSinks</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\LogSinks\DebuggerSink.h">
+      <Filter>Core\LogSinks</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\LogSinks\FileSink.h">
+      <Filter>Core\LogSinks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

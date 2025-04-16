@@ -3,12 +3,12 @@
 
 namespace adria
 {
-	class FileLogger : public ILogger
+	class FileSink : public ILogSink
 	{
 	public:
-		FileLogger(Char const* log_file, LogLevel logger_level = LogLevel::LOG_DEBUG, Bool append_mode = false);
-		virtual ~FileLogger() override;
-		ADRIA_NONCOPYABLE_NONMOVABLE(FileLogger)
+		FileSink(Char const* log_file, LogLevel logger_level = LogLevel::LOG_DEBUG, Bool append_mode = false);
+		virtual ~FileSink() override;
+		ADRIA_NONCOPYABLE_NONMOVABLE(FileSink)
 
 		virtual void Log(LogLevel level, Char const* entry, Char const* file, Uint32 line) override;
 		virtual void Flush() override;

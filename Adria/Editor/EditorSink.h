@@ -5,10 +5,10 @@
 
 namespace adria
 {
-	class EditorLogger : public ILogger
+	class EditorSink : public ILogSink
 	{
 	public:
-		EditorLogger(LogLevel logger_level = LogLevel::LOG_DEBUG);
+		EditorSink(LogLevel logger_level = LogLevel::LOG_DEBUG);
 		virtual void Log(LogLevel level, Char const* entry, Char const* file, uint32_t line) override;
 		void Draw(const Char* title, Bool* p_open = nullptr);
 	private:

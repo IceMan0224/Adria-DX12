@@ -16,7 +16,7 @@ namespace adria
 	class Engine;
 	class ImGuiManager;
 	class RenderGraph;
-	class EditorLogger;
+	class EditorSink;
 	class EditorConsole;
 	struct Material;
 
@@ -66,7 +66,7 @@ namespace adria
 		Bool ray_tracing_supported = false;
 
 		std::unique_ptr<EditorConsole> console;
-		EditorLogger* logger;
+		EditorSink* editor_sink;
 
 		Bool scene_focused = false;
 		entt::entity selected_entity;

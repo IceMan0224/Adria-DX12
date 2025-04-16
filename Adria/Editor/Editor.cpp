@@ -2,7 +2,7 @@
 #include "nfd.h"
 #include "Editor.h"
 #include "ImGuiManager.h"
-#include "EditorLogger.h"
+#include "EditorSink.h"
 #include "EditorConsole.h"
 #include "Core/Engine.h"
 #include "Core/Input.h"
@@ -57,7 +57,7 @@ namespace adria
 	Editor::~Editor() = default;
 	void Editor::Init(EditorInit&& init)
 	{
-		logger = ADRIA_LOGGER(EditorLogger);
+		editor_sink = ADRIA_SINK(EditorSink);
 		engine = std::make_unique<Engine>(init.window, init.scene_file);
 		gfx = engine->gfx.get();
 		gui = std::make_unique<ImGuiManager>(gfx);
@@ -806,7 +806,7 @@ namespace adria
 	void Editor::Log()
 	{
 		if (!visibility_flags[Flag_Log]) return;
-		logger->Draw(ICON_FA_COMMENT" Log", &visibility_flags[Flag_Log]);
+		editor_sink->Draw(ICON_FA_COMMENT" Log", &visibility_flags[Flag_Log]);
 	}
 	void Editor::Console()
 	{
