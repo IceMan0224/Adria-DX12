@@ -18,7 +18,7 @@ namespace adria
 
 		void Initialize(GfxDevice* gfx);
 		void Clear();
-		void Destroy();
+		void Shutdown();
 
 		ADRIA_NODISCARD TextureHandle LoadTexture(std::string_view path, Bool srgb = false);
 		ADRIA_NODISCARD TextureHandle LoadCubemap(std::array<std::string, 6> const& cubemap_textures);

@@ -55,7 +55,7 @@ namespace adria
 
 	Editor::Editor() = default;
 	Editor::~Editor() = default;
-	void Editor::Init(EditorInit&& init)
+	void Editor::Initialize(EditorInitParams&& init)
 	{
 		editor_sink = ADRIA_SINK(EditorSink);
 		engine = std::make_unique<Engine>(init.window, init.scene_file);
@@ -69,7 +69,7 @@ namespace adria
 		SetStyle();
 		fs::create_directory(paths::PixCapturesDir);
 	}
-	void Editor::Destroy()
+	void Editor::Shutdown()
 	{
 		gui.reset();
 		engine.reset();

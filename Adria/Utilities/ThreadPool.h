@@ -27,22 +27,20 @@ namespace adria
 				threads.emplace_back(std::bind(&ThreadPool::ThreadWork, this));
 			}
 		}
-		void Destroy()
+		void Shutdown()
 		{
-			if (done)
+			if (!done)
 			{
-				return;
-			}
+				{
+					std::unique_lock<std::mutex> lk(cond_mutex);
+					done = true;
+					cond_var.notify_all();
+				}
 
-			{
-				std::unique_lock<std::mutex> lk(cond_mutex);
-				done = true;
-				cond_var.notify_all();
-			}
-
-			for (Uint i = 0; i < threads.size(); ++i)
-			{
-				if (threads[i].joinable())  threads[i].join();
+				for (Uint i = 0; i < threads.size(); ++i)
+				{
+					if (threads[i].joinable())  threads[i].join();
+				}
 			}
 		}
 

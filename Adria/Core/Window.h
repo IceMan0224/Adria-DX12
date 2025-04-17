@@ -14,7 +14,7 @@ namespace adria
 		Float  height	= 0.0f;
 	};
 
-    struct WindowInit
+    struct WindowCreationParams
     {
         Char const* title;
         Uint32 width, height;
@@ -26,7 +26,7 @@ namespace adria
 	class Window
 	{
 	public:
-		Window(WindowInit const& init);
+		Window(WindowCreationParams const& init);
 		~Window();
 
 		Uint32 Width() const;

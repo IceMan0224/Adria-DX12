@@ -20,7 +20,7 @@ namespace adria
 	class EditorConsole;
 	struct Material;
 
-	struct EditorInit
+	struct EditorInitParams
 	{
 		Window* window;
 		std::string scene_file;
@@ -45,8 +45,8 @@ namespace adria
 		};
 
 	public:
-		void Init(EditorInit&& init);
-		void Destroy();
+		void Initialize(EditorInitParams&& init);
+		void Shutdown();
 
 		void OnWindowEvent(WindowEventInfo const& msg_data);
 		void Run();

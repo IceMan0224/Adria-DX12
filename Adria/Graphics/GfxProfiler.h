@@ -21,7 +21,7 @@ namespace adria
 
 	public:
 		void Initialize(GfxDevice* gfx);
-		void Destroy();
+		void Shutdown();
 
 		void NewFrame();
 		void BeginProfileScope(GfxCommandList* cmd_list, Char const* name);

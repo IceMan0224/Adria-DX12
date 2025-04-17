@@ -56,7 +56,7 @@ namespace adria
 	Renderer::~Renderer()
 	{
 		GfxTracyProfiler::Destroy();
-		g_GfxProfiler.Destroy();
+		g_GfxProfiler.Shutdown();
 		gfx->WaitForGPU();
 		reg.clear();
 		gfxcommon::Destroy();

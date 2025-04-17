@@ -10,7 +10,7 @@ namespace adria
 		gfx = _gfx;
 	}
 
-	void GeometryBufferCache::Destroy()
+	void GeometryBufferCache::Shutdown()
 	{
 		buffer_map.clear();
 		gfx = nullptr;

@@ -864,7 +864,7 @@
     <ClInclude Include="Utilities\FileWatcher.h" />
     <ClInclude Include="Utilities\Heightmap.h" />
     <ClInclude Include="Utilities\HosekDataRGB.h" />
-    <ClInclude Include="Utilities\hwbp.h" />
+    <ClInclude Include="Utilities\Hwbp.h" />
     <ClInclude Include="Utilities\ImageWrite.h" />
     <ClInclude Include="Utilities\JsonUtil.h" />
     <ClInclude Include="Utilities\LinearOffsetAllocator.h" />

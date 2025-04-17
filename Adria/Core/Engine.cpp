@@ -54,10 +54,10 @@ namespace adria
 
 	Engine::~Engine()
 	{
-		g_TextureManager.Destroy();
+		g_TextureManager.Shutdown();
 		ShaderManager::Destroy();
 		GfxShaderCompiler::Destroy();
-		g_ThreadPool.Destroy();
+		g_ThreadPool.Shutdown();
 	}
 
 	void Engine::OnWindowEvent(WindowEventInfo const& msg_data)

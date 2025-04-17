@@ -55,7 +55,7 @@ namespace adria
 		};
 	public:
 		void Initialize(GfxDevice* gfx, Uint32 width, Uint32 height);
-		void Destroy();
+		void Shutdown();
 		void OnResize(Uint32 w, Uint32 h);
 
 		void Render(RenderGraph& rg);

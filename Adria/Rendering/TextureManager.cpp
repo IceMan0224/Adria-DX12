@@ -32,7 +32,7 @@ namespace adria
 		is_scene_initialized = false;
 	}
 
-	void TextureManager::Destroy()
+	void TextureManager::Shutdown()
 	{
 		Clear();
 		gfx = nullptr;

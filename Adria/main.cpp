@@ -23,23 +23,23 @@ int APIENTRY wWinMain(
     ADRIA_SINK(FileSink, log_file.c_str(), log_level);
     ADRIA_SINK(DebuggerSink, log_level);
 
-    WindowInit window_init{};
-    window_init.width = CommandLineOptions::GetWindowWidth();
-    window_init.height = CommandLineOptions::GetWindowHeight();
-    window_init.maximize = CommandLineOptions::GetMaximizeWindow();
+    WindowCreationParams window_params{};
+    window_params.width = CommandLineOptions::GetWindowWidth();
+    window_params.height = CommandLineOptions::GetWindowHeight();
+    window_params.maximize = CommandLineOptions::GetMaximizeWindow();
 	std::string window_title = CommandLineOptions::GetWindowTitle();
-	window_init.title = window_title.c_str();
-    Window window(window_init);
+	window_params.title = window_title.c_str();
+    Window window(window_params);
     g_Input.Initialize(&window);
 
-    EditorInit editor_init{ .window = &window, .scene_file = CommandLineOptions::GetSceneFile() };
-    g_Editor.Init(std::move(editor_init));
+    EditorInitParams editor_params{ .window = &window, .scene_file = CommandLineOptions::GetSceneFile() };
+    g_Editor.Initialize(std::move(editor_params));
     window.GetWindowEvent().AddLambda([](WindowEventInfo const& msg_data) { g_Editor.OnWindowEvent(msg_data); });
     while (window.Loop())
     {
         g_Editor.Run();
     }
-    g_Editor.Destroy();
+    g_Editor.Shutdown();
 }
 
 

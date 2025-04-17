@@ -190,7 +190,7 @@ namespace adria
 
 	SceneLoader::~SceneLoader()
 	{
-		g_GeometryBufferCache.Destroy();
+		g_GeometryBufferCache.Shutdown();
 	}
 
 	entt::entity SceneLoader::LoadSkybox(SkyboxParameters const& params)

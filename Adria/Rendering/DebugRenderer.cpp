@@ -38,7 +38,7 @@ namespace adria
 		CreatePSOs();
 	}
 
-	void DebugRenderer::Destroy()
+	void DebugRenderer::Shutdown()
 	{
 		transient_lines.clear();
 		transient_triangles.clear();

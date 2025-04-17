@@ -136,7 +136,7 @@ namespace adria
 		pimpl->Init(_gfx);
 	}
 
-	void GfxProfiler::Destroy()
+	void GfxProfiler::Shutdown()
 	{
 		pimpl->Destroy();
 		pimpl = nullptr;
@@ -166,7 +166,7 @@ namespace adria
 	{
 	}
 
-	void GfxProfiler::Destroy()
+	void GfxProfiler::Shutdown()
 	{
 	}
 

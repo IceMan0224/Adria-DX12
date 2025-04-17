@@ -79,17 +79,17 @@ namespace adria::hwbp
         }
     }
 
-    static Breakpoint Set(const void* onPointer, Uint8 size, When when)
+    static Breakpoint Set(void const* onPointer, Uint8 size, When when)
     {
         return Detail::UpdateThreadContext(
-            [&](CONTEXT& ctx, const std::array<Bool, 4>& busyDebugRegister) -> Breakpoint
+            [&](CONTEXT& ctx, std::array<Bool, 4> const& busyDebugRegister) -> Breakpoint
             {
-                const auto found = std::find(begin(busyDebugRegister), end(busyDebugRegister), false);
+                auto const found = std::find(begin(busyDebugRegister), end(busyDebugRegister), false);
                 if (found == end(busyDebugRegister))
                 {
                     return Breakpoint::MakeFailed(Result::NoAvailableRegisters);
                 }
-                const auto register_index = static_cast<std::uint16_t>(std::distance(begin(busyDebugRegister), found));
+                auto const register_index = static_cast<Uint16>(std::distance(begin(busyDebugRegister), found));
                 switch (register_index)
                 {
                 case 0:

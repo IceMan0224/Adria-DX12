@@ -50,7 +50,7 @@ namespace adria
 	public:
 
 		void Initialize(GfxDevice* _gfx);
-		void Destroy();
+		void Shutdown();
 
 		ADRIA_NODISCARD ArcGeometryBufferHandle CreateAndInitializeGeometryBuffer(GfxBuffer* staging_buffer, Uint64 total_buffer_size, Uint64 src_offset);
 		ADRIA_NODISCARD GfxBuffer* GetGeometryBuffer(GeometryBufferHandle& handle) const;

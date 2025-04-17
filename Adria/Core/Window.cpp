@@ -32,7 +32,7 @@ namespace adria
 	}
 
 
-    Window::Window(WindowInit const& init)
+    Window::Window(WindowCreationParams const& init)
     {
         HINSTANCE hinstance = GetModuleHandle(NULL);
         const std::wstring window_title = ToWideString(init.title);

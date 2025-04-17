@@ -818,7 +818,7 @@
     <ClInclude Include="Editor\GUICommand.h">
       <Filter>Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\hwbp.h">
+    <ClInclude Include="Utilities\Hwbp.h">
       <Filter>Utilities</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\GfxInputLayout.h">
