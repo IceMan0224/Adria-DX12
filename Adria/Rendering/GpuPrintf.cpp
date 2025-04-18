@@ -4,7 +4,6 @@
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
 #include "RenderGraph/RenderGraph.h"
-#include "Core/Log.h"
 #include "Utilities/BufferReader.h"
 #endif
 
