@@ -25,7 +25,7 @@ namespace adria
 		auto lights = reg.view<Light>();
 		for (entt::entity light : lights)
 		{
-			auto const& light_data = lights.get<Light>(light);
+			Light const& light_data = lights.get<Light>(light);
 			if (!light_data.active) continue;
 
 			if (light_data.type == LightType::Directional)

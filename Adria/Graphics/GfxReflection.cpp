@@ -49,7 +49,7 @@ namespace adria
 		GFX_CHECK_HR(hr);
 		hr = reflection->Load(&my_blob);
 		GFX_CHECK_HR(hr);
-		uint32_t part_index;
+		Uint32 part_index;
 #ifndef MAKEFOURCC
 #define MAKEFOURCC(a, b, c, d) (Uint)((Uchar)(a) | (Uchar)(b) << 8 | (Uchar)(c) << 16 | (Uchar)(d) << 24)
 #endif

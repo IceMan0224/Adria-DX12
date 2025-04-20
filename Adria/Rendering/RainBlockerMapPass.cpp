@@ -74,7 +74,7 @@ namespace adria
 				cmd_list->SetRootCBV(2, rain_constants);
 
 				auto batch_view = reg.view<Batch>();
-				for (auto batch_entity : batch_view)
+				for (entt::entity batch_entity : batch_view)
 				{
 					Batch& batch = batch_view.get<Batch>(batch_entity);
 					cmd_list->SetPipelineState(rain_blocker_pso.get());

@@ -631,7 +631,7 @@ namespace adria
 		{
 			std::vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC> rtvs{};
 			std::unique_ptr<D3D12_RENDER_PASS_DEPTH_STENCIL_DESC> dsv = nullptr;
-			for (auto const& attachment : render_pass_desc.rtv_attachments)
+			for (GfxColorAttachmentDesc const& attachment : render_pass_desc.rtv_attachments)
 			{
 				D3D12_RENDER_PASS_RENDER_TARGET_DESC rtv_desc{};
 				rtv_desc.cpuDescriptor = attachment.cpu_handle;
@@ -643,7 +643,7 @@ namespace adria
 
 			if (render_pass_desc.dsv_attachment)
 			{
-				auto const& _dsv_desc = render_pass_desc.dsv_attachment.value();
+				GfxDepthAttachmentDesc const& _dsv_desc = render_pass_desc.dsv_attachment.value();
 				dsv = std::make_unique<D3D12_RENDER_PASS_DEPTH_STENCIL_DESC>();
 
 				dsv->cpuDescriptor = _dsv_desc.cpu_handle;
@@ -665,7 +665,7 @@ namespace adria
 			std::vector<GfxDescriptor> rtv_handles{};
 			GfxDescriptor const* dsv_handle = nullptr;
 
-			for (auto const& rtv : render_pass_desc.rtv_attachments)
+			for (GfxColorAttachmentDesc const& rtv : render_pass_desc.rtv_attachments)
 			{
 				rtv_handles.push_back(rtv.cpu_handle);
 				if (rtv.beginning_access == GfxLoadAccessOp::Clear) ClearRenderTarget(rtv.cpu_handle, rtv.clear_value.color.color);
@@ -897,7 +897,7 @@ namespace adria
 	{
 		ADRIA_ASSERT(current_context != Context::Invalid);
 
-		auto dynamic_allocator = gfx->GetDynamicAllocator();
+		GfxLinearDynamicAllocator* dynamic_allocator = gfx->GetDynamicAllocator();
 		GfxDynamicAllocation alloc = dynamic_allocator->Allocate(data_size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 		alloc.Update(data, data_size);
 

@@ -38,9 +38,9 @@ namespace adria
 		if (ocean_color_changed)
 		{
 			auto ocean_view = reg.view<Ocean, Material>();
-			for (auto e : ocean_view)
+			for (entt::entity e : ocean_view)
 			{
-				auto& material = ocean_view.get<Material>(e);
+				Material& material = ocean_view.get<Material>(e);
 				memcpy(material.albedo_color, ocean_color, sizeof(ocean_color));
 			}
 		}
@@ -331,7 +331,7 @@ namespace adria
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 
 				auto ocean_chunk_view = reg.view<SubMesh, Material, Transform, Ocean>();
-				for (auto ocean_chunk : ocean_chunk_view)
+				for (entt::entity ocean_chunk : ocean_chunk_view)
 				{
 					auto const& [mesh, material, transform] = ocean_chunk_view.get<const SubMesh, const Material, const Transform>(ocean_chunk);
 

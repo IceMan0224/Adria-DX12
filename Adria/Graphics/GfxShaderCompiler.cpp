@@ -39,7 +39,7 @@ namespace adria
 			}
 
 			Bool already_included = false;
-			for (auto const& included_file : include_files)
+			for (std::string const& included_file : include_files)
 			{
 				if (include_file == included_file)
 				{
@@ -277,7 +277,7 @@ namespace adria
 
 			std::vector<std::wstring> defines;
 			defines.reserve(input.defines.size());
-			for (auto const& define : input.defines)
+			for (GfxShaderDefine const& define : input.defines)
 			{
 				std::wstring define_name = ToWideString(define.name);
 				std::wstring define_value = ToWideString(define.value);

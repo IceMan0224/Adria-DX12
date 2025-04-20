@@ -341,9 +341,9 @@ namespace adria
 		Uint64 current_light_matrices_count = 0;
 
 		auto light_view = reg.view<Light>();
-		for (auto e : light_view)
+		for (entt::entity e : light_view)
 		{
-			auto& light = light_view.get<Light>(e);
+			Light& light = light_view.get<Light>(e);
 			if (light.casts_shadows)
 			{
 				if (light.type == LightType::Directional && light.use_cascades) current_light_matrices_count += SHADOW_CASCADE_COUNT;
@@ -372,9 +372,9 @@ namespace adria
 		bounding_objects.clear();
 		std::vector<Matrix> light_matrices;
 		light_matrices.reserve(light_matrices_count);
-		for (auto e : light_view)
+		for (entt::entity e : light_view)
 		{
-			auto& light = light_view.get<Light>(e);
+			Light& light = light_view.get<Light>(e);
 			light.shadow_mask_index = -1;
 			light.shadow_texture_index = -1;
 			if (light.casts_shadows)
@@ -437,9 +437,9 @@ namespace adria
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		auto light_view = reg.view<Light>();
-		for (auto e : light_view)
+		for (entt::entity e : light_view)
 		{
-			auto& light = light_view.get<Light>(e);
+			Light& light = light_view.get<Light>(e);
 			if (!light.casts_shadows) continue;
 			Int32 light_index = light.light_index;
 			Int32 light_matrix_index = light.shadow_matrix_index;
@@ -531,9 +531,9 @@ namespace adria
 	void ShadowRenderer::AddRayTracingShadowPasses(RenderGraph& rg)
 	{
 		auto light_view = reg.view<Light>();
-		for (auto e : light_view)
+		for (entt::entity e : light_view)
 		{
-			auto& light = light_view.get<Light>(e);
+			Light& light = light_view.get<Light>(e);
 			if (!light.ray_traced_shadows) continue;
 			Int32 light_index = light.light_index;
 			Uint64 light_id = entt::to_integral(e);
@@ -578,7 +578,7 @@ namespace adria
 		};
 		auto view = reg.view<Batch>();
 		std::vector<Batch*> masked_batches, opaque_batches;
-		for (auto batch_entity : reg.view<Batch>())
+		for (entt::entity batch_entity : reg.view<Batch>())
 		{
 			Batch& batch = reg.get<Batch>(batch_entity);
 			if (batch.alpha_mode == MaterialAlphaMode::Opaque) opaque_batches.push_back(&batch);

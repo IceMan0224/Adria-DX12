@@ -436,7 +436,7 @@ namespace adria
 		d3d12_desc.SampleMask = desc.sample_mask;
 		if (d3d12_desc.DSVFormat == DXGI_FORMAT_UNKNOWN) d3d12_desc.DepthStencilState.DepthEnable = false;
 
-		auto pso_stream = CD3DX12_PIPELINE_MESH_STATE_STREAM(d3d12_desc);
+		CD3DX12_PIPELINE_MESH_STATE_STREAM pso_stream(d3d12_desc);
 		D3D12_PIPELINE_STATE_STREAM_DESC stream_desc{};
 		stream_desc.pPipelineStateSubobjectStream = &pso_stream;
 		stream_desc.SizeInBytes = sizeof(pso_stream);

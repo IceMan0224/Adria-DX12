@@ -147,7 +147,7 @@ namespace adria
 			if (active)
 			{
 				periodic_sampler.DecodeCounters();
-				periodic_sampler.ConsumeSamples([&](const uint8_t* pCounterDataImage, size_t counterDataImageSize, uint32_t rangeIndex, bool& stop)
+				periodic_sampler.ConsumeSamples([&](Uint8 const* pCounterDataImage, Uint64 counterDataImageSize, Uint32 rangeIndex, Bool& stop)
 					{
 						stop = false;
 						return hud_data_model.AddSample(pCounterDataImage, counterDataImageSize, rangeIndex);

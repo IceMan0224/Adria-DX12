@@ -39,10 +39,10 @@ namespace adria
 		}
 
 		BoundingBox scene_bounding_box;
-		for (auto mesh_entity : reg.view<Mesh>())
+		for (entt::entity mesh_entity : reg.view<Mesh>())
 		{
 			Mesh& mesh = reg.get<Mesh>(mesh_entity);
-			for (auto const& instance : mesh.instances)
+			for (SubMeshInstance const& instance : mesh.instances)
 			{
 				SubMeshGPU& submesh = mesh.submeshes[instance.submesh_index];
 				BoundingBox instance_bounding_box;

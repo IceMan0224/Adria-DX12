@@ -697,7 +697,7 @@ namespace adria
 			else
 			{
 				// This is a Typed Buffer
-				uint32_t stride = GetGfxFormatStride(format);
+				Uint32 stride = GetGfxFormatStride(format);
 				srv_desc.Format = ConvertGfxFormat(format);
 				srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 				srv_desc.Buffer.FirstElement = view_desc.offset / stride;

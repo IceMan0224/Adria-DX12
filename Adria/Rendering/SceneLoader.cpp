@@ -313,7 +313,7 @@ namespace adria
 		memcpy(ocean_material.albedo_color, default_ocean_color, 3 * sizeof(Float));
 		Ocean ocean_component{};
 
-		for (auto ocean_chunk : ocean_chunks)
+		for (entt::entity ocean_chunk : ocean_chunks)
 		{
 			reg.emplace<Material>(ocean_chunk, ocean_material);
 			reg.emplace<Ocean>(ocean_chunk, ocean_component);
@@ -541,7 +541,7 @@ namespace adria
 			std::vector<Int32>& primitives = mesh_primitives_map[&gltf_mesh];
 			for (Uint32 j = 0; j < gltf_mesh.primitives_count; ++j)
 			{
-				auto const& gltf_primitive = gltf_mesh.primitives[j];
+				cgltf_primitive const& gltf_primitive = gltf_mesh.primitives[j];
 				ADRIA_ASSERT(gltf_primitive.indices->count >= 0);
 
 				MeshData& mesh_data = mesh_datas.emplace_back();
@@ -755,7 +755,7 @@ namespace adria
 		entt::entity mesh_entity = reg.create();
 		Mesh mesh;
 		mesh.materials.reserve(obj_materials.size());
-		for (auto const& obj_material : obj_materials)
+		for (tinyobj::material_t const& obj_material : obj_materials)
 		{
 			Material material{};
 			memcpy(material.albedo_color, obj_material.diffuse, sizeof(material.albedo_color));

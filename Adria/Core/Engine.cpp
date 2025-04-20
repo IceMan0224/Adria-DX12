@@ -136,18 +136,18 @@ namespace adria
 
 	void Engine::InitializeScene(SceneConfig const& config)
 	{
-		auto cmd_list = gfx->GetLatestGraphicsCommandList();
+		GfxCommandList* cmd_list = gfx->GetLatestGraphicsCommandList();
 		cmd_list->Begin();
 
 		camera = std::make_unique<Camera>(config.camera_params);
 		camera->SetAspectRatio((Float)window->Width() / window->Height());
 		scene_loader->LoadSkybox(config.skybox_params);
 
-		for (auto const& model : config.scene_models) scene_loader->LoadModel(model);
-		for (auto const& light : config.scene_lights) scene_loader->LoadLight(light);
+		for (ModelParameters const& model : config.scene_models) scene_loader->LoadModel(model);
+		for (LightParameters const& light : config.scene_lights) scene_loader->LoadLight(light);
 
 		auto ray_tracing_view = reg.view<Mesh, RayTracing>();
-		for (auto entity : reg.view<Mesh, RayTracing>())
+		for (entt::entity entity : reg.view<Mesh, RayTracing>())
 		{
 			auto const& mesh = ray_tracing_view.get<Mesh>(entity);
 			GfxBuffer* buffer = g_GeometryBufferCache.GetGeometryBuffer(mesh.geometry_buffer_handle);

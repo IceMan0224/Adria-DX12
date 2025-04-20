@@ -42,7 +42,7 @@ namespace adria
 			{
 				if (tail + size <= max_size)
 				{
-					auto offset = tail;
+					Uint64 offset = tail;
 					tail += size;
 					used_size += size;
 					current_frame_size += size;
@@ -60,7 +60,7 @@ namespace adria
 			}
 			else if (tail + size <= head)
 			{
-				auto offset = tail;
+				Uint64 offset = tail;
 				tail += size;
 				used_size += size;
 				current_frame_size += size;
@@ -81,7 +81,7 @@ namespace adria
 			while (!completed_frames.empty() &&
 				completed_frames.front().frame <= completed_frame)
 			{
-				auto const& oldest_buffer_entry = completed_frames.front();
+				BufferEntry const& oldest_buffer_entry = completed_frames.front();
 				assert(oldest_buffer_entry.size <= used_size);
 				used_size -= oldest_buffer_entry.size;
 				head = oldest_buffer_entry.offset;
@@ -90,8 +90,8 @@ namespace adria
 		}
 
 		Uint64 MaxSize()  const { return max_size; }
-		Bool Full()			  const { return used_size == max_size; };
-		Bool Empty()		  const { return used_size == reserve; };
+		Bool   Full()	  const { return used_size == max_size; };
+		Bool   Empty()	  const { return used_size == reserve; };
 		Uint64 UsedSize() const { return used_size; }
 
 	private:

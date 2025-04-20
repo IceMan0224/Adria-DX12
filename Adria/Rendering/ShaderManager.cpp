@@ -602,7 +602,7 @@ namespace adria
 			shader_map[shader] = std::move(output.shader);
 
 			file_shader_map[fs::path(shader_desc.file)].insert(shader);
-			for (auto const& include : output.includes)
+			for (std::string const& include : output.includes)
 			{
 				file_shader_map[fs::path(include)].insert(shader);
 			}

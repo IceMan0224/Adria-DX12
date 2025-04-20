@@ -24,7 +24,7 @@ namespace adria
 		auto lights = reg.view<Light>();
 		for (entt::entity light : lights)
 		{
-			auto const& light_data = lights.get<Light>(light);
+			Light const& light_data = lights.get<Light>(light);
 			if (!light_data.active) continue;
 			if (light_data.type == LightType::Directional)
 			{
@@ -54,7 +54,7 @@ namespace adria
 			[=, &reg](RenderGraphContext& context, GfxCommandList* cmd_list)
 			{
 				GfxDevice* gfx = cmd_list->GetDevice();
-				auto dynamic_allocator = gfx->GetDynamicAllocator();
+				GfxLinearDynamicAllocator* dynamic_allocator = gfx->GetDynamicAllocator();
 
 				cmd_list->SetPipelineState(sun_pso.get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

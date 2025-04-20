@@ -34,7 +34,7 @@ namespace adria
 		if (sky_type == SkyType::Skybox)
 		{
 			auto skybox_view = reg.view<Skybox>();
-			for (auto e : skybox_view)
+			for (entt::entity e : skybox_view)
 			{
 				auto const& [skybox] = skybox_view.get(e);
 				if (skybox.active)
@@ -183,7 +183,7 @@ namespace adria
 		if (sky_type == SkyType::Skybox)
 		{
 			auto skybox_view = reg.view<Skybox>();
-			for (auto e : skybox_view)
+			for (entt::entity e : skybox_view)
 			{
 				auto const& skybox = skybox_view.get<Skybox>(e);
 				if (!skybox.active) continue;

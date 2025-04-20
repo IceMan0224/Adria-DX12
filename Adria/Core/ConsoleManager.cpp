@@ -573,7 +573,7 @@ namespace adria
 
 	Bool ConsoleManager::ProcessInput(std::string const& cmd)
 	{
-		auto args = SplitString(cmd, ' ');
+		std::vector<std::string> args = SplitString(cmd, ' ');
 		if (args.empty()) return false;
 
 		IConsoleObject* object = FindConsoleObject(args[0]);

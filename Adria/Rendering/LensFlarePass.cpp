@@ -33,7 +33,7 @@ namespace adria
 		auto lights = postprocessor->GetRegistry().view<Light>();
 		for (entt::entity light : lights)
 		{
-			auto const& light_data = lights.get<Light>(light);
+			Light const& light_data = lights.get<Light>(light);
 			if (light_data.active && light_data.lens_flare) return true;
 		}
 		return false;

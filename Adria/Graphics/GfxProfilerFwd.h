@@ -11,7 +11,7 @@ namespace adria
 		Float64 time;
 	};
 
-	template<typename T, typename Allocator>
+	template<typename T, typename AllocatorT>
 	class Tree;
 	template<Uint64 BlockSize>
 	class LinearAllocator;

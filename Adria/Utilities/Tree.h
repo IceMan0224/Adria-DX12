@@ -3,24 +3,24 @@
 
 namespace adria
 {
-	template<typename T, typename Allocator>
+	template<typename T, typename AllocatorT>
 	class Tree;
 
-	template<typename T, typename Allocator> requires IsAllocator<Allocator, T>
+	template<typename T, typename AllocatorT> requires IsAllocator<AllocatorT, T>
 	class TreeNode 
 	{
-		friend class Tree<T, Allocator>;
+		friend class Tree<T, AllocatorT>;
 		using ChildrenList = std::vector<TreeNode*>;
-		using NodeAllocator = Allocator;
+		using NodeAllocator = AllocatorT;
 
 	public:
 		TreeNode(std::string const& node_name, T const& node_data,
-			Allocator& alloc, TreeNode* parent_node = nullptr)
+			AllocatorT& alloc, TreeNode* parent_node = nullptr)
 			: name(node_name),
 			data(node_data),
 			parent(parent_node),
 			children(),
-			allocator_ref(alloc)
+			allocator(alloc)
 		{
 		}
 		~TreeNode()
@@ -28,7 +28,7 @@ namespace adria
 			for (auto& child : children)
 			{
 				child->~TreeNode();
-				allocator_ref.Deallocate(child, 1);
+				allocator.Deallocate(child, 1);
 			}
 		}
 
@@ -52,8 +52,8 @@ namespace adria
 
 		TreeNode* AddChild(std::string const& child_name, T const& child_data)
 		{
-			TreeNode* child = allocator_ref.template Allocate<TreeNode<T, Allocator>>(1);
-			new (child) TreeNode(child_name, child_data, allocator_ref, this);
+			TreeNode* child = allocator.template Allocate<TreeNode<T, AllocatorT>>(1);
+			new (child) TreeNode(child_name, child_data, allocator, this);
 			children.push_back(child);
 			return child;
 		}
@@ -152,17 +152,17 @@ namespace adria
 		std::string name;
 		T data;
 		std::vector<TreeNode*> children;
-		Allocator& allocator_ref;
+		AllocatorT& allocator;
 	};
 
-	template<typename T, typename Allocator>
+	template<typename T, typename AllocatorT>
 	class Tree 
 	{
 	public:
-		using NodeType = TreeNode<T, Allocator>;
+		using NodeType = TreeNode<T, AllocatorT>;
 	public:
-		explicit Tree(Allocator& allocator) : node_allocator(allocator), root(nullptr) {}
-		Tree(std::string const& root_name, T const& root_data, Allocator& alloc)
+		explicit Tree(AllocatorT& allocator) : node_allocator(allocator), root(nullptr) {}
+		Tree(std::string const& root_name, T const& root_data, AllocatorT& alloc)
 			: node_allocator(alloc)
 		{
 			root = node_allocator.template Allocate<NodeType>(1);
@@ -237,7 +237,7 @@ namespace adria
 
 	private:
 		NodeType* root;
-		Allocator& node_allocator;
+		AllocatorT& node_allocator;
 
 	private:
 		void TraversePreOrderImpl(NodeType* node, std::function<void(NodeType*)> const& callback) const

@@ -139,7 +139,7 @@ namespace adria
 				return gbuffer_psos->Get();
 			};
 
-		for (auto batch_entity : view)
+		for (entt::entity batch_entity : view)
 		{
 			Batch& batch = view.get<Batch>(batch_entity);
 			if (!batch.camera_visibility) continue;

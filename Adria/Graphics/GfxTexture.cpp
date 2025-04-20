@@ -117,7 +117,7 @@ namespace adria
 			initial_state = GfxResourceState::CopyDst;
 		}
 
-		auto device = gfx->GetDevice();
+		ID3D12Device* device = gfx->GetDevice();
 		if (desc.heap_type == GfxResourceUsage::Readback || desc.heap_type == GfxResourceUsage::Upload)
 		{
 			Uint64 required_size = 0;
@@ -149,8 +149,7 @@ namespace adria
 				allocation_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_SHARED | D3D12_HEAP_FLAG_SHARED_CROSS_ADAPTER;
 			}
 		}
-		auto allocator = gfx->GetAllocator();
-
+		D3D12MA::Allocator* allocator = gfx->GetAllocator();
 		D3D12MA::Allocation* alloc = nullptr;
 		if (gfx->GetCapabilities().SupportsEnhancedBarriers())
 		{
@@ -197,11 +196,11 @@ namespace adria
 		}
 		if (desc.mip_levels == 0)
 		{
-			const_cast<GfxTextureDesc&>(desc).mip_levels = (uint32_t)log2(std::max<Uint32>(desc.width, desc.height)) + 1;
+			const_cast<GfxTextureDesc&>(desc).mip_levels = (Uint32)log2(std::max<Uint32>(desc.width, desc.height)) + 1;
 		}
 
-		auto dynamic_allocator = gfx->GetDynamicAllocator();
-		auto cmd_list = gfx->GetGraphicsCommandList();
+		GfxLinearDynamicAllocator* dynamic_allocator = gfx->GetDynamicAllocator();
+		GfxCommandList* cmd_list = gfx->GetGraphicsCommandList();
 		if (data.sub_data != nullptr)
 		{
 			Uint32 subresource_count = data.sub_count;

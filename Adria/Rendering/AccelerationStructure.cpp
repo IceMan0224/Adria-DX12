@@ -15,7 +15,7 @@ namespace adria
 
 	void AccelerationStructure::AddInstance(Mesh const& mesh)
 	{
-		auto dynamic_allocator = gfx->GetDynamicAllocator();
+		GfxLinearDynamicAllocator* dynamic_allocator = gfx->GetDynamicAllocator();
 		blases.resize(mesh.instances.size());
 		Uint32 instance_id = 0;
 

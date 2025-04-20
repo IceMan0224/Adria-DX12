@@ -94,7 +94,7 @@ namespace adria
 				cmd_list->SetPipelineState(pso);
 
 				auto batch_view = reg.view<Batch, Transparent>();
-				for (auto batch_entity : batch_view)
+				for (entt::entity batch_entity : batch_view)
 				{
 					Batch& batch = batch_view.get<Batch>(batch_entity);
 					if (!batch.camera_visibility) continue;

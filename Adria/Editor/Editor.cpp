@@ -413,7 +413,7 @@ namespace adria
 			GfxDevice* gfx = engine->gfx.get();
 			if (selected_entity != entt::null)
 			{
-				auto tag = engine->reg.try_get<Tag>(selected_entity);
+				Tag* tag = engine->reg.try_get<Tag>(selected_entity);
 				if (tag)
 				{
 					Char buffer[256];
@@ -423,7 +423,7 @@ namespace adria
 						tag->name = std::string(buffer);
 				}
 
-				auto light = engine->reg.try_get<Light>(selected_entity);
+				Light* light = engine->reg.try_get<Light>(selected_entity);
 				if (light && ImGui::CollapsingHeader("Light"))
 				{
 					if (light->type == LightType::Directional)	ImGui::Text("Directional Light");
@@ -524,7 +524,7 @@ namespace adria
 					ImGui::Checkbox("Lens Flare", &light->lens_flare);
 				}
 
-				auto material = engine->reg.try_get<Material>(selected_entity);
+				Material* material = engine->reg.try_get<Material>(selected_entity);
 				if (material && ImGui::CollapsingHeader("Material"))
 				{
 					ImGui::Text("Albedo Texture");
@@ -617,7 +617,7 @@ namespace adria
 					ImGui::SliderFloat("Emissive Factor", &material->emissive_factor, 0.0f, 32.0f);
 				}
 
-				auto transform = engine->reg.try_get<Transform>(selected_entity);
+				Transform* transform = engine->reg.try_get<Transform>(selected_entity);
 				if (transform && ImGui::CollapsingHeader("Transform"))
 				{
 					Matrix tr = transform->current_transform;
@@ -635,7 +635,7 @@ namespace adria
 					transform->current_transform = translation_matrix * rotation_matrix * scale_matrix;
 				}
 
-				auto decal = engine->reg.try_get<Decal>(selected_entity);
+				Decal* decal = engine->reg.try_get<Decal>(selected_entity);
 				if (decal && ImGui::CollapsingHeader("Decal"))
 				{
 					ImGui::Text("Decal Albedo Texture");
@@ -684,7 +684,7 @@ namespace adria
 					ImGui::Checkbox("Modify GBuffer Normals", &decal->modify_gbuffer_normals);
 				}
 
-				auto skybox = engine->reg.try_get<Skybox>(selected_entity);
+				Skybox* skybox = engine->reg.try_get<Skybox>(selected_entity);
 				if (skybox && ImGui::CollapsingHeader("Skybox"))
 				{
 					ImGui::Checkbox("Active", &skybox->active);

@@ -227,7 +227,7 @@ namespace adria
 
 		accel_structure.Clear();
 		auto ray_tracing_view = reg.view<Mesh, RayTracing>();
-		for (auto entity : ray_tracing_view)
+		for (entt::entity entity : ray_tracing_view)
 		{
 			Mesh const& mesh = ray_tracing_view.get<Mesh>(entity);
 			accel_structure.AddInstance(mesh);
@@ -237,13 +237,13 @@ namespace adria
 
 	void Renderer::UpdateSceneBuffers()
 	{
-		for (auto e : reg.view<Batch>()) reg.destroy(e);
+		for (entt::entity e : reg.view<Batch>()) reg.destroy(e);
 		reg.clear<Batch>();
 
 		std::vector<LightGPU> hlsl_lights{};
 		Uint32 light_index = 0;
 		Matrix light_transform = lighting_path == LightingPath::PathTracing ? Matrix::Identity : camera->View();
-		for (auto light_entity : reg.view<Light>())
+		for (entt::entity light_entity : reg.view<Light>())
 		{
 			Light& light = reg.get<Light>(light_entity);
 			light.light_index = light_index;
@@ -271,7 +271,7 @@ namespace adria
 		std::vector<MaterialGPU> materials;
 		Uint32 instanceID = 0;
 
-		for (auto mesh_entity : reg.view<Mesh>())
+		for (entt::entity mesh_entity : reg.view<Mesh>())
 		{
 			Mesh& mesh = reg.get<Mesh>(mesh_entity);
 
@@ -280,7 +280,7 @@ namespace adria
 			GfxDescriptor mesh_buffer_online_srv = gfx->AllocateDescriptorsGPU();
 			gfx->CopyDescriptors(1, mesh_buffer_online_srv, mesh_buffer_srv);
 
-			for (auto const& instance : mesh.instances)
+			for (SubMeshInstance const& instance : mesh.instances)
 			{
 				SubMeshGPU& submesh = mesh.submeshes[instance.submesh_index];
 				Material& material = mesh.materials[submesh.material_index];
@@ -311,7 +311,7 @@ namespace adria
 
 				++instanceID;
 			}
-			for (auto const& submesh : mesh.submeshes)
+			for (SubMeshGPU const& submesh : mesh.submeshes)
 			{
 				MeshGPU& mesh_gpu = meshes.emplace_back();
 				mesh_gpu.buffer_idx = mesh_buffer_online_srv.GetIndex();
@@ -327,7 +327,7 @@ namespace adria
 				mesh_gpu.meshlet_count = submesh.meshlet_count;
 			}
 
-			for (auto const& material : mesh.materials)
+			for (Material const& material : mesh.materials)
 			{
 				MaterialGPU& material_gpu = materials.emplace_back();
 				material_gpu.shading_extension = (Uint32)material.shading_extension;
@@ -444,9 +444,9 @@ namespace adria
 		}
 
 		auto lights = reg.view<Light>();
-		for (auto light : lights)
+		for (entt::entity light : lights)
 		{
-			auto const& light_data = lights.get<Light>(light);
+			Light const& light_data = lights.get<Light>(light);
 			if (light_data.type == LightType::Directional && light_data.active)
 			{
 				frame_cbuf_data.sun_direction = -light_data.direction;
@@ -469,7 +469,7 @@ namespace adria
 		BoundingFrustum camera_frustum = camera->Frustum();
 		auto batch_view = reg.view<Batch>();
 		auto light_view = reg.view<Light>();
-		for (auto e : batch_view)
+		for (entt::entity e : batch_view)
 		{
 			Batch& batch = batch_view.get<Batch>(e);
 			auto& aabb = batch.bounding_box;

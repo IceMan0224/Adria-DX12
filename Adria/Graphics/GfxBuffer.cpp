@@ -64,8 +64,8 @@ namespace adria
 			allocation_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_SHARED;
 		}
 
-		auto device = gfx->GetDevice();
-		auto allocator = gfx->GetAllocator();
+		ID3D12Device* device = gfx->GetDevice();
+		D3D12MA::Allocator* allocator = gfx->GetAllocator();
 
 		D3D12MA::Allocation* alloc = nullptr;
 		HRESULT hr = allocator->CreateResource(
@@ -103,9 +103,9 @@ namespace adria
 
 		if (initial_data != nullptr && desc.resource_usage != GfxResourceUsage::Upload)
 		{
-			auto cmd_list = gfx->GetGraphicsCommandList();
-			auto upload_buffer = gfx->GetDynamicAllocator();
-			GfxDynamicAllocation upload_alloc = upload_buffer->Allocate(buffer_size);
+			GfxCommandList* cmd_list = gfx->GetGraphicsCommandList();
+			GfxLinearDynamicAllocator* dynamic_allocator = gfx->GetDynamicAllocator();
+			GfxDynamicAllocation upload_alloc = dynamic_allocator->Allocate(buffer_size);
 			upload_alloc.Update(initial_data, desc.size);
 			cmd_list->CopyBuffer(
 				*this,
