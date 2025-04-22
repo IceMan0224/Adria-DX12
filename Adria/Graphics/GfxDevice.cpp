@@ -306,13 +306,14 @@ namespace adria
 		compute_cmd_list_pool[backbuffer_index]->EndCmdLists();
 		copy_cmd_list_pool[backbuffer_index]->EndCmdLists();
 
+		graphics_queue.ExecuteCommandListPool(*graphics_cmd_list_pool[backbuffer_index]);
+		compute_queue.ExecuteCommandListPool(*compute_cmd_list_pool[backbuffer_index]);
+		copy_queue.ExecuteCommandListPool(*copy_cmd_list_pool[backbuffer_index]);
+
 		frame_fence_values[backbuffer_index] = frame_fence_value;
 		graphics_queue.Signal(frame_fence, frame_fence_value);
 		++frame_fence_value;
 
-		graphics_queue.ExecuteCommandListPool(*graphics_cmd_list_pool[backbuffer_index]);
-		compute_queue.ExecuteCommandListPool(*compute_cmd_list_pool[backbuffer_index]);
-		copy_queue.ExecuteCommandListPool(*copy_cmd_list_pool[backbuffer_index]);
 		ProcessReleaseQueue();
 		if (nsight_perf_manager)
 		{
