@@ -77,7 +77,7 @@ namespace adria
 				Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 				cmd_list->ClearUAV(context.GetTexture(*data.output), gfx->GetDescriptorGPU(i + 5), context.GetReadWriteTexture(data.output), clear);
 
-				struct RendererDebugViewConstants
+				struct RendererDebugViewIndices
 				{
 					Uint32 normal_metallic_idx;
 					Uint32 diffuse_idx;
@@ -87,11 +87,17 @@ namespace adria
 					Uint32 ao_idx;
 					Uint32 motion_vectors_idx;
 					Uint32 output_idx;
-					Float  triangle_overdraw_scale;
-				} constants =
+				} indices =
 				{
 					.normal_metallic_idx = i, .diffuse_idx = i + 1, .depth_idx = i + 2, .emissive_idx = i + 3, 
 					.custom_idx = i + 4, .ao_idx = i + 5, .motion_vectors_idx = i + 6, .output_idx = i + 7,
+				};
+
+				struct RendererDebugViewConstants
+				{
+					Float triangle_overdraw_scale;
+				} constants = 
+				{
 					.triangle_overdraw_scale = (Float)triangle_overdraw_scale
 				};
 
@@ -118,7 +124,8 @@ namespace adria
 
 				cmd_list->SetPipelineState(renderer_output_psos->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-				cmd_list->SetRootConstants(1, constants);
+				cmd_list->SetRootConstants(1, indices);
+				cmd_list->SetRootCBV(2, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::Compute);
 	}

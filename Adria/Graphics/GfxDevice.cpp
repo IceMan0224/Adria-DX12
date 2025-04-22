@@ -1,4 +1,4 @@
-#pragma comment(lib,"d3d12.lib")
+﻿#pragma comment(lib,"d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "DirectML.lib")
@@ -251,7 +251,10 @@ namespace adria
 			width = w;
 			height = h;
 			WaitForGPU();
-			for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i) frame_fence_values[i] = frame_fence_values[swapchain->GetBackbufferIndex()];
+			for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
+			{
+				frame_fence_values[i] = frame_fence_values[swapchain->GetBackbufferIndex()];
+			}
 			swapchain->OnResize(w, h);
 		}
 	}
@@ -288,10 +291,12 @@ namespace adria
 
 		Uint32 backbuffer_index = swapchain->GetBackbufferIndex();
 		frame_fence.Wait(frame_fence_values[backbuffer_index]);
+		if (frame_index >= GFX_BACKBUFFER_COUNT)
+		{
+			gpu_descriptor_allocator->ReleaseCompletedFrames(frame_index - GFX_BACKBUFFER_COUNT);
+		}
 
-		gpu_descriptor_allocator->ReleaseCompletedFrames(frame_index);
 		dynamic_allocators[backbuffer_index]->Clear();
-
 		graphics_cmd_list_pool[backbuffer_index]->BeginCmdLists();
 		compute_cmd_list_pool[backbuffer_index]->BeginCmdLists();
 		copy_cmd_list_pool[backbuffer_index]->BeginCmdLists();
@@ -306,15 +311,15 @@ namespace adria
 		compute_cmd_list_pool[backbuffer_index]->EndCmdLists();
 		copy_cmd_list_pool[backbuffer_index]->EndCmdLists();
 
+		ProcessReleaseQueue();
 		graphics_queue.ExecuteCommandListPool(*graphics_cmd_list_pool[backbuffer_index]);
 		compute_queue.ExecuteCommandListPool(*compute_cmd_list_pool[backbuffer_index]);
 		copy_queue.ExecuteCommandListPool(*copy_cmd_list_pool[backbuffer_index]);
 
-		frame_fence_values[backbuffer_index] = frame_fence_value;
 		graphics_queue.Signal(frame_fence, frame_fence_value);
+		frame_fence_values[backbuffer_index] = frame_fence_value;
 		++frame_fence_value;
 
-		ProcessReleaseQueue();
 		if (nsight_perf_manager)
 		{
 			nsight_perf_manager->EndFrame();
@@ -330,9 +335,8 @@ namespace adria
 			MessageBoxA(nullptr, "Swapchain present failed!", "GPU Crash", MB_OK);
 			std::exit(1);
 		}
-
-		++frame_index;
 		gpu_descriptor_allocator->FinishCurrentFrame(frame_index);
+		++frame_index;
 	}
 	void GfxDevice::TakePixCapture(Char const* capture_name, Uint32 num_frames)
 	{

@@ -4,7 +4,7 @@
 
 #define BLOCK_SIZE 16
 
-struct RendererDebugViewConstants
+struct RendererDebugViewIndices
 {
 	uint normalMetallicIdx;
 	uint diffuseIdx;
@@ -14,9 +14,15 @@ struct RendererDebugViewConstants
 	uint aoIdx;
 	uint motionVectorsIdx;
 	uint outputIdx;
+};
+
+struct RendererDebugViewConstants
+{
 	float triangleOverdrawScale;
 };
-ConstantBuffer<RendererDebugViewConstants> RendererDebugViewPassCB : register(b1);
+
+ConstantBuffer<RendererDebugViewIndices>   RendererDebugViewPassCB  : register(b1);
+ConstantBuffer<RendererDebugViewConstants> RendererDebugViewPassCB2 : register(b2);
 
 
 float3 TurboColormap(float x)
@@ -137,7 +143,7 @@ void RendererDebugViewCS(CSInput input)
 	RWTexture2D<uint> triangleOverdrawTexture = ResourceDescriptorHeap[FrameCB.triangleOverdrawIdx];
 	uint2 texCoords = uint2(uv * FrameCB.renderResolution);
 	uint overdrawCount = triangleOverdrawTexture.Load(texCoords);
-	float overdrawRatio = overdrawCount / (10 * RendererDebugViewPassCB.triangleOverdrawScale);
+	float overdrawRatio = overdrawCount / (10 * RendererDebugViewPassCB2.triangleOverdrawScale);
     outputTexture[input.DispatchThreadId.xy] = float4(TurboColormap(overdrawRatio), 1.0f);
 #elif OUTPUT_MOTION_VECTORS
 	Texture2D motionVectorsTexture = ResourceDescriptorHeap[RendererDebugViewPassCB.motionVectorsIdx];
