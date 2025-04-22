@@ -203,7 +203,7 @@ namespace adria
 	private:
 		void* hwnd;
 		Uint32 width, height;
-		Uint32 frame_index;
+		Uint32 frame_index = 0;
 
 		Ref<IDXGIFactory6> dxgi_factory = nullptr;
 		Ref<ID3D12Device5> device = nullptr;
@@ -221,7 +221,7 @@ namespace adria
 		GfxCommandQueue copy_queue;
 
 		GfxFence	 frame_fence;
-		Uint64		 frame_fence_value = 0;
+		Uint64		 frame_fence_value = 1;
 		Uint64       frame_fence_values[GFX_BACKBUFFER_COUNT];
 
 		std::unique_ptr<GfxGraphicsCommandListPool> graphics_cmd_list_pool[GFX_BACKBUFFER_COUNT];

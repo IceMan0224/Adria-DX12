@@ -99,7 +99,6 @@ namespace adria
 
 
 	GfxDevice::GfxDevice(Window* window)
-		: frame_index(0), shading_rate_info{}
 	{
 		VSync->Set(CommandLineOptions::GetVSync());
 		hwnd = window->Handle();
@@ -193,7 +192,10 @@ namespace adria
 			desc.type = static_cast<GfxDescriptorHeapType>(i);
 			cpu_descriptor_allocators[i] = std::make_unique<GfxDescriptorAllocator>(this, desc);
 		}
-		for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i) dynamic_allocators.emplace_back(new GfxLinearDynamicAllocator(this, 1 << 20));
+		for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
+		{
+			dynamic_allocators.emplace_back(new GfxLinearDynamicAllocator(this, 1 << 20));
+		}
 		dynamic_allocator_on_init.reset(new GfxLinearDynamicAllocator(this, 1 << 30));
 
 		GfxSwapchainDesc swapchain_desc{};
@@ -291,10 +293,7 @@ namespace adria
 
 		Uint32 backbuffer_index = swapchain->GetBackbufferIndex();
 		frame_fence.Wait(frame_fence_values[backbuffer_index]);
-		if (frame_index >= GFX_BACKBUFFER_COUNT)
-		{
-			gpu_descriptor_allocator->ReleaseCompletedFrames(frame_index - GFX_BACKBUFFER_COUNT);
-		}
+		gpu_descriptor_allocator->ReleaseCompletedFrames(frame_fence_values[backbuffer_index]);
 
 		dynamic_allocators[backbuffer_index]->Clear();
 		graphics_cmd_list_pool[backbuffer_index]->BeginCmdLists();
@@ -318,6 +317,10 @@ namespace adria
 
 		graphics_queue.Signal(frame_fence, frame_fence_value);
 		frame_fence_values[backbuffer_index] = frame_fence_value;
+
+#if defined(NDEBUG)
+		ADRIA_HACK(frame_fence.Wait(frame_fence_value), "With new NVIDIA drivers (576.02), without this statement, we get flickering in Release builds");
+#endif
 		++frame_fence_value;
 
 		if (nsight_perf_manager)
@@ -335,7 +338,7 @@ namespace adria
 			MessageBoxA(nullptr, "Swapchain present failed!", "GPU Crash", MB_OK);
 			std::exit(1);
 		}
-		gpu_descriptor_allocator->FinishCurrentFrame(frame_index);
+		gpu_descriptor_allocator->FinishCurrentFrame(frame_fence_value - 1);
 		++frame_index;
 	}
 	void GfxDevice::TakePixCapture(Char const* capture_name, Uint32 num_frames)
