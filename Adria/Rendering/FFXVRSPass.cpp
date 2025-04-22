@@ -55,7 +55,10 @@ namespace adria
 	FFXVRSPass::~FFXVRSPass()
 	{
 		DestroyContext();
-		DestroyFfxInterface(ffx_interface);
+		if (ffx_interface != nullptr)
+		{
+			DestroyFfxInterface(ffx_interface);
+		}
 	}
 
 	void FFXVRSPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
@@ -196,6 +199,11 @@ namespace adria
 
 	void FFXVRSPass::CreateVRSImage()
 	{
+		if (!IsSupported())
+		{
+			return;
+		}
+
 		Uint32 vrs_image_width, vrs_image_height;
 		ffxVrsGetImageSizeFromeRenderResolution(&vrs_image_width, &vrs_image_height, width, height, shading_rate_image_tile_size);
 		GfxTextureDesc vrs_image_desc{};

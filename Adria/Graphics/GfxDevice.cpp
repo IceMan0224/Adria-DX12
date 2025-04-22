@@ -122,7 +122,7 @@ namespace adria
 			std::string adapter_description = ToString(adapter_wide_description);
 			ADRIA_LOG(INFO, "\t%s - %f GB", adapter_description.c_str(), (Float)desc.DedicatedVideoMemory / (1 << 30) );
 		}
-		dxgi_factory->EnumAdapterByGpuPreference(0, gpu_preference, IID_PPV_ARGS(adapter.GetAddressOf()));
+		dxgi_factory->EnumAdapterByGpuPreference(1, gpu_preference, IID_PPV_ARGS(adapter.GetAddressOf()));
 		DXGI_ADAPTER_DESC3 desc{};
 		adapter->GetDesc3(&desc);
 
@@ -321,7 +321,6 @@ namespace adria
 #if defined(NDEBUG)
 		ADRIA_HACK(frame_fence.Wait(frame_fence_value), "With new NVIDIA drivers (576.02), without this statement, we get flickering in Release builds");
 #endif
-		++frame_fence_value;
 
 		if (nsight_perf_manager)
 		{
@@ -336,9 +335,11 @@ namespace adria
 				nsight_aftermath->HandleGpuCrash();
 			}
 			MessageBoxA(nullptr, "Swapchain present failed!", "GPU Crash", MB_OK);
-			std::exit(1);
+			std::exit(EXIT_FAILURE);
 		}
-		gpu_descriptor_allocator->FinishCurrentFrame(frame_fence_value - 1);
+
+		gpu_descriptor_allocator->FinishCurrentFrame(frame_fence_value);
+		++frame_fence_value;
 		++frame_index;
 	}
 	void GfxDevice::TakePixCapture(Char const* capture_name, Uint32 num_frames)
