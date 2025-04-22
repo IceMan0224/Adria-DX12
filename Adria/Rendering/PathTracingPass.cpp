@@ -140,7 +140,10 @@ namespace adria
 	void PathTracingPass::Reset()
 	{
 		accumulated_frames = 0;
-		oidn_denoiser_pass->Reset();
+		if (oidn_denoiser_pass)
+		{
+			oidn_denoiser_pass->Reset();
+		}
 	}
 
 	void PathTracingPass::GUI()
