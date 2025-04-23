@@ -89,7 +89,7 @@ Material GetMaterialData(uint materialIdx)
 template<typename T>
 T LoadMeshBuffer(uint bufferIdx, uint bufferOffset, uint vertexId)
 {
-	ByteAddressBuffer meshBuffer = ResourceDescriptorHeap[bufferIdx];
+	ByteAddressBuffer meshBuffer = ResourceDescriptorHeap[NonUniformResourceIndex(bufferIdx)];
 	return meshBuffer.Load<T>(bufferOffset + sizeof(T) * vertexId);
 }
 

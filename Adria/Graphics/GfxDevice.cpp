@@ -295,10 +295,10 @@ namespace adria
 		frame_fence.Wait(frame_fence_values[backbuffer_index]);
 		gpu_descriptor_allocator->ReleaseCompletedFrames(frame_fence_values[backbuffer_index]);
 
-		dynamic_allocators[backbuffer_index]->Clear();
 		graphics_cmd_list_pool[backbuffer_index]->BeginCmdLists();
 		compute_cmd_list_pool[backbuffer_index]->BeginCmdLists();
 		copy_cmd_list_pool[backbuffer_index]->BeginCmdLists();
+		dynamic_allocators[backbuffer_index]->Clear();
 	}
 	void GfxDevice::EndFrame()
 	{
@@ -319,7 +319,7 @@ namespace adria
 		frame_fence_values[backbuffer_index] = frame_fence_value;
 
 #if defined(NDEBUG)
-		ADRIA_HACK(frame_fence.Wait(frame_fence_value), "With new NVIDIA drivers (576.02), without this statement, we get flickering in Release builds");
+		ADRIA_HACK(frame_fence.Wait(frame_fence_value), "Without this statement, we get flickering in Release builds");
 #endif
 
 		if (nsight_perf_manager)

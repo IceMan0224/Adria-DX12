@@ -71,7 +71,6 @@ namespace adria
 		CloudParameters params{};
 		CloudResolution resolution = CloudResolution_Full;
 		Bool should_generate_textures = false;
-		Bool temporal_reprojection = true;
 		std::unique_ptr<GfxComputePipelineStatePermutations> clouds_psos;
 		std::unique_ptr<GfxComputePipelineState> clouds_type_pso;
 		std::unique_ptr<GfxComputePipelineState> clouds_shape_pso;

@@ -40,7 +40,7 @@ namespace adria
 		std::mutex alloc_mutex;
 		std::vector<GfxAllocationPage> alloc_pages;
 		Uint64 const page_size;
-		Uint64 current_page = 0;
+		Uint64 current_page;
 		Uint64 used_page_count_history[PAGE_COUNT_HISTORY_SIZE];
 	};
 }

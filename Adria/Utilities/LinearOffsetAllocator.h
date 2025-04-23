@@ -30,6 +30,7 @@ namespace adria
 			top = reserve;
 		}
 
+		Uint64 Top()	  const { return top;}
 		Uint64 MaxSize()  const { return max_size; }
 		Bool Full()	      const { return top == max_size; };
 		Bool Empty()      const { return top == reserve; };

@@ -41,7 +41,7 @@ namespace adria
 		decals_pass(reg, gfx, width, height), rain_pass(reg, gfx, width, height), ocean_renderer(reg, gfx, width, height),
 		shadow_renderer(reg, gfx, width, height), renderer_debug_view_pass(gfx, width, height),
 		path_tracer(gfx, width, height), ddgi(gfx, reg, width, height), restir_di(gfx, width, height), gpu_printf(gfx), gpu_assert(gfx),
-		transparent_pass(reg, gfx, width, height), ray_tracing_supported(gfx->GetCapabilities().SupportsRayTracing()),
+		transparent_pass(reg, gfx, width, height), ray_tracing_supported(gfx->GetCapabilities().SupportsRayTracing()), 
 		volumetric_fog_manager(gfx, reg, width, height)
 	{
 		g_DebugRenderer.Initialize(gfx, width, height);
@@ -372,10 +372,10 @@ namespace adria
 			scene_buffer.buffer_srv_gpu = gfx->AllocateDescriptorsGPU();
 			gfx->CopyDescriptors(1, scene_buffer.buffer_srv_gpu, scene_buffer.buffer_srv);
 		};
-		CopyBuffer(hlsl_lights, scene_buffers[SceneBuffer_Light]);
-		CopyBuffer(meshes, scene_buffers[SceneBuffer_Mesh]);
-		CopyBuffer(instances, scene_buffers[SceneBuffer_Instance]);
-		CopyBuffer(materials, scene_buffers[SceneBuffer_Material]);
+		CopyBuffer(hlsl_lights, scene_buffers[backbuffer_index][SceneBuffer_Light]);
+		CopyBuffer(meshes, scene_buffers[backbuffer_index][SceneBuffer_Mesh]);
+		CopyBuffer(instances, scene_buffers[backbuffer_index][SceneBuffer_Instance]);
+		CopyBuffer(materials, scene_buffers[backbuffer_index][SceneBuffer_Material]);
 	}
 
 	void Renderer::UpdateFrameConstants(Float dt)
@@ -417,11 +417,11 @@ namespace adria
 		frame_cbuf_data.mouse_normalized_coords_x = (viewport_data.mouse_position_x - viewport_data.scene_viewport_pos_x) / viewport_data.scene_viewport_size_x;
 		frame_cbuf_data.mouse_normalized_coords_y = (viewport_data.mouse_position_y - viewport_data.scene_viewport_pos_y) / viewport_data.scene_viewport_size_y;
 		frame_cbuf_data.env_map_idx = sky_pass.GetSkyIndex();
-		frame_cbuf_data.meshes_idx = (Int32)scene_buffers[SceneBuffer_Mesh].buffer_srv_gpu.GetIndex();
-		frame_cbuf_data.materials_idx = (Int32)scene_buffers[SceneBuffer_Material].buffer_srv_gpu.GetIndex();
-		frame_cbuf_data.instances_idx = (Int32)scene_buffers[SceneBuffer_Instance].buffer_srv_gpu.GetIndex();
-		frame_cbuf_data.lights_idx = (Int32)scene_buffers[SceneBuffer_Light].buffer_srv_gpu.GetIndex();
-		frame_cbuf_data.light_count = (Int32)scene_buffers[SceneBuffer_Light].buffer->GetCount();
+		frame_cbuf_data.meshes_idx = (Int32)scene_buffers[backbuffer_index][SceneBuffer_Mesh].buffer_srv_gpu.GetIndex();
+		frame_cbuf_data.materials_idx = (Int32)scene_buffers[backbuffer_index][SceneBuffer_Material].buffer_srv_gpu.GetIndex();
+		frame_cbuf_data.instances_idx = (Int32)scene_buffers[backbuffer_index][SceneBuffer_Instance].buffer_srv_gpu.GetIndex();
+		frame_cbuf_data.lights_idx = (Int32)scene_buffers[backbuffer_index][SceneBuffer_Light].buffer_srv_gpu.GetIndex();
+		frame_cbuf_data.light_count = (Int32)scene_buffers[backbuffer_index][SceneBuffer_Light].buffer->GetCount();
 		shadow_renderer.FillFrameCBuffer(frame_cbuf_data);
 		frame_cbuf_data.ddgi_volumes_idx = ddgi.IsEnabled() ? ddgi.GetDDGIVolumeIndex() : -1;
 		frame_cbuf_data.printf_buffer_idx = gpu_printf.GetPrintfBufferIndex();

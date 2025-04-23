@@ -57,10 +57,10 @@ PSOutput GBufferPS(VSToPS input)
 {
     Instance instanceData = GetInstanceData(GBufferPassCB.instanceId);
     Material materialData = GetMaterialData(instanceData.materialIdx);
-	Texture2D albedoTexture = ResourceDescriptorHeap[materialData.diffuseIdx];
-	Texture2D normalTexture = ResourceDescriptorHeap[materialData.normalIdx];
-	Texture2D metallicRoughnessTexture = ResourceDescriptorHeap[materialData.roughnessMetallicIdx];
-	Texture2D emissiveTexture = ResourceDescriptorHeap[materialData.emissiveIdx];
+	Texture2D albedoTexture = ResourceDescriptorHeap[NonUniformResourceIndex(materialData.diffuseIdx)];
+	Texture2D normalTexture = ResourceDescriptorHeap[NonUniformResourceIndex(materialData.normalIdx)];
+	Texture2D metallicRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(materialData.roughnessMetallicIdx)];
+	Texture2D emissiveTexture = ResourceDescriptorHeap[NonUniformResourceIndex(materialData.emissiveIdx)];
 	PSOutput output = (PSOutput)0;
 
 #if VIEW_MIPMAPS

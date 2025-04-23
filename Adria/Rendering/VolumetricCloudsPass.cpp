@@ -17,8 +17,8 @@ using namespace DirectX;
 
 namespace adria
 {
-	static TAutoConsoleVariable<Bool> Clouds("r.Clouds", true, "Enable or Disable Clouds");
-
+	static TAutoConsoleVariable<Bool> Clouds("r.Clouds", true, "Enable or disable Clouds");
+	static TAutoConsoleVariable<Bool> TemporalReprojection("r.Clouds.TemporalReprojection", true, "Should Clouds use temporal reprojection or not");
 		
 	VolumetricCloudsPass::VolumetricCloudsPass(GfxDevice* gfx, Uint32 w, Uint32 h)
 		: gfx(gfx), width{ w }, height{ h }
@@ -39,7 +39,7 @@ namespace adria
 		rg.ImportTexture(RG_NAME(PreviousCloudsOutput), prev_clouds.get());
 		AddComputeTexturesPass(rg);
 		AddComputeCloudsPass(rg);
-		if (temporal_reprojection)
+		if (TemporalReprojection.Get())
 		{
 			AddCopyPassForTemporalReprojection(rg);
 		}
@@ -111,7 +111,7 @@ namespace adria
 					ImGui::Checkbox("Enable Volumetric Clouds", Clouds.GetPtr());
 					if (Clouds.Get())
 					{
-						ImGui::Checkbox("Temporal reprojection", &temporal_reprojection);
+						ImGui::Checkbox("Temporal Reprojection", TemporalReprojection.GetPtr());
 						should_generate_textures |= ImGui::SliderInt("Shape Noise Frequency", &params.shape_noise_frequency, 1, 10);
 						should_generate_textures |= ImGui::SliderInt("Shape Noise Resolution", &params.shape_noise_resolution, 32, 256);
 						should_generate_textures |= ImGui::SliderInt("Detail Noise Frequency", &params.detail_noise_frequency, 1, 10);
@@ -485,7 +485,7 @@ namespace adria
 					.henyey_greenstein_g_backward = params.henyey_greenstein_g_backward,
 					.resolution_factor = (Uint32)resolution,
 				};
-				clouds_psos->AddDefine("REPROJECTION", temporal_reprojection ? "1" : "0");
+				clouds_psos->AddDefine("REPROJECTION", TemporalReprojection.Get() ? "1" : "0");
 
 				GfxPipelineState* clouds_pso = clouds_psos->Get();
 				cmd_list->SetPipelineState(clouds_pso);

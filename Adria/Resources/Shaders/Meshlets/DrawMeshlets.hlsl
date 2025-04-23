@@ -94,10 +94,10 @@ PSOutput DrawMeshletsPS(MSToPS input)
 	Instance instance = GetInstanceData(candidate.instanceID);
 	Material material = GetMaterialData(instance.materialIdx);
 
-	Texture2D albedoTexture = ResourceDescriptorHeap[material.diffuseIdx];
-	Texture2D normalTexture = ResourceDescriptorHeap[material.normalIdx];
-	Texture2D metallicRoughnessTexture = ResourceDescriptorHeap[material.roughnessMetallicIdx];
-	Texture2D emissiveTexture = ResourceDescriptorHeap[material.emissiveIdx];
+	Texture2D albedoTexture = ResourceDescriptorHeap[NonUniformResourceIndex(material.diffuseIdx)];
+	Texture2D normalTexture = ResourceDescriptorHeap[NonUniformResourceIndex(material.normalIdx)];
+	Texture2D metallicRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(material.roughnessMetallicIdx)];
+	Texture2D emissiveTexture = ResourceDescriptorHeap[NonUniformResourceIndex(material.emissiveIdx)];
 	PSOutput output = (PSOutput)0;
 
 #if VIEW_MIPMAPS
@@ -156,7 +156,7 @@ PSOutput DrawMeshletsPS(MSToPS input)
 	float clearCoatRoughness = material.clearCoatRoughness;
 	
 	Texture2D clearCoatTexture = ResourceDescriptorHeap[material.clearCoatIdx];
-	Texture2D clearCoatRoughnessTexture = ResourceDescriptorHeap[material.clearCoatRoughnessIdx];
+	Texture2D clearCoatRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(material.clearCoatRoughnessIdx)];
 	clearCoat *= clearCoatTexture.Sample(LinearWrapSampler, input.Uvs).r;
 	clearCoatRoughness *= clearCoatRoughnessTexture.Sample(LinearWrapSampler, input.Uvs).g;
 

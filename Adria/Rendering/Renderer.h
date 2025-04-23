@@ -107,7 +107,7 @@ namespace adria
 			GfxDescriptor				buffer_srv;
 			GfxDescriptor				buffer_srv_gpu;
 		};
-		std::array<SceneBuffer, SceneBuffer_Count> scene_buffers;
+		std::array<SceneBuffer, SceneBuffer_Count> scene_buffers[GFX_BACKBUFFER_COUNT];
 
 		//passes
 		GBufferPass  gbuffer_pass;

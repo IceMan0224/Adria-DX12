@@ -5,7 +5,7 @@
 namespace adria
 {
 	GfxLinearDynamicAllocator::GfxLinearDynamicAllocator(GfxDevice* gfx, Uint64 page_size, Uint64 page_count)
-		: gfx(gfx), page_size(page_size)
+		: gfx(gfx), page_size(page_size), current_page(0), used_page_count_history{}
 	{
 		alloc_pages.reserve(page_count);
 		while (alloc_pages.size() < page_count) alloc_pages.emplace_back(gfx, page_size);
@@ -14,29 +14,48 @@ namespace adria
 
 	GfxDynamicAllocation GfxLinearDynamicAllocator::Allocate(Uint64 size_in_bytes, Uint64 alignment)
 	{
-		Uint64 offset = INVALID_ALLOC_OFFSET;
-		GfxAllocationPage& last_page = alloc_pages[current_page];
+		if (alignment == 0) alignment = 1;
+
+		GfxAllocationPage* last_page = &alloc_pages[current_page]; // Use pointer to allow changing page
+		Uint64 current_page_offset = last_page->linear_offset_allocator.Top(); 
+
+		Uint64 base_gpu_address = last_page->buffer->GetGpuAddress();
+		Uint64 current_gpu_address = base_gpu_address + current_page_offset;
+		Uint64 aligned_gpu_address = Align(current_gpu_address, alignment);
+		Uint64 padding = aligned_gpu_address - current_gpu_address;
+		Uint64 total_allocation_size = padding + size_in_bytes;
+
+		Uint64 allocated_page_offset = INVALID_ALLOC_OFFSET;
 		{
 			std::lock_guard<std::mutex> guard(alloc_mutex);
-			offset = last_page.linear_offset_allocator.Allocate(size_in_bytes, alignment);
+			allocated_page_offset = last_page->linear_offset_allocator.Allocate(total_allocation_size, 1);
 		}
 
-		if (offset != INVALID_ALLOC_OFFSET)
+		if (allocated_page_offset != INVALID_ALLOC_OFFSET)
 		{
-			GfxDynamicAllocation allocation{};
-			allocation.buffer = last_page.buffer.get();
-			allocation.cpu_address = reinterpret_cast<Uint8*>(last_page.cpu_address) + offset;
-			allocation.gpu_address = last_page.buffer->GetGpuAddress() + offset;
-			allocation.offset = offset;
-			allocation.size = size_in_bytes;
+			Uint64 final_data_offset = allocated_page_offset + padding;
 
+			GfxDynamicAllocation allocation{};
+			allocation.buffer = last_page->buffer.get();
+			allocation.cpu_address = reinterpret_cast<Uint8*>(last_page->cpu_address) + final_data_offset;
+			allocation.gpu_address = base_gpu_address + final_data_offset;
+			allocation.offset = final_data_offset; 
+			allocation.size = size_in_bytes; 
+
+			ADRIA_ASSERT_MSG(allocation.gpu_address % alignment == 0, "Dynamic allocation final GPU address is misaligned!");
+			ADRIA_ASSERT_MSG(final_data_offset + size_in_bytes <= page_size, "Dynamic allocation exceeds page bounds!");
 			return allocation;
 		}
-		else
+		else 
 		{
 			++current_page;
-			GfxAllocationPage& last_page = current_page < alloc_pages.size() ? alloc_pages[current_page] : alloc_pages.emplace_back(gfx, std::max(size_in_bytes, page_size));
-			return Allocate(size_in_bytes, alignment);
+			if (current_page >= alloc_pages.size())
+			{
+				Uint64 required_page_size = Align(size_in_bytes, alignment); 
+				Uint64 new_page_size = std::max(page_size, std::max(size_in_bytes, required_page_size)); 
+				alloc_pages.emplace_back(gfx, new_page_size);
+			}
+			return Allocate(size_in_bytes, alignment); 
 		}
 	}
 	void GfxLinearDynamicAllocator::Clear()
