@@ -10,35 +10,40 @@ namespace adria
 	class GfxReflectionBlob : public IDxcBlob
 	{
 	public:
-		GfxReflectionBlob(void const* pShaderBytecode, Uint64 byteLength) : bytecodeSize{ byteLength }
+		GfxReflectionBlob(void const* pShaderBytecode, Uint64 byteLength) : bytecode_size{ byteLength }
 		{
-			pBytecode = const_cast<void*>(pShaderBytecode);
+			bytecode = const_cast<void*>(pShaderBytecode);
 		}
 		virtual ~GfxReflectionBlob() { /*non owning blob -> empty destructor*/ }
-		virtual LPVOID STDMETHODCALLTYPE GetBufferPointer(void) override { return pBytecode; }
-		virtual SIZE_T STDMETHODCALLTYPE GetBufferSize(void) override { return bytecodeSize; }
+		virtual LPVOID STDMETHODCALLTYPE GetBufferPointer(void) override { return bytecode; }
+		virtual SIZE_T STDMETHODCALLTYPE GetBufferSize(void) override { return bytecode_size; }
 		virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, _COM_Outptr_ void __RPC_FAR* __RPC_FAR* ppv) override
 		{
-			if (ppv == NULL) return E_POINTER;
+			if (ppv == NULL)
+			{
+				return E_POINTER;
+			}
 			if (riid == __uuidof(IDxcBlob)) //uuid(guid_str)
+			{
 				*ppv = static_cast<IDxcBlob*>(this);
+			}
 			else if (riid == IID_IUnknown)
+			{
 				*ppv = static_cast<IUnknown*>(this);
+			}
 			else
 			{
 				*ppv = NULL;
 				return E_NOINTERFACE;
 			}
-
 			reinterpret_cast<IUnknown*>(*ppv)->AddRef();
 			return S_OK;
-
 		}
 		virtual ULONG STDMETHODCALLTYPE AddRef(void) override { return 1; }
 		virtual ULONG STDMETHODCALLTYPE Release(void) override { return 1; }
 	private:
-		LPVOID pBytecode = nullptr;
-		SIZE_T bytecodeSize = 0;
+		LPVOID bytecode = nullptr;
+		SIZE_T bytecode_size = 0;
 	};
 
 	void GfxReflection::FillInputLayoutDesc(GfxShader const& vertex_shader, GfxInputLayout& input_layout)

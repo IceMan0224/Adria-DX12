@@ -12,7 +12,6 @@
 #include "Editor/GUICommand.h"
 #include "Core/ConsoleManager.h"
 
-
 using namespace DirectX;
 
 namespace adria

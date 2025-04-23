@@ -15,7 +15,6 @@ namespace adria
 		using TextureName = std::string;
 
 	public:
-
 		void Initialize(GfxDevice* gfx);
 		void Clear();
 		void Shutdown();

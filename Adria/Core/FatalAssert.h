@@ -1,6 +1,6 @@
 #include <cstdio>  
 #include <cstdarg> 
-#include "Log.h"
+#include "Logging/Log.h"
 
 namespace adria
 {

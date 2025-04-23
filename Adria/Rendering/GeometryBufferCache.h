@@ -15,7 +15,6 @@ namespace adria
 		friend class ArcGeometryBufferHandle;
 
 	public:
-
 		~GeometryBufferHandle();
 		operator Uint64() const { return handle; }
 		GeometryBufferHandle operator ++() const { return handle + 1; }

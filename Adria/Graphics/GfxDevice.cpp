@@ -97,7 +97,6 @@ namespace adria
 
 	static TAutoConsoleVariable<Bool> VSync("rhi.VSync", false, "0: VSync is disabled. 1: VSync is enabled.");
 
-
 	GfxDevice::GfxDevice(Window* window)
 	{
 		VSync->Set(CommandLineOptions::GetVSync());
@@ -370,7 +369,6 @@ namespace adria
 	{
 		return dml_device.Get();
 	}
-
 	IDMLCommandRecorder* GfxDevice::GetDMLCommandRecorder() const
 	{
 		return dml_command_recorder.Get();
@@ -1534,7 +1532,6 @@ namespace adria
 		else LogDredInfo(device, dred.Get());
 		std::exit(1);
 	}
-
 }
 
 

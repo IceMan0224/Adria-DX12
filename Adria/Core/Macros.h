@@ -8,7 +8,7 @@
 #define ADRIA_CONCAT(x, y) _ADRIA_CONCAT_IMPL(x, y)
 
 #define ADRIA_TODO(...)    
-#define ADRIA_HACK(expr, msg)       expr
+#define ADRIA_HACK(stmt, msg)       stmt
 #define ADRIA_ASSERT(expr)			assert(expr)
 #define ADRIA_ASSERT_MSG(expr, msg) assert(expr && msg)
 #define ADRIA_DEBUGBREAK()			__debugbreak()
