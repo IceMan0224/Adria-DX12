@@ -51,7 +51,7 @@ namespace adria
 		void HandleSceneRequest();
 
 		void Update(Float dt);
-		void Render();
+		void Render(Float dt);
 
 		void SetViewportData(ViewportData*);
 		void RegisterEditorEventCallbacks(EditorEvents&);

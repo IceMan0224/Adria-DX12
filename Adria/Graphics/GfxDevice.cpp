@@ -317,10 +317,6 @@ namespace adria
 		graphics_queue.Signal(frame_fence, frame_fence_value);
 		frame_fence_values[backbuffer_index] = frame_fence_value;
 
-#if defined(NDEBUG)
-		ADRIA_HACK(frame_fence.Wait(frame_fence_value), "Without this statement, we get flickering in Release builds");
-#endif
-
 		if (nsight_perf_manager)
 		{
 			nsight_perf_manager->EndFrame();

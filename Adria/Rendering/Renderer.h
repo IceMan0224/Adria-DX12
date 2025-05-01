@@ -92,7 +92,6 @@ namespace adria
 		FrameCBuffer frame_cbuf_data{};
 		GfxConstantBuffer<FrameCBuffer> frame_cbuffer;
 
-		//scene buffers
 		enum SceneBufferType 
 		{ 
 			SceneBuffer_Light, 
@@ -107,7 +106,7 @@ namespace adria
 			GfxDescriptor				buffer_srv;
 			GfxDescriptor				buffer_srv_gpu;
 		};
-		std::array<SceneBuffer, SceneBuffer_Count> scene_buffers[GFX_BACKBUFFER_COUNT];
+		std::array<SceneBuffer, SceneBuffer_Count> scene_buffers;
 
 		//passes
 		GBufferPass  gbuffer_pass;

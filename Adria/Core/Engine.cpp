@@ -72,7 +72,7 @@ namespace adria
 		Float const dt = timer.MarkInSeconds();
 		g_Input.Tick();
 		Update(dt);
-		Render();
+		Render(dt);
 		FrameMarkNamed("EngineFrame");
 	}
 
@@ -94,16 +94,16 @@ namespace adria
 	{
 		ZoneScopedN("Engine::Update");
 		HandleSceneRequest();
-		camera->Update(dt);
 		renderer->NewFrame(camera.get());
-		renderer->Update(dt);
+		camera->Update(dt);
 		gfx->Update();
 		
 	}
-	void Engine::Render()
+	void Engine::Render(Float dt)
 	{
 		ZoneScopedN("Engine::Render");
 		gfx->BeginFrame();
+		renderer->Update(dt);
 		renderer->Render();
 		gfx->EndFrame();
 	}
