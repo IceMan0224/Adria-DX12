@@ -44,6 +44,14 @@ namespace adria
 			Flag_Count
 		};
 
+		enum EditorTheme
+		{
+			EditorTheme_Default,
+			EditorTheme_Cherry,
+			EditorTheme_Photoshop,
+			EditorTheme_ClassicSteam,
+		};
+
 	public:
 		void Initialize(EditorInitParams&& init);
 		void Shutdown();
@@ -73,6 +81,7 @@ namespace adria
 
 		Bool reload_shaders = false;
 		Bool visibility_flags[Flag_Count] = {false};
+		EditorTheme theme = EditorTheme_Default;
 		std::vector<GUICommand> commands;
 		std::vector<GUITexture> debug_textures;
 		
@@ -86,7 +95,6 @@ namespace adria
 		Editor();
 		~Editor();
 
-		void SetStyle();
 		void HandleInput();
 		void MenuBar();
 		void AddEntities();
@@ -100,6 +108,11 @@ namespace adria
 		void Profiling();
 		void ShaderHotReload();
 		void Debug();
+
+		void SetStyle_Default();
+		void SetStyle_Cherry();
+		void SetStyle_Photoshop();
+		void SetStyle_ClassicSteam();
 	};
 	#define g_Editor Editor::Get()
 
