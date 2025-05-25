@@ -203,6 +203,8 @@ namespace adria
 		current_pso = nullptr;
 		current_render_pass = nullptr;
 		current_state_object = nullptr;
+		current_primitive_topology = GfxPrimitiveTopology::Undefined;
+		current_stencil_ref = 0;
 		current_rt_table.reset();
 		current_context = Context::Invalid;
 
