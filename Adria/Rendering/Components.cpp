@@ -5,7 +5,7 @@ namespace adria
 {
 	void Draw(SubMesh const& submesh, GfxCommandList* cmd_list, Bool override_topology /*= false*/, GfxPrimitiveTopology new_topology /*= GfxPrimitiveTopology::Undefined*/)
 	{
-		cmd_list->SetTopology(override_topology ? new_topology : submesh.topology);
+		cmd_list->SetPrimitiveTopology(override_topology ? new_topology : submesh.topology);
 		GfxVertexBufferView vbvs[] = { GfxVertexBufferView(submesh.vertex_buffer.get()) };
 		cmd_list->SetVertexBuffers(vbvs);
 		if (submesh.index_buffer)

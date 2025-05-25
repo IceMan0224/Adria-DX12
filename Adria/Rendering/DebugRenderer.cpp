@@ -93,7 +93,7 @@ namespace adria
 
 					cmd_list->SetPipelineState(debug_psos->Get());
 					cmd_list->SetVertexBuffers(vbv);
-					cmd_list->SetTopology(GfxPrimitiveTopology::LineList);
+					cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::LineList);
 					cmd_list->Draw(vb_count);
 					transient_lines.clear();
 				}
@@ -112,7 +112,7 @@ namespace adria
 					debug_psos->SetFillMode(GfxFillMode::Solid);
 					cmd_list->SetPipelineState(debug_psos->Get());
 					cmd_list->SetVertexBuffers(vbv);
-					cmd_list->SetTopology(GfxPrimitiveTopology::TriangleList);
+					cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 					cmd_list->Draw(vb_count);
 					transient_triangles.clear();
 				}

@@ -71,7 +71,7 @@ namespace adria
 				gfx->CopyDescriptors(1, dst, context.GetReadOnlyTexture(data.texture_src));
 
 				cmd_list->SetRootConstant(1, dst.GetIndex(), 0);
-				cmd_list->SetTopology(GfxPrimitiveTopology::TriangleList);
+				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->Draw(3);
 			}, RGPassType::Graphics, RGPassFlags::None);
 	}
@@ -163,7 +163,7 @@ namespace adria
 
 				cmd_list->SetRootConstant(1, i, 0);
 				cmd_list->SetRootConstant(1, i + 1, 1);
-				cmd_list->SetTopology(GfxPrimitiveTopology::TriangleList);
+				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->Draw(3);
 			}, RGPassType::Graphics, RGPassFlags::None);
 	}

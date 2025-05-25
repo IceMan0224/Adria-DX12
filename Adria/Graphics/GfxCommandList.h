@@ -106,7 +106,7 @@ namespace adria
 
 		void SetStencilReference(Uint8 stencil);
 		void SetBlendFactor(Float const* blend_factor);
-		void SetTopology(GfxPrimitiveTopology topology);
+		void SetPrimitiveTopology(GfxPrimitiveTopology topology);
 		void SetIndexBuffer(GfxIndexBufferView* index_buffer_view);
 		void SetVertexBuffer(GfxVertexBufferView const& vertex_buffer_view, Uint32 start_slot = 0);
 		void SetVertexBuffers(std::span<GfxVertexBufferView const> vertex_buffer_views, Uint32 start_slot = 0);
@@ -158,6 +158,9 @@ namespace adria
 
 		ID3D12StateObject* current_state_object = nullptr;
 		std::unique_ptr<GfxRayTracingShaderTable> current_rt_table;
+
+		GfxPrimitiveTopology current_primitive_topology = GfxPrimitiveTopology::Undefined;
+		Uint8 current_stencil_ref = 0;
 
 		Context current_context = Context::Invalid;
 

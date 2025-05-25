@@ -132,7 +132,7 @@ namespace adria
 				GfxDevice* gfx = cmd_list->GetDevice();
 				cmd_list->SetPipelineState(sky_pso.get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-				cmd_list->SetTopology(GfxPrimitiveTopology::TriangleList);
+				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->SetVertexBuffer(GfxVertexBufferView(cube_vb.get()));
 				GfxIndexBufferView ibv(cube_ib.get());
 				cmd_list->SetIndexBuffer(&ibv);

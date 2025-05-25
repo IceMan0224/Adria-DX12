@@ -326,7 +326,7 @@ namespace adria
 				{
 					.visualize_mode = (Uint32)ddgi_visualize_mode
 				};
-				cmd_list->SetTopology(GfxPrimitiveTopology::TriangleList);
+				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->SetPipelineState(visualize_probes_pso.get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);

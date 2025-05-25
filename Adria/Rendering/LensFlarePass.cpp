@@ -192,7 +192,7 @@ namespace adria
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->SetRootCBV(2, constants2);
-				cmd_list->SetTopology(GfxPrimitiveTopology::PointList);
+				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::PointList);
 				cmd_list->Draw(7);
 
 			}, RGPassType::Graphics, RGPassFlags::None);

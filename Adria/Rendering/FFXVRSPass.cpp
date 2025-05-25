@@ -151,7 +151,7 @@ namespace adria
 					cmd_list->TextureBarrier(*vrs_image, GfxResourceState::ComputeUAV, GfxResourceState::PixelSRV);
 					cmd_list->SetRootConstant(1, dst.GetIndex(), 0);
 					cmd_list->SetRootConstant(1, shading_rate_image_tile_size, 1);
-					cmd_list->SetTopology(GfxPrimitiveTopology::TriangleList);
+					cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 					cmd_list->Draw(3);
 					cmd_list->TextureBarrier(*vrs_image, GfxResourceState::PixelSRV, GfxResourceState::ComputeUAV);
 				}, RGPassType::Graphics, RGPassFlags::None);

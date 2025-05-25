@@ -730,9 +730,13 @@ namespace adria
 		return *current_rt_table;
 	}
 
-	void GfxCommandList::SetStencilReference(Uint8 stencil)
+	void GfxCommandList::SetStencilReference(Uint8 stencil_ref)
 	{
-		cmd_list->OMSetStencilRef(stencil);
+		if (stencil_ref != current_stencil_ref)
+		{
+			cmd_list->OMSetStencilRef(stencil_ref);
+			current_stencil_ref = stencil_ref;
+		}
 	}
 
 	void GfxCommandList::SetBlendFactor(Float const* blend_factor)
@@ -740,9 +744,13 @@ namespace adria
 		cmd_list->OMSetBlendFactor(blend_factor);
 	}
 
-	void GfxCommandList::SetTopology(GfxPrimitiveTopology topology)
+	void GfxCommandList::SetPrimitiveTopology(GfxPrimitiveTopology topology)
 	{
-		cmd_list->IASetPrimitiveTopology(ToD3D12PrimitiveTopology(topology));
+		if (topology != current_primitive_topology)
+		{
+			cmd_list->IASetPrimitiveTopology(ToD3D12PrimitiveTopology(topology));
+			current_primitive_topology = topology;
+		}
 	}
 
 	void GfxCommandList::SetIndexBuffer(GfxIndexBufferView* index_buffer_view)

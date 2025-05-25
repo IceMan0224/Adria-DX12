@@ -90,7 +90,7 @@ namespace adria
 						constants.decal_normal_idx = (Uint32)decal.normal_decal_texture;
 						
 						cmd_list->SetRootCBV(2, constants);
-						cmd_list->SetTopology(GfxPrimitiveTopology::TriangleList);
+						cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 						cmd_list->SetVertexBuffer(GfxVertexBufferView(cube_vb.get()));
 						GfxIndexBufferView ibv(cube_ib.get());
 						cmd_list->SetIndexBuffer(&ibv);
