@@ -363,8 +363,8 @@ namespace adria
 			return;
 		}
 		rdoc_api->SetLogFilePathTemplate(capture_name);
-		rdoc_api->SetActiveWindow(device.Get(), hwnd);
 		rdoc_api->TriggerMultiFrameCapture(num_frames);
+		ADRIA_LOG(INFO, "Saving capture of %d frame(s) to %s_{frame_number}...", num_frames, capture_name);
 	}
 
 	IDXGIFactory4* GfxDevice::GetFactory() const
@@ -1338,6 +1338,11 @@ namespace adria
 				pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(renderdoc_module, "RENDERDOC_GetAPI");
 				Int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&rdoc_api);
 				ADRIA_ASSERT(ret == 1);
+				if (rdoc_api)
+				{
+					rdoc_api->SetActiveWindow(device.Get(), hwnd);
+					rdoc_api->MaskOverlayBits(0, 0);
+				}
 			}
 		}
 	}
