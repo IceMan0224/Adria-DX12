@@ -19,6 +19,7 @@ namespace adria::paths
 	extern std::string const LogDir;
 	extern std::string const ScreenshotsDir;
 	extern std::string const PixCapturesDir;
+	extern std::string const RenderDocCapturesDir;
 	extern std::string const RenderGraphDir;
 	extern std::string const ShaderCacheDir;
 	extern std::string const ShaderPDBDir;

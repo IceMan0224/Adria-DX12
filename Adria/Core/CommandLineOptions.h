@@ -21,6 +21,7 @@ namespace adria
 		Bool GetDRED();
 		Bool GetGpuValidation();
 		Bool GetPIX();
+		Bool GetRenderDoc();
 		Bool GetAftermath();
 		Bool GetPerfReport();
 		Bool GetPerfHUD();

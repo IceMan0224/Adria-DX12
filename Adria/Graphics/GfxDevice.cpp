@@ -19,11 +19,13 @@
 #include "GfxNsightAftermathGpuCrashTracker.h"
 #include "GfxNsightPerfManager.h"
 #include "d3dx12.h"
-#include "pix3.h"
 #include "Core/Window.h"
 #include "Core/ConsoleManager.h"
 #include "Core/CommandLineOptions.h"
+#include "Core/Paths.h"
 #include "tracy/Tracy.hpp"
+#include "pix3.h"
+#include "renderdoc_app.h"
 
 extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = D3D12_SDK_VERSION; }
 extern "C" { __declspec(dllexport) extern LPCSTR D3D12SDKPath = ".\\D3D12\\"; }
@@ -342,7 +344,7 @@ namespace adria
 		ADRIA_ASSERT(num_frames != 0);
 		if (!pix_dll_loaded)
 		{
-			ADRIA_LOG(WARNING, "All PIX capture requests are ignored because PIX dll wasn't loaded! Did you pass -pix as a command line argument?");
+			ADRIA_LOG(WARNING, "All PIX capture requests will be ignored because PIX dll wasn't loaded! Did you pass -pix as a command line argument?");
 			return;
 		}
 
@@ -350,6 +352,19 @@ namespace adria
 		std::wstring wcapture_name = ToWideString(full_capture_name);
 		GFX_CHECK_HR(PIXGpuCaptureNextFrames(wcapture_name.c_str(), num_frames));
 		ADRIA_LOG(INFO, "Saving capture of %d frame(s) to %s...", num_frames, full_capture_name.c_str());
+	}
+
+	void GfxDevice::TakeRenderDocCapture(Char const* capture_name, Uint32 num_frames)
+	{
+		ADRIA_ASSERT(num_frames != 0);
+		if (!rdoc_api)
+		{
+			ADRIA_LOG(WARNING, "All RenderDoc capture requests will be ignored because RenderDoc dll wasn't loaded! Did you pass -renderdoc as a command line argument?");
+			return;
+		}
+		rdoc_api->SetLogFilePathTemplate(capture_name);
+		rdoc_api->SetActiveWindow(device.Get(), hwnd);
+		rdoc_api->TriggerMultiFrameCapture(num_frames);
 	}
 
 	IDXGIFactory4* GfxDevice::GetFactory() const
@@ -1309,6 +1324,20 @@ namespace adria
 			{
 				pix_dll_loaded = false;
 				ADRIA_LOG(WARNING, "Pix dll could not be loaded!");
+			}
+		}
+		else if (CommandLineOptions::GetRenderDoc())
+		{
+			HMODULE renderdoc_module = GetModuleHandleA("renderdoc.dll");
+			if (!renderdoc_module)
+			{
+				renderdoc_module = LoadLibraryA("renderdoc.dll");
+			}
+			if (renderdoc_module)
+			{
+				pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(renderdoc_module, "RENDERDOC_GetAPI");
+				Int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&rdoc_api);
+				ADRIA_ASSERT(ret == 1);
 			}
 		}
 	}

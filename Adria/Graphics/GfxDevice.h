@@ -11,6 +11,9 @@
 #include "GfxShadingRate.h"
 #include "Utilities/Releasable.h"
 
+
+struct RENDERDOC_API_1_6_0;
+
 namespace adria
 {
 	class Window;
@@ -199,6 +202,7 @@ namespace adria
 		GPUMemoryUsage GetMemoryUsage() const;
 		GfxNsightPerfManager* GetNsightPerfManager() const;
 		void TakePixCapture(Char const* capture_name, Uint32 num_frames);
+		void TakeRenderDocCapture(Char const* capture_name, Uint32 num_frames);
 
 	private:
 		void* hwnd;
@@ -265,6 +269,8 @@ namespace adria
 		std::unique_ptr<DRED> dred;
 		Bool rendering_not_started = true;
 		Bool first_frame = false;
+
+		RENDERDOC_API_1_6_0* rdoc_api = nullptr;
 		Bool pix_dll_loaded = false;
 
 		std::unique_ptr<GfxNsightAftermathGpuCrashTracker> nsight_aftermath;

@@ -19,6 +19,7 @@ namespace adria::CommandLineOptions
 		Bool dred = false;
 		Bool gpu_validation = false;
 		Bool pix = false;
+		Bool renderdoc = false;
 		Bool aftermath = false;
 		Bool perf_report = false;
 		Bool perf_hud = false;
@@ -41,6 +42,7 @@ namespace adria::CommandLineOptions
 			cli_parser.AddArg(false, "-dred");
 			cli_parser.AddArg(false, "-gpuvalidation");
 			cli_parser.AddArg(false, "-pix");
+			cli_parser.AddArg(false, "-renderdoc");
 			cli_parser.AddArg(false, "-aftermath");
 			cli_parser.AddArg(false, "-perfreport");
 			cli_parser.AddArg(false, "-perfhud");
@@ -68,6 +70,7 @@ namespace adria::CommandLineOptions
 		dred = parse_result["-dred"];
 		gpu_validation = parse_result["-gpuvalidation"];
 		pix = parse_result["-pix"];
+		renderdoc = parse_result["-renderdoc"];
 		aftermath = parse_result["-aftermath"];
 		perf_report = parse_result["-perfreport"];
 		perf_hud = parse_result["-perfhud"];
@@ -144,6 +147,10 @@ namespace adria::CommandLineOptions
 		return pix;
 	}
 
+	Bool GetRenderDoc()
+	{
+		return renderdoc;
+	}
 	Bool GetAftermath()
 	{
 		return aftermath;

@@ -68,6 +68,7 @@ namespace adria
 		selected_entity = entt::null;
 		SetStyle_Default();
 		fs::create_directory(paths::PixCapturesDir);
+		fs::create_directory(paths::RenderDocCapturesDir);
 	}
 	void Editor::Shutdown()
 	{
@@ -163,9 +164,19 @@ namespace adria
 			gui->ToggleVisibility();
 			g_Input.SetMouseVisibility(gui->IsVisible());
 		}
-		if (g_Input.IsKeyDown(KeyCode::Tilde)) show_basic_console = !show_basic_console;
-		if (gui->IsVisible()) engine->camera->Enable(scene_focused);
-		else engine->camera->Enable(true);
+		if (g_Input.IsKeyDown(KeyCode::Tilde))
+		{
+			show_basic_console = !show_basic_console;
+		}
+
+		if (gui->IsVisible())
+		{
+			engine->camera->Enable(scene_focused);
+		}
+		else
+		{
+			engine->camera->Enable(true);
+		}
 	}
 	void Editor::MenuBar()
 	{
@@ -1234,6 +1245,22 @@ namespace adria
 				{
 					std::string capture_full_path = paths::PixCapturesDir + capture_name;
 					gfx->TakePixCapture(capture_full_path.c_str(), frame_count);
+				}
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("RenderDoc"))
+			{
+				static Char capture_name[32] = { 'a', 'd', 'r', 'i', 'a' };
+				ImGui::InputText("Capture name", capture_name, sizeof(capture_name));
+
+				static Int frame_count = 1;
+				ImGui::SliderInt("Number of capture frames", &frame_count, 1, 10);
+
+				if (ImGui::Button("Take capture"))
+				{
+					std::string capture_full_path = paths::RenderDocCapturesDir + capture_name;
+					gfx->TakeRenderDocCapture(capture_full_path.c_str(), frame_count);
 				}
 				ImGui::TreePop();
 			}
