@@ -24,6 +24,7 @@ namespace adria
 		Bool GetAftermath();
 		Bool GetPerfReport();
 		Bool GetPerfHUD();
+		Bool WaitDebugger();
 	}
 }
 

@@ -16,11 +16,11 @@
 		"far": 1600.0
 	},
 	"skybox": {
-		"texture": [ "Resources/Textures/Skybox/sunsetcube1024.dds" ]
+		"texture": [ "Skybox/sunsetcube1024.dds" ]
 	},
 	"models": [
 		{
-			"path": "Resources/Models/Bistro/bistro.gltf",
+			"path": "Bistro/bistro.gltf",
 			"scale": [ 12.0, 12.0, -12.0 ],
 			"use_ccw": true,
 			"force_alpha_mask": false

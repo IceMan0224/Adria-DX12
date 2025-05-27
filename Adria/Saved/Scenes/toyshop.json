@@ -15,11 +15,11 @@
         "far": 475.0
     },
 		"skybox" : {
-			"texture" : ["Resources/Textures/Skybox/sunsetcube1024.dds"]
+			"texture" : ["Skybox/sunsetcube1024.dds"]
 	},
     "models" : [
 			{
-				"path": "Resources/Models/Toyshop_TeddyGI/Toyshop_Teddy_static/Toyshop_Teddy_static.gltf",
+				"path": "Toyshop_TeddyGI/Toyshop_Teddy_static/Toyshop_Teddy_static.gltf",
 				"scale": [ 20.0, 20.0, -20.0 ],
 				"use_ccw": true,
 				"force_alpha_mask": false

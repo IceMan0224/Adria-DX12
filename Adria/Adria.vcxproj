@@ -225,7 +225,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING;_SILENCE_CXX20_CISO646_REMOVED_WARNING;WIN32_LEAN_AND_MEAN;NOMINMAX;SOLUTION_DIR=LR"($(SolutionDir))"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING;_SILENCE_CXX20_CISO646_REMOVED_WARNING;WIN32_LEAN_AND_MEAN;NOMINMAX;SOLUTION_DIR=R"($(SolutionDir))";SOLUTION_DIR_W=LR"($(SolutionDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -246,6 +246,9 @@
       <AdditionalLibraryDirectories>$(SolutionDir)External\dxc\lib;$(SolutionDir)External\nfd\lib;$(SolutionDir)External\XeSS\lib;$(SolutionDir)External\DLSS\lib;$(SolutionDir)External\FidelityFX-SDK\lib;$(SolutionDir)External\NVIDIA_Aftermath_SDK\lib;$(SolutionDir)packages\WinPixEventRuntime.1.0.230302001\bin\x64;$(SolutionDir)External\oidn-2.3.2\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>nfd_d.lib;WinPixEventRuntime.lib;%(AdditionalDependencies);libxess.lib;nvsdk_ngx_d_dbg.lib;ffx_dof_x64d.lib;ffx_fsr2_x64d.lib;ffx_fsr3_x64d.lib;ffx_cas_x64d.lib;ffx_backend_dx12_x64d.lib;ffx_cacao_x64d.lib;ffx_frameinterpolation_x64d.lib;ffx_opticalflow_x64d.lib;ffx_fsr3upscaler_x64d.lib;ffx_vrs_x64d.lib;GFSDK_Aftermath_Lib.x64.lib;OpenImageDenoise.lib;OpenImageDenoise_core.lib</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /I "$(ProjectDir)*.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -253,7 +256,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_RELEASE;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;NOMINMAX;_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING;_SILENCE_CXX20_CISO646_REMOVED_WARNING;EASTL_USER_DEFINED_ALLOCATOR;WIN32_LEAN_AND_MEAN;SOLUTION_DIR=LR"($(SolutionDir))"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_RELEASE;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;NOMINMAX;_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING;_SILENCE_CXX20_CISO646_REMOVED_WARNING;EASTL_USER_DEFINED_ALLOCATOR;WIN32_LEAN_AND_MEAN;SOLUTION_DIR=R"($(SolutionDir))";SOLUTION_DIR_W=LR"($(SolutionDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -277,6 +280,9 @@
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>nfd.lib;WinPixEventRuntime.lib;%(AdditionalDependencies);libxess.lib;nvsdk_ngx_d.lib;ffx_dof_x64.lib;ffx_backend_dx12_x64.lib;ffx_fsr2_x64.lib;ffx_fsr3_x64.lib;ffx_cas_x64.lib;ffx_cacao_x64.lib;ffx_frameinterpolation_x64.lib;ffx_opticalflow_x64.lib;ffx_fsr3upscaler_x64.lib;ffx_vrs_x64.lib;GFSDK_Aftermath_Lib.x64.lib;OpenImageDenoise.lib;OpenImageDenoise_core.lib</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /I "$(ProjectDir)*.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
@@ -284,7 +290,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_REL_WITH_DEB_INFO;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;NOMINMAX;_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING;_SILENCE_CXX20_CISO646_REMOVED_WARNING;EASTL_USER_DEFINED_ALLOCATOR;WIN32_LEAN_AND_MEAN;SOLUTION_DIR=LR"($(SolutionDir))"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_REL_WITH_DEB_INFO;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;NOMINMAX;_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING;_SILENCE_CXX20_CISO646_REMOVED_WARNING;EASTL_USER_DEFINED_ALLOCATOR;WIN32_LEAN_AND_MEAN;SOLUTION_DIR=R"($(SolutionDir))";SOLUTION_DIR_W=LR"($(SolutionDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -308,6 +314,9 @@
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>nfd.lib;WinPixEventRuntime.lib;%(AdditionalDependencies);libxess.lib;nvsdk_ngx_d.lib;ffx_dof_x64.lib;ffx_backend_dx12_x64.lib;ffx_fsr2_x64.lib;ffx_fsr3_x64.lib;ffx_cas_x64.lib;ffx_cacao_x64.lib;ffx_frameinterpolation_x64.lib;ffx_opticalflow_x64.lib;ffx_fsr3upscaler_x64.lib;ffx_vrs_x64.lib;GFSDK_Aftermath_Lib.x64.lib;OpenImageDenoise.lib;OpenImageDenoise_core.lib</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /I "$(ProjectDir)*.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
     <ClCompile>
@@ -315,7 +324,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_PROFILE;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;NOMINMAX;_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING;_SILENCE_CXX20_CISO646_REMOVED_WARNING;EASTL_USER_DEFINED_ALLOCATOR;WIN32_LEAN_AND_MEAN;SOLUTION_DIR=LR"($(SolutionDir))";TRACY_ENABLE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_PROFILE;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;NOMINMAX;_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING;_SILENCE_CXX20_CISO646_REMOVED_WARNING;EASTL_USER_DEFINED_ALLOCATOR;WIN32_LEAN_AND_MEAN;TRACY_ENABLE;SOLUTION_DIR=R"($(SolutionDir))";SOLUTION_DIR_W=LR"($(SolutionDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -339,6 +348,9 @@
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>nfd.lib;WinPixEventRuntime.lib;%(AdditionalDependencies);libxess.lib;nvsdk_ngx_d.lib;ffx_dof_x64.lib;ffx_backend_dx12_x64.lib;ffx_fsr2_x64.lib;ffx_fsr3_x64.lib;ffx_cas_x64.lib;ffx_cacao_x64.lib;ffx_frameinterpolation_x64.lib;ffx_opticalflow_x64.lib;ffx_fsr3upscaler_x64.lib;ffx_vrs_x64.lib;GFSDK_Aftermath_Lib.x64.lib;OpenImageDenoise.lib;OpenImageDenoise_core.lib</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /I "$(ProjectDir)*.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\External\D3D12MA\D3D12MemAlloc.cpp" />

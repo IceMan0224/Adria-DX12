@@ -15,11 +15,11 @@
     "far": 560.0
   },
   "skybox": {
-    "texture": [ "Resources/Textures/Skybox/sunsetcube1024.dds" ]
+    "texture": [ "Skybox/sunsetcube1024.dds" ]
   },
   "models": [
     {
-      "path": "Resources/Models/Brutalism/BrutalistHall.gltf",
+      "path": "Brutalism/BrutalistHall.gltf",
       "scale": [ 2.5, 2.5, -2.5 ],
       "use_ccw": true,
       "force_alpha_mask": false

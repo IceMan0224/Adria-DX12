@@ -12,6 +12,7 @@ namespace adria::paths
 	extern std::string const FontsDir;
 	extern std::string const IconsDir;
 	extern std::string const ShaderDir;
+	extern std::string const ModelsDir;
 	extern std::string const TexturesDir;
 	extern std::string const MLDir;
 

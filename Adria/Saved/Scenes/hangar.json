@@ -15,11 +15,11 @@
         "far": 475.0
     },
 		"skybox" : {
-			"texture" : ["Resources/Textures/Skybox/sunsetcube1024.dds"]
+			"texture" : ["Skybox/sunsetcube1024.dds"]
 	},
     "models" : [
 			{
-				"path": "Resources/Models/Hangar/Hangar_1105.gltf",
+				"path": "Hangar/Hangar_1105.gltf",
 				"scale": [ 0.33, 0.33, 0.33 ],
 				"use_ccw": false,
 				"force_alpha_mask": false,

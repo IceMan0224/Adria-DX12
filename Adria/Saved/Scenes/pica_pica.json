@@ -15,11 +15,11 @@
         "far": 475.0
     },
 		"skybox" : {
-			"texture" : ["Resources/Textures/Skybox/sunsetcube1024.dds"]
+			"texture" : ["Skybox/sunsetcube1024.dds"]
 	},
     "models" : [
 			{
-				"path": "Resources/Models/pica_pica/scene.gltf",
+				"path": "pica_pica/scene.gltf",
 				"scale": [ 1.0, 1.0, -1.0 ],
 				"use_ccw": true,
 				"force_alpha_mask": false

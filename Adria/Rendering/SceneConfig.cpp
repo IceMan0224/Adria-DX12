@@ -38,6 +38,7 @@ namespace adria
 			{
 				ADRIA_LOG(WARNING, "Model doesn't have path field! Skipping this model...");
 			}
+			path = paths::ModelsDir + path;
 			std::string tex_path = model_params.FindOr<std::string>("tex_path", GetParentPath(path) + "\\");
 
 			Float position[3] = { 0.0f, 0.0f, 0.0f };
@@ -181,13 +182,17 @@ namespace adria
 		std::string cubemap[1];
 		if (skybox_params.FindArray("texture", cubemap))
 		{
-			config.skybox_params.cubemap = cubemap[0];
+			config.skybox_params.cubemap = paths::TexturesDir + cubemap[0];
 		}
 		else
 		{
 			std::string cubemap[6];
 			if (skybox_params.FindArray("texture", cubemap))
 			{
+				for (std::string& cubemap_face : cubemap)
+				{
+					cubemap_face = paths::TexturesDir + cubemap_face;
+				}
 				config.skybox_params.cubemap_textures = std::to_array(cubemap);
 			}
 			else

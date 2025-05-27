@@ -17,6 +17,14 @@ int APIENTRY wWinMain(
     _In_ int       nCmdShow)
 {
     CommandLineOptions::Initialize(lpCmdLine);
+
+    if (CommandLineOptions::WaitDebugger())
+    {
+        while (!IsDebuggerPresent())
+        {
+			MessageBoxA(NULL, "Waiting for debugger. Click OK after attaching.", "Debug Attach", MB_OK);
+        }
+    }
     
     std::string log_file = CommandLineOptions::GetLogFile();  
     LogLevel log_level = static_cast<LogLevel>(CommandLineOptions::GetLogLevel());

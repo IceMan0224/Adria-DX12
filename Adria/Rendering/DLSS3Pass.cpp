@@ -204,8 +204,8 @@ namespace adria
 
 		static const Wchar* dll_paths[] = 
 		{ 
-		SOLUTION_DIR L"\\External\\DLSS\\lib\\dev",
-		SOLUTION_DIR L"\\External\\DLSS\\lib\\rel",
+		SOLUTION_DIR_W L"\\External\\DLSS\\lib\\dev",
+		SOLUTION_DIR_W L"\\External\\DLSS\\lib\\rel",
 		};
 
 		NVSDK_NGX_FeatureCommonInfo feature_common_info{};

@@ -15,23 +15,23 @@
     "far": 700.0
   },
   "skybox": {
-    "texture": [ "Resources/Textures/Skybox/sunsetcube1024.dds" ]
+    "texture": [ "Skybox/sunsetcube1024.dds" ]
   },
   "models": [
     {
-      "path": "Resources/Models/SponzaNew/MainSponza.gltf",
+      "path": "SponzaNew/MainSponza.gltf",
       "scale": [ 6.0, 6.0, -6.0 ],
       "use_ccw": true,
       "force_alpha_mask": false
     },
     {
-      "path": "Resources/Models/SponzaNew/ivy/NewSponza_IvyGrowth_glTF.gltf",
+      "path": "SponzaNew/ivy/NewSponza_IvyGrowth_glTF.gltf",
       "scale": [ 6.0, 6.0, -6.0 ],
       "use_ccw": true,
       "force_alpha_mask": false
     },
     {
-      "path": "Resources/Models/SponzaNew/trees/NewSponza_CypressTree_glTF.gltf",
+      "path": "SponzaNew/trees/NewSponza_CypressTree_glTF.gltf",
       "scale": [ 6.0, 6.0, -6.0 ],
       "use_ccw": true,
       "force_alpha_mask": false

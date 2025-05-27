@@ -15,11 +15,11 @@
         "far": 475.0
     },
 		"skybox" : {
-			"texture" : ["Resources/Textures/Skybox/sunsetcube1024.dds"]
+			"texture" : ["Skybox/sunsetcube1024.dds"]
 	},
     "models" : [
 			{
-				"path": "Resources/Models/Arcade/Arcade.gltf",
+				"path": "Arcade/Arcade.gltf",
 				"scale": [ 15.0, 15.0, -15.0 ],
 				"use_ccw": true,
 				"force_alpha_mask": false

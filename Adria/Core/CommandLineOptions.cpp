@@ -22,6 +22,7 @@ namespace adria::CommandLineOptions
 		Bool aftermath = false;
 		Bool perf_report = false;
 		Bool perf_hud = false;
+		Bool wait_debugger = false;
 
 		void RegisterOptions(CLIParser& cli_parser)
 		{
@@ -43,6 +44,7 @@ namespace adria::CommandLineOptions
 			cli_parser.AddArg(false, "-aftermath");
 			cli_parser.AddArg(false, "-perfreport");
 			cli_parser.AddArg(false, "-perfhud");
+			cli_parser.AddArg(false, "-waitdebugger");
 		}
 	}
 
@@ -69,6 +71,7 @@ namespace adria::CommandLineOptions
 		aftermath = parse_result["-aftermath"];
 		perf_report = parse_result["-perfreport"];
 		perf_hud = parse_result["-perfhud"];
+		wait_debugger = parse_result["-waitdebugger"];
 	}
 
 	std::string const& GetLogFile()
@@ -155,5 +158,11 @@ namespace adria::CommandLineOptions
 	{
 		return perf_hud;
 	}
+
+	Bool WaitDebugger()
+	{
+		return wait_debugger;
+	}
+
 }
 

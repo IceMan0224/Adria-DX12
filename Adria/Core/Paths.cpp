@@ -3,7 +3,7 @@
 namespace adria
 {
 
-	std::string const paths::MainDir = "";
+	std::string const paths::MainDir = SOLUTION_DIR"/Adria/";
 
 	std::string const paths::ConfigDir = MainDir;
 
@@ -18,6 +18,8 @@ namespace adria
 	std::string const paths::IconsDir = ResourcesDir + "Icons/";
 
 	std::string const paths::ShaderDir = ResourcesDir + "Shaders/";
+
+	std::string const paths::ModelsDir = ResourcesDir + "Models/";
 
 	std::string const paths::TexturesDir = ResourcesDir + "Textures/";
 
