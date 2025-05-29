@@ -1053,7 +1053,7 @@ namespace adria
 
 			for (Uint32 event_idx : pass->events_to_start)
 			{
-				cmd_list->BeginEvent(rg.events[event_idx].name, GfxEventColor(0xff, 0xff, 0x00));
+				cmd_list->BeginEvent(rg.events[event_idx].name, GfxEventColor(0x5E, 0xC4, 0xFF));
 			}
 
 			RenderGraphContext rg_resources(rg, *pass);

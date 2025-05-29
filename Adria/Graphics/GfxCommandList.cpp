@@ -247,7 +247,7 @@ namespace adria
 
 	void GfxCommandList::BeginEvent(Char const* event_name)
 	{
-		BeginEvent(event_name, GfxEventColor(0xf0, 0x00, 0xff));
+		BeginEvent(event_name, GfxEventColor(0xFF, 0xB3, 0x5E));
 	}
 
 	void GfxCommandList::BeginEvent(Char const* event_name, Uint32 event_color)

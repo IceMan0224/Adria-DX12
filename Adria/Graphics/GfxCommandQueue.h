@@ -30,7 +30,7 @@ namespace adria
 		operator ID3D12CommandQueue* () const { return command_queue.Get(); }
 	private:
 		Ref<ID3D12CommandQueue> command_queue;
-		Uint64 timestamp_frequency;
+		Uint64 timestamp_frequency = 0;
 		GfxCommandListType type;
 	};
 }

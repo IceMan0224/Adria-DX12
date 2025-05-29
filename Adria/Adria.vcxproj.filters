@@ -633,6 +633,12 @@
     <ClCompile Include="Core\Logging\LogSinks\FileSink.cpp">
       <Filter>Core\Logging\LogSinks</Filter>
     </ClCompile>
+    <ClCompile Include="Graphics\GfxRenderDoc.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\GfxPIX.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utilities\RingBuffer.h">
@@ -1703,6 +1709,12 @@
     </ClInclude>
     <ClInclude Include="Core\Logging\LogSinks\FileSink.h">
       <Filter>Core\Logging\LogSinks</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\GfxRenderDoc.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\GfxPIX.h">
+      <Filter>Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

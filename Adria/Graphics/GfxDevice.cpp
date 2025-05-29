@@ -18,14 +18,14 @@
 #include "GfxPipelineState.h"
 #include "GfxNsightAftermathGpuCrashTracker.h"
 #include "GfxNsightPerfManager.h"
+#include "GfxRenderDoc.h"
+#include "GfxPIX.h"
 #include "d3dx12.h"
 #include "Core/Window.h"
 #include "Core/ConsoleManager.h"
 #include "Core/CommandLineOptions.h"
 #include "Core/Paths.h"
 #include "tracy/Tracy.hpp"
-#include "pix3.h"
-#include "renderdoc_app.h"
 
 extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = D3D12_SDK_VERSION; }
 extern "C" { __declspec(dllexport) extern LPCSTR D3D12SDKPath = ".\\D3D12\\"; }
@@ -339,33 +339,6 @@ namespace adria
 		++frame_fence_value;
 		++frame_index;
 	}
-	void GfxDevice::TakePixCapture(Char const* capture_name, Uint32 num_frames)
-	{
-		ADRIA_ASSERT(num_frames != 0);
-		if (!pix_dll_loaded)
-		{
-			ADRIA_LOG(WARNING, "All PIX capture requests will be ignored because PIX dll wasn't loaded! Did you pass -pix as a command line argument?");
-			return;
-		}
-
-		std::string full_capture_name = std::string(capture_name) + "_" + std::to_string(frame_index) + ".wpix";
-		std::wstring wcapture_name = ToWideString(full_capture_name);
-		GFX_CHECK_HR(PIXGpuCaptureNextFrames(wcapture_name.c_str(), num_frames));
-		ADRIA_LOG(INFO, "Saving capture of %d frame(s) to %s...", num_frames, full_capture_name.c_str());
-	}
-
-	void GfxDevice::TakeRenderDocCapture(Char const* capture_name, Uint32 num_frames)
-	{
-		ADRIA_ASSERT(num_frames != 0);
-		if (!rdoc_api)
-		{
-			ADRIA_LOG(WARNING, "All RenderDoc capture requests will be ignored because RenderDoc dll wasn't loaded! Did you pass -renderdoc as a command line argument?");
-			return;
-		}
-		rdoc_api->SetLogFilePathTemplate(capture_name);
-		rdoc_api->TriggerMultiFrameCapture(num_frames);
-		ADRIA_LOG(INFO, "Saving capture of %d frame(s) to %s_{frame_number}...", num_frames, capture_name);
-	}
 
 	IDXGIFactory4* GfxDevice::GetFactory() const
 	{
@@ -672,10 +645,12 @@ namespace adria
 		return std::make_unique<GfxRayTracingBLAS>(this, geometries, flags);
 	}
 
-
 	GfxDescriptor GfxDevice::CreateBufferView(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter)
 	{
-		if (uav_counter) ADRIA_ASSERT(view_type == GfxSubresourceType::UAV);
+		if (uav_counter)
+		{
+			ADRIA_ASSERT(view_type == GfxSubresourceType::UAV);
+		}
 		GfxBufferDesc desc = buffer->GetDesc();
 		GfxFormat format = desc.format;
 		GfxDescriptor heap_descriptor = AllocateDescriptorCPU(GfxDescriptorHeapType::CBV_SRV_UAV);
@@ -1314,36 +1289,11 @@ namespace adria
 		}
 		if (CommandLineOptions::GetPIX())
 		{
-			HMODULE pix_library = PIXLoadLatestWinPixGpuCapturerLibrary();
-			if (pix_library)
-			{
-				pix_dll_loaded = true;
-				ADRIA_LOG(INFO, "PIX dll loaded!");
-			}
-			else
-			{
-				pix_dll_loaded = false;
-				ADRIA_LOG(WARNING, "Pix dll could not be loaded!");
-			}
+			GfxPIX::Init();
 		}
 		else if (CommandLineOptions::GetRenderDoc())
 		{
-			HMODULE renderdoc_module = GetModuleHandleA("renderdoc.dll");
-			if (!renderdoc_module)
-			{
-				renderdoc_module = LoadLibraryA("renderdoc.dll");
-			}
-			if (renderdoc_module)
-			{
-				pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(renderdoc_module, "RENDERDOC_GetAPI");
-				Int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&rdoc_api);
-				ADRIA_ASSERT(ret == 1);
-				if (rdoc_api)
-				{
-					rdoc_api->SetActiveWindow(device.Get(), hwnd);
-					rdoc_api->MaskOverlayBits(0, 0);
-				}
-			}
+			GfxRenderDoc::Init();
 		}
 	}
 	void GfxDevice::CreateCommonRootSignature()

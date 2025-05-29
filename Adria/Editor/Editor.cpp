@@ -20,6 +20,8 @@
 #include "Graphics/GfxRingDescriptorAllocator.h"
 #include "Graphics/GfxProfiler.h"
 #include "Graphics/GfxNsightPerfManager.h"
+#include "Graphics/GfxRenderDoc.h"
+#include "Graphics/GfxPIX.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Utilities/FilesUtil.h"
 #include "Utilities/StringUtil.h"
@@ -1244,7 +1246,7 @@ namespace adria
 				if (ImGui::Button("Take capture"))
 				{
 					std::string capture_full_path = paths::PixCapturesDir + capture_name;
-					gfx->TakePixCapture(capture_full_path.c_str(), frame_count);
+					GfxPIX::TakeCapture(capture_full_path.c_str(), frame_count);
 				}
 				ImGui::TreePop();
 			}
@@ -1260,7 +1262,8 @@ namespace adria
 				if (ImGui::Button("Take capture"))
 				{
 					std::string capture_full_path = paths::RenderDocCapturesDir + capture_name;
-					gfx->TakeRenderDocCapture(capture_full_path.c_str(), frame_count);
+					GfxRenderDoc::SetCaptureFile(capture_full_path.c_str());
+					GfxRenderDoc::TriggerMultiFrameCapture(frame_count);
 				}
 				ImGui::TreePop();
 			}
@@ -1374,7 +1377,6 @@ namespace adria
 			}
 		}
 	}
-
 	void Editor::SetStyle_Cherry()
 	{
 		//https://github.com/Patitotective/ImThemes/blob/main/themes.toml
@@ -1469,7 +1471,6 @@ namespace adria
 		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.800f, 0.800f, 0.800f, 0.20f);
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.800f, 0.800f, 0.800f, 0.35f);
 	}
-
 	void Editor::SetStyle_Photoshop()
 	{
 		//https://github.com/Patitotective/ImThemes/blob/main/themes.toml
@@ -1563,7 +1564,6 @@ namespace adria
 		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.586f);
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.586f);
 	}
-
 	void Editor::SetStyle_ClassicSteam()
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -1654,5 +1654,4 @@ namespace adria
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 
 	}
-
 }

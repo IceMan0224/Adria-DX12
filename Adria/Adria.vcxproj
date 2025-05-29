@@ -409,10 +409,12 @@
     <ClCompile Include="Graphics\GfxDevice.cpp" />
     <ClCompile Include="Graphics\GfxFence.cpp" />
     <ClCompile Include="Graphics\GfxNsightAftermathGpuCrashTracker.cpp" />
+    <ClCompile Include="Graphics\GfxPIX.cpp" />
     <ClCompile Include="Graphics\GfxQueryHeap.cpp" />
     <ClCompile Include="Graphics\GfxRayTracingAS.cpp" />
     <ClCompile Include="Graphics\GfxRayTracingShaderTable.cpp" />
     <ClCompile Include="Graphics\GfxReflection.cpp" />
+    <ClCompile Include="Graphics\GfxRenderDoc.cpp" />
     <ClCompile Include="Graphics\GfxScopedEvent.cpp" />
     <ClCompile Include="Graphics\GfxShaderKey.cpp" />
     <ClCompile Include="Graphics\GfxStateObject.cpp" />
@@ -720,7 +722,9 @@
     <ClInclude Include="Graphics\GfxDescriptor.h" />
     <ClInclude Include="Graphics\GfxDescriptorAllocator.h" />
     <ClInclude Include="Graphics\GfxDescriptorAllocatorBase.h" />
+    <ClInclude Include="Graphics\GfxPIX.h" />
     <ClInclude Include="Graphics\GfxProfilerFwd.h" />
+    <ClInclude Include="Graphics\GfxRenderDoc.h" />
     <ClInclude Include="Graphics\GfxScopedEvent.h" />
     <ClInclude Include="Graphics\GfxFence.h" />
     <ClInclude Include="Graphics\GfxFormat.h" />
