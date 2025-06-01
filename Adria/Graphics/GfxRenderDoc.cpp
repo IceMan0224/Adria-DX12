@@ -1,26 +1,32 @@
 #include "GfxRenderDoc.h"
+
+#if defined(GFX_RENDERDOC_AVAILABLE)
 #include "Core/ConsoleManager.h"
 #include "Core/Paths.h"
-#include "Core/Logging/Log.h"
 #include "renderdoc_app.h"
+#endif
+#include "Core/Logging/Log.h"
+
 
 namespace adria::GfxRenderDoc
 {
+#if defined(GFX_RENDERDOC_AVAILABLE)
+
 	static AutoConsoleCommand RenderDoc_TakeCapture("r.RenderDoc", " Takes RenderDoc capture. Optional arguments are: [capture name, frame count]",
 		ConsoleCommandWithArgsDelegate::CreateLambda([](std::span<Char const*> args)
 		{
 			if (args.empty())
 			{
 				std::string capture_full_path = paths::RenderDocCapturesDir + "Adria";
-				GfxRenderDoc::SetCaptureFile(capture_full_path.c_str());
-				return GfxRenderDoc::TriggerMultiFrameCapture(1);
+				GFX_RENDERDOC_SETCAPFILE(capture_full_path.c_str());
+				GFX_RENDERDOC_MULTIFRAMECAPTURE(1);
 			}
 			else if (args.size() == 1)
 			{
 				Char const* arg = args[0];
 				std::string capture_full_path = paths::RenderDocCapturesDir + arg;
-				GfxRenderDoc::SetCaptureFile(capture_full_path.c_str());
-				return GfxRenderDoc::TriggerMultiFrameCapture(1);
+				GFX_RENDERDOC_SETCAPFILE(capture_full_path.c_str());
+				GFX_RENDERDOC_MULTIFRAMECAPTURE(1);
 			}
 			else
 			{
@@ -30,8 +36,8 @@ namespace adria::GfxRenderDoc
 				if (pos == strlen(args[1]))
 				{
 					std::string capture_full_path = paths::RenderDocCapturesDir + arg;
-					GfxRenderDoc::SetCaptureFile(capture_full_path.c_str());
-					return GfxRenderDoc::TriggerMultiFrameCapture(frame_count);
+					GFX_RENDERDOC_SETCAPFILE(capture_full_path.c_str());
+					GFX_RENDERDOC_MULTIFRAMECAPTURE(frame_count);
 				}
 			}
 		}));
@@ -71,7 +77,7 @@ namespace adria::GfxRenderDoc
 		pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(renderdoc_module, "RENDERDOC_GetAPI");
 		if (RENDERDOC_GetAPI)
 		{
-			Int rval = (*RENDERDOC_GetAPI)(eRENDERDOC_API_Version_1_1_2, (void**)&g_RenderDocApi);
+			Int rval = (*RENDERDOC_GetAPI)(eRENDERDOC_API_Version_1_6_0, (void**)&g_RenderDocApi);
 			if (rval != 1)
 			{
 				ADRIA_LOG(WARNING, "[RenderDoc] RENDERDOC_GetAPI failed with return code %d", rval);
@@ -82,8 +88,10 @@ namespace adria::GfxRenderDoc
 			RENDERDOC_InputButton captureKey = eRENDERDOC_Key_F12;
 			g_RenderDocApi->SetCaptureKeys(&captureKey, 1);
 			g_RenderDocApi->SetFocusToggleKeys(nullptr, 0);
-			//g_RenderDocApi->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
+			g_RenderDocApi->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
+			return true;
 		}
+		return false;
 	}
 
 	Bool IsConnected()
@@ -156,6 +164,29 @@ namespace adria::GfxRenderDoc
 		}
 	}
 
+	void EndFrame()
+	{
+		if (!IsConnected())
+			return;
+
+		if (g_RenderDocApi->GetNumCaptures && g_RenderDocApi->GetNumCaptures() > g_RenderDocNumCaptures)
+		{
+			g_RenderDocNumCaptures = g_RenderDocApi->GetNumCaptures();
+
+			if (!g_RenderDocApi->IsTargetControlConnected())
+			{
+				Uint32 path_length = 0;
+				g_RenderDocApi->GetCapture(g_RenderDocApi->GetNumCaptures() - 1, nullptr, &path_length, nullptr);
+				if (path_length > 0)
+				{
+					Char* logFile = (Char*)alloca(path_length);
+					g_RenderDocApi->GetCapture(g_RenderDocApi->GetNumCaptures() - 1, logFile, nullptr, nullptr);
+					g_RenderDocApi->LaunchReplayUI(1, logFile);
+				}
+			}
+		}
+	}
+
 	void TriggerMultiFrameCapture(Uint32 frameCount)
 	{
 		if (!g_RenderDocApi)
@@ -175,4 +206,15 @@ namespace adria::GfxRenderDoc
 			g_RenderDocApi->TriggerMultiFrameCapture(frameCount);
 		}
 	}
+
+#else
+
+	void EmitWarning()
+	{
+		ADRIA_LOG(WARNING, "[RenderDoc] RenderDoc is not available in Release builds");
+	}
+
+#endif
 }
+
+

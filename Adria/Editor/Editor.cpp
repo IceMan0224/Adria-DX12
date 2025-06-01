@@ -1246,7 +1246,7 @@ namespace adria
 				if (ImGui::Button("Take capture"))
 				{
 					std::string capture_full_path = paths::PixCapturesDir + capture_name;
-					GfxPIX::TakeCapture(capture_full_path.c_str(), frame_count);
+					GFX_PIX_TAKE_CAPTURE(capture_full_path.c_str(), frame_count);
 				}
 				ImGui::TreePop();
 			}
@@ -1262,8 +1262,8 @@ namespace adria
 				if (ImGui::Button("Take capture"))
 				{
 					std::string capture_full_path = paths::RenderDocCapturesDir + capture_name;
-					GfxRenderDoc::SetCaptureFile(capture_full_path.c_str());
-					GfxRenderDoc::TriggerMultiFrameCapture(frame_count);
+					GFX_RENDERDOC_SETCAPFILE(capture_full_path.c_str());
+					GFX_RENDERDOC_MULTIFRAMECAPTURE(frame_count);
 				}
 				ImGui::TreePop();
 			}

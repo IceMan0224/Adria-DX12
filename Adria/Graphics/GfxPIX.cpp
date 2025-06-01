@@ -1,25 +1,30 @@
 #include "GfxPIX.h"
+
+#if defined(GFX_PIX_AVAILABLE)
 #include "Core/Paths.h"
 #include "Core/ConsoleManager.h"
-#include "Core/Logging/Log.h"
 #include "Utilities/StringUtil.h"
 #include "pix3.h"
+#endif
+#include "Core/Logging/Log.h"
 
 namespace adria::GfxPIX
 {
+#if defined(GFX_PIX_AVAILABLE)
+
 	static AutoConsoleCommand PIX_TakeCapture("r.PIX", " Takes PIX capture. Optional arguments are: [capture name, frame count]",
 		ConsoleCommandWithArgsDelegate::CreateLambda([](std::span<Char const*> args)
 			{
 				if (args.empty())
 				{
 					std::string capture_full_path = paths::PixCapturesDir + "Adria";
-					GfxPIX::TakeCapture(capture_full_path.c_str(), 1);
+					GFX_PIX_TAKE_CAPTURE(capture_full_path.c_str(), 1);
 				}
 				else if (args.size() == 1)
 				{
 					Char const* arg = args[0];
 					std::string capture_full_path = paths::PixCapturesDir + arg;
-					GfxPIX::TakeCapture(capture_full_path.c_str(), 1);
+					GFX_PIX_TAKE_CAPTURE(capture_full_path.c_str(), 1);
 				}
 				else
 				{
@@ -29,7 +34,7 @@ namespace adria::GfxPIX
 					if (pos == strlen(args[1]))
 					{
 						std::string capture_full_path = paths::PixCapturesDir + arg;
-						GfxPIX::TakeCapture(capture_full_path.c_str(), frame_count);
+						GFX_PIX_TAKE_CAPTURE(capture_full_path.c_str(), frame_count);
 					}
 				}
 			}));
@@ -45,12 +50,12 @@ namespace adria::GfxPIX
 		if (pix_library)
 		{
 			g_PixLoaded = true;
-			ADRIA_LOG(INFO, "PIX dll loaded!");
+			ADRIA_LOG(INFO, "[PIX] PIX dll loaded!");
 		}
 		else
 		{
 			g_PixLoaded = false;
-			ADRIA_LOG(WARNING, "Pix dll could not be loaded!");
+			ADRIA_LOG(WARNING, "[PIX] PIX dll could not be loaded!");
 		}
 	}
 
@@ -67,9 +72,16 @@ namespace adria::GfxPIX
 		std::string full_capture_name = std::string(capture_name) + "_" + std::to_string(capture_index++) + ".wpix";
 		std::wstring wcapture_name = ToWideString(full_capture_name);
 		GFX_CHECK_HR(PIXGpuCaptureNextFrames(wcapture_name.c_str(), num_frames));
-		ADRIA_LOG(INFO, "Saving capture of %d frame(s) to %s...", num_frames, full_capture_name.c_str());
+		ADRIA_LOG(INFO, "[PIX] Saving capture of %d frame(s) to %s...", num_frames, full_capture_name.c_str());
+	}
+#else
+
+	void EmitWarning()
+	{
+		ADRIA_LOG(WARNING, "[PIX] PIX is not available in Release builds");
 	}
 
+#endif
 }
 
 

@@ -334,6 +334,7 @@ namespace adria
 			MessageBoxA(nullptr, "Swapchain present failed!", "GPU Crash", MB_OK);
 			std::exit(EXIT_FAILURE);
 		}
+		GFX_RENDERDOC_ENDFRAME();
 
 		gpu_descriptor_allocator->FinishCurrentFrame(frame_fence_value);
 		++frame_fence_value;
@@ -1289,11 +1290,11 @@ namespace adria
 		}
 		if (CommandLineOptions::GetPIX())
 		{
-			GfxPIX::Init();
+			GFX_PIX_INIT();
 		}
 		else if (CommandLineOptions::GetRenderDoc())
 		{
-			GfxRenderDoc::Init();
+			GFX_RENDERDOC_INIT();
 		}
 	}
 	void GfxDevice::CreateCommonRootSignature()
