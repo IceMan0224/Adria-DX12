@@ -9,7 +9,7 @@ namespace adria
 #if defined(GFX_PIX_AVAILABLE)
 	namespace GfxPIX
 	{
-		ADRIA_MAYBE_UNUSED void Init();
+		void Init();
 		void TakeCapture(Char const* capture_name, Uint32 num_frames);
 	}
 

@@ -33,18 +33,11 @@ extern "C" { __declspec(dllexport) extern UINT NvOptimusEnablement = true; }
 
 namespace adria
 {
-	static constexpr Wchar const* DredBreadcrumbOpName(D3D12_AUTO_BREADCRUMB_OP op);
-	static constexpr Wchar const* DredAllocationName(D3D12_DRED_ALLOCATION_TYPE type);
-	static void LogDredInfo(ID3D12Device5* device, ID3D12DeviceRemovedExtendedData1* dred);
-	static void DeviceRemovedHandler(void* _device, BYTE);
-	static void ReportLiveObjects()
-	{
-		Ref<IDXGIDebug1> dxgi_debug;
-		if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgi_debug.GetAddressOf()))))
-		{
-			dxgi_debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
-		}
-	}
+	static constexpr Wchar const* DredBreadcrumbOpName(D3D12_AUTO_BREADCRUMB_OP);
+	static constexpr Wchar const* DredAllocationName(D3D12_DRED_ALLOCATION_TYPE);
+	static void LogDredInfo(ID3D12Device5*, ID3D12DeviceRemovedExtendedData1*);
+	static void DeviceRemovedHandler(void*, BYTE);
+	static void ReportLiveObjects();
 
 	enum GfxVendorId : Uint32
 	{
@@ -82,7 +75,10 @@ namespace adria
 		{
 			dred_fence.Create(gfx, "DRED Fence");
 			dred_wait_handle = CreateEventA(nullptr, false, false, nullptr);
-			if (!dred_wait_handle) return;
+			if (!dred_wait_handle)
+			{
+				return;
+			}
 			static_cast<ID3D12Fence*>(dred_fence)->SetEventOnCompletion(UINT64_MAX, dred_wait_handle);
 			ADRIA_ASSERT(RegisterWaitForSingleObject(&dred_wait_handle, dred_wait_handle, DeviceRemovedHandler, gfx->GetDevice(), INFINITE, 0));
 		}
@@ -1502,16 +1498,30 @@ namespace adria
 			}
 		}
 	}
-	void DeviceRemovedHandler(void* _device, BYTE)
+	void DeviceRemovedHandler(void* device, BYTE)
 	{
-		ID3D12Device5* device = static_cast<ID3D12Device5*>(_device);
-		HRESULT removed_reason = device->GetDeviceRemovedReason();
+		ID3D12Device5* device5 = static_cast<ID3D12Device5*>(device);
+		HRESULT removed_reason = device5->GetDeviceRemovedReason();
 		ADRIA_LOG(ERROR, "Device removed, reason code: %ld", removed_reason);
 
 		Ref<ID3D12DeviceRemovedExtendedData1> dred;
-		if (FAILED(device->QueryInterface(IID_PPV_ARGS(dred.GetAddressOf())))) ADRIA_LOG(ERROR, "Failed to get DRED interface");
-		else LogDredInfo(device, dred.Get());
-		std::exit(1);
+		if (FAILED(device5->QueryInterface(IID_PPV_ARGS(dred.GetAddressOf()))))
+		{
+			ADRIA_LOG(ERROR, "Failed to get DRED interface");
+		}
+		else
+		{
+			LogDredInfo(device5, dred.Get());
+		}
+		std::exit(EXIT_FAILURE);
+	}
+	void ReportLiveObjects()
+	{
+		Ref<IDXGIDebug1> dxgi_debug;
+		if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgi_debug.GetAddressOf()))))
+		{
+			dxgi_debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+		}
 	}
 }
 

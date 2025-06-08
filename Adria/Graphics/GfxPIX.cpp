@@ -39,10 +39,8 @@ namespace adria::GfxPIX
 				}
 			}));
 
-	namespace
-	{
-		Bool g_PixLoaded = false;
-	}
+	static Bool g_PixLoaded = false;
+
 
 	void Init()
 	{
