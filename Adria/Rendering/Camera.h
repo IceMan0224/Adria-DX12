@@ -46,6 +46,7 @@ namespace adria
 		void Update(Float dt);
 		void Enable(Bool _enabled) { enabled = _enabled; }
 		Bool IsChanged() const { return changed; }
+
 	private:
 		Matrix view_matrix;
 		Matrix projection_matrix;

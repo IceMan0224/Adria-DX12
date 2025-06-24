@@ -22,6 +22,7 @@
 #define ADRIA_DEPRECATED_MSG(msg)	[[deprecated(#msg)]]
 #define ADRIA_DEBUGZONE_BEGIN       __pragma(optimize("", off))
 #define ADRIA_DEBUGZONE_END         __pragma(optimize("", on))
+#define ADRIA_BIT(x) (1 << x)
 
 #define ADRIA_NONCOPYABLE(Class)                 \
         Class(Class const&)            = delete; \

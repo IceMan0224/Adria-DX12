@@ -80,6 +80,7 @@ namespace adria
 		return HasAnyFlag(value, flag);
 	}
 
+#define BIT(x) (1 << x)
 #define ENABLE_ENUM_BIT_OPERATORS(EnumType) \
 	template<> struct EnumBitmaskOperators<EnumType> \
 	{ static constexpr bool enable = true; }

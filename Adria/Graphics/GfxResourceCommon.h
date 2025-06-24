@@ -119,10 +119,10 @@ namespace adria
 	enum class GfxBindFlag : Uint32
 	{
 		None = 0,
-		ShaderResource = 1 << 0,
-		RenderTarget = 1 << 1,
-		DepthStencil = 1 << 2,
-		UnorderedAccess = 1 << 3,
+		ShaderResource = BIT(0),
+		RenderTarget = BIT(1),
+		DepthStencil = BIT(2),
+		UnorderedAccess = BIT(3),
 	};
 	ENABLE_ENUM_BIT_OPERATORS(GfxBindFlag);
 
@@ -136,49 +136,49 @@ namespace adria
 	enum class GfxTextureMiscFlag : Uint32
 	{
 		None = 0,
-		TextureCube = 1 << 0,
-		SRGB = 1 << 1,
-		Shared = 1 << 2
+		TextureCube = BIT(0),
+		SRGB = BIT(1),
+		Shared = BIT(2)
 	};
 	ENABLE_ENUM_BIT_OPERATORS(GfxTextureMiscFlag);
 
 	enum class GfxBufferMiscFlag : Uint32
 	{
-		None,
-		IndirectArgs = 1 << 0,
-		BufferRaw = 1 << 1,
-		BufferStructured = 1 << 2,
-		ConstantBuffer = 1 << 3,
-		VertexBuffer = 1 << 4,
-		IndexBuffer = 1 << 5,
-		AccelStruct = 1 << 6,
-		Shared = 1 << 7
+		None = 0,
+		IndirectArgs = BIT(0),
+		BufferRaw = BIT(1),
+		BufferStructured = BIT(2),
+		ConstantBuffer = BIT(3),
+		VertexBuffer = BIT(4),
+		IndexBuffer = BIT(5),
+		AccelStruct = BIT(6),
+		Shared = BIT(7)
 	};
 	ENABLE_ENUM_BIT_OPERATORS(GfxBufferMiscFlag);
 
 	enum class GfxResourceState : Uint64
 	{
 		None = 0,
-		Common = 1 << 0,
-		Present = 1 << 1,
-		RTV = 1 << 2,
-		DSV = 1 << 3,
-		DSV_ReadOnly = 1 << 4,
-		VertexSRV = 1 << 5,
-		PixelSRV = 1 << 6,
-		ComputeSRV = 1 << 7,
-		VertexUAV = 1 << 8,
-		PixelUAV = 1 << 9,
-		ComputeUAV = 1 << 10,
-		ClearUAV = 1 << 11,
-		CopyDst = 1 << 12,
-		CopySrc = 1 << 13,
-		ShadingRate = 1 << 14,
-		IndexBuffer = 1 << 15,
-		IndirectArgs = 1 << 16,
-		ASRead = 1 << 17,
-		ASWrite = 1 << 18,
-		Discard = 1 << 19,
+		Common = BIT(0),
+		Present = BIT(1),
+		RTV = BIT(2),
+		DSV = BIT(3),
+		DSV_ReadOnly = BIT(4),
+		VertexSRV = BIT(5),
+		PixelSRV = BIT(6),
+		ComputeSRV = BIT(7),
+		VertexUAV = BIT(8),
+		PixelUAV = BIT(9),
+		ComputeUAV = BIT(10),
+		ClearUAV = BIT(11),
+		CopyDst = BIT(12),
+		CopySrc = BIT(13),
+		ShadingRate = BIT(14),
+		IndexBuffer = BIT(15),
+		IndirectArgs = BIT(16),
+		ASRead = BIT(17),
+		ASWrite = BIT(18),
+		Discard = BIT(19),
 
 		AllVertex = VertexSRV | VertexUAV,
 		AllPixel = PixelSRV | PixelUAV,

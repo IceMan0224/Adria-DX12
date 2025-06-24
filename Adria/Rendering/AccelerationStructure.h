@@ -15,7 +15,6 @@ namespace adria
 
 	class AccelerationStructure
 	{
-
 	public:
 		explicit AccelerationStructure(GfxDevice* gfx);
 
@@ -36,6 +35,7 @@ namespace adria
 
 		GfxFence build_fence;
 		Uint64 build_fence_value = 0;
+
 	private:
 		void BuildBottomLevels();
 		void BuildTopLevel();

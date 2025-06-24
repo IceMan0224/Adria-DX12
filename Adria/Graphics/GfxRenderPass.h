@@ -23,12 +23,12 @@ namespace adria
 
     enum GfxRenderPassFlagBit : Uint32
     {
-        GfxRenderPassFlagBit_None = 0x0,
-        GfxRenderPassFlagBit_ReadOnlyDepth = 0x1,
-        GfxRenderPassFlagBit_ReadOnlyStencil = 0x2,
-        GfxRenderPassFlagBit_AllowUAVWrites = 0x4,
-        GfxRenderPassFlagBit_SuspendingPass = 0x8,
-        GfxRenderPassFlagBit_ResumingPass = 0x10,
+        GfxRenderPassFlagBit_None = 0,
+        GfxRenderPassFlagBit_ReadOnlyDepth = BIT(0),
+        GfxRenderPassFlagBit_ReadOnlyStencil = BIT(1),
+        GfxRenderPassFlagBit_AllowUAVWrites = BIT(2),
+        GfxRenderPassFlagBit_SuspendingPass = BIT(3),
+        GfxRenderPassFlagBit_ResumingPass = BIT(4),
     };
     ENABLE_ENUM_BIT_OPERATORS(GfxRenderPassFlagBit);
     using GfxRenderPassFlags = Uint32;

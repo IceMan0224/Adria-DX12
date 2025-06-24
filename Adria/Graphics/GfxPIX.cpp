@@ -41,7 +41,6 @@ namespace adria::GfxPIX
 
 	static Bool g_PixLoaded = false;
 
-
 	void Init()
 	{
 		HMODULE pix_library = PIXLoadLatestWinPixGpuCapturerLibrary();
