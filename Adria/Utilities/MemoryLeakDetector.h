@@ -3,7 +3,6 @@
 #include <stdlib.h>  
 #include <crtdbg.h> 
 #include <windows.h>
-#include <memory>
 
 namespace adria
 {
@@ -13,7 +12,7 @@ namespace adria
 		return 1;
 	}
 
-	class MemoryDebugger
+	class MemoryLeakDetector
 	{
 	public:
 		static void Checkpoint()

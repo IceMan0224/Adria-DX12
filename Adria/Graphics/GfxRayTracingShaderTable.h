@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include "GfxMacros.h"
 #include "GfxDynamicAllocation.h"
 
@@ -50,8 +49,8 @@ namespace adria
 
 	private:
 
-		template<typename TAllocator>
-		void CommitImpl(TAllocator& allocator, D3D12_DISPATCH_RAYS_DESC& desc)
+		template<typename AllocatorT>
+		void CommitImpl(AllocatorT& allocator, D3D12_DISPATCH_RAYS_DESC& desc)
 		{
 			Uint32 total_size = 0;
 			Uint32 rg_section = ray_gen_record_size;

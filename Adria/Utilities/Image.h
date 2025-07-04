@@ -1,6 +1,4 @@
 #pragma once
-#include <string_view>
-#include <memory>
 #include "Graphics/GfxFormat.h"
 
 namespace adria

@@ -1,5 +1,4 @@
 #pragma once
-#include <filesystem>
 #include "Utilities/Delegate.h"
 
 namespace adria
@@ -12,7 +11,6 @@ namespace adria
 	};
 
 	DECLARE_EVENT(FileModifiedEvent, FileWatcher, std::string const&)
-
 	class FileWatcher
 	{
 	public:

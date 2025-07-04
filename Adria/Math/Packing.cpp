@@ -1,4 +1,5 @@
 #include "Packing.h"
+#include "MathCommon.h"
 #include <DirectXPackedVector.h>
 
 namespace adria
@@ -6,19 +7,19 @@ namespace adria
 	Uint32 PackToUint(Float(&arr)[3])
 	{
 		Uint32 output = 0;
-		output |= (Uint8)(Clamp(arr[0]) * 255.0f) << 24;
-		output |= (Uint8)(Clamp(arr[1]) * 255.0f) << 16;
-		output |= (Uint8)(Clamp(arr[2]) * 255.0f) << 8;
+		output |= (Uint8)(Clamp(arr[0], 0.0f, 1.0f) * 255.0f) << 24;
+		output |= (Uint8)(Clamp(arr[1], 0.0f, 1.0f) * 255.0f) << 16;
+		output |= (Uint8)(Clamp(arr[2], 0.0f, 1.0f) * 255.0f) << 8;
 		output |= (Uint8)(255.0f) << 0;
 		return output;
 	}
 	Uint32 PackToUint(Float r, Float g, Float b, Float a /*= 1.0f*/)
 	{
 		Uint32 output = 0;
-		output |= (Uint8)(Clamp(r) * 255.0f) << 24;
-		output |= (Uint8)(Clamp(g) * 255.0f) << 16;
-		output |= (Uint8)(Clamp(b) * 255.0f) << 8;
-		output |= (Uint8)(Clamp(a) * 255.0f) << 0;
+		output |= (Uint8)(Clamp(r, 0.0f, 1.0f) * 255.0f) << 24;
+		output |= (Uint8)(Clamp(g, 0.0f, 1.0f) * 255.0f) << 16;
+		output |= (Uint8)(Clamp(b, 0.0f, 1.0f) * 255.0f) << 8;
+		output |= (Uint8)(Clamp(a, 0.0f, 1.0f) * 255.0f) << 0;
 		return output;
 	}
 

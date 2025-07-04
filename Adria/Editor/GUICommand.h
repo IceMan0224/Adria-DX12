@@ -1,6 +1,4 @@
 #pragma once
-#include <functional>
-#include <string>
 #include "ImGuiManager.h"
 
 namespace adria

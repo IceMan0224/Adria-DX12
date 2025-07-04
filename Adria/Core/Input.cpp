@@ -143,7 +143,10 @@ namespace adria
 				input_events.window_resized_event.Broadcast((Uint32)data.width, (Uint32)data.height);
 				break;
 			case WM_SIZE:
-				if (!resizing) input_events.window_resized_event.Broadcast((Uint32)data.width, (Uint32)data.height);
+				if (!resizing)
+				{
+					input_events.window_resized_event.Broadcast((Uint32)data.width, (Uint32)data.height);
+				}
 				break;
 			case WM_MOUSEWHEEL:
 				input_events.scroll_mouse_event.Broadcast((Int32)GET_WHEEL_DELTA_WPARAM(data.wparam) / WHEEL_DELTA);

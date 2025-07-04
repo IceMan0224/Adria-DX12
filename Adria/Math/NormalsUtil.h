@@ -1,6 +1,4 @@
 #pragma once
-#include <DirectXMath.h>
-#include <vector>
 #include <concepts>
 
 
@@ -17,23 +15,23 @@ namespace adria
     {
         using namespace DirectX;
 
-        template<typename vertex_t, typename index_t> requires HasPositionAndNormal<vertex_t>&& std::integral<index_t>
+        template<typename VertexT, typename IndexT> requires HasPositionAndNormal<VertexT> && std::integral<IndexT>
             void ComputeNormalsEqualWeight(
-                std::vector<vertex_t>& vertices,
-                std::vector<index_t> const& indices,
+                std::vector<VertexT>& vertices,
+                std::vector<IndexT> const& indices,
                 Bool cw = false
         )
         {
             std::vector<XMVECTOR> normals(vertices.size());
             for (Uint64 face = 0; face < indices.size() / 3; ++face)
             {
-                index_t i0 = indices[face * 3];
-                index_t i1 = indices[face * 3 + 1];
-                index_t i2 = indices[face * 3 + 2];
+                IndexT i0 = indices[face * 3];
+                IndexT i1 = indices[face * 3 + 1];
+                IndexT i2 = indices[face * 3 + 2];
 
-                if (i0 == index_t(-1)
-                    || i1 == index_t(-1)
-                    || i2 == index_t(-1))
+                if (i0 == IndexT(-1)
+                    || i1 == IndexT(-1)
+                    || i2 == IndexT(-1))
                     continue;
 
                 if (i0 >= vertices.size()
@@ -55,10 +53,9 @@ namespace adria
                 normals[i2] = XMVectorAdd(normals[i2], faceNormal);
             }
 
-            // Store results
             if (cw)
             {
-                for (size_t vert = 0; vert < vertices.size(); ++vert)
+                for (Uint64 vert = 0; vert < vertices.size(); ++vert)
                 {
                     XMVECTOR n = XMVector3Normalize(normals[vert]);
                     n = XMVectorNegate(n);
@@ -67,7 +64,7 @@ namespace adria
             }
             else
             {
-                for (size_t vert = 0; vert < vertices.size(); ++vert)
+                for (Uint64 vert = 0; vert < vertices.size(); ++vert)
                 {
                     XMVECTOR n = XMVector3Normalize(normals[vert]);
                     XMStoreFloat3(&vertices[vert].normal, n);
@@ -78,23 +75,23 @@ namespace adria
         }
 
 
-        template<typename vertex_t, typename index_t> requires HasPositionAndNormal<vertex_t>&& std::integral<index_t>
+        template<typename VertexT, typename IndexT> requires HasPositionAndNormal<VertexT> && std::integral<IndexT>
         void ComputeNormalsWeightedByAngle(
-            std::vector<vertex_t>& vertices,
-            std::vector<index_t> const& indices,
+            std::vector<VertexT>& vertices,
+            std::vector<IndexT> const& indices,
             Bool cw = false)
         {
             std::vector<XMVECTOR> normals(vertices.size());
 
-            for (size_t face = 0; face < indices.size() / 3; ++face)
+            for (Uint64 face = 0; face < indices.size() / 3; ++face)
             {
-                index_t i0 = indices[face * 3];
-                index_t i1 = indices[face * 3 + 1];
-                index_t i2 = indices[face * 3 + 2];
+                IndexT i0 = indices[face * 3];
+                IndexT i1 = indices[face * 3 + 1];
+                IndexT i2 = indices[face * 3 + 2];
 
-                if (i0 == index_t(-1)
-                    || i1 == index_t(-1)
-                    || i2 == index_t(-1))
+                if (i0 == IndexT(-1)
+                    || i1 == IndexT(-1)
+                    || i2 == IndexT(-1))
                     continue;
 
                 if (i0 >= vertices.size()
@@ -137,10 +134,9 @@ namespace adria
                 normals[i2] = XMVectorMultiplyAdd(faceNormal, w2, normals[i2]);
             }
 
-            // Store results
             if (cw)
             {
-                for (size_t vert = 0; vert < vertices.size(); ++vert)
+                for (Uint64 vert = 0; vert < vertices.size(); ++vert)
                 {
                     XMVECTOR n = XMVector3Normalize(normals[vert]);
                     n = XMVectorNegate(n);
@@ -149,7 +145,7 @@ namespace adria
             }
             else
             {
-                for (size_t vert = 0; vert < vertices.size(); ++vert)
+                for (Uint64 vert = 0; vert < vertices.size(); ++vert)
                 {
                     XMVECTOR n = XMVector3Normalize(normals[vert]);
                     XMStoreFloat3(&vertices[vert].normal, n);
@@ -159,23 +155,23 @@ namespace adria
 
         }
 
-        template<typename vertex_t, typename index_t> requires HasPositionAndNormal<vertex_t>&& std::integral<index_t>
+        template<typename VertexT, typename IndexT> requires HasPositionAndNormal<VertexT> && std::integral<IndexT>
         void ComputeNormalsWeightedByArea(
-            std::vector<vertex_t>& vertices,
-            std::vector<index_t> indices,
+            std::vector<VertexT>& vertices,
+            std::vector<IndexT> indices,
             Bool cw = false) 
         {
             std::vector<XMVECTOR> normals(vertices.size());
 
-            for (size_t face = 0; face < indices.size() / 3; ++face)
+            for (Uint64 face = 0; face < indices.size() / 3; ++face)
             {
-                index_t i0 = indices[face * 3];
-                index_t i1 = indices[face * 3 + 1];
-                index_t i2 = indices[face * 3 + 2];
+                IndexT i0 = indices[face * 3];
+                IndexT i1 = indices[face * 3 + 1];
+                IndexT i2 = indices[face * 3 + 2];
 
-                if (i0 == index_t(-1)
-                    || i1 == index_t(-1)
-                    || i2 == index_t(-1))
+                if (i0 == IndexT(-1)
+                    || i1 == IndexT(-1)
+                    || i2 == IndexT(-1))
                     continue;
 
                 if (i0 >= vertices.size()
@@ -216,7 +212,7 @@ namespace adria
             // Store results
             if (cw)
             {
-                for (size_t vert = 0; vert < vertices.size(); ++vert)
+                for (Uint64 vert = 0; vert < vertices.size(); ++vert)
                 {
                     XMVECTOR n = XMVector3Normalize(normals[vert]);
                     n = XMVectorNegate(n);
@@ -225,7 +221,7 @@ namespace adria
             }
             else
             {
-                for (size_t vert = 0; vert < vertices.size(); ++vert)
+                for (Uint64 vert = 0; vert < vertices.size(); ++vert)
                 {
                     XMVECTOR n = XMVector3Normalize(normals[vert]);
                     XMStoreFloat3(&vertices[vert].normal, n);
@@ -321,11 +317,11 @@ namespace adria
         AreaWeight
     };
 
-    template<typename vertex_t, typename index_t> requires HasPositionAndNormal<vertex_t> && std::integral<index_t>
+    template<typename VertexT, typename IndexT> requires HasPositionAndNormal<VertexT> && std::integral<IndexT>
     void ComputeNormals(
         NormalCalculation normal_type,
-        std::vector<vertex_t>& vertices,
-        std::vector<index_t> indices,
+        std::vector<VertexT>& vertices,
+        std::vector<IndexT> indices,
         Bool cw = false)
     {
         switch (normal_type)

@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 #include "GfxFormat.h"
 #include "GfxMacros.h"
 #include "GfxDescriptor.h"

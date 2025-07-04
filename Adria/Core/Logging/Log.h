@@ -1,6 +1,4 @@
 #pragma once
-#include <memory> 
-#include <string>
 #include <source_location>
 
 namespace adria

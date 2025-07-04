@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 #include "TextureHandle.h"
 #include "RainBlockerMapPass.h"
 #include "Graphics/GfxDescriptor.h"

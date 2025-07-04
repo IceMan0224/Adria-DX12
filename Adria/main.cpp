@@ -5,7 +5,6 @@
 #include "Core/Logging/LogSinks/FileSink.h"
 #include "Core/Logging/LogSinks/DebuggerSink.h"
 #include "Editor/Editor.h"
-#include "Utilities/MemoryDebugger.h"
 #include "Utilities/CLIParser.h"
 
 using namespace adria;

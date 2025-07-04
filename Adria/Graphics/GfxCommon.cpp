@@ -1,5 +1,3 @@
-#include <array>
-#include <memory>
 #include "GfxCommon.h"
 #include "GfxDevice.h"
 #include "GfxTexture.h"

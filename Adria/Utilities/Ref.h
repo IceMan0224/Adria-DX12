@@ -180,7 +180,7 @@ namespace adria
 			{
 				auto ref = ptr_->Release();
 				(void)ref; 
-				assert(ref != 0 || ptr_ != other);
+				ADRIA_ASSERT(ref != 0 || ptr_ != other);
 			}
 			ptr_ = other;
 		}

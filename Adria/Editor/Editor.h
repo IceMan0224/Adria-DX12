@@ -1,6 +1,4 @@
 #pragma once
-#include <memory>
-#include <queue>
 #include "GUICommand.h"
 #include "EditorEvents.h"
 #include "Graphics/GfxProfilerFwd.h"

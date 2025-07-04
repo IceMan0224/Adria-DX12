@@ -9,13 +9,16 @@
 #include <mutex>
 #include <thread>
 #include <optional>
+#include <variant>
 #include <functional>
 #include <span>
 #include <type_traits>
 #include <unordered_map>
 #include <map>
 #include <unordered_set>
+#include <list>
 #include <fstream>
+#include <filesystem>
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <windows.h>

@@ -1,6 +1,4 @@
 #pragma once
-#include <array>
-#include <variant>
 #include "RayTracedShadowsPass.h"
 #include "Graphics/GfxMacros.h"
 #include "Graphics/GfxDescriptor.h"

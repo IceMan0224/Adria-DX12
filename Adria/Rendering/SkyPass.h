@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 #include "SkyModel.h"
 #include "Graphics/GfxDescriptor.h"
 #include "RenderGraph/RenderGraphResourceId.h"

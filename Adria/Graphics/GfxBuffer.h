@@ -144,7 +144,10 @@ namespace adria
 		GfxBufferDesc desc{};
 		desc.resource_usage = (uav || !dynamic) ? GfxResourceUsage::Default : GfxResourceUsage::Upload;
 		desc.bind_flags = GfxBindFlag::ShaderResource;
-		if (uav) desc.bind_flags |= GfxBindFlag::UnorderedAccess;
+		if (uav)
+		{
+			desc.bind_flags |= GfxBindFlag::UnorderedAccess;
+		}
 		desc.misc_flags = GfxBufferMiscFlag::BufferStructured;
 		desc.stride = sizeof(T);
 		desc.size = desc.stride * count;

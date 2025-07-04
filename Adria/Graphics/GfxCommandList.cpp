@@ -131,10 +131,8 @@ namespace adria
 		ID3D12Device* device = gfx->GetDevice();
 		HRESULT hr = device->CreateCommandAllocator(cmd_list_type, IID_PPV_ARGS(cmd_allocator.GetAddressOf()));
 		GFX_CHECK_HR(hr);
-
 		hr = device->CreateCommandList(0, cmd_list_type, cmd_allocator, nullptr, IID_PPV_ARGS(cmd_list.GetAddressOf()));
 		GFX_CHECK_HR(hr);
-
 		cmd_list->SetName(ToWideString(name).c_str());
 		cmd_list->Close();
 	}
@@ -290,7 +288,10 @@ namespace adria
 	void GfxCommandList::Draw(Uint32 vertex_count, Uint32 instance_count, Uint32 start_vertex_location, Uint32 start_instance_location)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
-		if (vertex_count == 0 || instance_count == 0) return;
+		if (vertex_count == 0 || instance_count == 0)
+		{
+			return;
+		}
 		cmd_list->DrawInstanced(vertex_count, instance_count, start_vertex_location, start_instance_location);
 		++command_count;
 	}
@@ -298,7 +299,10 @@ namespace adria
 	void GfxCommandList::DrawIndexed(Uint32 index_count, Uint32 instance_count, Uint32 index_offset, Uint32 base_vertex_location, Uint32 start_instance_location)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
-		if (index_count == 0 || instance_count == 0) return;
+		if (index_count == 0 || instance_count == 0) 
+		{
+			return;
+		}
 		cmd_list->DrawIndexedInstanced(index_count, instance_count, index_offset, base_vertex_location, start_instance_location);
 		++command_count;
 	}
@@ -306,7 +310,10 @@ namespace adria
 	void GfxCommandList::Dispatch(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z)
 	{
 		ADRIA_ASSERT(current_context == Context::Compute);
-		if (group_count_x == 0 || group_count_y == 0 || group_count_z == 0) return;
+		if (group_count_x == 0 || group_count_y == 0 || group_count_z == 0)
+		{
+			return;
+		}
 		cmd_list->Dispatch(group_count_x, group_count_y, group_count_z);
 		++command_count;
 	}
@@ -314,7 +321,10 @@ namespace adria
 	void GfxCommandList::DispatchMesh(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
-		if (group_count_x == 0 || group_count_y == 0 || group_count_z == 0) return;
+		if (group_count_x == 0 || group_count_y == 0 || group_count_z == 0)
+		{
+			return;
+		}
 		cmd_list->DispatchMesh(group_count_x, group_count_y, group_count_z);
 		++command_count;
 	}
@@ -350,7 +360,10 @@ namespace adria
 	void GfxCommandList::DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth)
 	{
 		ADRIA_ASSERT(current_context == Context::Compute);
-		if (dispatch_width == 0 || dispatch_height == 0 || dispatch_depth == 0) return;
+		if (dispatch_width == 0 || dispatch_height == 0 || dispatch_depth == 0)
+		{
+			return;
+		}
 		D3D12_DISPATCH_RAYS_DESC dispatch_desc{};
 		dispatch_desc.Width = dispatch_width;
 		dispatch_desc.Height = dispatch_height;
@@ -393,7 +406,10 @@ namespace adria
 			barrier.pResource = texture.GetNative();
 			barrier.Subresources = CD3DX12_BARRIER_SUBRESOURCE_RANGE(subresource);
 
-			if (HasAnyFlag(flags_before, GfxResourceState::Discard)) barrier.Flags = D3D12_TEXTURE_BARRIER_FLAG_DISCARD;
+			if (HasAnyFlag(flags_before, GfxResourceState::Discard))
+			{
+				barrier.Flags = D3D12_TEXTURE_BARRIER_FLAG_DISCARD;
+			}
 			texture_barriers.push_back(barrier);
 		}
 	}
@@ -482,12 +498,10 @@ namespace adria
 			{
 				barrier_groups.push_back(CD3DX12_BARRIER_GROUP((Uint32)texture_barriers.size(), texture_barriers.data()));
 			}
-
 			if (!buffer_barriers.empty())
 			{
 				barrier_groups.push_back(CD3DX12_BARRIER_GROUP((Uint32)buffer_barriers.size(), buffer_barriers.data()));
 			}
-
 			if (!global_barriers.empty())
 			{
 				barrier_groups.push_back(CD3DX12_BARRIER_GROUP((Uint32)global_barriers.size(), global_barriers.data()));
@@ -670,7 +684,10 @@ namespace adria
 			for (GfxColorAttachmentDesc const& rtv : render_pass_desc.rtv_attachments)
 			{
 				rtv_handles.push_back(rtv.cpu_handle);
-				if (rtv.beginning_access == GfxLoadAccessOp::Clear) ClearRenderTarget(rtv.cpu_handle, rtv.clear_value.color.color);
+				if (rtv.beginning_access == GfxLoadAccessOp::Clear)
+				{
+					ClearRenderTarget(rtv.cpu_handle, rtv.clear_value.color.color);
+				}
 			}
 
 			if (render_pass_desc.dsv_attachment.has_value())
@@ -678,7 +695,9 @@ namespace adria
 				dsv_handle = &render_pass_desc.dsv_attachment->cpu_handle;
 				GfxClearValue::GfxClearDepthStencil depth_stencil = render_pass_desc.dsv_attachment->clear_value.depth_stencil;
 				if (render_pass_desc.dsv_attachment->depth_beginning_access == GfxLoadAccessOp::Clear)
+				{
 					ClearDepth(*dsv_handle, depth_stencil.depth, depth_stencil.stencil, false);
+				}
 			}
 			SetRenderTargets(rtv_handles, dsv_handle);
 		}
@@ -986,7 +1005,10 @@ namespace adria
 	void GfxCommandList::ClearDepth(GfxDescriptor dsv, Float depth, Uint8 stencil, Bool clear_stencil)
 	{
 		D3D12_CLEAR_FLAGS d3d12_clear_flags = D3D12_CLEAR_FLAG_DEPTH;
-		if (clear_stencil) d3d12_clear_flags |= D3D12_CLEAR_FLAG_STENCIL;
+		if (clear_stencil) 
+		{
+			d3d12_clear_flags |= D3D12_CLEAR_FLAG_STENCIL;
+		}
 		cmd_list->ClearDepthStencilView(dsv, d3d12_clear_flags, depth, stencil, 0, nullptr);
 	}
 

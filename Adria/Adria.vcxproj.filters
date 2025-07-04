@@ -665,7 +665,7 @@
     <ClInclude Include="Core\Window.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\MemoryDebugger.h">
+    <ClInclude Include="Utilities\MemoryLeakDetector.h">
       <Filter>Utilities</Filter>
     </ClInclude>
     <ClInclude Include="Core\Engine.h">

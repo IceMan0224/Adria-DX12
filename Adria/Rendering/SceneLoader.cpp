@@ -327,10 +327,22 @@ namespace adria
 	{
 		Decal decal{};
 		g_TextureManager.EnableMipMaps(false);
-		if (!params.albedo_texture_path.empty()) decal.albedo_decal_texture = g_TextureManager.LoadTexture(params.albedo_texture_path);
-		else decal.albedo_decal_texture = g_TextureManager.LoadTexture(paths::TexturesDir + "Decals/Decal_00_Albedo.tga");
-		if (!params.normal_texture_path.empty()) decal.normal_decal_texture = g_TextureManager.LoadTexture(params.normal_texture_path);
-		else decal.normal_decal_texture = g_TextureManager.LoadTexture(paths::TexturesDir + "Decals/Decal_00_Normal.tga");
+		if (!params.albedo_texture_path.empty())
+		{
+			decal.albedo_decal_texture = g_TextureManager.LoadTexture(params.albedo_texture_path);
+		}
+		else
+		{
+			decal.albedo_decal_texture = g_TextureManager.LoadTexture(paths::TexturesDir + "Decals/Decal_00_Albedo.tga");
+		}
+		if (!params.normal_texture_path.empty())
+		{
+			decal.normal_decal_texture = g_TextureManager.LoadTexture(params.normal_texture_path);
+		}
+		else
+		{
+			decal.normal_decal_texture = g_TextureManager.LoadTexture(paths::TexturesDir + "Decals/Decal_00_Normal.tga");
+		}
 		g_TextureManager.EnableMipMaps(true);
 
 		Vector3 P = params.position;

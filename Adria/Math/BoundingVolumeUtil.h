@@ -1,6 +1,5 @@
 #pragma once
 #include <DirectXCollision.h>
-#include <vector>
 #include <concepts>
 #include <algorithm>
 
@@ -15,23 +14,26 @@ namespace adria
         {v.position.z} -> std::convertible_to<Float>;
     };
 
-    template<typename Iterator> requires HasPosition<std::iter_value_t<Iterator>>
-    BoundingBox AABBFromRange(Iterator begin, Iterator end)
+    template<typename IteratorT> requires HasPosition<std::iter_value_t<IteratorT>>
+    BoundingBox AABBFromRange(IteratorT begin, IteratorT end)
     {
-        using V = typename std::iterator_traits<Iterator>::value_type;
+        using V = typename std::iterator_traits<IteratorT>::value_type;
 
         auto x_extremes = std::minmax_element(begin, end,
-            [](V const& lhs, V const& rhs) {
+            [](V const& lhs, V const& rhs) 
+            {
                 return lhs.position.x < rhs.position.x;
             });
 
         auto y_extremes = std::minmax_element(begin, end,
-            [](V const& lhs, V const& rhs) {
+            [](V const& lhs, V const& rhs) 
+            {
                 return lhs.position.y < rhs.position.y;
             });
 
         auto z_extremes = std::minmax_element(begin, end,
-            [](V const& lhs, V const& rhs) {
+            [](V const& lhs, V const& rhs) 
+            {
                 return lhs.position.z < rhs.position.z;
             });
 
@@ -54,17 +56,20 @@ namespace adria
         auto begin = positions.begin();
         auto end = positions.end();
 		auto x_extremes = std::minmax_element(begin, end,
-			[](auto const& lhs, auto const& rhs) {
+			[](auto const& lhs, auto const& rhs) 
+            {
 				return lhs.x < rhs.x;
 			});
 
 		auto y_extremes = std::minmax_element(begin, end,
-			[](auto const& lhs, auto const& rhs) {
+			[](auto const& lhs, auto const& rhs) 
+            {
 				return lhs.y < rhs.y;
 			});
 
 		auto z_extremes = std::minmax_element(begin, end,
-			[](auto const& lhs, auto const& rhs) {
+			[](auto const& lhs, auto const& rhs) 
+            {
 				return lhs.z < rhs.z;
 			});
 

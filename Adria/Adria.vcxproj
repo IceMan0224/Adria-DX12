@@ -902,7 +902,7 @@
     <ClInclude Include="Utilities\ConcurrentQueue.h" />
     <ClInclude Include="Utilities\HashUtil.h" />
     <ClInclude Include="Utilities\Image.h" />
-    <ClInclude Include="Utilities\MemoryDebugger.h" />
+    <ClInclude Include="Utilities\MemoryLeakDetector.h" />
     <ClInclude Include="Utilities\Random.h" />
     <ClInclude Include="Utilities\Singleton.h" />
     <ClInclude Include="Utilities\StringUtil.h" />

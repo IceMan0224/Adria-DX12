@@ -3,7 +3,6 @@
 
 namespace adria
 {
-	
 	constexpr FastNoiseLite::NoiseType GetNoiseType(NoiseType type)
 	{
 		switch (type)
@@ -61,8 +60,8 @@ namespace adria
 			for (Uint32 x = 0; x < desc.width; x++)
 			{
 
-				Float xf = x * desc.noise_scale / desc.width; // - desc.width / 2;
-				Float zf = z * desc.noise_scale / desc.depth; // - desc.depth / 2;
+				Float xf = x * desc.noise_scale / desc.width; 
+				Float zf = z * desc.noise_scale / desc.depth; 
 
 				Float total = noise.GetNoise(xf, zf);
 
@@ -72,7 +71,7 @@ namespace adria
 	}
 	Heightmap::Heightmap(std::string_view heightmap_path)
 	{
-		//todo
+		ADRIA_TODO("Add support for heightmap files");
 	}
 	Float Heightmap::HeightAt(Uint64 x, Uint64 z)
 	{

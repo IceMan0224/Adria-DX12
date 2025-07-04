@@ -1,6 +1,4 @@
 #pragma once
-#include <functional>
-#include <vector>
 #include <concepts>
 
 namespace adria

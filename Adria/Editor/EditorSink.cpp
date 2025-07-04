@@ -40,14 +40,12 @@ namespace adria
 				return;
 			}
 
-			// Options menu
 			if (ImGui::BeginPopup("Options"))
 			{
 				ImGui::Checkbox("Auto-scroll", &AutoScroll);
 				ImGui::EndPopup();
 			}
 
-			// Main window
 			if (ImGui::Button("Options"))
 				ImGui::OpenPopup("Options");
 			ImGui::SameLine();
@@ -66,8 +64,8 @@ namespace adria
 				ImGui::LogToClipboard();
 
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-			const Char* buf = Buf.begin();
-			const Char* buf_end = Buf.end();
+			Char const* buf = Buf.begin();
+			Char const* buf_end = Buf.end();
 			if (Filter.IsActive())
 			{
 				for (Int line_no = 0; line_no < LineOffsets.Size; line_no++)

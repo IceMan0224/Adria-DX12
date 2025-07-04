@@ -73,7 +73,10 @@ the model.
 
 // uses Aug 23 dataset
 
-double datasetRGB1[] =
+namespace adria
+{
+
+Float64 datasetRGB1[] =
 {
 	// albedo 0, turbidity 1
 	-1.099459e+000,
@@ -1177,7 +1180,7 @@ double datasetRGB1[] =
 	6.658012e-001,
 };
 
-double datasetRGBRad1[] = 
+Float64 datasetRGBRad1[] =
 {
 	// albedo 0, turbidity 1
 	1.962684e+000,
@@ -1321,7 +1324,7 @@ double datasetRGBRad1[] =
 	2.574284e+001,
 };
 
-double datasetRGB2[] = 
+Float64 datasetRGB2[] =
 {
 	// albedo 0, turbidity 1
 	-1.140530e+000,
@@ -2425,7 +2428,7 @@ double datasetRGB2[] =
 	6.588427e-001,
 };
 
-double datasetRGBRad2[] = 
+Float64 datasetRGBRad2[] =
 {
 	// albedo 0, turbidity 1
 	1.590330e+000,
@@ -2569,7 +2572,7 @@ double datasetRGBRad2[] =
 	2.643066e+001,
 };
 
-double datasetRGB3[] = 
+Float64 datasetRGB3[] =
 {
 	// albedo 0, turbidity 1
 	-1.372629e+000,
@@ -3673,7 +3676,7 @@ double datasetRGB3[] =
 	6.966285e-001,
 };
 
-double datasetRGBRad3[] = 
+Float64 datasetRGBRad3[] =
 {
 	// albedo 0, turbidity 1
 	9.926518e-001,
@@ -3817,16 +3820,18 @@ double datasetRGBRad3[] =
 	2.893432e+001,
 };
 
-double* datasetsRGB[] =
+Float64* datasetsRGB[] =
 {
 	datasetRGB1,
 	datasetRGB2,
 	datasetRGB3
 };
 
-double* datasetsRGBRad[] =
+Float64* datasetsRGBRad[] =
 {
 	datasetRGBRad1,
 	datasetRGBRad2,
 	datasetRGBRad3
 };
+
+}

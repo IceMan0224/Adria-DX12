@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 #include <DirectXCollision.h>
 #include "GeometryBufferCache.h"
 #include "TextureManager.h"

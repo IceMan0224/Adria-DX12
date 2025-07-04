@@ -60,7 +60,9 @@ namespace adria::hwbp
             auto CheckBusyRegister = [&](Uint64 index, DWORD64 mask)
             {
                 if (ctx.Dr7 & mask)
+                {
                     busy_debug_register[index] = true;
+                }
             };
 
             CheckBusyRegister(0, 1);
@@ -68,8 +70,7 @@ namespace adria::hwbp
             CheckBusyRegister(2, 16);
             CheckBusyRegister(3, 64);
 
-            const auto action_result = action(ctx, busy_debug_register);
-
+            auto const action_result = action(ctx, busy_debug_register);
             if (::SetThreadContext(::GetCurrentThread(), &ctx) == FALSE)
             {
                 return failure(Result::CantSetThreadContext);
@@ -108,6 +109,7 @@ namespace adria::hwbp
                     ADRIA_ASSERT(!"Impossible happened - searching in array of 4 got index < 0 or > 3");
                     std::exit(EXIT_FAILURE);
                 }
+
                 std::bitset<sizeof(ctx.Dr7) * 8> dr7;
                 memcpy(&dr7, &ctx.Dr7, sizeof(ctx.Dr7));
                 dr7.set(register_index * 2); 
@@ -117,17 +119,14 @@ namespace adria::hwbp
                     dr7.set(16 + register_index * 4 + 1, true);
                     dr7.set(16 + register_index * 4, true);
                     break;
-
                 case When::Written:
                     dr7.set(16 + register_index * 4 + 1, false);
                     dr7.set(16 + register_index * 4, true);
                     break;
-
                 case When::Executed:
                     dr7.set(16 + register_index * 4 + 1, false);
                     dr7.set(16 + register_index * 4, false);
                     break;
-
                 default:
                     return Breakpoint::MakeFailed(Result::BadWhen);
                 }
@@ -138,22 +137,18 @@ namespace adria::hwbp
                     dr7.set(16 + register_index * 4 + 3, false);
                     dr7.set(16 + register_index * 4 + 2, false);
                     break;
-
                 case 2:
                     dr7.set(16 + register_index * 4 + 3, false);
                     dr7.set(16 + register_index * 4 + 2, true);
                     break;
-
                 case 8:
                     dr7.set(16 + register_index * 4 + 3, true);
                     dr7.set(16 + register_index * 4 + 2, false);
                     break;
-
                 case 4:
                     dr7.set(16 + register_index * 4 + 3, true);
                     dr7.set(16 + register_index * 4 + 2, true);
                     break;
-
                 default:
                     return Breakpoint::MakeFailed(Result::BadSize);
                 }

@@ -82,7 +82,7 @@ namespace adria
 				completed_frames.front().frame <= completed_frame)
 			{
 				BufferEntry const& oldest_buffer_entry = completed_frames.front();
-				assert(oldest_buffer_entry.size <= used_size);
+				ADRIA_ASSERT(oldest_buffer_entry.size <= used_size);
 				used_size -= oldest_buffer_entry.size;
 				head = oldest_buffer_entry.offset;
 				completed_frames.pop();

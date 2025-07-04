@@ -1,5 +1,4 @@
 #pragma once
-#include <span>
 #include "GfxFence.h"
 
 namespace adria
@@ -28,6 +27,7 @@ namespace adria
 		GfxCommandListType GetType() const { return type; }
 
 		operator ID3D12CommandQueue* () const { return command_queue.Get(); }
+
 	private:
 		Ref<ID3D12CommandQueue> command_queue;
 		Uint64 timestamp_frequency = 0;

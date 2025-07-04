@@ -214,14 +214,10 @@ namespace adria
 			}
 			else
 			{
-				if (HasAnyFlag(value, GfxColorWrite::EnableRed))
-					_flag |= D3D12_COLOR_WRITE_ENABLE_RED;
-				if (HasAnyFlag(value, GfxColorWrite::EnableGreen))
-					_flag |= D3D12_COLOR_WRITE_ENABLE_GREEN;
-				if (HasAnyFlag(value, GfxColorWrite::EnableBlue))
-					_flag |= D3D12_COLOR_WRITE_ENABLE_BLUE;
-				if (HasAnyFlag(value, GfxColorWrite::EnableAlpha))
-					_flag |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
+				if (HasAnyFlag(value, GfxColorWrite::EnableRed))	_flag |= D3D12_COLOR_WRITE_ENABLE_RED;
+				if (HasAnyFlag(value, GfxColorWrite::EnableGreen))	_flag |= D3D12_COLOR_WRITE_ENABLE_GREEN;
+				if (HasAnyFlag(value, GfxColorWrite::EnableBlue))	_flag |= D3D12_COLOR_WRITE_ENABLE_BLUE;
+				if (HasAnyFlag(value, GfxColorWrite::EnableAlpha))	_flag |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
 			}
 			return _flag;
 		}
@@ -317,7 +313,10 @@ namespace adria
 					break;
 				}
 				desc.InstanceDataStepRate = 0;
-				if (desc.InputSlotClass == D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA) desc.InstanceDataStepRate = 1;
+				if (desc.InputSlotClass == D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA)
+				{
+					desc.InstanceDataStepRate = 1;
+				}
 				desc.SemanticIndex = element.semantic_index;
 				desc.SemanticName = element.semantic_name.c_str();
 				element_descs[i] = desc;
@@ -375,7 +374,8 @@ namespace adria
 		}
 		d3d12_desc.PrimitiveTopologyType = ConvertPrimitiveTopologyType(desc.topology_type);
 		d3d12_desc.SampleMask = desc.sample_mask;
-		if (d3d12_desc.DSVFormat == DXGI_FORMAT_UNKNOWN) d3d12_desc.DepthStencilState.DepthEnable = false;
+		d3d12_desc.DepthStencilState.DepthEnable = d3d12_desc.DSVFormat != DXGI_FORMAT_UNKNOWN;
+
 		HRESULT hr = gfx->GetDevice()->CreateGraphicsPipelineState(&d3d12_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf()));
 		GFX_CHECK_HR(hr);
 	}
@@ -391,7 +391,10 @@ namespace adria
 	}
 	void GfxComputePipelineState::OnShaderRecompiled(GfxShaderKey const& s)
 	{
-		if (s == desc.CS) Create(desc);
+		if (s == desc.CS)
+		{
+			Create(desc);
+		}
 	}
 	void GfxComputePipelineState::Create(GfxComputePipelineStateDesc const& desc)
 	{
@@ -412,12 +415,14 @@ namespace adria
 	}
 	void GfxMeshShaderPipelineState::OnShaderRecompiled(GfxShaderKey const& s)
 	{
-		if (s == desc.AS || s == desc.MS || s == desc.PS) Create(desc);
+		if (s == desc.AS || s == desc.MS || s == desc.PS)
+		{
+			Create(desc);
+		}
 	}
 	void GfxMeshShaderPipelineState::Create(GfxMeshShaderPipelineStateDesc const& desc)
 	{
 		D3DX12_MESH_SHADER_PIPELINE_STATE_DESC d3d12_desc{};
-
 		d3d12_desc.pRootSignature = gfx->GetCommonRootSignature();
 		d3d12_desc.AS = GetGfxShader(desc.AS);
 		d3d12_desc.MS = GetGfxShader(desc.MS);
@@ -434,7 +439,7 @@ namespace adria
 		}
 		d3d12_desc.PrimitiveTopologyType = ConvertPrimitiveTopologyType(desc.topology_type);
 		d3d12_desc.SampleMask = desc.sample_mask;
-		if (d3d12_desc.DSVFormat == DXGI_FORMAT_UNKNOWN) d3d12_desc.DepthStencilState.DepthEnable = false;
+		d3d12_desc.DepthStencilState.DepthEnable = d3d12_desc.DSVFormat != DXGI_FORMAT_UNKNOWN;
 
 		CD3DX12_PIPELINE_MESH_STATE_STREAM pso_stream(d3d12_desc);
 		D3D12_PIPELINE_STATE_STREAM_DESC stream_desc{};

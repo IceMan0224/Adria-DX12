@@ -1,4 +1,3 @@
-#include <filesystem>
 #include "FilesUtil.h"
 
 namespace fs = std::filesystem;
@@ -60,15 +59,23 @@ namespace adria
 	{
 		while (true)
 		{
-			size_t index = path.rfind("../");
+			Uint64 index = path.rfind("../");
 			if (index == std::string::npos)
+			{
 				break;
-			size_t idx0 = path.rfind('/', index);
+			}
+
+			Uint64 idx0 = path.rfind('/', index);
 			if (idx0 == std::string::npos)
+			{
 				return false;
+			}
+
 			idx0 = path.rfind('/', idx0 - 1);
 			if (idx0 != std::string::npos)
+			{
 				path = path.substr(0, idx0 + 1) + path.substr(index + 3);
+			}
 		}
 		return true;
 	}

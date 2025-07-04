@@ -1,5 +1,4 @@
 #include <iomanip>
-#include <filesystem>
 #include "GfxNsightAftermathGpuCrashTracker.h"
 #include "GFSDK_Aftermath.h"
 #include "GfxShader.h"
@@ -46,7 +45,10 @@ namespace adria
 
 	GfxNsightAftermathGpuCrashTracker::~GfxNsightAftermathGpuCrashTracker()
 	{
-		if (initialized) GFSDK_Aftermath_DisableGpuCrashDumps();
+		if (initialized)
+		{
+			GFSDK_Aftermath_DisableGpuCrashDumps();
+		}
 	}
 
 	void GfxNsightAftermathGpuCrashTracker::Initialize()
@@ -101,13 +103,13 @@ namespace adria
 
 	void GfxNsightAftermathGpuCrashTracker::OnCrashDump(const void* gpu_crash_dump_data, const Uint32 gpu_crash_dump_size)
 	{
-		std::lock_guard<std::mutex> lock(aftermath_mutex);
+		std::lock_guard lock(aftermath_mutex);
 		WriteGpuCrashDumpToFile(gpu_crash_dump_data, gpu_crash_dump_size);
 	}
 
 	void GfxNsightAftermathGpuCrashTracker::OnShaderDebugInfo(const void* shader_debug_info, const Uint32 shader_debug_info_size)
 	{
-		std::lock_guard<std::mutex> lock(aftermath_mutex);
+		std::lock_guard lock(aftermath_mutex);
 
 		GFSDK_Aftermath_ShaderDebugInfoIdentifier identifier{};
 		GFSDK_Aftermath_Result result = GFSDK_Aftermath_GetShaderDebugInfoIdentifier(

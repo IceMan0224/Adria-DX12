@@ -1,6 +1,5 @@
 #include "GfxNsightPerfManager.h"
 #if defined(GFX_ENABLE_NV_PERF)
-#include <filesystem>
 #include "GfxDevice.h"
 #include "GfxCommandList.h"
 #include "Core/Paths.h"

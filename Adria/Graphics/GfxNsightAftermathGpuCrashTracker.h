@@ -1,5 +1,4 @@
 #pragma once
-#include <mutex>
 #include "Graphics/GfxShaderKey.h"
 #include "GFSDK_Aftermath_Defines.h"
 #include "GFSDK_Aftermath_GpuCrashDump.h"

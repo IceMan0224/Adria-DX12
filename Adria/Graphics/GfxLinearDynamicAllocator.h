@@ -1,5 +1,4 @@
 #pragma once
-#include <mutex>
 #include "GfxDynamicAllocation.h"
 #include "Utilities/LinearOffsetAllocator.h"
 
@@ -23,6 +22,7 @@ namespace adria
 			GfxAllocationPage(GfxAllocationPage&&);
 			~GfxAllocationPage();
 		};
+
 	public:
 		GfxLinearDynamicAllocator(GfxDevice* gfx, Uint64 page_size, Uint64 page_count = 1);
 		~GfxLinearDynamicAllocator();

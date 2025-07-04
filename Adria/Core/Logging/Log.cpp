@@ -1,8 +1,6 @@
 #include "Log.h"
 #include <chrono>
 #include <ctime>   
-#include <vector>
-#include <thread>
 #include "Utilities/ConcurrentQueue.h"
 
 namespace adria

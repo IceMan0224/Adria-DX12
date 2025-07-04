@@ -74,7 +74,7 @@ namespace adria
 		ImGui::Separator();
 
 		// Reserve enough left-over height for 1 separator + 1 input text
-		const Float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+		Float const footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 		ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
 		if (ImGui::BeginPopupContextWindow())
 		{
@@ -86,7 +86,7 @@ namespace adria
 		if (copy_to_clipboard) ImGui::LogToClipboard();
 		for (Int i = 0; i < Items.Size; i++)
 		{
-			const Char* item = Items[i];
+			Char const* item = Items[i];
 			if (!Filter.PassFilter(item)) continue;
 			ImGui::TextUnformatted(item);
 		}
@@ -248,17 +248,17 @@ namespace adria
 		{
 		case ImGuiInputTextFlags_CallbackCompletion:
 		{
-			const Char* word_end = data->Buf + data->CursorPos;
-			const Char* word_start = word_end;
+			Char const* word_end = data->Buf + data->CursorPos;
+			Char const* word_start = word_end;
 			while (word_start > data->Buf)
 			{
-				const Char c = word_start[-1];
+				Char const c = word_start[-1];
 				if (c == ' ' || c == '\t' || c == ',' || c == ';')
 					break;
 				word_start--;
 			}
 
-			ImVector<const Char*> candidates;
+			ImVector<Char const*> candidates;
 			for (Int i = 0; i < Commands.Size; i++)
 				if (Strnicmp(Commands[i], word_start, (int)(word_end - word_start)) == 0)
 					candidates.push_back(Commands[i]);
@@ -306,7 +306,7 @@ namespace adria
 		}
 		case ImGuiInputTextFlags_CallbackHistory:
 		{
-			const Int prev_history_pos = HistoryPos;
+			Int const prev_history_pos = HistoryPos;
 			if (data->EventKey == ImGuiKey_UpArrow)
 			{
 				if (HistoryPos == -1)
@@ -324,7 +324,7 @@ namespace adria
 			// A better implementation would preserve the data on the current input line along with cursor position.
 			if (prev_history_pos != HistoryPos)
 			{
-				const Char* history_str = (HistoryPos >= 0) ? History[HistoryPos] : "";
+				Char const* history_str = (HistoryPos >= 0) ? History[HistoryPos] : "";
 				data->DeleteChars(0, data->BufTextLen);
 				data->InsertChars(0, history_str);
 			}

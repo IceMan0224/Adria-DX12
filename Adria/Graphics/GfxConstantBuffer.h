@@ -63,7 +63,7 @@ namespace adria
 	template<typename CBufferT>
 	void GfxConstantBuffer<CBufferT>::Update(CBufferT const& data, Uint32 cbuffer_index)
 	{
-		memcpy(&mapped_data[cbuffer_index * cbuffer_size], &data, sizeof(CBufferT)); //maybe change to cbuffer_size
+		memcpy(&mapped_data[cbuffer_index * cbuffer_size], &data, sizeof(CBufferT)); 
 	}
 
 	template<typename CBufferT>

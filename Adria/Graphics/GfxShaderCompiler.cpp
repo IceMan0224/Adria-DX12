@@ -1,6 +1,5 @@
 #pragma comment(lib, "dxcompiler.lib")
 #include <d3dcompiler.h>
-#include <filesystem>
 #include "dxcapi.h"
 #include "cereal/archives/binary.hpp"
 #include "cereal/types/string.hpp"
