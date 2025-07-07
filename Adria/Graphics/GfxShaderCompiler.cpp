@@ -1,4 +1,3 @@
-#pragma comment(lib, "dxcompiler.lib")
 #include <d3dcompiler.h>
 #include "dxcapi.h"
 #include "cereal/archives/binary.hpp"
