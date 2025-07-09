@@ -1,4 +1,3 @@
-#include <set>
 #include "ShaderManager.h"
 #include "Core/Paths.h"
 #include "Core/ConsoleManager.h"

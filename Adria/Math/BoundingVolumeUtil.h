@@ -1,11 +1,7 @@
 #pragma once
-#include <DirectXCollision.h>
-#include <concepts>
-#include <algorithm>
 
 namespace adria
 {
-   
     template<typename V>
     concept HasPosition = requires (V v)
     {

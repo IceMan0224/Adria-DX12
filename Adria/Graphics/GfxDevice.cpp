@@ -1,10 +1,4 @@
-﻿#pragma comment(lib,"d3d12.lib")
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "DirectML.lib")
-
-#include <dxgidebug.h>
-#include "GfxDevice.h"
+﻿#include "GfxDevice.h"
 #include "GfxSwapchain.h"
 #include "GfxCommandList.h"
 #include "GfxCommandListPool.h"

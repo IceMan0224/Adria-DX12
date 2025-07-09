@@ -1,30 +1,44 @@
 #pragma once
 
+#include <cstdio>
+#include <fstream>
+#include <iomanip>
+
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+
 #include <vector>
-#include <memory>
-#include <string>
 #include <array>
+#include <string>
 #include <stack>
 #include <queue>
-#include <mutex>
-#include <thread>
+#include <unordered_map>
+#include <map>
+#include <unordered_set>
+#include <set>
+#include <list>
+
+#include <memory>
 #include <optional>
 #include <variant>
 #include <functional>
 #include <span>
+#include <algorithm>
 #include <type_traits>
-#include <unordered_map>
-#include <map>
-#include <unordered_set>
-#include <list>
-#include <fstream>
 #include <filesystem>
+#include <chrono>
+#include <format>
+#include <concepts>
+
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <dxgidebug.h>
 #include <windows.h>
 #define DML_TARGET_VERSION_USE_LATEST
 #include <DirectML.h>
 #include <DirectXMath.h>
+#include <DirectXCollision.h>
 
 #include "d3dx12.h"
 #include "DirectMLX.h"

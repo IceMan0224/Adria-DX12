@@ -5,7 +5,6 @@
 
 namespace adria
 {
-
 	std::wstring ToWideString(std::string const& str)
 	{
 		Int num_chars = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (Int)str.length(), NULL, 0);

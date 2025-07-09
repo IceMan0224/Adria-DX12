@@ -1,5 +1,4 @@
 #pragma once
-#include <mutex>
 #include "GfxDescriptorAllocatorBase.h"
 #include "Utilities/RingOffsetAllocator.h"
 

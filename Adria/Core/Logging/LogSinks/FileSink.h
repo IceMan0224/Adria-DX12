@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdio>
 #include "Core/Logging/Log.h"
 
 namespace adria

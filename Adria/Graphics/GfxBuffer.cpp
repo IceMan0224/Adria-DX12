@@ -3,8 +3,6 @@
 #include "GfxCommandList.h"
 #include "GfxLinearDynamicAllocator.h"
 
-#include <format>
-
 namespace adria
 {
 

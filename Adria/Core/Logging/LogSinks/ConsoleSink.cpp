@@ -1,9 +1,7 @@
 #include "ConsoleSink.h"
-#include <cstdio>             
 
 namespace adria
 {
-
 	ConsoleSink::ConsoleSink(Bool use_cerr, LogLevel log_level)
 		: use_cerr{ use_cerr }, log_level{ log_level }
 	{

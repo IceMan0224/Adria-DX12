@@ -1,4 +1,3 @@
-#include <map>
 #include "GBufferPass.h"
 #include "ShaderStructs.h"
 #include "Components.h"

@@ -1,9 +1,6 @@
 #pragma once
-#include <functional>
-#include <optional>
 #include "RenderGraphContext.h"
 #include "Utilities/EnumUtil.h"
-
 
 namespace adria
 {

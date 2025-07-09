@@ -1,5 +1,4 @@
 #pragma once
-#include <DirectXMath.h>
 #include "Graphics/GfxFence.h"
 #include "Graphics/GfxDescriptor.h"
 #include "Graphics/GfxRayTracingAS.h"

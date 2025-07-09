@@ -3,7 +3,6 @@
 
 namespace adria
 {
-
 	enum class LogLevel : Uint8
 	{
 		LOG_DEBUG,

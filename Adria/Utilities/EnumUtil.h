@@ -1,11 +1,9 @@
 ﻿#pragma once
 #include <type_traits>
-#include <concepts>
 #include <bit>
 
 namespace adria
 {
-
 	template <typename E> requires std::is_enum_v<E>
 	struct EnumBitmaskOperators
 	{

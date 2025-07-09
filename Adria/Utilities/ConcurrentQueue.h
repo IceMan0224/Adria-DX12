@@ -1,11 +1,7 @@
 #pragma once
-#include <queue>
-#include <mutex>
-#include <condition_variable>
 
 namespace adria
 {
-
     template<typename T>
     class ConcurrentQueue
     {

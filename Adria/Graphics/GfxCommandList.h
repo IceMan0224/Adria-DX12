@@ -1,5 +1,4 @@
 #pragma once
-#include <span>
 #include "GfxDescriptor.h"
 #include "GfxResourceCommon.h"
 #include "GfxDynamicAllocation.h"

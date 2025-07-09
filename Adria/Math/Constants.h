@@ -1,6 +1,5 @@
 #pragma once
 #include <limits>
-#include <concepts>
 
 namespace adria
 {

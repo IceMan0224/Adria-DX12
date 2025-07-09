@@ -1,12 +1,10 @@
 #pragma once
-
 #include <random>
 #include <cmath>
 #include <type_traits>
 
 namespace adria
 {
-
     template<typename FloatType = Float64,
         typename Generator = std::mt19937,
         typename = std::enable_if_t<std::is_floating_point_v<FloatType>>

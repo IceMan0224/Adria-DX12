@@ -1,13 +1,8 @@
 #pragma once
 #include <type_traits>
-#include <utility>
-#ifdef __cpp_concepts
-#include <concepts>
-#endif
 
 namespace adria
 {
-
 	template <typename ... Trest>
 	struct unique_types;
 

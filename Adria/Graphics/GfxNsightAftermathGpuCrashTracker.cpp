@@ -1,4 +1,3 @@
-#include <iomanip>
 #include "GfxNsightAftermathGpuCrashTracker.h"
 #include "GFSDK_Aftermath.h"
 #include "GfxShader.h"

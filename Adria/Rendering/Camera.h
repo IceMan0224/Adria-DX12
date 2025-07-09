@@ -1,9 +1,7 @@
 #pragma once
-#include <utility>
 
 namespace adria
 {
-
 	struct CameraParameters
 	{
 		Float near_plane;

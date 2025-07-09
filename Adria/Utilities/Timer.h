@@ -1,5 +1,4 @@
 #pragma once
-#include <chrono>
 
 namespace adria
 {
@@ -7,9 +6,8 @@ namespace adria
 	class Timer
 	{
 		using tp = typename Clock::time_point;
-		
-	public:
 
+	public:
 		Timer() : t0{ Clock::now() } { t1 = t0; }
 
 		typename Duration::rep Mark()
@@ -52,8 +50,8 @@ namespace adria
 	private:
 		const tp t0; 
 		tp t1;  
-	private:
 
+	private:
 		static constexpr Float DurationSecondRatio = std::chrono::seconds(1) * 1.0f / Duration(1);
 	};
 

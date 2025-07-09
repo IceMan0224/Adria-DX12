@@ -1,4 +1,3 @@
-#include <format>
 #include "BloomPass.h"
 #include "ShaderStructs.h"
 #include "Components.h"

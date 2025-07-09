@@ -1,5 +1,4 @@
 #pragma once
-#include <optional>
 #include "GfxDescriptor.h"
 #include "GfxResourceCommon.h"
 

@@ -1,7 +1,6 @@
 #pragma once
 #include "GfxDynamicAllocation.h"
 #include "Utilities/RingOffsetAllocator.h"
-#include <mutex>
 
 namespace adria
 {
