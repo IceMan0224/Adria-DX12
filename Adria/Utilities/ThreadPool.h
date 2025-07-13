@@ -17,7 +17,6 @@ namespace adria
 		void Initialize(Uint pool_size = std::thread::hardware_concurrency() - 1)
 		{
 			done = false;
-
 			static const Uint max_threads = std::thread::hardware_concurrency();
 			Uint const num_threads = pool_size == 0 ? max_threads - 1 : std::min(max_threads - 1, pool_size);
 			threads.reserve(num_threads);
@@ -35,10 +34,12 @@ namespace adria
 					done = true;
 					cond_var.notify_all();
 				}
-
 				for (Uint i = 0; i < threads.size(); ++i)
 				{
-					if (threads[i].joinable())  threads[i].join();
+					if (threads[i].joinable())
+					{
+						threads[i].join();
+					}
 				}
 			}
 		}
@@ -75,7 +76,10 @@ namespace adria
 			{
 				{
 					std::unique_lock<std::mutex> lk(cond_mutex);
-					while (!done && task_queue.Empty()) cond_var.wait(lk);
+					while (!done && task_queue.Empty())
+					{
+						cond_var.wait(lk);
+					}
 
 					if (done)
 					{

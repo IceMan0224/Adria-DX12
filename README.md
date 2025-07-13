@@ -65,7 +65,7 @@ Graphics engine written in C++ using DirectX12.
 ![](Adria/Saved/Screenshots/sanmiguel2.png "San Miguel") 
 
 ### Bistro
-![](Adria/Saved/Screenshots/bistro.png "Rainy Bistro") 
+![](Adria/Saved/Screenshots/bistro_rain.png "Rainy Bistro") 
 
 ### New Sponza
 ![](Adria/Saved/Screenshots/newsponza.png "New Sponza") 

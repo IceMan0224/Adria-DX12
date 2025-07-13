@@ -109,6 +109,7 @@ namespace adria
 			case CS_CloudDetail:
 			case CS_CloudType:
 			case CS_Taa:
+			case CS_RainDrops:
 			case CS_DeferredLighting:
 			case CS_VolumetricLighting:
 			case CS_TiledDeferredLighting:
@@ -276,6 +277,8 @@ namespace adria
 				return "Postprocess/FXAA.hlsl";
 			case CS_Taa:
 				return "Postprocess/TAA.hlsl";
+			case CS_RainDrops:
+				return "Postprocess/RainDrops.hlsl";
 			case CS_Ambient:
 				return "Lighting/Ambient.hlsl";
 			case CS_DeferredLighting:
@@ -505,6 +508,8 @@ namespace adria
 				return "GenerateMipsCS";
 			case CS_Taa:
 				return "TAA_CS";
+			case CS_RainDrops:
+				return "RainDropsCS";
 			case CS_DeferredLighting:
 				return "DeferredLightingCS";
 			case CS_VolumetricLighting:
@@ -583,7 +588,10 @@ namespace adria
 
 		void CompileShader(GfxShaderKey const& shader)
 		{
-			if (!shader.IsValid()) return;
+			if (!shader.IsValid())
+			{
+				return;
+			}
 
 			GfxShaderDesc shader_desc{};
 			shader_desc.entry_point = GetEntryPoint(shader);
@@ -596,7 +604,10 @@ namespace adria
 			GfxShaderCompileOutput output;
 			Bool compile_result = GfxShaderCompiler::CompileShader(shader_desc, output);
 			ADRIA_ASSERT(compile_result);
-			if (!compile_result) return;
+			if (!compile_result)
+			{
+				return;
+			}
 
 			shader_map[shader] = std::move(output.shader);
 

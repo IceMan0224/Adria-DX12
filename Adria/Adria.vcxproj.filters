@@ -639,6 +639,9 @@
     <ClCompile Include="Graphics\GfxPIX.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\RainDropsPass.cpp">
+      <Filter>Rendering\Passes\Post Effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utilities\RingBuffer.h">
@@ -1716,6 +1719,9 @@
     <ClInclude Include="Graphics\GfxPIX.h">
       <Filter>Graphics</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\RainDropsPass.h">
+      <Filter>Rendering\Passes\Post Effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Adria.rc">
@@ -2079,6 +2085,9 @@
       <Filter>Shaders\Other</Filter>
     </FxCompile>
     <FxCompile Include="Resources\Shaders\Postprocess\NNAO.hlsl">
+      <Filter>Shaders\Postprocess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\Shaders\Postprocess\RainDrops.hlsl">
       <Filter>Shaders\Postprocess</Filter>
     </FxCompile>
   </ItemGroup>

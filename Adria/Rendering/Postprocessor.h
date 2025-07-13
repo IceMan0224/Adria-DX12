@@ -32,6 +32,7 @@ namespace adria
 			PostEffectType_FilmEffects,
 			PostEffectType_Fog,
 			PostEffectType_DepthOfField,
+			PostEffectType_RainDrops,
 			PostEffectType_Upscaler,
 			PostEffectType_TAA,
 			PostEffectType_MotionBlur,

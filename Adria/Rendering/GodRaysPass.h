@@ -32,6 +32,4 @@ namespace adria
 		void CreatePSO();
 		void AddGodRaysPass(RenderGraph&, Light const&);
 	};
-
-
 }

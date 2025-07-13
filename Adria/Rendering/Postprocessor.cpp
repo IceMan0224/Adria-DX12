@@ -16,6 +16,7 @@
 #include "MotionBlurPass.h"
 #include "GodRaysPass.h"
 #include "FilmEffectsPass.h"
+#include "RainDropsPass.h"
 #include "TAAPass.h"
 #include "UpscalerPassGroup.h"
 #include "FFXCASPass.h"
@@ -51,6 +52,7 @@ namespace adria
 	void PostProcessor::OnRainEvent(Bool enabled)
 	{
 		GetPostEffect<VolumetricCloudsPass>()->OnRainEvent(enabled);
+		GetPostEffect<RainDropsPass>()->OnRainEvent(enabled);
 	}
 
 	void PostProcessor::AddAmbientOcclusionPass(RenderGraph& rg)
@@ -196,6 +198,7 @@ namespace adria
 		post_effects[PostEffectType_FilmEffects]	= std::make_unique<FilmEffectsPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_Fog]			= std::make_unique<ExponentialHeightFogPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_DepthOfField]	= std::make_unique<DepthOfFieldPassGroup>(gfx, render_width, render_height);
+		post_effects[PostEffectType_RainDrops]		= std::make_unique<RainDropsPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_Upscaler]		= std::make_unique<UpscalerPassGroup>(gfx, render_width, render_height);
 		post_effects[PostEffectType_TAA]			= std::make_unique<TAAPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_MotionBlur]		= std::make_unique<MotionBlurPass>(gfx, render_width, render_height);
@@ -265,6 +268,10 @@ namespace adria
 		else if constexpr (std::is_same_v<PostEffectT, DepthOfFieldPassGroup>)
 		{
 			return static_cast<PostEffectT*>(post_effects[PostEffectType_DepthOfField].get());
+		}
+		else if constexpr (std::is_same_v<PostEffectT, RainDropsPass>)
+		{
+			return static_cast<PostEffectT*>(post_effects[PostEffectType_RainDrops].get());
 		}
 		else if constexpr (std::is_same_v<PostEffectT, UpscalerPassGroup>)
 		{
