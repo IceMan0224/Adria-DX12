@@ -44,6 +44,7 @@ namespace adria
 		Int32 GetRainSplashBumpIndex()    const { return (Int32)rain_splash_bump_handle;    }
 		Int32 GetRainBlockerMapIndex()    const { return rain_blocker_map_pass.GetRainBlockerMapIdx(); }
 		Matrix GetRainViewProjection()    const { return rain_blocker_map_pass.GetViewProjection(); }
+
 	private:
 		GfxDevice* gfx;
 		std::unique_ptr<GfxBuffer> rain_data_buffer;
@@ -68,5 +69,7 @@ namespace adria
 
 	private:
 		void CreatePSOs();
+		void AddSimulationPass(RenderGraph&);
+		void AddDrawPass(RenderGraph&);
 	};
 }
