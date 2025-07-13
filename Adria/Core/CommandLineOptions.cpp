@@ -62,7 +62,7 @@ namespace adria::CommandLineOptions
 		window_width = parse_result["-w"].AsIntOr(1280);
 		window_height = parse_result["-h"].AsIntOr(1024);
 		maximize_window = parse_result["-max"];
-		scene_file = parse_result["-scene"].AsStringOr("bistro.json");
+		scene_file = parse_result["-scene"].AsStringOr("sponza.json");
 		vsync = parse_result["-vsync"];
 		debug_device = parse_result["-debugdevice"];
 		debug_dml = parse_result["-debugdml"];

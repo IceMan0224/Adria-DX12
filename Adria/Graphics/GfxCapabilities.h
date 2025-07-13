@@ -76,6 +76,10 @@ namespace adria
 		{
 			return enhanced_barriers_supported;
 		}
+		Bool SupportsTypedUAVLoadAdditionalFormats() const
+		{
+			return typed_uav_additional_formats_supported;
+		}
 
 		Bool SupportsAdditionalShadingRates() const { return additional_shading_rates_supported; }
 		Uint32 GetShadingRateImageTileSize() const { return shading_rate_image_tile_size; }
@@ -88,7 +92,7 @@ namespace adria
 		WorkGraphSupport work_graph_support = WorkGraphSupport::TierNotSupported;
 		GfxShaderModel shader_model = SM_Unknown;
 		Bool enhanced_barriers_supported = false;
-
+		Bool typed_uav_additional_formats_supported = false;
 		Bool additional_shading_rates_supported = false;
 		Uint32 shading_rate_image_tile_size = 0;
 	};

@@ -66,7 +66,10 @@ namespace adria
 		final_resource = RG_NAME(HDR_RenderTarget);
 		for (Uint32 i = 0; i < PostEffectType_Count; ++i)
 		{
-			if (post_effects[i]->IsEnabled(this)) post_effects[i]->AddPass(rg, this);
+			if (post_effects[i]->IsEnabled(this))
+			{
+				post_effects[i]->AddPass(rg, this);
+			}
 		}
 
 		rg.ExportTexture(GetPostEffect<ToneMapPass>()->GetInput(), history_buffer.get());
@@ -93,7 +96,6 @@ namespace adria
 
 	void PostProcessor::GUI()
 	{
-		
 		ambient_occlusion_manager.GUI();
 		for (auto& post_effect : post_effects)
 		{

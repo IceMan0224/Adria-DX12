@@ -24,7 +24,8 @@ namespace adria
 	private:
 		GfxDevice* gfx;
 		Uint32 width, height;
-		Bool rainEnabled;
+		Bool is_supported;
+		Bool rain_enabled;
 		std::unique_ptr<GfxComputePipelineState> rain_drops_pso;
 		TextureHandle noise_texture_handle;
 

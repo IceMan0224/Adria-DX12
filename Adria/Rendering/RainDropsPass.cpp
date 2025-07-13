@@ -13,18 +13,24 @@
 namespace adria
 {
 	RainDropsPass::RainDropsPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h),
-		rainEnabled(false), noise_texture_handle(INVALID_TEXTURE_HANDLE)
+		rain_enabled(false), is_supported(false), noise_texture_handle(INVALID_TEXTURE_HANDLE)
 	{
 		CreatePSO();
+		is_supported = gfx->GetCapabilities().SupportsTypedUAVLoadAdditionalFormats();
 	}
 
 	Bool RainDropsPass::IsEnabled(PostProcessor const* postprocessor) const
 	{
-		return rainEnabled;
+		return rain_enabled;
 	}
 
 	void RainDropsPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
+		if (!is_supported)
+		{
+			return;
+		}
+
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
 		struct RainDropsPassData
@@ -80,7 +86,7 @@ namespace adria
 
 	void RainDropsPass::OnRainEvent(Bool enabled)
 	{
-		rainEnabled = enabled;
+		rain_enabled = enabled;
 	}
 
 	void RainDropsPass::CreatePSO()

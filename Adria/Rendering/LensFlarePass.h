@@ -25,6 +25,7 @@ namespace adria
 	private:
 		GfxDevice* gfx;
 		Uint32 width, height;
+		Bool is_procedural_supported = false;
 		std::vector<TextureHandle> lens_flare_textures;
 		std::unique_ptr<GfxGraphicsPipelineState> lens_flare_pso;
 		std::unique_ptr<GfxComputePipelineState> procedural_lens_flare_pso;

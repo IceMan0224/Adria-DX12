@@ -26,6 +26,7 @@ namespace adria
 		: gfx(gfx), width(w), height(h)
 	{
 		CreatePSOs();
+		is_procedural_supported = gfx->GetCapabilities().SupportsTypedUAVLoadAdditionalFormats();
 	}
 
 	Bool LensFlarePass::IsEnabled(PostProcessor const* postprocessor) const
@@ -34,7 +35,10 @@ namespace adria
 		for (entt::entity light : lights)
 		{
 			Light const& light_data = lights.get<Light>(light);
-			if (light_data.active && light_data.lens_flare) return true;
+			if (light_data.active && light_data.lens_flare)
+			{
+				return true;
+			}
 		}
 		return false;
 	}
@@ -203,6 +207,11 @@ namespace adria
 
 	void LensFlarePass::AddProceduralLensFlarePass(RenderGraph& rg, PostProcessor* postprocessor, Light const& light)
 	{
+		if (!is_procedural_supported)
+		{
+			return;
+		}
+
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
 		struct LensFlarePassData

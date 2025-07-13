@@ -43,7 +43,6 @@ namespace adria
 			}
 			return MeshShaderSupport::TierNotSupported;
 		}
-
 		constexpr WorkGraphSupport ConvertWorkGraphTier(D3D12_WORK_GRAPHS_TIER work_graph_tier)
 		{
 			switch (work_graph_tier)
@@ -53,7 +52,6 @@ namespace adria
 			}
 			return WorkGraphSupport::TierNotSupported;
 		}
-
 		constexpr GfxShaderModel ConvertShaderModel(D3D_SHADER_MODEL shader_model)
 		{
 			switch (shader_model)
@@ -84,7 +82,7 @@ namespace adria
 		work_graph_support = ConvertWorkGraphTier(feature_support.WorkGraphsTier());
 		shader_model		= ConvertShaderModel(feature_support.HighestShaderModel());
 		enhanced_barriers_supported = feature_support.EnhancedBarriersSupported();
-
+		typed_uav_additional_formats_supported = feature_support.TypedUAVLoadAdditionalFormats();
 		shading_rate_image_tile_size = feature_support.ShadingRateImageTileSize();
 		additional_shading_rates_supported = feature_support.AdditionalShadingRatesSupported();
 
