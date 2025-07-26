@@ -1,5 +1,6 @@
 #pragma once
 #include "GfxFormat.h"
+#include "Utilities/EnumUtil.h"
 
 namespace adria
 {
@@ -9,23 +10,23 @@ namespace adria
 
 	enum GfxRayTracingASFlagBit : Uint32
 	{
-		GfxRayTracingASFlag_None = 0x0,
-		GfxRayTracingASFlag_AllowUpdate = 0x1,
-		GfxRayTracingASFlag_AllowCompaction = 0x2,
-		GfxRayTracingASFlag_PreferFastTrace = 0x4,
-		GfxRayTracingASFlag_PreferFastBuild = 0x8,
-		GfxRayTracingASFlag_MinimizeMemory = 0x10,
-		GfxRayTracingASFlag_PerformUpdate = 0x20,
+		GfxRayTracingASFlag_None = 0,
+		GfxRayTracingASFlag_AllowUpdate = BIT(0),
+		GfxRayTracingASFlag_AllowCompaction = BIT(1),
+		GfxRayTracingASFlag_PreferFastTrace = BIT(2),
+		GfxRayTracingASFlag_PreferFastBuild = BIT(3),
+		GfxRayTracingASFlag_MinimizeMemory = BIT(4),
+		GfxRayTracingASFlag_PerformUpdate = BIT(5)
 	};
 	using GfxRayTracingASFlags = Uint32;
 
 	enum GfxRayTracingInstanceFlagBit : Uint32
 	{
-		GfxRayTracingInstanceFlag_None = 0x0,
-		GfxRayTracingInstanceFlag_CullDisable = 0x1,
-		GfxRayTracingInstanceFlag_FrontCCW = 0x2,
-		GfxRayTracingInstanceFlag_ForceOpaque = 0x4,
-		GfxRayTracingInstanceFlag_ForceNoOpaque = 0x8,
+		GfxRayTracingInstanceFlag_None = BIT(0),
+		GfxRayTracingInstanceFlag_CullDisable = BIT(1),
+		GfxRayTracingInstanceFlag_FrontCCW = BIT(2),
+		GfxRayTracingInstanceFlag_ForceOpaque = BIT(3),
+		GfxRayTracingInstanceFlag_ForceNoOpaque = BIT(4)
 	};
 
 	using GfxRayTracingInstanceFlags = Uint32;

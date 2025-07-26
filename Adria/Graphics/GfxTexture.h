@@ -47,8 +47,8 @@ namespace adria
 
 	enum GfxTextureDescriptorFlags : Uint8
 	{
-		GfxTextureDescriptorFlag_None = 0x0,
-		GfxTextureDescriptorFlag_DepthReadOnly = 0x1
+		GfxTextureDescriptorFlag_None = 0,
+		GfxTextureDescriptorFlag_DepthReadOnly = BIT(0)
 	};
 
 	enum GfxTextureChannelMapping : Uint32

@@ -14,9 +14,9 @@ namespace adria
 
 	enum class RGPassFlags : Uint32
 	{
-		None = 0x00,
-		ForceNoCull = 0x01,						//RGPass will not be culled by Render Graph, useful for debug passes
-		LegacyRenderPass = 0x02,				//RGPass will not use DX12 Render Passes but rather OMSetRenderTargets
+		None = 0,
+		ForceNoCull = BIT(0),						//RGPass will not be culled by Render Graph, useful for debug passes
+		LegacyRenderPass = BIT(1),					//RGPass will not use DX12 Render Passes but rather OMSetRenderTargets
 	};
 	ENABLE_ENUM_BIT_OPERATORS(RGPassFlags);
 

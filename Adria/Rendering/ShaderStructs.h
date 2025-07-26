@@ -1,14 +1,10 @@
 #pragma once
 
-#ifndef DECLSPEC_ALIGN
-#define DECLSPEC_ALIGN(x)   __declspec(align(x))
-#endif
-
 #define PAD Uint32 ADRIA_CONCAT(pad, __COUNTER__)
 
 namespace adria
 {
-	DECLSPEC_ALIGN(16) struct FrameCBuffer
+	struct alignas(16) FrameCBuffer
 	{
 		Matrix view;
 		Matrix projection;

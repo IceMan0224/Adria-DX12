@@ -10,9 +10,9 @@ namespace adria
 
 	enum GfxShadingRate1D : Uint32
 	{
-		GfxShadingRate1D_1X = 0x01,
-		GfxShadingRate1D_2X = 0x02,
-		GfxShadingRate1D_4X = 0x04
+		GfxShadingRate1D_1X = BIT(0),
+		GfxShadingRate1D_2X = BIT(1),
+		GfxShadingRate1D_4X = BIT(2)
 	};
 
 	enum class GfxVariableShadingMode : Uint32
