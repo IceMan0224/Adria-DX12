@@ -76,7 +76,7 @@ namespace adria
 								desc.rtv_formats[1] = GfxFormat::R8G8B8A8_UNORM;
 							});
 					}
-					GfxPipelineState* pso = decal_psos->Get();
+					GfxPipelineState const* pso = decal_psos->Get();
 					cmd_list->SetPipelineState(pso);
 					for (auto e : decal_view)
 					{

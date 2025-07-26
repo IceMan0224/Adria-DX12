@@ -90,7 +90,7 @@ namespace adria
 					});
 
 				transparent_psos->AddDefine("USE_SSR", reflections_enabled ? "1" : "0");
-				GfxPipelineState* pso = transparent_psos->Get();
+				GfxPipelineState const* pso = transparent_psos->Get();
 				cmd_list->SetPipelineState(pso);
 
 				auto batch_view = reg.view<Batch, Transparent>();

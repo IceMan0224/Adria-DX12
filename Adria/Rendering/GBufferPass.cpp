@@ -72,8 +72,14 @@ namespace adria
 				GfxShadingRateInfo const& vrs = gfx->GetVRSInfo();
 				cmd_list->BeginVRS(vrs);
 
-				if (skip_alpha_blended) ProcessBatches(reg.view<Batch>(entt::exclude_t<Transparent>()), cmd_list);
-				else ProcessBatches(reg.view<Batch>(), cmd_list);
+				if (skip_alpha_blended)
+				{
+					ProcessBatches(reg.view<Batch>(entt::exclude_t<Transparent>()), cmd_list);
+				}
+				else
+				{
+					ProcessBatches(reg.view<Batch>(), cmd_list);
+				}
 
 				cmd_list->EndVRS(vrs);
 			}, RGPassType::Graphics, RGPassFlags::None);
@@ -143,7 +149,7 @@ namespace adria
 			Batch& batch = view.get<Batch>(batch_entity);
 			if (!batch.camera_visibility) continue;
 
-			GfxPipelineState* pso = GetPSO(batch.shading_extension, batch.alpha_mode);
+			GfxPipelineState const* pso = GetPSO(batch.shading_extension, batch.alpha_mode);
 			cmd_list->SetPipelineState(pso);
 
 			struct GBufferConstants

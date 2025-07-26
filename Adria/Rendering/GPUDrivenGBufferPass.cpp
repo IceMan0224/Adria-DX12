@@ -342,7 +342,7 @@ namespace adria
 
 				cull_instances_psos->AddDefine("SKIP_ALPHA_BLENDED", skip_alpha_blended ? "1" : "0");
 				cull_instances_psos->AddDefine("OCCLUSION_CULL", occlusion_culling ? "1" : "0");
-				GfxPipelineState* pso = cull_instances_psos->Get();
+				GfxPipelineState const* pso = cull_instances_psos->Get();
 				cmd_list->SetPipelineState(pso);
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
@@ -453,7 +453,7 @@ namespace adria
 				};
 
 				cull_meshlets_psos->AddDefine("OCCLUSION_CULL", occlusion_culling ? "1" : "0");
-				GfxPipelineState* pso = cull_meshlets_psos->Get();
+				GfxPipelineState const* pso = cull_meshlets_psos->Get();
 				cmd_list->SetPipelineState(pso);
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
@@ -570,7 +570,7 @@ namespace adria
 				draw_psos->AddDefine("MATERIAL_ID", material_ids ? "1" : "0");
 				draw_psos->AddDefine("MESHLET_ID", meshlet_ids ? "1" : "0");
 
-				GfxPipelineState* pso = draw_psos->Get();
+				GfxPipelineState const* pso = draw_psos->Get();
 				cmd_list->SetPipelineState(pso);
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
@@ -878,7 +878,7 @@ namespace adria
 				draw_psos->AddDefine("MATERIAL_ID", material_ids ? "1" : "0");
 				draw_psos->AddDefine("MESHLET_ID", meshlet_ids ? "1" : "0");
 
-				GfxPipelineState* pso = draw_psos->Get();
+				GfxPipelineState const* pso = draw_psos->Get();
 				cmd_list->SetPipelineState(pso);
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);

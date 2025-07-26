@@ -486,7 +486,7 @@ namespace adria
 				};
 				clouds_psos->AddDefine("REPROJECTION", TemporalReprojection.Get() ? "1" : "0");
 
-				GfxPipelineState* clouds_pso = clouds_psos->Get();
+				GfxPipelineState const* clouds_pso = clouds_psos->Get();
 				cmd_list->SetPipelineState(clouds_pso);
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootCBV(2, constants);

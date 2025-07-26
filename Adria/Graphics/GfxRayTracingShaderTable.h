@@ -29,7 +29,7 @@ namespace adria
 		};
 
 	public:
-		explicit GfxRayTracingShaderTable(GfxStateObject* state_object);
+		explicit GfxRayTracingShaderTable(GfxStateObject const* state_object);
 
 		void SetRayGenShader(Char const* name, void* local_data = nullptr, Uint32 data_size = 0);
 		void AddMissShader(Char const* name, Uint32 i, void* local_data = nullptr, Uint32 data_size = 0);

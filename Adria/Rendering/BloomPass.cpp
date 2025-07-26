@@ -143,7 +143,7 @@ namespace adria
 				{
 					downsample_psos->AddDefine("FIRST_PASS", "1");
 				}
-				GfxPipelineState* pso = downsample_psos->Get();
+				GfxPipelineState const* pso = downsample_psos->Get();
 				cmd_list->SetPipelineState(pso);
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);

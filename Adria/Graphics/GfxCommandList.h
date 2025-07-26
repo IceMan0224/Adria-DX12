@@ -91,17 +91,17 @@ namespace adria
 		void CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array);
 		void CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset);
 
-		void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Float* clear_value);
-		void ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Float* clear_value);
-		void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Uint32* clear_value);
-		void ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Uint32* clear_value);
+		void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, Float const* clear_value);
+		void ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, Float const* clear_value);
+		void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, Uint32 const* clear_value);
+		void ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, Uint32 const* clear_value);
 		void WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data);
 
 		void BeginRenderPass(GfxRenderPassDesc const& render_pass_desc);
 		void EndRenderPass();
 
-		void SetPipelineState(GfxPipelineState* state);
-		GfxRayTracingShaderTable& SetStateObject(GfxStateObject* state_object);
+		void SetPipelineState(GfxPipelineState const* state);
+		GfxRayTracingShaderTable& SetStateObject(GfxStateObject const* state_object);
 
 		void SetStencilReference(Uint8 stencil);
 		void SetBlendFactor(Float const* blend_factor);
@@ -152,7 +152,7 @@ namespace adria
 		Ref<ID3D12CommandAllocator> cmd_allocator = nullptr;
 
 		Uint32 command_count = 0;
-		GfxPipelineState* current_pso = nullptr;
+		GfxPipelineState const* current_pso = nullptr;
 		GfxRenderPassDesc const* current_render_pass = nullptr;
 
 		ID3D12StateObject* current_state_object = nullptr;

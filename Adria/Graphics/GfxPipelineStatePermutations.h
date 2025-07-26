@@ -180,14 +180,14 @@ namespace adria
 			f(current_pso_desc);
 		}
 
-		PSO* Get() const
+		PSO const* Get() const
 		{
-			Uint64 pso_hash = PSODescHasher{}(current_pso_desc);
+			Uint64 const pso_hash = PSODescHasher{}(current_pso_desc);
 			if (!pso_permutations.contains(pso_hash))
 			{
 				pso_permutations[pso_hash] = std::make_unique<PSO>(gfx, current_pso_desc);
 			}
-			PSO* pso = pso_permutations[pso_hash].get();
+			PSO const* pso = pso_permutations[pso_hash].get();
 			current_pso_desc = base_pso_desc;
 			return pso;
 		}

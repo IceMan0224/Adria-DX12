@@ -592,7 +592,7 @@ namespace adria
 			{
 				shadow_psos->AddDefine("TRANSPARENT", "1");
 			}
-			GfxPipelineState* pso = shadow_psos->Get();
+			GfxPipelineState const* pso = shadow_psos->Get();
 			cmd_list->SetRootConstants(1, constants);
 			cmd_list->SetPipelineState(pso);
 			for (Batch* batch : batches)

@@ -715,7 +715,7 @@ namespace adria
 		current_render_pass = nullptr;
 	}
 
-	void GfxCommandList::SetPipelineState(GfxPipelineState* pso)
+	void GfxCommandList::SetPipelineState(GfxPipelineState const* pso)
 	{
 		if (pso != current_pso)
 		{
@@ -739,7 +739,7 @@ namespace adria
 		}
 	}
 
-	GfxRayTracingShaderTable& GfxCommandList::SetStateObject(GfxStateObject* state_object)
+	GfxRayTracingShaderTable& GfxCommandList::SetStateObject(GfxStateObject const* state_object)
 	{
 		if (state_object->d3d12_so != current_state_object)
 		{
