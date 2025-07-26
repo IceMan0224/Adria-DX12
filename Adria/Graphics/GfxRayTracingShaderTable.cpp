@@ -6,7 +6,6 @@
 
 namespace adria
 {
-
 	GfxRayTracingShaderTable::GfxRayTracingShaderTable(GfxStateObject const* state_object)
 	{
 		GFX_CHECK_HR(state_object->d3d12_so->QueryInterface(IID_PPV_ARGS(pso_info.GetAddressOf())));

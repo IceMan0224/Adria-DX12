@@ -22,7 +22,7 @@ namespace adria
 		T& Create(Args&&... args)
 		{
 			static_assert(std::is_trivial_v<T> && std::is_standard_layout_v<T>);
-			ADRIA_ASSERT(board_data.find(typeid(T)) == board_data.end() && "Cannot create same type more than once in blackboard!");
+			ADRIA_ASSERT_MSG(board_data.find(typeid(T)) == board_data.end(), "Cannot create same type more than once in blackboard!");
 			board_data[typeid(T)] = std::make_unique<Uint8[]>(sizeof(T));
 			T* data_entry = reinterpret_cast<T*>(board_data[typeid(T)].get());
 			*data_entry = T{ std::forward<Args>(args)... };

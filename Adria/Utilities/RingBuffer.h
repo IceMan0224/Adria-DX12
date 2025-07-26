@@ -386,7 +386,7 @@ namespace adria
 
 		reference At(size_type i)
 		{
-			ADRIA_ASSERT(InBounds(i), "Out of Bounds Index");
+			ADRIA_ASSERT_MSG(InBounds(i), "Out of Bounds Index");
 			iterator it = begin();
 			it += i;
 			return *it;
@@ -394,7 +394,7 @@ namespace adria
 
 		const_reference At(size_type i) const
 		{
-			ADRIA_ASSERT(InBounds(i), "Out of Bounds Index");
+			ADRIA_ASSERT_MSG(InBounds(i), "Out of Bounds Index");
 			iterator it = cbegin();
 			it += i;
 			return *it;
@@ -422,7 +422,7 @@ namespace adria
 
 		void HeadIncrement()
 		{
-			ADRIA_ASSERT(!Empty(), "Cannot call Pop Front on empty buffer");
+			ADRIA_ASSERT_MSG(!Empty(), "Cannot call Pop Front on empty buffer");
 			++head;
 			--content_size;
 			if (head == buffer.size()) head = 0;

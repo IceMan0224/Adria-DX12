@@ -55,7 +55,7 @@ namespace adria
 			resource_desc.DepthOrArraySize = (Uint16)desc.depth;
 			break;
 		default:
-			ADRIA_ASSERT(false && "Invalid Texture Type!");
+			ADRIA_ASSERT_MSG(false, "Invalid Texture Type!");
 			break;
 		}
 		D3D12_CLEAR_VALUE* clear_value_ptr = nullptr;

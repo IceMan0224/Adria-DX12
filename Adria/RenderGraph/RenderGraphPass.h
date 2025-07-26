@@ -166,13 +166,13 @@ namespace adria
 
 		void Setup(RenderGraphBuilder& builder) override
 		{
-			ADRIA_ASSERT(setup != nullptr && "setup function is null!");
+			ADRIA_ASSERT_MSG(setup != nullptr, "setup function is null!");
 			setup(data, builder);
 		}
 
 		void Execute(RenderGraphContext& context, GfxCommandList* ctx) const override
 		{
-			ADRIA_ASSERT(setup != nullptr && "execute function is null!");
+			ADRIA_ASSERT_MSG(execute != nullptr, "execute function is null!");
 			execute(data, context, ctx);
 		}
 	};
@@ -202,13 +202,13 @@ namespace adria
 
 		void Setup(RenderGraphBuilder& builder) override
 		{
-			ADRIA_ASSERT(setup != nullptr && "setup function is null!");
+			ADRIA_ASSERT_MSG(setup != nullptr, "setup function is null!");
 			setup(builder);
 		}
 
 		void Execute(RenderGraphContext& context, GfxCommandList* ctx) const override
 		{
-			ADRIA_ASSERT(setup != nullptr && "execute function is null!");
+			ADRIA_ASSERT_MSG(execute != nullptr, "execute function is null!");
 			execute(context, ctx);
 		}
 	};

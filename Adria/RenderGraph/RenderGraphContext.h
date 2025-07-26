@@ -66,7 +66,7 @@ namespace adria
 		void SetName()
 		{
 #if RG_DEBUG
-			ADRIA_ASSERT(resource != nullptr && "Call SetDebugName at allocation/creation of a resource");
+			ADRIA_ASSERT_MSG(resource != nullptr, "Call SetDebugName at allocation/creation of a resource");
 			resource->SetName(name);
 #endif
 		}

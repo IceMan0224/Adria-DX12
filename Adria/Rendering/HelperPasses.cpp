@@ -64,7 +64,7 @@ namespace adria
 					cmd_list->SetPipelineState(copy_psos->Get());
 					break;
 				default:
-					ADRIA_ASSERT(false && "Invalid Copy Mode in CopyTexture");
+					ADRIA_ASSERT_MSG(false, "Invalid Copy Mode in CopyTexture");
 				}
 
 				GfxDescriptor dst = gfx->AllocateDescriptorsGPU();
@@ -153,7 +153,7 @@ namespace adria
 					cmd_list->SetPipelineState(add_psos->Get());
 					break;
 				default:
-					ADRIA_ASSERT(false && "Invalid Copy Mode in CopyTexture");
+					ADRIA_ASSERT_MSG(false, "Invalid Copy Mode in CopyTexture");
 				}
 
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(2);

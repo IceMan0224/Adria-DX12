@@ -23,7 +23,7 @@ namespace adria
 				std::lock_guard guard(alloc_mutex);
 				start = ring_offset_allocator.Allocate(count);
 			}
-			ADRIA_ASSERT(start != INVALID_ALLOC_OFFSET && "Don't have enough space");
+			ADRIA_ASSERT_MSG(start != INVALID_ALLOC_OFFSET, "Don't have enough space");
 			return GetHandle((Uint32)start);
 		}
 

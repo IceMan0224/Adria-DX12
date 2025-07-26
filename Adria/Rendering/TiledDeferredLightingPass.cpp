@@ -96,7 +96,11 @@ namespace adria
 					.depth_idx = i + 4, .ao_idx = i + 5, .output_idx = i + 6, 
 					.debug_data_packed = PackTwoUint16ToUint32(visualize_tiled ? Uint16(i + 7) : 0, (Uint16)visualize_max_lights)
 				};
-				if (visualize_tiled) ADRIA_ASSERT(i + 7 < UINT16_MAX);
+
+				if (visualize_tiled)
+				{
+					ADRIA_ASSERT(i + 7 < UINT16_MAX);
+				}
 
 				static constexpr Float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 				GfxTexture const& tiled_target = context.GetTexture(*data.output);
