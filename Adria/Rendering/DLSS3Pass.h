@@ -19,8 +19,6 @@ namespace adria
 		DLSS3Pass(GfxDevice* gfx, Uint32 w, Uint32 h);
 		~DLSS3Pass();
 
-		RGResourceName AddPass(RenderGraph& rg, RGResourceName input);
-
 		virtual void OnResize(Uint32 w, Uint32 h) override
 		{
 			display_width = w, display_height = h;

@@ -156,6 +156,8 @@ namespace adria
 
 	void FSR3Pass::CreateContext()
 	{
+		ADRIA_ASSERT(recreate_context);
+
 		fsr3_context_desc.fpMessage = FSR3Log;
 		fsr3_context_desc.maxRenderSize.width = render_width;
 		fsr3_context_desc.maxRenderSize.height = render_height;

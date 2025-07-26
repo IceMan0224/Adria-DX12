@@ -59,7 +59,10 @@ namespace adria
 
 	void XeSS2Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
-		if (needs_init) XeSSInit();
+		if (needs_init)
+		{
+			XeSSInit();
+		}
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
@@ -89,7 +92,10 @@ namespace adria
 			},
 			[=](XeSS2PassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
 			{
-				if (needs_init) XeSSInit();
+				if (needs_init)
+				{
+					XeSSInit();
+				}
 
 				GfxTexture& input_texture = ctx.GetTexture(*data.input);
 				GfxTexture& velocity_texture = ctx.GetTexture(*data.velocity);
@@ -146,20 +152,19 @@ namespace adria
 
 	void XeSS2Pass::XeSSInit()
 	{
-		if (needs_init)
-		{
-			gfx->WaitForGPU();
+		ADRIA_ASSERT(needs_init);
 
-			xess_d3d12_init_params_t params{};
-			params.outputResolution.x = display_width;
-			params.outputResolution.y = display_height;
-			params.qualitySetting = quality_setting;
-			params.initFlags = XESS_INIT_FLAG_ENABLE_AUTOEXPOSURE | XESS_INIT_FLAG_INVERTED_DEPTH;
+		gfx->WaitForGPU();
 
-			xess_result_t result = xessD3D12Init(context, &params);
-			ADRIA_ASSERT(result == XESS_RESULT_SUCCESS);
-			needs_init = false;
-		}
+		xess_d3d12_init_params_t params{};
+		params.outputResolution.x = display_width;
+		params.outputResolution.y = display_height;
+		params.qualitySetting = quality_setting;
+		params.initFlags = XESS_INIT_FLAG_ENABLE_AUTOEXPOSURE | XESS_INIT_FLAG_INVERTED_DEPTH;
+
+		xess_result_t result = xessD3D12Init(context, &params);
+		ADRIA_ASSERT(result == XESS_RESULT_SUCCESS);
+		needs_init = false;
 	}
 
 	void XeSS2Pass::RecreateRenderResolution()

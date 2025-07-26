@@ -18,8 +18,7 @@ namespace adria
 		{
 			display_width = w, display_height = h;
 			RecreateRenderResolution();
-			DestroyContext();
-			CreateContext();
+			recreate_context = true;
 		}
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual Bool IsEnabled(PostProcessor const*) const override;
@@ -34,7 +33,7 @@ namespace adria
 		FfxInterface* ffx_interface;
 		FfxFsr2ContextDescription fsr2_context_desc{};
 		FfxFsr2Context fsr2_context{};
-		Bool recreate_context = false;
+		Bool recreate_context = true;
 
 		FfxFsr2QualityMode fsr2_quality_mode = FFX_FSR2_QUALITY_MODE_QUALITY;
 		Float custom_upscale_ratio = 1.0f;

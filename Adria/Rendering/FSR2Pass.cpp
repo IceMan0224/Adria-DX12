@@ -150,6 +150,8 @@ namespace adria
 
 	void FSR2Pass::CreateContext()
 	{
+		ADRIA_ASSERT(recreate_context);
+
 		fsr2_context_desc.fpMessage = FSR2Log;
 		fsr2_context_desc.maxRenderSize.width = render_width;
 		fsr2_context_desc.maxRenderSize.height = render_height;
