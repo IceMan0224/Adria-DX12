@@ -294,7 +294,10 @@ namespace adria
 	void GfxDevice::EndFrame()
 	{
 		ZoneScopedN("GfxDevice::EndFrame");
-		if (first_frame) [[unlikely]] first_frame = false;
+		if (first_frame) [[unlikely]]
+		{
+			first_frame = false;
+		}
 		Uint32 backbuffer_index = swapchain->GetBackbufferIndex();
 
 		graphics_cmd_list_pool[backbuffer_index]->EndCmdLists();
@@ -1205,7 +1208,7 @@ namespace adria
 			NewFilter.DenyList.pIDList = DenyIds;
 
 			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false));
-			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true));
+			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, false));
 			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true));
 			info_queue->PushStorageFilter(&NewFilter);
 

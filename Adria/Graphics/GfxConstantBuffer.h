@@ -38,6 +38,10 @@ namespace adria
 		{
 			return cbuffer->GetGpuAddress() + (Uint64)cbuffer_index * cbuffer_size;
 		}
+		void SetName(Char const* name)
+		{
+			cbuffer->SetName(name);
+		}
 
 	private:
 		std::unique_ptr<GfxBuffer> cbuffer;

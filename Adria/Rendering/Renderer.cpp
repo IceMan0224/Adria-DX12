@@ -51,6 +51,7 @@ namespace adria
 		CreateRenderSizeDependentResources();
 		RegisterEventListeners();
 		screenshot_fence.Create(gfx, "Screenshot Fence");
+		frame_cbuffer.SetName("FrameCBuffer");
 	}
 
 	Renderer::~Renderer()

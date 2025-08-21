@@ -69,10 +69,16 @@ namespace adria
 		{
 			passes.emplace_back(allocator.AllocateObject<RenderGraphPass<PassData>>(std::forward<Args>(args)...));
 			RGPassBase*& pass = passes.back(); pass->id = passes.size() - 1;
+
 			RenderGraphBuilder builder(*this, *pass);
 			pass->Setup(builder);
-			for (Uint32 event_idx : pending_event_indices) pass->events_to_start.push_back(event_idx);
+
+			for (Uint32 event_idx : pending_event_indices)
+			{
+				pass->events_to_start.push_back(event_idx);
+			}
 			pending_event_indices.clear();
+
 			return *dynamic_cast<RenderGraphPass<PassData>*>(pass);
 		}
 

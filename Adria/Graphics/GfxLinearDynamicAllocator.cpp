@@ -87,6 +87,7 @@ namespace adria
 		buffer = gfx->CreateBuffer(desc);
 		ADRIA_ASSERT(buffer->IsMapped());
 		cpu_address = buffer->GetMappedData();
+		buffer->SetName("LinearDynamicAllocatorPage");
 	}
 	GfxLinearDynamicAllocator::GfxAllocationPage::GfxAllocationPage(GfxAllocationPage&&) = default;
 
