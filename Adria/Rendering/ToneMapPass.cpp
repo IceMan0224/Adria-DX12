@@ -61,11 +61,22 @@ namespace adria
 				}
 				data.hdr_input = builder.ReadTexture(source, ReadAccess_NonPixelShader);
 
-				if (builder.IsTextureDeclared(RG_NAME(Exposure))) data.exposure = builder.ReadTexture(RG_NAME(Exposure), ReadAccess_NonPixelShader);
-				else data.exposure.Invalidate();
-
-				if (builder.IsTextureDeclared(RG_NAME(Bloom))) data.bloom = builder.ReadTexture(RG_NAME(Bloom), ReadAccess_NonPixelShader);
-				else data.bloom.Invalidate();
+				if (builder.IsTextureDeclared(RG_NAME(Exposure)))
+				{
+					data.exposure = builder.ReadTexture(RG_NAME(Exposure), ReadAccess_NonPixelShader);
+				}
+				else
+				{
+					data.exposure.Invalidate();
+				}
+				if (builder.IsTextureDeclared(RG_NAME(Bloom)))
+				{
+					data.bloom = builder.ReadTexture(RG_NAME(Bloom), ReadAccess_NonPixelShader);
+				}
+				else
+				{
+					data.bloom.Invalidate();
+				}
 
 				data.output = builder.WriteTexture(destination);
 				builder.SetViewport(width, height);

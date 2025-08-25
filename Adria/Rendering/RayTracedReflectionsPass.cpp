@@ -128,7 +128,7 @@ namespace adria
 
 	void RayTracedReflectionsPass::CreateStateObject()
 	{
-		GfxShader const& rtr_blob = GetGfxShader(LIB_Reflections);
+		GfxShader const& rtr_blob = SM_GetGfxShader(LIB_Reflections);
 		GfxStateObjectBuilder rtr_state_object_builder(6);
 		{
 			D3D12_DXIL_LIBRARY_DESC	dxil_lib_desc{};

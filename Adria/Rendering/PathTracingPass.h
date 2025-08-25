@@ -9,7 +9,8 @@ namespace adria
 	class GfxDevice;
 	class GfxShaderKey;
 	class GfxStateObject;
-	class OIDNDenoiserPass;
+	class SVGFDenoiserPass;
+	class GfxComputePipelineState;
 
 	class PathTracingPass
 	{
@@ -27,22 +28,25 @@ namespace adria
 	private:
 		GfxDevice* gfx;
 		std::unique_ptr<GfxStateObject> path_tracing_so;
-		std::unique_ptr<GfxStateObject> path_tracing_so_write_gbuffer;
+		std::unique_ptr<GfxStateObject> path_tracing_with_denoiser_so;
+		std::unique_ptr<GfxComputePipelineState> remodulate_pso;
 		Uint32 width, height;
 		Bool is_supported;
 		std::unique_ptr<GfxTexture> accumulation_texture = nullptr;
-		std::unique_ptr<GfxTexture> denoiser_albedo_texture = nullptr;
-		std::unique_ptr<GfxTexture> denoiser_normal_texture = nullptr;
 		Int32 accumulated_frames = 1;
-		std::unique_ptr<OIDNDenoiserPass> oidn_denoiser_pass;
-		Bool reset_denoiser = false;
+
+		std::unique_ptr<SVGFDenoiserPass> svgf_denoiser_pass;
+		Bool denoiser_active = false;
 
 	private:
-		void CreateStateObject();
+		void CreatePSO();
+		void CreateStateObjects();
 		GfxStateObject* CreateStateObjectCommon(GfxShaderKey const&);
 		void OnLibraryRecompiled(GfxShaderKey const&);
 
+		void AddPathTracingPass(RenderGraph&);
+		void AddRemodulatePass(RenderGraph&);
+
 		void CreateAccumulationTexture();
-		void CreateDenoiserTextures();
 	};
 }

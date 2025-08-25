@@ -142,7 +142,7 @@ namespace adria
 
 	void GfxNsightAftermathGpuCrashTracker::OnShaderLookup(GFSDK_Aftermath_ShaderBinaryHash const& shader_hash, PFN_GFSDK_Aftermath_SetData set_shader_binary) const
 	{
-		GfxShader const& shader = GetGfxShader(shader_hash_map[shader_hash.hash]);
+		GfxShader const& shader = SM_GetGfxShader(shader_hash_map[shader_hash.hash]);
 		set_shader_binary(shader.GetData(), (Uint32)shader.GetSize());
 	}
 
@@ -243,7 +243,7 @@ namespace adria
 
 	void GfxNsightAftermathGpuCrashTracker::OnShaderOrLibraryCompiled(GfxShaderKey const& shader_key)
 	{
-		GfxShader const& shader = GetGfxShader(shader_key);
+		GfxShader const& shader = SM_GetGfxShader(shader_key);
 		D3D12_SHADER_BYTECODE shader_bytecode{ shader.GetData(), shader.GetSize() };
 		GFSDK_Aftermath_ShaderBinaryHash shader_hash;
 		Bool result = GFSDK_Aftermath_GetShaderHash(GFSDK_Aftermath_Version_API, &shader_bytecode, &shader_hash);

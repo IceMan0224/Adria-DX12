@@ -642,6 +642,9 @@
     <ClCompile Include="Rendering\RainDropsPass.cpp">
       <Filter>Rendering\Passes\Post Effects</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\SVGFDenoiserPass.cpp">
+      <Filter>Rendering\Passes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utilities\RingBuffer.h">
@@ -1722,6 +1725,9 @@
     <ClInclude Include="Rendering\RainDropsPass.h">
       <Filter>Rendering\Passes\Post Effects</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\SVGFDenoiserPass.h">
+      <Filter>Rendering\Passes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Adria.rc">
@@ -2089,6 +2095,12 @@
     </FxCompile>
     <FxCompile Include="Resources\Shaders\Postprocess\RainDrops.hlsl">
       <Filter>Shaders\Postprocess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\Shaders\RayTracing\SVGF.hlsl">
+      <Filter>Shaders\RayTracing</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\Shaders\RayTracing\Remodulate.hlsl">
+      <Filter>Shaders\RayTracing</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

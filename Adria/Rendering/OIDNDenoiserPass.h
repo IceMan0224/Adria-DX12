@@ -10,7 +10,7 @@ namespace adria
 	class GfxCommandList;
 	class RenderGraph;
 
-	class OIDNDenoiserPass 
+	class [[deprecated("Use SVGF denoiser")]] OIDNDenoiserPass
 	{
 	public:
 		explicit OIDNDenoiserPass(GfxDevice* gfx);

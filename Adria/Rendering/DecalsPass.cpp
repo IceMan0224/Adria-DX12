@@ -118,7 +118,7 @@ namespace adria
 	void DecalsPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc decals_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(GetGfxShader(VS_Decals), decals_pso_desc.input_layout);
+		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_Decals), decals_pso_desc.input_layout);
 		decals_pso_desc.root_signature = GfxRootSignatureID::Common;
 		decals_pso_desc.VS = VS_Decals;
 		decals_pso_desc.PS = PS_Decals;

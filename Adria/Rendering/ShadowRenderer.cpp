@@ -548,7 +548,7 @@ namespace adria
 	{
 		using enum GfxShaderStage;
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(GetGfxShader(VS_Shadow), gfx_pso_desc.input_layout);
+		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_Shadow), gfx_pso_desc.input_layout);
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_Shadow;
 		gfx_pso_desc.PS = PS_Shadow;

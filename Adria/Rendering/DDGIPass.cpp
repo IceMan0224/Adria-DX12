@@ -410,7 +410,7 @@ namespace adria
 	void DDGIPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc  gfx_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(GetGfxShader(VS_DDGIVisualize), gfx_pso_desc.input_layout);
+		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_DDGIVisualize), gfx_pso_desc.input_layout);
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_DDGIVisualize;
 		gfx_pso_desc.PS = PS_DDGIVisualize;
@@ -433,7 +433,7 @@ namespace adria
 
 	void DDGIPass::CreateStateObject()
 	{
-		GfxShader const& ddgi_blob = GetGfxShader(LIB_DDGIRayTracing);
+		GfxShader const& ddgi_blob = SM_GetGfxShader(LIB_DDGIRayTracing);
 
 		GfxStateObjectBuilder ddgi_state_object_builder(5);
 		{

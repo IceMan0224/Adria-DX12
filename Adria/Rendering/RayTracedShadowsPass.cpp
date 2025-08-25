@@ -74,7 +74,7 @@ namespace adria
 
 	void RayTracedShadowsPass::CreateStateObject()
 	{
-		GfxShader const& rt_shadows_blob = GetGfxShader(LIB_Shadows);
+		GfxShader const& rt_shadows_blob = SM_GetGfxShader(LIB_Shadows);
 		GfxStateObjectBuilder rt_shadows_state_object_builder(6);
 		{
 			D3D12_EXPORT_DESC export_descs[] =

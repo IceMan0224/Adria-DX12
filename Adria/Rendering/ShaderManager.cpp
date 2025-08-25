@@ -147,6 +147,10 @@ namespace adria
 			case CS_DepthOfField_Combine:
 			case CS_TensorToTexture:
 			case CS_TextureToTensor:
+			case CS_SVGF_Reprojection:
+			case CS_SVGF_Variance:
+			case CS_SVGF_Atrous:
+			case CS_Remodulate:
 				return GfxShaderStage::CS;
 			case HS_OceanLOD:
 				return GfxShaderStage::HS;
@@ -331,6 +335,12 @@ namespace adria
 				return "RayTracing/RayTracedReflections.hlsl";
 			case LIB_PathTracing:
 				return "RayTracing/PathTracer.hlsl";
+			case CS_SVGF_Reprojection:
+			case CS_SVGF_Variance:
+			case CS_SVGF_Atrous:
+				return "RayTracing/SVGF.hlsl";
+			case CS_Remodulate:
+				return "RayTracing/Remodulate.hlsl";
 			case CS_ReSTIR_DI_InitialSampling:
 				return "ReSTIR/DI/InitialSampling.hlsl";
 			case CS_ReSTIR_DI_TemporalResampling:
@@ -548,6 +558,14 @@ namespace adria
 				return "DDGIVisualizeVS";
 			case PS_DDGIVisualize:
 				return "DDGIVisualizePS";
+			case CS_SVGF_Reprojection:
+				return "SVGF_ReprojectionCS";
+			case CS_SVGF_Variance:
+				return "SVGF_VarianceCS";
+			case CS_SVGF_Atrous:
+				return "SVGF_AtrousCS";
+			case CS_Remodulate:
+				return "Remodulate_CS";
 			case CS_ReSTIR_DI_InitialSampling:
 				return "InitialSamplingCS";
 			case CS_ReSTIR_DI_TemporalResampling:

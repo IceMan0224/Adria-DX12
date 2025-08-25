@@ -112,6 +112,10 @@ namespace adria
 		CS_VolumetricFog_ScatteringIntegration,
 		PS_VolumetricFog_CombineFog,
 		PS_VRSOverlay,
+		CS_SVGF_Reprojection,
+		CS_SVGF_Variance,
+		CS_SVGF_Atrous,
+		CS_Remodulate,
 		CS_ReSTIR_DI_InitialSampling,
 		CS_ReSTIR_DI_TemporalResampling,
 		CS_ReSTIR_DI_SpatialResampling,
@@ -138,5 +142,5 @@ namespace adria
 		static LibraryRecompiledEvent& GetLibraryRecompiledEvent();
 		static GfxShader const& GetGfxShader(GfxShaderKey const& shader_key);
 	};
-	#define GetGfxShader(key) ShaderManager::GetGfxShader(key)
+	#define SM_GetGfxShader(key) ShaderManager::GetGfxShader(key)
 }
