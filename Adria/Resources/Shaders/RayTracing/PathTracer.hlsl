@@ -169,7 +169,6 @@ void PT_RayGen()
             break;
         }
     }
-
     float3 radiance = radianceDiffuse + radianceSpecular;
 
     float3 accumulatedRadiance = radiance;

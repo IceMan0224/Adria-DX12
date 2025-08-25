@@ -177,10 +177,11 @@ void SVGF_AtrousCS(uint3 DTid : SV_DispatchThreadID)
     
     float4 centerSample = inputTexture.Load(int3(pix, 0));
     float  centerDepth   = depthTexture.Load(int3(pix, 0));
-    float3 centerNormal  = DecodeNormalOctahedron(normalTexture.Load(int3(pix, 0)).xy * 2.0f - 1.0f);
+    float3 centerNormal  = normalTexture.Load(int3(pix, 0)).rgb * 2.0f - 1.0f;
     float3 centerAlbedo  = albedoTexture.Load(int3(pix, 0)).rgb; 
     uint   centerMeshID  = meshIDTexture.Load(int3(pix, 0));
-    float  centerLuma    = Luminance(centerSample.rgb);
+    
+    float  centerLuma    = Luminance(centerAlbedo.rgb);
     
     float stabilizedCenterVariance = 0.0;
     float varianceWeightSum = 0.0;
@@ -199,7 +200,6 @@ void SVGF_AtrousCS(uint3 DTid : SV_DispatchThreadID)
         }
     }
     if (varianceWeightSum > 0) stabilizedCenterVariance /= varianceWeightSum;
-    
     stabilizedCenterVariance = max(stabilizedCenterVariance, 0.001);
     
     float centerKernelWeight = 6.0 / 22.0;
@@ -220,13 +220,12 @@ void SVGF_AtrousCS(uint3 DTid : SV_DispatchThreadID)
         
         float4 sampleValue  = inputTexture.Load(int3(samplePix, 0));
         float  sampleDepth  = depthTexture.Load(int3(samplePix, 0));
-        float3 sampleNormal = DecodeNormalOctahedron(normalTexture.Load(int3(samplePix, 0)).xy * 2.0f - 1.0f);
+        float3 sampleNormal = normalTexture.Load(int3(samplePix, 0)).rgb * 2.0f - 1.0f;
         float3 sampleAlbedo = albedoTexture.Load(int3(samplePix, 0)).rgb;
-        float  sampleLuma   = Luminance(sampleValue.rgb);
-        
+
+        float  sampleLuma   = Luminance(sampleAlbedo.rgb);
         float lumaDiff   = abs(centerLuma - sampleLuma);
         float depthDiff  = abs(centerDepth - sampleDepth) / max(centerDepth, 0.001);
-        float albedoDiff = length(centerAlbedo - sampleAlbedo);
         
         float sampleVariance = max(sampleValue.a, 0.001);
         float minVariance = min(stabilizedCenterVariance, sampleVariance);
@@ -235,10 +234,9 @@ void SVGF_AtrousCS(uint3 DTid : SV_DispatchThreadID)
         float wNormal = pow(saturate(dot(centerNormal, sampleNormal)), AtrousPassCB.phiNormal);
         
         float adaptiveColorPhi = AtrousPassCB.phiColor * sqrt(max(minVariance, 0.01));
+        
         float wLuma = BilateralWeight(lumaDiff, adaptiveColorPhi);
-        float wAlbedo = BilateralWeight(albedoDiff, AtrousPassCB.phiAlbedo);
-
-        float weight = wLuma * wDepth * wNormal * wAlbedo;
+        float weight = wLuma * wDepth * wNormal;
         
         weight = max(weight, 0.01);
         
