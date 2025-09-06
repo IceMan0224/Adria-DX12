@@ -1,6 +1,7 @@
 #pragma once
 #include "Graphics/GfxRayTracingShaderTable.h"
 #include "RenderGraph/RenderGraphResourceName.h"
+#include "entt/entity/fwd.hpp"
 
 namespace adria
 {
@@ -15,7 +16,7 @@ namespace adria
 	class PathTracingPass
 	{
 	public:
-		PathTracingPass(GfxDevice* gfx, Uint32 width, Uint32 height);
+		PathTracingPass(entt::registry& reg, GfxDevice* gfx, Uint32 width, Uint32 height);
 		~PathTracingPass();
 		void AddPass(RenderGraph& rendergraph);
 		void OnResize(Uint32 w, Uint32 h);
@@ -26,12 +27,16 @@ namespace adria
 		RGResourceName GetFinalOutput() const;
 
 	private:
+		entt::registry& reg;
 		GfxDevice* gfx;
-		std::unique_ptr<GfxStateObject> path_tracing_so;
-		std::unique_ptr<GfxStateObject> path_tracing_with_denoiser_so;
-		std::unique_ptr<GfxComputePipelineState> remodulate_pso;
 		Uint32 width, height;
 		Bool is_supported;
+
+		std::unique_ptr<GfxStateObject> path_tracing_so;
+		std::unique_ptr<GfxStateObject> path_tracing_svgf_enabled_so;
+		std::unique_ptr<GfxComputePipelineState> remodulate_pso;
+		std::unique_ptr<GfxGraphicsPipelineState> pt_gbuffer_pso;
+
 		std::unique_ptr<GfxTexture> accumulation_texture = nullptr;
 		Int32 accumulated_frames = 1;
 
@@ -39,11 +44,12 @@ namespace adria
 		Bool denoiser_active = false;
 
 	private:
-		void CreatePSO();
+		void CreatePSOs();
 		void CreateStateObjects();
 		GfxStateObject* CreateStateObjectCommon(GfxShaderKey const&);
 		void OnLibraryRecompiled(GfxShaderKey const&);
 
+		void AddPTGBufferPass(RenderGraph&);
 		void AddPathTracingPass(RenderGraph&);
 		void AddRemodulatePass(RenderGraph&);
 

@@ -1,13 +1,15 @@
 #include "PathTracingPass.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
+#include "Components.h"
 #include "SVGFDenoiserPass.h"
 #include "OIDNDenoiserPass.h"
 #include "Graphics/GfxShader.h"
 #include "Graphics/GfxShaderKey.h"
 #include "Graphics/GfxStateObject.h"
-#include "Graphics/GfxCommon.h"
 #include "Graphics/GfxPipelineState.h"
+#include "Graphics/GfxCommon.h"
+#include "Graphics/GfxReflection.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 #include "Core/ConsoleManager.h"
@@ -24,14 +26,14 @@ namespace adria
 	static TAutoConsoleVariable<Int> Denoiser("r.PathTracing.Denoiser", DenoiserType_None, "What denoiser will path tracer use: 0 - None, 1 - SVGF");
 	static TAutoConsoleVariable<Int> DenoiserThreshold("r.PathTracing.Denoiser.AccumulationThreshold", 64, "After how many accumulation frames we stop using denoiser");
 
-	PathTracingPass::PathTracingPass(GfxDevice* gfx, Uint32 width, Uint32 height)
-		: gfx(gfx), width(width), height(height)
+	PathTracingPass::PathTracingPass(entt::registry& reg, GfxDevice* gfx, Uint32 width, Uint32 height)
+		: reg(reg), gfx(gfx), width(width), height(height)
 	{
 		is_supported = gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1);
 		if (is_supported)
 		{
 			CreateStateObjects();
-			CreatePSO();
+			CreatePSOs();
 			svgf_denoiser_pass = std::make_unique<SVGFDenoiserPass>(gfx, width, height);
 			OnResize(width, height);
 			ShaderManager::GetLibraryRecompiledEvent().AddMember(&PathTracingPass::OnLibraryRecompiled, *this);
@@ -53,13 +55,18 @@ namespace adria
 
 		denoiser_active = Denoiser.Get() != DenoiserType_None && (DenoiserThreshold.Get() == 0 || accumulated_frames < DenoiserThreshold.Get());
 
-		AddPathTracingPass(rg);
-		
 		if (denoiser_active)
 		{
+			AddPTGBufferPass(rg);
+			AddPathTracingPass(rg);
 			svgf_denoiser_pass->AddPass(rg);
 			AddRemodulatePass(rg);
 		}
+		else
+		{
+			AddPathTracingPass(rg);
+		}
+
 		++accumulated_frames;
 	}
 
@@ -110,11 +117,27 @@ namespace adria
 		return denoiser_active ? RG_NAME(PT_Denoised) : RG_NAME(PT_Output);
 	}
 
-	void PathTracingPass::CreatePSO()
+	void PathTracingPass::CreatePSOs()
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_Remodulate;
 		remodulate_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+
+		GfxGraphicsPipelineStateDesc pt_gbuffer_pso_desc{};
+		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_PT_GBuffer), pt_gbuffer_pso_desc.input_layout);
+		pt_gbuffer_pso_desc.root_signature = GfxRootSignatureID::Common;
+		pt_gbuffer_pso_desc.VS = VS_PT_GBuffer;
+		pt_gbuffer_pso_desc.PS = PS_PT_GBuffer;
+		pt_gbuffer_pso_desc.depth_state.depth_enable = true;
+		pt_gbuffer_pso_desc.depth_state.depth_write_mask = GfxDepthWriteMask::All;
+		pt_gbuffer_pso_desc.depth_state.depth_func = GfxComparisonFunc::GreaterEqual;
+		pt_gbuffer_pso_desc.num_render_targets = 3u;
+		pt_gbuffer_pso_desc.rtv_formats[0] = GfxFormat::R32G32B32A32_FLOAT;
+		pt_gbuffer_pso_desc.rtv_formats[1] = GfxFormat::R16G16B16A16_FLOAT;
+		pt_gbuffer_pso_desc.rtv_formats[2] = GfxFormat::R32G32B32A32_FLOAT;
+		pt_gbuffer_pso_desc.dsv_format = GfxFormat::D32_FLOAT;
+
+		pt_gbuffer_pso = std::make_unique<GfxGraphicsPipelineState>(gfx, pt_gbuffer_pso_desc);
 	}
 
 	void PathTracingPass::CreateStateObjects()
@@ -123,9 +146,9 @@ namespace adria
 		GfxShader const& pt_blob = SM_GetGfxShader(pt_shader_key);
 		path_tracing_so.reset(CreateStateObjectCommon(pt_shader_key));
 
-		pt_shader_key.AddDefine("WITH_DENOISER", "1");
+		pt_shader_key.AddDefine("SVGF_ENABLED", "1");
 		GfxShader const& pt_blob_write_gbuffer = SM_GetGfxShader(pt_shader_key);
-		path_tracing_with_denoiser_so.reset(CreateStateObjectCommon(pt_shader_key));
+		path_tracing_svgf_enabled_so.reset(CreateStateObjectCommon(pt_shader_key));
 	}
 
 	GfxStateObject* PathTracingPass::CreateStateObjectCommon(GfxShaderKey const& shader_key)
@@ -164,6 +187,86 @@ namespace adria
 		}
 	}
 
+	void PathTracingPass::AddPTGBufferPass(RenderGraph& rg)
+	{
+		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
+		rg.AddPass<void>("Path Tracing GBuffer Pass",
+			[=](RenderGraphBuilder& builder)
+			{
+				RGTextureDesc gbuffer_desc{};
+				gbuffer_desc.width = width;
+				gbuffer_desc.height = height;
+				gbuffer_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
+
+				gbuffer_desc.format = GfxFormat::R32G32B32A32_FLOAT;
+				builder.DeclareTexture(RG_NAME(PT_GBuffer_LinearZ), gbuffer_desc);
+
+				gbuffer_desc.format = GfxFormat::R16G16B16A16_FLOAT;
+				builder.DeclareTexture(RG_NAME(PT_GBuffer_MotionVectors), gbuffer_desc);
+
+				gbuffer_desc.format = GfxFormat::R32G32B32A32_FLOAT;
+				builder.DeclareTexture(RG_NAME(PT_GBuffer_CompactNormDepth), gbuffer_desc);
+
+				builder.WriteRenderTarget(RG_NAME(PT_GBuffer_LinearZ), RGLoadStoreAccessOp::Clear_Preserve);
+				builder.WriteRenderTarget(RG_NAME(PT_GBuffer_MotionVectors), RGLoadStoreAccessOp::Clear_Preserve);
+				builder.WriteRenderTarget(RG_NAME(PT_GBuffer_CompactNormDepth), RGLoadStoreAccessOp::Clear_Preserve);
+
+				RGTextureDesc depth_desc{};
+				depth_desc.width = width;
+				depth_desc.height = height;
+				depth_desc.format = GfxFormat::R32_TYPELESS;
+				depth_desc.clear_value = GfxClearValue(0.0f, 0);
+				builder.DeclareTexture(RG_NAME(PT_DepthStencil), depth_desc);
+				builder.WriteDepthStencil(RG_NAME(PT_DepthStencil), RGLoadStoreAccessOp::Clear_Preserve);
+				builder.SetViewport(width, height);
+			},
+			[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+			{
+				reg.sort<Batch>([&frame_data](Batch const& lhs, Batch const& rhs)
+					{
+						if (lhs.alpha_mode != rhs.alpha_mode)
+						{
+							return lhs.alpha_mode < rhs.alpha_mode;
+						}
+						if (lhs.shading_extension != rhs.shading_extension)
+						{
+							return lhs.shading_extension < rhs.shading_extension;
+						}
+						Vector3 camera_position(frame_data.camera_position);
+						Float lhs_distance = Vector3::DistanceSquared(camera_position, lhs.bounding_box.Center);
+						Float rhs_distance = Vector3::DistanceSquared(camera_position, rhs.bounding_box.Center);
+						return lhs_distance < rhs_distance;
+					});
+
+				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
+				GfxDevice* gfx = cmd_list->GetDevice();
+
+				auto view = reg.view<Batch>();
+				for (entt::entity batch_entity : view)
+				{
+					Batch& batch = view.get<Batch>(batch_entity);
+					if (!batch.camera_visibility)
+					{
+						continue;
+					}
+
+					GfxPipelineState const* pso = pt_gbuffer_pso.get();
+					cmd_list->SetPipelineState(pso);
+
+					struct GBufferConstants
+					{
+						Uint32 instance_id;
+					} constants{ .instance_id = batch.instance_id };
+					cmd_list->SetRootConstants(1, constants);
+
+					GfxIndexBufferView ibv(batch.submesh->buffer_address + batch.submesh->indices_offset, batch.submesh->indices_count);
+					cmd_list->SetPrimitiveTopology(batch.submesh->topology);
+					cmd_list->SetIndexBuffer(&ibv);
+					cmd_list->DrawIndexed(batch.submesh->indices_count);
+				}
+			}, RGPassType::Graphics, RGPassFlags::None);
+	}
+
 	void PathTracingPass::AddPathTracingPass(RenderGraph& rg)
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
@@ -172,15 +275,14 @@ namespace adria
 		{
 			RGTextureReadWriteId output;
 			RGTextureReadWriteId accumulation;
-			RGTextureReadWriteId albedo;
-			RGTextureReadWriteId normal;
-			RGTextureReadWriteId motion;
-			RGTextureReadWriteId depth;
-			RGTextureReadWriteId mesh_id;
-			RGTextureReadWriteId specular;
+
+			RGTextureReadWriteId direct_radiance;
+			RGTextureReadWriteId indirect_radiance;
+			RGTextureReadWriteId direct_albedo;
+			RGTextureReadWriteId indirect_albedo;
 		};
 
-		rg.ImportTexture(RG_NAME(AccumulationTexture), accumulation_texture.get());
+		rg.ImportTexture(RG_NAME(PT_AccumulationTexture), accumulation_texture.get());
 
 		rg.AddPass<PathTracingPassData>("Path Tracing Pass",
 			[=](PathTracingPassData& data, RGBuilder& builder)
@@ -192,76 +294,97 @@ namespace adria
 				render_target_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
 				builder.DeclareTexture(RG_NAME(PT_Output), render_target_desc);
 
-				data.output = builder.WriteTexture(RG_NAME(PT_Output));
-				data.accumulation = builder.WriteTexture(RG_NAME(AccumulationTexture));
 				if (denoiser_active)
 				{
 					RGTextureDesc denoiser_texture_desc{};
+					denoiser_texture_desc.format = GfxFormat::R16G16B16A16_FLOAT;
+					denoiser_texture_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
 					denoiser_texture_desc.width = width;
 					denoiser_texture_desc.height = height;
-					denoiser_texture_desc.format = GfxFormat::R16G16B16A16_FLOAT;
+					builder.DeclareTexture(RG_NAME(PT_DirectRadiance), denoiser_texture_desc);
+					builder.DeclareTexture(RG_NAME(PT_IndirectRadiance), denoiser_texture_desc);
+					builder.DeclareTexture(RG_NAME(PT_DirectAlbedo), denoiser_texture_desc);
+					builder.DeclareTexture(RG_NAME(PT_IndirectAlbedo), denoiser_texture_desc);
 
-					builder.DeclareTexture(RG_NAME(PT_Albedo), denoiser_texture_desc);
-					builder.DeclareTexture(RG_NAME(PT_Normal), denoiser_texture_desc);
-					builder.DeclareTexture(RG_NAME(PT_Specular), denoiser_texture_desc);
-					denoiser_texture_desc.format = GfxFormat::R16G16_FLOAT;
-					builder.DeclareTexture(RG_NAME(PT_MotionVectors), denoiser_texture_desc);
-					denoiser_texture_desc.format = GfxFormat::R32_FLOAT;
-					builder.DeclareTexture(RG_NAME(PT_Depth), denoiser_texture_desc);
-					denoiser_texture_desc.format = GfxFormat::R32_UINT;
-					builder.DeclareTexture(RG_NAME(PT_MeshID), denoiser_texture_desc);
-
-					data.albedo = builder.WriteTexture(RG_NAME(PT_Albedo));
-					data.normal = builder.WriteTexture(RG_NAME(PT_Normal));
-					data.specular = builder.WriteTexture(RG_NAME(PT_Specular));
-					data.motion = builder.WriteTexture(RG_NAME(PT_MotionVectors));
-					data.depth = builder.WriteTexture(RG_NAME(PT_Depth));
-					data.mesh_id = builder.WriteTexture(RG_NAME(PT_MeshID));
+					data.direct_radiance = builder.WriteTexture(RG_NAME(PT_DirectRadiance));
+					data.indirect_radiance = builder.WriteTexture(RG_NAME(PT_IndirectRadiance));
+					data.direct_albedo = builder.WriteTexture(RG_NAME(PT_DirectAlbedo));
+					data.indirect_albedo = builder.WriteTexture(RG_NAME(PT_IndirectAlbedo));
+				}
+				else
+				{
+					data.accumulation = builder.WriteTexture(RG_NAME(PT_AccumulationTexture));
+					data.output = builder.WriteTexture(RG_NAME(PT_Output));
 				}
 			},
 			[=](PathTracingPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
 			{
 				GfxDevice* gfx = cmd_list->GetDevice();
-				GfxDescriptor const null_uav = gfxcommon::GetCommonView(GfxCommonViewType::NullTexture2D_UAV);
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadWriteTexture(data.accumulation),
-					ctx.GetReadWriteTexture(data.output),
-					denoiser_active ? ctx.GetReadWriteTexture(data.albedo) : null_uav,
-					denoiser_active ? ctx.GetReadWriteTexture(data.normal) : null_uav,
-					denoiser_active ? ctx.GetReadWriteTexture(data.motion) : null_uav,
-					denoiser_active ? ctx.GetReadWriteTexture(data.depth) : null_uav,
-					denoiser_active ? ctx.GetReadWriteTexture(data.mesh_id) : null_uav,
-					denoiser_active ? ctx.GetReadWriteTexture(data.specular) : null_uav
-				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				static GfxDescriptor const null_uav = gfxcommon::GetCommonView(GfxCommonViewType::NullTexture2D_UAV);
 
-				struct PathTracingConstants
+				if (denoiser_active)
 				{
-					Int32   bounce_count;
-					Int32   accumulated_frames;
-					Uint32  accum_idx;
-					Uint32  output_idx;
-					Uint32  albedo_idx;
-					Uint32  normal_idx;
-					Uint32  motion_vectors_idx;
-					Uint32  depth_idx;
-					Uint32  mesh_id_idx;
-					Uint32  specular_idx;
-				} constants =
-				{
-					.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
-					.accum_idx = i + 0, .output_idx = i + 1, .albedo_idx = i + 2, .normal_idx = i + 3,
-					.motion_vectors_idx = i + 4,  .depth_idx = i + 5, .mesh_id_idx = i + 6, .specular_idx = i + 7
-				};
+					GfxDescriptor src_descriptors[] =
+					{
+						ctx.GetReadWriteTexture(data.direct_radiance),
+						ctx.GetReadWriteTexture(data.indirect_radiance),
+						ctx.GetReadWriteTexture(data.direct_albedo),
+						ctx.GetReadWriteTexture(data.indirect_albedo),
+					};
+					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
+					gfx->CopyDescriptors(dst_descriptor, src_descriptors);
+					Uint32 const i = dst_descriptor.GetIndex();
 
-				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-				cmd_list->SetRootCBV(2, constants);
-				auto& table = cmd_list->SetStateObject(denoiser_active ? path_tracing_with_denoiser_so.get() : path_tracing_so.get());
-				table.SetRayGenShader("PT_RayGen");
-				cmd_list->DispatchRays(width, height);
+					struct PathTracingConstants
+					{
+						Int32   bounce_count;
+						Int32   accumulated_frames;
+						Uint32  direct_radiance_idx;
+						Uint32  indirect_radiance_idx;
+						Uint32  direct_albedo_idx;
+						Uint32  indirect_albedo_idx;
+					} constants =
+					{
+						.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
+						.direct_radiance_idx = i + 0, .indirect_radiance_idx = i + 1,
+						.direct_albedo_idx = i + 2, .indirect_albedo_idx = i + 3
+					};
+
+					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
+					cmd_list->SetRootConstants(1, constants);
+					auto& table = cmd_list->SetStateObject(path_tracing_svgf_enabled_so.get());
+					table.SetRayGenShader("PT_RayGen");
+					cmd_list->DispatchRays(width, height);
+				}
+				else
+				{
+					GfxDescriptor src_descriptors[] =
+					{
+						ctx.GetReadWriteTexture(data.accumulation),
+						ctx.GetReadWriteTexture(data.output)
+					};
+					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
+					gfx->CopyDescriptors(dst_descriptor, src_descriptors);
+					Uint32 const i = dst_descriptor.GetIndex();
+
+					struct PathTracingConstants
+					{
+						Int32   bounce_count;
+						Int32   accumulated_frames;
+						Uint32  accum_idx;
+						Uint32  output_idx;
+					} constants =
+					{
+						.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
+						.accum_idx = i + 0, .output_idx = i + 1
+					};
+
+					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
+					cmd_list->SetRootConstants(1, constants);
+					auto& table = cmd_list->SetStateObject(path_tracing_so.get());
+					table.SetRayGenShader("PT_RayGen");
+					cmd_list->DispatchRays(width, height);
+				}
 
 			}, RGPassType::Compute, RGPassFlags::None);
 	}
@@ -313,7 +436,8 @@ namespace adria
 					Uint32 albedo_idx;
 					Uint32 specular_idx;
 					Uint32 output_idx;
-				} constants = {
+				} constants = 
+				{
 					.denoised_lighting_idx = i,
 					.albedo_idx = i + 1,
 					.specular_idx = i + 2, 

@@ -3,39 +3,50 @@
 struct PathTracingConstants
 {
     int  bounceCount;
-    int  accumulatedFrames;
-    uint accumIdx;
-    uint outputIdx;
-    uint albedoIdx;
-    uint normalIdx;
-    uint motionVectorsIdx;
-    uint depthIdx;
-    uint meshIDIdx;
-    uint specularIdx; 
+    int  accumulatedFrames;   
+#if SVGF_ENABLED
+    uint directRadianceIdx;
+    uint indirectRadianceIdx;
+    uint directAlbedoIdx;
+    uint indirectAlbedoIdx;
+#else 
+    uint accumIdx;            
+    uint outputIdx;   
+#endif
 };
-ConstantBuffer<PathTracingConstants> PathTracingPassCB : register(b2);
+ConstantBuffer<PathTracingConstants> PathTracingPassCB : register(b1);
 
 [shader("raygeneration")]
 void PT_RayGen()
 {
+    uint2 launchIdx = DispatchRaysIndex().xy;
+    uint2 launchDim = DispatchRaysDimensions().xy;
+    float2 resolution = float2(launchDim);
+
+#if SVGF_ENABLED
+    RWTexture2D<float4> directRadianceTex   = ResourceDescriptorHeap[PathTracingPassCB.directRadianceIdx];
+    RWTexture2D<float4> indirectRadianceTex = ResourceDescriptorHeap[PathTracingPassCB.indirectRadianceIdx];
+    RWTexture2D<float4> directAlbedoTex     = ResourceDescriptorHeap[PathTracingPassCB.directAlbedoIdx];
+    RWTexture2D<float4> indirectAlbedoTex   = ResourceDescriptorHeap[PathTracingPassCB.indirectAlbedoIdx];
+#else
     RWTexture2D<float4> accumulationTexture = ResourceDescriptorHeap[PathTracingPassCB.accumIdx];
+    RWTexture2D<float4> outputTexture       = ResourceDescriptorHeap[PathTracingPassCB.outputIdx];
+#endif
 
-    float2 pixel = float2(DispatchRaysIndex().xy);
-    float2 resolution = float2(DispatchRaysDimensions().xy);
+    uint seedBase = launchIdx.x + launchIdx.y * launchDim.x;
+    RNG rng = RNG_Initialize(seedBase, FrameCB.frameCount, 16);
+    float2 jitter = float2(RNG_GetNext(rng), RNG_GetNext(rng));
 
-    RNG rng = RNG_Initialize(pixel.x + pixel.y * resolution.x, FrameCB.frameCount, 16);
-    float2 offset = float2(RNG_GetNext(rng), RNG_GetNext(rng));
-    pixel += lerp(-0.5f.xx, 0.5f.xx, offset);
+    float2 pixel = float2(launchIdx) + lerp(-0.5f.xx, 0.5f.xx, jitter);
 
     float2 ncdXY = (pixel / (resolution * 0.5f)) - 1.0f;
     ncdXY.y *= -1.0f;
     float4 rayStart = mul(float4(ncdXY, 1.0f, 1.0f), FrameCB.inverseViewProjection);
-    float4 rayEnd = mul(float4(ncdXY, 0.0f, 1.0f), FrameCB.inverseViewProjection);
+    float4 rayEnd   = mul(float4(ncdXY, 0.0f, 1.0f), FrameCB.inverseViewProjection);
 
     rayStart.xyz /= rayStart.w;
-    rayEnd.xyz /= rayEnd.w;
+    rayEnd.xyz   /= rayEnd.w;
     float3 rayDir = normalize(rayEnd.xyz - rayStart.xyz);
-    float rayLength = length(rayEnd.xyz - rayStart.xyz);
 
     RayDesc ray;
     ray.Origin = rayStart.xyz;
@@ -43,108 +54,106 @@ void PT_RayGen()
     ray.TMin = 0.0f;
     ray.TMax = FLT_MAX;
 
-    float3 radianceDiffuse = 0.0f;
-    float3 radianceSpecular = 0.0f;
-    float3 throughput = 1.0f;
-
-#if WITH_DENOISER
-    float4 albedoColor = 0.0f;
-    float4 normal = 0.0f;
-    float depth = 0.0f;
-    float2 motionVector = 0.0f;
-    uint meshID = 0;
+#if SVGF_ENABLED
+    float3 radianceDirect   = 0.0f;
+    float3 radianceIndirect = 0.0f;
+    float3 directAlbedo     = 0.0f;
+    float3 indirectAlbedo   = 0.0f;
+#else
+    float3 radiance = 0.0f;
 #endif
-    float pdf = 1.0;
-    for (int i = 0; i < PathTracingPassCB.bounceCount; ++i)
+
+    float3 throughput = 1.0f;
+    float pdf = 1.0f;
+    for (int bounce = 0; bounce < PathTracingPassCB.bounceCount; ++bounce)
     {
-        HitInfo info = (HitInfo)0;
-        if (TraceRay(ray, info))
+        HitInfo hit = (HitInfo)0;
+        if (TraceRay(ray, hit))
         {
-            Instance instanceData = GetInstanceData(info.instanceIndex);
+            Instance instanceData = GetInstanceData(hit.instanceIndex);
             Mesh meshData = GetMeshData(instanceData.meshIndex);
             Material materialData = GetMaterialData(instanceData.materialIdx);
-            VertexData vertex = LoadVertexData(meshData, info.primitiveIndex, info.barycentricCoordinates);
+            VertexData vert = LoadVertexData(meshData, hit.primitiveIndex, hit.barycentricCoordinates);
 
-            float3 worldPosition = mul(vertex.pos, info.objectToWorldMatrix).xyz;
-            float3 worldNormal = normalize(mul(vertex.nor, (float3x3) transpose(info.worldToObjectMatrix)));
-            float3 geometryNormal = normalize(worldNormal);
-            float3 V = -ray.Direction;
-            MaterialProperties matProperties = GetMaterialProperties(materialData, vertex.uv, 0);
-            BrdfData brdfData = GetBrdfData(matProperties);
+            float3 worldPosition = mul(vert.pos, hit.objectToWorldMatrix).xyz;
+            float3 worldNormal   = normalize(mul(vert.nor, (float3x3)transpose(hit.worldToObjectMatrix)));
+            float3 V             = -ray.Direction;
 
-#if WITH_DENOISER
-            if (i == 0)
-            {
-                albedoColor = float4(matProperties.baseColor, 1.0f);
-                normal = float4(worldNormal * 0.5f + 0.5f, 1.0f);
+            MaterialProperties matProps = GetMaterialProperties(materialData, vert.uv, 0);
+            BrdfData brdf = GetBrdfData(matProps);
 
-                float4 clipPos = mul(float4(worldPosition, 1.0), FrameCB.viewProjection);
-                depth = clipPos.z / clipPos.w;
-                
-                float4 previousClipPos = mul(float4(worldPosition, 1.0), FrameCB.prevViewProjection);
-                float2 previousUv = (previousClipPos.xy / previousClipPos.w) * float2(0.5, -0.5) + 0.5;
-                float2 currentUv = (clipPos.xy / clipPos.w) * float2(0.5, -0.5) + 0.5;
-                motionVector = currentUv - previousUv;
-
-                meshID = instanceData.meshIndex;
-            }
-#endif
+            static const float S_PI = 3.14159265358979323846f;
+            float3 albedoSample = brdf.Diffuse / S_PI + brdf.Specular;
 
             int lightIndex = 0;
             float lightWeight = 0.0f;
-
-            float3 wo = normalize(FrameCB.cameraPosition.xyz - worldPosition);
             if (SampleLightRIS(rng, worldPosition, worldNormal, lightIndex, lightWeight))
             {
-                  LightInfo lightInfo = LoadLightInfo(lightIndex); 
-                  float visibility = TraceShadowRay(lightInfo, worldPosition.xyz);
-                  float3 wi = normalize(-lightInfo.direction.xyz);
-                  float NdotL = saturate(dot(worldNormal, wi));
-                  float3 lightContribution = visibility * lightInfo.color.rgb * NdotL;
+                LightInfo lightInfo = LoadLightInfo(lightIndex);
+                float vis = TraceShadowRay(lightInfo, worldPosition.xyz);
+                float3 wi = normalize(-lightInfo.direction.xyz);
+                float NdotL = saturate(dot(worldNormal, wi));
+                float3 lightContribution = vis * lightInfo.color.rgb * NdotL;
 
-                  float3 diffuseBRDF = DiffuseBRDF(brdfData.Diffuse);
-                  float3 F;
-                  float3 specularBRDF = SpecularBRDF(worldNormal, wo, wi, brdfData.Specular, brdfData.Roughness, F);
+                float3 diffuseBRDF = DiffuseBRDF(brdf.Diffuse);
+                float3 Ftmp;
+                float3 specularBRDF = SpecularBRDF(worldNormal, V, wi, brdf.Specular, brdf.Roughness, Ftmp);
 
-                  radianceDiffuse += lightWeight * (diffuseBRDF * lightContribution) * throughput / pdf;
-                  radianceSpecular += lightWeight * (specularBRDF * lightContribution) * throughput / pdf;
+#if SVGF_ENABLED
+                if (bounce == 0)
+                {
+                    radianceDirect += lightWeight * (diffuseBRDF * lightContribution + specularBRDF * lightContribution) * throughput / pdf;
+                    directAlbedo   += albedoSample;
+                }
+                else
+                {
+                    radianceIndirect += lightWeight * (diffuseBRDF * lightContribution + specularBRDF * lightContribution) * throughput / pdf;
+                    indirectAlbedo   += albedoSample;
+                }
+#else
+                radiance += lightWeight * (diffuseBRDF * lightContribution + specularBRDF * lightContribution) * throughput / pdf;
+#endif
             }
 
-            radianceSpecular += matProperties.emissive * throughput / pdf;
+#if SVGF_ENABLED
+            if (bounce == 0) radianceDirect += matProps.emissive * throughput / pdf;
+            else             radianceIndirect += matProps.emissive * throughput / pdf;
+#else
+            radiance += matProps.emissive * throughput / pdf;
+#endif
 
-            if (i == PathTracingPassCB.bounceCount - 1) break;
+            if (bounce == PathTracingPassCB.bounceCount - 1) break;
 
-            float probDiffuse = ProbabilityToSampleDiffuse(brdfData.Diffuse, brdfData.Specular);
-            bool chooseDiffuse = RNG_GetNext(rng) < probDiffuse;
+            float probDiffuse = ProbabilityToSampleDiffuse(brdf.Diffuse, brdf.Specular);
+            bool chooseDiffuse = (RNG_GetNext(rng) < probDiffuse);
 
             float3 wi;
             if (chooseDiffuse)
             {
                 wi = GetCosHemisphereSample(rng, worldNormal);
-                float3 diffuseBrdf = DiffuseBRDF(brdfData.Diffuse);
+                float3 diffBRDF = DiffuseBRDF(brdf.Diffuse);
                 float NdotL = saturate(dot(worldNormal, wi));
-                throughput *= diffuseBrdf * NdotL;
-                pdf *= (NdotL / M_PI) * probDiffuse;
+                throughput *= diffBRDF * NdotL;
+                pdf *= (NdotL / PI) * probDiffuse;
             }
             else
             {
                 float2 u = float2(RNG_GetNext(rng), RNG_GetNext(rng));
-                float3 H = SampleGGX(u, brdfData.Roughness, worldNormal);
-                float roughness = max(brdfData.Roughness, 0.065);
-                wi = reflect(-wo, H);
+                float3 H = SampleGGX(u, brdf.Roughness, worldNormal);
+                float roughness = max(brdf.Roughness, 0.065f);
+                wi = reflect(-V, H);
 
                 float3 F;
-                float3 specularBrdf = SpecularBRDF(worldNormal, wo, wi, brdfData.Specular, roughness, F);
+                float3 specBRDF = SpecularBRDF(worldNormal, V, wi, brdf.Specular, roughness, F);
                 float NdotL = saturate(dot(worldNormal, wi));
-                throughput *= specularBrdf * NdotL;
+                throughput *= specBRDF * NdotL;
 
                 float a = roughness * roughness;
                 float D = D_GGX(worldNormal, H, a);
                 float NdotH = saturate(dot(worldNormal, H));
                 float LdotH = saturate(dot(wi, H));
-                float NdotV = saturate(dot(worldNormal, wo));
-                float samplePDF = D * NdotH / (4 * LdotH);
-                pdf *= samplePDF * (1.0 - probDiffuse);
+                float samplePDF = D * NdotH / max(1e-6f, (4.0f * LdotH));
+                pdf *= samplePDF * (1.0f - probDiffuse);
             }
 
             ray.Origin = OffsetRay(worldPosition, worldNormal);
@@ -155,62 +164,60 @@ void PT_RayGen()
         else
         {
             TextureCube envMapTexture = ResourceDescriptorHeap[FrameCB.envMapIdx];
-            float3 envMapValue = envMapTexture.SampleLevel(LinearWrapSampler, ray.Direction, 0).rgb;
-            
-            radianceSpecular += envMapValue * throughput / pdf;
-
-#if WITH_DENOISER
-            if (i == 0)
-            {
-                albedoColor = float4(1.0, 1.0, 1.0, 1.0); 
-                meshID = uint(-1);
-            }
+            float3 envVal = envMapTexture.SampleLevel(LinearWrapSampler, ray.Direction, 0).rgb;
+#if SVGF_ENABLED
+            if (bounce == 0) radianceDirect   += envVal * throughput / pdf;
+            else             radianceIndirect += envVal * throughput / pdf;
+#else
+            radiance += envVal * throughput / pdf;
 #endif
             break;
         }
-    }
-    float3 radiance = radianceDiffuse + radianceSpecular;
+    } 
 
-    float3 accumulatedRadiance = radiance;
-    float3 previousColor = accumulationTexture[DispatchRaysIndex().xy].rgb;
+#if SVGF_ENABLED
+    float3 prevDirect   = directRadianceTex[launchIdx].rgb;
+    float3 prevIndirect = indirectRadianceTex[launchIdx].rgb;
+    float3 prevDAlbedo  = directAlbedoTex[launchIdx].rgb;
+    float3 prevIAlbedo  = indirectAlbedoTex[launchIdx].rgb;
+
+    float3 accDirect   = radianceDirect;
+    float3 accIndirect = radianceIndirect;
+    float3 accDAlbedo  = directAlbedo;
+    float3 accIAlbedo  = indirectAlbedo;
+
     if (PathTracingPassCB.accumulatedFrames > 1)
     {
-        accumulatedRadiance += previousColor;
+        accDirect   += prevDirect;
+        accIndirect += prevIndirect;
+        accDAlbedo  += prevDAlbedo;
+        accIAlbedo  += prevIAlbedo;
     }
 
-    if (any(isnan(accumulatedRadiance)) || any(isinf(accumulatedRadiance)))
+    if (any(isnan(accDirect)) || any(isinf(accDirect)))     accDirect = 0.0f;
+    if (any(isnan(accIndirect)) || any(isinf(accIndirect))) accIndirect = 0.0f;
+    if (any(isnan(accDAlbedo)) || any(isinf(accDAlbedo)))   accDAlbedo = 0.0f;
+    if (any(isnan(accIAlbedo)) || any(isinf(accIAlbedo)))   accIAlbedo = 0.0f;
+
+    directRadianceTex[launchIdx]   = float4(accDirect, 1.0f);
+    indirectRadianceTex[launchIdx] = float4(accIndirect, 1.0f);
+    directAlbedoTex[launchIdx]     = float4(accDAlbedo, 1.0f);
+    indirectAlbedoTex[launchIdx]   = float4(accIAlbedo, 1.0f);
+
+#else
+    float3 prevColor = accumulationTexture[launchIdx].rgb;
+    float3 accRadiance = radiance;
+    if (PathTracingPassCB.accumulatedFrames > 1)
+        accRadiance += prevColor;
+
+    if (any(isnan(accRadiance)) || any(isinf(accRadiance)))
     {
-        accumulatedRadiance = float3(1, 0, 0);
+        accRadiance = float3(1,0,0); 
     }
 
-#if WITH_DENOISER
-    RWTexture2D<float4> albedoTexture = ResourceDescriptorHeap[PathTracingPassCB.albedoIdx];
-    albedoTexture[DispatchRaysIndex().xy] = albedoColor;
-    
-    RWTexture2D<float4> normalTexture = ResourceDescriptorHeap[PathTracingPassCB.normalIdx];
-    normalTexture[DispatchRaysIndex().xy] = normal;
-    
-    RWTexture2D<float> depthTexture = ResourceDescriptorHeap[PathTracingPassCB.depthIdx];
-    depthTexture[DispatchRaysIndex().xy] = depth;
-    
-    RWTexture2D<float2> motionVectorsTexture = ResourceDescriptorHeap[PathTracingPassCB.motionVectorsIdx];
-    motionVectorsTexture[DispatchRaysIndex().xy] = motionVector;
-    
-    RWTexture2D<uint> meshIDTexture = ResourceDescriptorHeap[PathTracingPassCB.meshIDIdx];
-    meshIDTexture[DispatchRaysIndex().xy] = meshID;
+    float3 finalOut = accRadiance / (float)PathTracingPassCB.accumulatedFrames;
 
-    RWTexture2D<float4> specularTexture = ResourceDescriptorHeap[PathTracingPassCB.specularIdx];
-    specularTexture[DispatchRaysIndex().xy] = float4(radianceSpecular, 1.0);
-
-    float3 demodulatedDiffuse = radianceDiffuse / (albedoColor.rgb + 0.001f);
-    demodulatedDiffuse = clamp(demodulatedDiffuse, 0.0f, 10.0f);
-    float3 finalOutputColor = demodulatedDiffuse;
-
-#else 
-    float3 finalOutputColor = accumulatedRadiance / PathTracingPassCB.accumulatedFrames;
+    accumulationTexture[launchIdx] = float4(accRadiance, 1.0f);
+    outputTexture[launchIdx]       = float4(finalOut, 1.0f);
 #endif
-
-    accumulationTexture[DispatchRaysIndex().xy] = float4(accumulatedRadiance, 1.0);
-    RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[PathTracingPassCB.outputIdx];
-    outputTexture[DispatchRaysIndex().xy] = float4(finalOutputColor, 1.0f);
 }

@@ -59,8 +59,14 @@ namespace adria
 			{
 				reg.sort<Batch>([&frame_data](Batch const& lhs, Batch const& rhs)
 					{ 
-						if(lhs.alpha_mode != rhs.alpha_mode) return lhs.alpha_mode < rhs.alpha_mode;
-						if(lhs.shading_extension != rhs.shading_extension)  return lhs.shading_extension < rhs.shading_extension;
+						if (lhs.alpha_mode != rhs.alpha_mode)
+						{
+							return lhs.alpha_mode < rhs.alpha_mode;
+						}
+						if (lhs.shading_extension != rhs.shading_extension)
+						{
+							return lhs.shading_extension < rhs.shading_extension;
+						}
 						Vector3 camera_position(frame_data.camera_position);
 						Float lhs_distance = Vector3::DistanceSquared(camera_position, lhs.bounding_box.Center);
 						Float rhs_distance = Vector3::DistanceSquared(camera_position, rhs.bounding_box.Center);

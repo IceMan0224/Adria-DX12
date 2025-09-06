@@ -2102,6 +2102,9 @@
     <FxCompile Include="Resources\Shaders\RayTracing\Remodulate.hlsl">
       <Filter>Shaders\RayTracing</Filter>
     </FxCompile>
+    <FxCompile Include="Resources\Shaders\RayTracing\PT_GBuffer.hlsl">
+      <Filter>Shaders\RayTracing</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\External\FidelityFX-SDK\include\FidelityFX\host\backends\dx12\license.txt">

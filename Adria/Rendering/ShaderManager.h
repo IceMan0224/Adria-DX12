@@ -116,6 +116,8 @@ namespace adria
 		CS_SVGF_Variance,
 		CS_SVGF_Atrous,
 		CS_Remodulate,
+		VS_PT_GBuffer,
+		PS_PT_GBuffer,
 		CS_ReSTIR_DI_InitialSampling,
 		CS_ReSTIR_DI_TemporalResampling,
 		CS_ReSTIR_DI_SpatialResampling,

@@ -56,6 +56,7 @@ namespace adria
 			case VS_Rain:
 			case VS_RainBlocker:
 			case VS_Transparent:
+			case VS_PT_GBuffer:
 				return GfxShaderStage::VS;
 			case PS_Sky:
 			case PS_Texture:
@@ -75,6 +76,7 @@ namespace adria
 			case PS_Rain:
 			case PS_VolumetricFog_CombineFog:
 			case PS_VRSOverlay:
+			case PS_PT_GBuffer:
 				return GfxShaderStage::PS;
 			case GS_LensFlare:
 				return GfxShaderStage::GS;
@@ -341,6 +343,9 @@ namespace adria
 				return "RayTracing/SVGF.hlsl";
 			case CS_Remodulate:
 				return "RayTracing/Remodulate.hlsl";
+			case VS_PT_GBuffer:
+			case PS_PT_GBuffer:
+				return "RayTracing/PT_GBuffer.hlsl";
 			case CS_ReSTIR_DI_InitialSampling:
 				return "ReSTIR/DI/InitialSampling.hlsl";
 			case CS_ReSTIR_DI_TemporalResampling:
@@ -566,6 +571,10 @@ namespace adria
 				return "SVGF_AtrousCS";
 			case CS_Remodulate:
 				return "Remodulate_CS";
+			case VS_PT_GBuffer:
+				return "PT_GBufferVS";
+			case PS_PT_GBuffer:
+				return "PT_GBufferPS";
 			case CS_ReSTIR_DI_InitialSampling:
 				return "InitialSamplingCS";
 			case CS_ReSTIR_DI_TemporalResampling:
