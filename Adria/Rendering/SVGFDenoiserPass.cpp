@@ -12,7 +12,7 @@
 namespace adria
 {
 	
-	static TAutoConsoleVariable<Int>   SVGF_AtrousIterations("r.SVGF.Atrous.Iterations", 3, "Number of a-trous filter iterations.");
+	static TAutoConsoleVariable<Int>   SVGF_AtrousIterations("r.SVGF.Atrous.Iterations", 4, "Number of a-trous filter iterations.");
 	static TAutoConsoleVariable<Float> SVGF_Alpha("r.SVGF.Alpha", 0.05f, "Temporal feedback factor for color.");
 	static TAutoConsoleVariable<Float> SVGF_MomentsAlpha("r.SVGF.Moments.Alpha", 0.1f, "Temporal feedback factor for moments.");
 	static TAutoConsoleVariable<Float> SVGF_PhiColor("r.SVGF.Phi.Color", 8.0f, "Edge-stopping function parameter for color.");
@@ -48,6 +48,11 @@ namespace adria
 		rg.ExportTexture(RG_NAME(SVGF_Reprojected_Moments), history_moments_texture.get());
 		rg.ExportTexture(RG_NAME(SVGF_Output_HistoryLength), history_length_texture.get());
 		rg.ExportTexture(RG_NAME(SVGF_Output_NormalDepth), history_normal_depth_texture.get());
+
+		GUI_DebugTexture("SVGF Direct Illum", history_direct_illum_texture.get());
+		GUI_DebugTexture("SVGF Indirect Illum", history_indirect_illum_texture.get());
+		GUI_DebugTexture("SVGF Reprojected Moments", history_moments_texture.get());
+		GUI_DebugTexture("SVGF Output NormalDepth", history_normal_depth_texture.get());
 	}
 
 	void SVGFDenoiserPass::OnResize(Uint32 w, Uint32 h)

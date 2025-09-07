@@ -249,17 +249,16 @@ struct AtrousPassConstants
 };
 ConstantBuffer<AtrousPassConstants> AtrousPassCB : register(b2);
 
-float2 ComputeStabilizedVariance(int2 ipos, Texture2D<float4> directTex, Texture2D<float4> indirectTex)
+float ComputeStabilizedVariance(int2 ipos, Texture2D<float4> directTex)
 {
-    float2 sum = 0.0;
+    float sum = 0.0;
     const float kernel[2][2] = { { 1.0 / 4.0, 1.0 / 8.0 }, { 1.0 / 8.0, 1.0 / 16.0 } };
     for (int y = -1; y <= 1; ++y)
     {
         for (int x = -1; x <= 1; ++x)
         {
             float k = kernel[abs(x)][abs(y)];
-            sum.x += directTex.Load(int3(ipos + int2(x, y), 0)).a * k;
-            sum.y += indirectTex.Load(int3(ipos + int2(x, y), 0)).a * k;
+            sum += directTex.Load(int3(ipos + int2(x, y), 0)).a * k;
         }
     }
     return sum;
@@ -288,8 +287,8 @@ void SVGF_AtrousCS(uint3 DTid : SV_DispatchThreadID)
     float centerDepth = centerCompactData.y;
     float centerDepthFwidth = centerCompactData.z;
     
-    float2 variance = ComputeStabilizedVariance(ipos, directIn, indirectIn);
-    float adaptivePhiColor = AtrousPassCB.phiColor * sqrt(max(1e-5, variance.x));
+    float variance = ComputeStabilizedVariance(ipos, directIn);
+    float adaptivePhiColor = AtrousPassCB.phiColor * sqrt(max(1e-5, variance));
     
     float sumWDirect = 1.0;
     float sumWIndirect = 1.0;

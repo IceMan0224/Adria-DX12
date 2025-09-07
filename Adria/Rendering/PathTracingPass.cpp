@@ -24,7 +24,6 @@ namespace adria
 	static TAutoConsoleVariable<Bool> AccumulateRadiance("r.PathTracing.AccumulateRadiance", true, "Should we accumulate radiance in path tracer or no");
 	static TAutoConsoleVariable<Int> MaxBounces("r.PathTracing.MaxBounces", 3, "Maximum number of bounces in a path tracer");
 	static TAutoConsoleVariable<Int> Denoiser("r.PathTracing.Denoiser", DenoiserType_None, "What denoiser will path tracer use: 0 - None, 1 - SVGF");
-	static TAutoConsoleVariable<Int> DenoiserThreshold("r.PathTracing.Denoiser.AccumulationThreshold", 64, "After how many accumulation frames we stop using denoiser");
 
 	PathTracingPass::PathTracingPass(entt::registry& reg, GfxDevice* gfx, Uint32 width, Uint32 height)
 		: reg(reg), gfx(gfx), width(width), height(height)
@@ -50,11 +49,10 @@ namespace adria
 
 		if (!AccumulateRadiance.Get())
 		{
-			accumulated_frames = 0;
+			accumulated_frames = 1;
 		}
 
-		denoiser_active = Denoiser.Get() != DenoiserType_None && (DenoiserThreshold.Get() == 0 || accumulated_frames < DenoiserThreshold.Get());
-
+		denoiser_active = Denoiser.Get() != DenoiserType_None;
 		if (denoiser_active)
 		{
 			AddPTGBufferPass(rg);
@@ -64,9 +62,12 @@ namespace adria
 		else
 		{
 			AddPathTracingPass(rg);
+			if (AccumulateRadiance.Get())
+			{
+				++accumulated_frames;
+			}
 		}
 
-		++accumulated_frames;
 	}
 
 	void PathTracingPass::OnResize(Uint32 w, Uint32 h)
@@ -89,6 +90,7 @@ namespace adria
 	void PathTracingPass::Reset()
 	{
 		accumulated_frames = 0;
+		svgf_denoiser_pass->Reset();
 	}
 
 	void PathTracingPass::GUI()
@@ -96,16 +98,16 @@ namespace adria
 		QueueGUI([&]()
 			{
 				ImGui::SliderInt("Max Bounces", MaxBounces.GetPtr(), 1, 8);
-				ImGui::Checkbox("Accumulate Radiance", AccumulateRadiance.GetPtr());
-				if (ImGui::Combo("Denoiser Type", Denoiser.GetPtr(), "None\0SVGF\0", 2))
+				if (!denoiser_active)
 				{
+					ImGui::Checkbox("Accumulate Radiance", AccumulateRadiance.GetPtr());
 				}
-				ImGui::SliderInt("Denoiser Threshold", DenoiserThreshold.GetPtr(), 0, 128);
+				ImGui::Combo("Denoiser Type", Denoiser.GetPtr(), "None\0SVGF\0", 2);
 				ImGui::Separator();
 			}, GUICommandGroup_PathTracer
 		);
 
-		if (Denoiser.Get() != DenoiserType_None)
+		if (denoiser_active)
 		{
 			svgf_denoiser_pass->GUI();
 		}

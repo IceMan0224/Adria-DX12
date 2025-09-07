@@ -104,14 +104,8 @@ void PT_RayGen()
                 float3 diffuseBRDF_White = DiffuseBRDF(float3(1.0, 1.0, 1.0));
                 float3 illumination = lightWeight * (diffuseBRDF_White * lightContribution) * throughput / pdf;
 
-                if (bounce == 0)
-                {
-                    radianceDirect += illumination;
-                }
-                else
-                {
-                    radianceIndirect += illumination;
-                }
+                if (bounce == 0) radianceDirect += illumination;
+                else             radianceIndirect += illumination;
 #else
                 float3 diffuseBRDF = DiffuseBRDF(brdf.Diffuse);
                 float3 Ftmp;
@@ -145,53 +139,45 @@ void PT_RayGen()
             TextureCube envMapTexture = ResourceDescriptorHeap[FrameCB.envMapIdx];
             float3 envVal = envMapTexture.SampleLevel(LinearWrapSampler, ray.Direction, 0).rgb;
 #if SVGF_ENABLED
-            if (bounce == 0) radianceDirect   += envVal * throughput / pdf;
-            else             radianceIndirect += envVal * throughput / pdf;
+            if (bounce == 0)
+            {
+                radianceDirect += envVal * throughput / pdf;
+                directAlbedo = 1.0f; 
+            }
+            else
+            {
+                radianceIndirect += envVal * throughput / pdf;
+                indirectAlbedo = 1.0f; 
+            }
 #else
             radiance += envVal * throughput / pdf;
 #endif
-            break;
+            break; 
         }
     } 
 
 #if SVGF_ENABLED
-    float3 prevDirect   = directRadianceTex[launchIdx].rgb;
-    float3 prevIndirect = indirectRadianceTex[launchIdx].rgb;
-    float3 prevDAlbedo  = directAlbedoTex[launchIdx].rgb;
-    float3 prevIAlbedo  = indirectAlbedoTex[launchIdx].rgb;
+    if (any(isnan(radianceDirect)) || any(isinf(radianceDirect)))   radianceDirect = 0.0f;
+    if (any(isnan(radianceIndirect)) || any(isinf(radianceIndirect))) radianceIndirect = 0.0f;
+    if (any(isnan(directAlbedo)) || any(isinf(directAlbedo)))     directAlbedo = 0.0f;
+    if (any(isnan(indirectAlbedo)) || any(isinf(indirectAlbedo)))   indirectAlbedo = 0.0f;
 
-    float3 accDirect   = radianceDirect;
-    float3 accIndirect = radianceIndirect;
-    float3 accDAlbedo  = directAlbedo;
-    float3 accIAlbedo  = indirectAlbedo;
-
-    if (PathTracingPassCB.accumulatedFrames > 1)
-    {
-        accDirect   += prevDirect;
-        accIndirect += prevIndirect;
-        accDAlbedo  += prevDAlbedo;
-        accIAlbedo  += prevIAlbedo;
-    }
-
-    if (any(isnan(accDirect)) || any(isinf(accDirect)))     accDirect = 0.0f;
-    if (any(isnan(accIndirect)) || any(isinf(accIndirect))) accIndirect = 0.0f;
-    if (any(isnan(accDAlbedo)) || any(isinf(accDAlbedo)))   accDAlbedo = 0.0f;
-    if (any(isnan(accIAlbedo)) || any(isinf(accIAlbedo)))   accIAlbedo = 0.0f;
-
-    directRadianceTex[launchIdx]   = float4(accDirect, 1.0f);
-    indirectRadianceTex[launchIdx] = float4(accIndirect, 1.0f);
-    directAlbedoTex[launchIdx]     = float4(accDAlbedo, 1.0f);
-    indirectAlbedoTex[launchIdx]   = float4(accIAlbedo, 1.0f);
+    directRadianceTex[launchIdx]   = float4(radianceDirect, 1.0f);
+    indirectRadianceTex[launchIdx] = float4(radianceIndirect, 1.0f);
+    directAlbedoTex[launchIdx]     = float4(directAlbedo, 1.0f);
+    indirectAlbedoTex[launchIdx]   = float4(indirectAlbedo, 1.0f);
 
 #else
     float3 prevColor = accumulationTexture[launchIdx].rgb;
     float3 accRadiance = radiance;
     if (PathTracingPassCB.accumulatedFrames > 1)
+    {
         accRadiance += prevColor;
+    }
 
     if (any(isnan(accRadiance)) || any(isinf(accRadiance)))
     {
-        accRadiance = float3(1,0,0); 
+        accRadiance = float3(0,0,0); 
     }
 
     float3 finalOut = accRadiance / (float)PathTracingPassCB.accumulatedFrames;
