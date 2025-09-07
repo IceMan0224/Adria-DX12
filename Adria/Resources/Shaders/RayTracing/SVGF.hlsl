@@ -4,24 +4,23 @@
 
 struct ReprojectionPassConstants
 {
-    bool reset; 
-    float alpha; 
-    float momentsAlpha; 
-    float phiAlbedoRejection;
-    uint inputIdx; 
-    uint motionIdx; 
-    uint depthIdx; 
-    uint normalIdx; 
-    uint albedoIdx; 
-    uint meshIDIdx;
-    uint historyColorIdx; 
-    uint historyMomentsIdx; 
-    uint historyNormalDepthIdx; 
-    uint historyMeshIDIdx;
-    uint outputColorIdx; 
-    uint outputMomentsIdx; 
-    uint outputNormalDepthIdx; 
-    uint outputMeshIDIdx;
+    bool reset;
+    float alpha;
+    float momentsAlpha;
+    uint directIllumIdx;
+    uint indirectIllumIdx;
+    uint motionIdx;
+    uint compactNormDepthIdx;
+    uint historyDirectIdx;
+    uint historyIndirectIdx;
+    uint historyMomentsIdx;
+    uint historyNormalDepthIdx;
+    uint historyLengthIdx;
+    uint outputDirectIdx;
+    uint outputIndirectIdx;
+    uint outputMomentsIdx;
+    uint outputNormalDepthIdx;
+    uint outputHistoryLengthIdx;
 };
 ConstantBuffer<ReprojectionPassConstants> ReprojectionPassCB : register(b2);
 
@@ -44,36 +43,45 @@ void UnpackNormalDepth(uint2 packed, out float3 normal, out float depth)
 [numthreads(16, 16, 1)]
 void SVGF_ReprojectionCS(uint3 DTid : SV_DispatchThreadID)
 {
-    Texture2D<float4>  noisyInput            = ResourceDescriptorHeap[ReprojectionPassCB.inputIdx];
-    Texture2D<float2>  motionVectors         = ResourceDescriptorHeap[ReprojectionPassCB.motionIdx];
-    Texture2D<float>   depthBuffer           = ResourceDescriptorHeap[ReprojectionPassCB.depthIdx];
-    Texture2D<float4>  normalBuffer          = ResourceDescriptorHeap[ReprojectionPassCB.normalIdx];
-    Texture2D<float4>  albedoBuffer          = ResourceDescriptorHeap[ReprojectionPassCB.albedoIdx]; 
-    Texture2D<uint>    meshIDBuffer          = ResourceDescriptorHeap[ReprojectionPassCB.meshIDIdx];
-    Texture2D<float4>  historyColor          = ResourceDescriptorHeap[ReprojectionPassCB.historyColorIdx];
+    Texture2D<float4>  directIllum           = ResourceDescriptorHeap[ReprojectionPassCB.directIllumIdx];
+    Texture2D<float4>  indirectIllum         = ResourceDescriptorHeap[ReprojectionPassCB.indirectIllumIdx];
+    Texture2D<float4>  motionVectors         = ResourceDescriptorHeap[ReprojectionPassCB.motionIdx];
+    Texture2D<float4>  compactNormDepth      = ResourceDescriptorHeap[ReprojectionPassCB.compactNormDepthIdx];
+    
+    Texture2D<float4>  historyDirect         = ResourceDescriptorHeap[ReprojectionPassCB.historyDirectIdx];
+    Texture2D<float4>  historyIndirect       = ResourceDescriptorHeap[ReprojectionPassCB.historyIndirectIdx];
     Texture2D<float2>  historyMoments        = ResourceDescriptorHeap[ReprojectionPassCB.historyMomentsIdx];
     Texture2D<uint2>   historyNormalDepth    = ResourceDescriptorHeap[ReprojectionPassCB.historyNormalDepthIdx];
-    Texture2D<uint>    historyMeshID         = ResourceDescriptorHeap[ReprojectionPassCB.historyMeshIDIdx];
-    RWTexture2D<float4> outputColor          = ResourceDescriptorHeap[ReprojectionPassCB.outputColorIdx];
+    Texture2D<float>   historyLength         = ResourceDescriptorHeap[ReprojectionPassCB.historyLengthIdx];
+    
+    RWTexture2D<float4> outputDirect         = ResourceDescriptorHeap[ReprojectionPassCB.outputDirectIdx];
+    RWTexture2D<float4> outputIndirect       = ResourceDescriptorHeap[ReprojectionPassCB.outputIndirectIdx];
     RWTexture2D<float2> outputMoments        = ResourceDescriptorHeap[ReprojectionPassCB.outputMomentsIdx];
     RWTexture2D<uint2>  outputNormalDepth    = ResourceDescriptorHeap[ReprojectionPassCB.outputNormalDepthIdx];
-    RWTexture2D<uint>   outputMeshID         = ResourceDescriptorHeap[ReprojectionPassCB.outputMeshIDIdx];
+    RWTexture2D<float>  outputHistoryLength  = ResourceDescriptorHeap[ReprojectionPassCB.outputHistoryLengthIdx];
 
-    uint2 pix = DTid.xy;
+    int2 pix = (int2)DTid.xy;
     float2 uv = (pix + 0.5) / FrameCB.displayResolution;
-    
-    float depth = depthBuffer.Load(int3(pix, 0));
-    float3 normal = DecodeNormalOctahedron(normalBuffer.Load(int3(pix, 0)).xy * 2.0f - 1.0f);
-    float3 albedoCurrent = albedoBuffer.Load(int3(pix, 0)).rgb;
-    uint meshIDCurrent = meshIDBuffer.Load(int3(pix, 0));
-    float3 colorCurrent = noisyInput.Load(int3(pix, 0)).rgb;
 
-    float2 motion = motionVectors.Load(int3(pix, 0));
+    float4 compactData = compactNormDepth.Load(int3(pix, 0));
+    uint packedShadingNormal = asuint(compactData.x);
+    float3 normalCurrent = DecodeNormal16x2(packedShadingNormal);
+    float depthCurrent = compactData.y;
+    float depthFwidth = compactData.z;
+
+    float3 directCurrent = directIllum.Load(int3(pix, 0)).rgb;
+    float3 indirectCurrent = indirectIllum.Load(int3(pix, 0)).rgb;
+
+    float4 motionData = motionVectors.Load(int3(pix, 0));
+    float2 motion = motionData.xy;
+
     float2 prevUv = uv - motion;
 
+    float4 prevDirectIllum = 0;
+    float4 prevIndirectIllum = 0;
+    float2 prevMoments = 0;
+    float prevHistoryLen = 0;
     bool validHistory = !ReprojectionPassCB.reset && all(prevUv >= 0) && all(prevUv <= 1);
-    float3 colorHistory = 0;
-    float2 momentsHistory = 0;
 
     if (validHistory)
     {
@@ -81,179 +89,278 @@ void SVGF_ReprojectionCS(uint3 DTid : SV_DispatchThreadID)
         float3 prevNormal;
         float prevDepth;
         UnpackNormalDepth(packedPrevNd, prevNormal, prevDepth);
-        uint prevMeshID = historyMeshID.SampleLevel(PointClampSampler, prevUv, 0);
-        float3 albedoHistory = albedoBuffer.SampleLevel(LinearClampSampler, prevUv, 0).rgb;
-
-        float depthDiff = abs(depth - prevDepth) / max(depth, 0.001);
-        float normalDiff = acos(saturate(dot(normal, prevNormal)));
-        float albedoDiff = length(albedoCurrent - albedoHistory);
-
-        if (meshIDCurrent != prevMeshID || depthDiff > 0.1 || normalDiff > 0.5 || albedoDiff > ReprojectionPassCB.phiAlbedoRejection)
+        
+        if (dot(normalCurrent, prevNormal) < 0.8 || abs(depthCurrent - prevDepth) / (depthFwidth + 1e-4f) > 4.0f)
         {
             validHistory = false;
         }
         else
         {
-            colorHistory = historyColor.SampleLevel(LinearClampSampler, prevUv, 0).rgb;
-            momentsHistory = historyMoments.SampleLevel(LinearClampSampler, prevUv, 0).xy;
+            prevDirectIllum   = historyDirect.SampleLevel(LinearClampSampler, prevUv, 0);
+            prevIndirectIllum = historyIndirect.SampleLevel(LinearClampSampler, prevUv, 0);
+            prevMoments       = historyMoments.SampleLevel(LinearClampSampler, prevUv, 0);
+            prevHistoryLen    = historyLength.SampleLevel(PointClampSampler, prevUv, 0);
+        }
+    }
+    
+    float currentHistoryLength = min(32.0f, validHistory ? prevHistoryLen + 1.0f : 1.0f);
+
+    float alpha = validHistory ? max(ReprojectionPassCB.alpha, 1.0f / currentHistoryLength) : 1.0f;
+    float momentsAlpha = validHistory ? max(ReprojectionPassCB.momentsAlpha, 1.0f / currentHistoryLength) : 1.0f;
+
+    float lumDirect = Luminance(directCurrent);
+    float2 momentsCurrent = float2(lumDirect, lumDirect * lumDirect); 
+
+    float4 lerpedDirect = lerp(prevDirectIllum, float4(directCurrent, 0.0), alpha);
+    float4 lerpedIndirect = lerp(prevIndirectIllum, float4(indirectCurrent, 0.0), alpha);
+    float2 lerpedMoments = lerp(prevMoments, momentsCurrent, momentsAlpha);
+    
+    float mu1 = lerpedMoments.x;
+    float mu2 = lerpedMoments.y;
+    float variance = max(0.0, mu2 - mu1 * mu1);
+    
+    outputDirect[pix] = float4(lerpedDirect.rgb, variance);
+    outputIndirect[pix] = lerpedIndirect; 
+    outputMoments[pix] = lerpedMoments;
+    outputNormalDepth[pix] = PackNormalDepth(normalCurrent, depthCurrent);
+    outputHistoryLength[pix] = currentHistoryLength;
+}
+
+struct FilterMomentsConstants
+{
+    float phiColor;
+    float phiNormal;
+    uint directIllumIdx;
+    uint indirectIllumIdx;
+    uint momentsIdx;
+    uint historyLengthIdx;
+    uint compactNormDepthIdx;
+    uint outputDirectIdx;
+    uint outputIndirectIdx;
+};
+ConstantBuffer<FilterMomentsConstants> FilterMomentsCB : register(b2);
+
+float BilateralWeight_Moments(float depthDiff, float phiDepth, float normalDot, float phiNormal, float lumaDiff, float phiLuma) 
+{
+    float w = exp(-depthDiff / phiDepth);
+    w *= pow(max(0.0, normalDot), phiNormal);
+    w *= exp(-lumaDiff / phiLuma);
+    return w;
+}
+
+[numthreads(16, 16, 1)]
+void SVGF_FilterMomentsCS(uint3 DTid : SV_DispatchThreadID)
+{
+    Texture2D<float4>  directIllum           = ResourceDescriptorHeap[FilterMomentsCB.directIllumIdx];
+    Texture2D<float4>  indirectIllum         = ResourceDescriptorHeap[FilterMomentsCB.indirectIllumIdx];
+    Texture2D<float2>  moments               = ResourceDescriptorHeap[FilterMomentsCB.momentsIdx];
+    Texture2D<float>   historyLength         = ResourceDescriptorHeap[FilterMomentsCB.historyLengthIdx];
+    Texture2D<float4>  compactNormDepth      = ResourceDescriptorHeap[FilterMomentsCB.compactNormDepthIdx];
+    RWTexture2D<float4> outputDirect         = ResourceDescriptorHeap[FilterMomentsCB.outputDirectIdx];
+    RWTexture2D<float4> outputIndirect       = ResourceDescriptorHeap[FilterMomentsCB.outputIndirectIdx];
+
+    int2 ipos = (int2)DTid.xy;
+    float h = historyLength.Load(int3(ipos, 0));
+
+    float4 directIn = directIllum.Load(int3(ipos, 0));
+    float4 indirectIn = indirectIllum.Load(int3(ipos, 0));
+
+    if (h >= 4.0)
+    {
+        outputDirect[ipos] = directIn;
+        outputIndirect[ipos] = indirectIn;
+        return;
+    }
+
+    float4 centerCompactData = compactNormDepth.Load(int3(ipos, 0));
+    uint packedCenterNormal = asuint(centerCompactData.x);
+    float3 centerNormal = DecodeNormal16x2(packedCenterNormal);
+    float centerDepth = centerCompactData.y;
+    float centerDepthFwidth = centerCompactData.z;
+
+    float3 centerDirectColor = directIn.rgb;
+    float centerLuma = Luminance(centerDirectColor);
+
+    float sumW = 0.0;
+    float3 sumDirect = 0.0;
+    float3 sumIndirect = 0.0;
+    float2 sumMoments = 0.0;
+    
+    const int radius = 3;
+    for (int y = -radius; y <= radius; ++y)
+    {
+        for (int x = -radius; x <= radius; ++x)
+        {
+            int2 samplePos = ipos + int2(x, y);
+
+            float4 sampleCompactData = compactNormDepth.Load(int3(samplePos, 0));
+            uint packedSampleNormal = asuint(sampleCompactData.x);
+            float3 sampleNormal = DecodeNormal16x2(packedSampleNormal);
+            float sampleDepth = sampleCompactData.y;
+
+            float depthDiff = abs(centerDepth - sampleDepth);
+            float normalDot = dot(centerNormal, sampleNormal);
+
+            float3 sampleDirectColor = directIllum.Load(int3(samplePos, 0)).rgb;
+            float sampleLuma = Luminance(sampleDirectColor);
+            float lumaDiff = abs(centerLuma - sampleLuma);
+            
+            float phiDepth = centerDepthFwidth * 3.0f;
+            float weight = BilateralWeight_Moments(depthDiff, phiDepth + 1e-6, normalDot, FilterMomentsCB.phiNormal, lumaDiff, FilterMomentsCB.phiColor + 1e-6);
+
+            sumW += weight;
+            sumDirect += sampleDirectColor * weight;
+            sumIndirect += indirectIllum.Load(int3(samplePos, 0)).rgb * weight;
+            sumMoments += moments.Load(int3(samplePos, 0)) * weight;
         }
     }
 
-    float lum = Luminance(colorCurrent);
-    float2 momentsCurrent = float2(lum, lum * lum); 
-    
-    float alpha = validHistory ? ReprojectionPassCB.alpha : 1.0;
-    float momentsAlpha = validHistory ? ReprojectionPassCB.momentsAlpha : 1.0;
+    sumW = max(sumW, 1e-6f);
+    sumDirect /= sumW;
+    sumIndirect /= sumW;
+    sumMoments /= sumW;
 
-    outputColor[pix] = float4(lerp(colorHistory, colorCurrent, alpha), 1.0);
-    outputMoments[pix] = lerp(momentsHistory, momentsCurrent, momentsAlpha);
-    outputNormalDepth[pix] = PackNormalDepth(normal, depth);
-    outputMeshID[pix] = meshIDCurrent;
-}
+    float variance = sumMoments.y - sumMoments.x * sumMoments.x;
+    variance = max(0.0, variance);
+    variance *= 4.0 / max(h, 1.0); 
 
-struct VariancePassConstants 
-{ 
-    uint colorIdx; 
-    uint momentsIdx; 
-    uint outputColorIdx; 
-    uint outputMomentsIdx; 
-};
-ConstantBuffer<VariancePassConstants> VariancePassCB : register(b1);
-
-[numthreads(16, 16, 1)]
-void SVGF_VarianceCS(uint3 DTid : SV_DispatchThreadID)
-{
-    Texture2D<float4>   inputColor    = ResourceDescriptorHeap[VariancePassCB.colorIdx];
-    Texture2D<float2>   inputMoments  = ResourceDescriptorHeap[VariancePassCB.momentsIdx];
-    RWTexture2D<float4> outputColor   = ResourceDescriptorHeap[VariancePassCB.outputColorIdx];
-    RWTexture2D<float2> outputMoments = ResourceDescriptorHeap[VariancePassCB.outputMomentsIdx];
-
-    int2 pix = (int2)DTid.xy;
-    
-    float2 moments = inputMoments.Load(int3(pix, 0));
-    float mu1 = moments.x;  
-    float mu2 = moments.y;  
-    float variance = max(0.0, mu2 - mu1 * mu1);
-    
-    outputColor[pix] = float4(inputColor.Load(int3(pix, 0)).rgb, variance);
-    
-    outputMoments[pix] = moments; 
+    outputDirect[ipos] = float4(sumDirect, variance);
+    outputIndirect[ipos] = float4(sumIndirect, 0.0);
 }
 
 
-struct AtrousPassConstants 
+struct AtrousPassConstants
 {
-    int   stepSize; 
-    float phiColor; 
-    float phiNormal; 
-    float phiDepth; 
-    float phiAlbedo;
-    uint  inputIdx; 
-    uint  momentsIdx; 
-    uint  normalIdx; 
-    uint  depthIdx; 
-    uint  albedoIdx; 
-    uint  meshIDIdx; 
-    uint  outputIdx; 
-    uint  historyColorUpdateIdx;
+    int   stepSize;
+    bool  performModulation;
+    float phiColor;
+    float phiNormal;
+    float phiDepth;
+    uint  directInIdx;
+    uint  indirectInIdx;
+    uint  historyLengthIdx;
+    uint  compactNormDepthIdx;
+    uint  directAlbedoIdx;
+    uint  indirectAlbedoIdx;
+    uint  directOutIdx;
+    uint  indirectOutIdx;
+    uint  feedbackDirectOutIdx;
+    uint  feedbackIndirectOutIdx;
 };
 ConstantBuffer<AtrousPassConstants> AtrousPassCB : register(b2);
 
-float BilateralWeight(float diff, float phi) { return exp(-max(0, diff) / phi); }
+float2 ComputeStabilizedVariance(int2 ipos, Texture2D<float4> directTex, Texture2D<float4> indirectTex)
+{
+    float2 sum = 0.0;
+    const float kernel[2][2] = { { 1.0 / 4.0, 1.0 / 8.0 }, { 1.0 / 8.0, 1.0 / 16.0 } };
+    for (int y = -1; y <= 1; ++y)
+    {
+        for (int x = -1; x <= 1; ++x)
+        {
+            float k = kernel[abs(x)][abs(y)];
+            sum.x += directTex.Load(int3(ipos + int2(x, y), 0)).a * k;
+            sum.y += indirectTex.Load(int3(ipos + int2(x, y), 0)).a * k;
+        }
+    }
+    return sum;
+}
 
 [numthreads(16, 16, 1)]
 void SVGF_AtrousCS(uint3 DTid : SV_DispatchThreadID)
 {
-    Texture2D<float4>  inputTexture  = ResourceDescriptorHeap[AtrousPassCB.inputIdx];
-    Texture2D<float2>  momentsTexture = ResourceDescriptorHeap[AtrousPassCB.momentsIdx];
-    Texture2D<float4>  normalTexture = ResourceDescriptorHeap[AtrousPassCB.normalIdx];
-    Texture2D<float>   depthTexture  = ResourceDescriptorHeap[AtrousPassCB.depthIdx];
-    Texture2D<float4>  albedoTexture = ResourceDescriptorHeap[AtrousPassCB.albedoIdx];
-    Texture2D<uint>    meshIDTexture = ResourceDescriptorHeap[AtrousPassCB.meshIDIdx];
-    RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[AtrousPassCB.outputIdx];
-    
-    int2 pix = (int2)DTid.xy;
+    Texture2D<float4>  directIn            = ResourceDescriptorHeap[AtrousPassCB.directInIdx];
+    Texture2D<float4>  indirectIn          = ResourceDescriptorHeap[AtrousPassCB.indirectInIdx];
+    Texture2D<float>   historyLength       = ResourceDescriptorHeap[AtrousPassCB.historyLengthIdx];
+    Texture2D<float4>  compactNormDepth    = ResourceDescriptorHeap[AtrousPassCB.compactNormDepthIdx];
+    Texture2D<float4>  directAlbedo        = ResourceDescriptorHeap[AtrousPassCB.directAlbedoIdx];
+    Texture2D<float4>  indirectAlbedo      = ResourceDescriptorHeap[AtrousPassCB.indirectAlbedoIdx];
+    RWTexture2D<float4> directOut          = ResourceDescriptorHeap[AtrousPassCB.directOutIdx];
+
+    int2 ipos = (int2)DTid.xy;
     int step = AtrousPassCB.stepSize;
+
+    float4 centerDirect = directIn.Load(int3(ipos, 0));
+    float4 centerIndirect = indirectIn.Load(int3(ipos, 0));
+
+    float4 centerCompactData = compactNormDepth.Load(int3(ipos, 0));
+    uint packedCenterNormal = asuint(centerCompactData.x);
+    float3 centerNormal = DecodeNormal16x2(packedCenterNormal);
+    float centerDepth = centerCompactData.y;
+    float centerDepthFwidth = centerCompactData.z;
     
-    float4 centerSample = inputTexture.Load(int3(pix, 0));
-    float  centerDepth   = depthTexture.Load(int3(pix, 0));
-    float3 centerNormal  = normalTexture.Load(int3(pix, 0)).rgb * 2.0f - 1.0f;
-    float3 centerAlbedo  = albedoTexture.Load(int3(pix, 0)).rgb; 
-    uint   centerMeshID  = meshIDTexture.Load(int3(pix, 0));
+    float2 variance = ComputeStabilizedVariance(ipos, directIn, indirectIn);
+    float adaptivePhiColor = AtrousPassCB.phiColor * sqrt(max(1e-5, variance.x));
     
-    float  centerLuma    = Luminance(centerAlbedo.rgb);
-    
-    float stabilizedCenterVariance = 0.0;
-    float varianceWeightSum = 0.0;
-    [unroll]
-    for (int y = -1; y <= 1; ++y)
+    float sumWDirect = 1.0;
+    float sumWIndirect = 1.0;
+    float4 sumDirect = centerDirect;
+    float4 sumIndirect = centerIndirect;
+
+    const float kernelWeights[3] = { 1.0, 2.0 / 3.0, 1.0 / 6.0 };
+
+    for (int y = -2; y <= 2; ++y)
     {
-        [unroll]
-        for (int x = -1; x <= 1; ++x)
+        for (int x = -2; x <= 2; ++x)
         {
-            int2 sampleCoord = pix + int2(x, y);
-            if (all(sampleCoord >= 0) && all(sampleCoord < FrameCB.displayResolution))
-            {
-                stabilizedCenterVariance += inputTexture.Load(int3(sampleCoord, 0)).a;
-                varianceWeightSum += 1.0;
-            }
+            if (x == 0 && y == 0) continue;
+
+            int2 samplePos = ipos + int2(x, y) * step;
+            
+            float4 sampleDirect = directIn.Load(int3(samplePos, 0));
+            float4 sampleIndirect = indirectIn.Load(int3(samplePos, 0));
+            
+            float4 sampleCompactData = compactNormDepth.Load(int3(samplePos, 0));
+            uint packedSampleNormal = asuint(sampleCompactData.x);
+            float3 sampleNormal = DecodeNormal16x2(packedSampleNormal);
+            float sampleDepth = sampleCompactData.y;
+            
+            float depthDiff = abs(centerDepth - sampleDepth);
+            float normalDot = dot(centerNormal, sampleNormal);
+
+            float lumaDiffDirect = abs(Luminance(centerDirect.rgb) - Luminance(sampleDirect.rgb));
+            float lumaDiffIndirect = abs(Luminance(centerIndirect.rgb) - Luminance(sampleIndirect.rgb));
+            
+            float phiDepth = centerDepthFwidth * AtrousPassCB.phiDepth * float(step);
+            
+            float wDirect = BilateralWeight_Moments(depthDiff, phiDepth + 1e-6, normalDot, AtrousPassCB.phiNormal, lumaDiffDirect, adaptivePhiColor + 1e-6);
+            float wIndirect = BilateralWeight_Moments(depthDiff, phiDepth + 1e-6, normalDot, AtrousPassCB.phiNormal, lumaDiffIndirect, AtrousPassCB.phiColor + 1e-6);
+            
+            float kernel = kernelWeights[abs(x)] * kernelWeights[abs(y)];
+            wDirect *= kernel;
+            wIndirect *= kernel;
+
+            sumWDirect += wDirect;
+            sumDirect += float4(sampleDirect.rgb * wDirect, sampleDirect.a * wDirect * wDirect);
+
+            sumWIndirect += wIndirect;
+            sumIndirect += float4(sampleIndirect.rgb * wIndirect, sampleIndirect.a * wIndirect * wIndirect);
         }
     }
-    if (varianceWeightSum > 0) stabilizedCenterVariance /= varianceWeightSum;
-    stabilizedCenterVariance = max(stabilizedCenterVariance, 0.001);
     
-    float centerKernelWeight = 6.0 / 22.0;
-    float neighborKernelWeight = 4.0 / 22.0;
-    
-    float4 sum = centerSample * centerKernelWeight;
-    float weightSum = centerKernelWeight;
-    
-    int2 kernelOffsets[4] = { int2(-1, 0), int2(1, 0), int2(0, -1), int2(0, 1) };
-    
-    [unroll]
-    for(int i = 0; i < 4; ++i)
-    {
-        int2 samplePix = pix + kernelOffsets[i] * step;
-        
-        if (any(samplePix < 0) || any(samplePix >= FrameCB.displayResolution)) continue;
-        if (centerMeshID != meshIDTexture.Load(int3(samplePix, 0))) continue;
-        
-        float4 sampleValue  = inputTexture.Load(int3(samplePix, 0));
-        float  sampleDepth  = depthTexture.Load(int3(samplePix, 0));
-        float3 sampleNormal = normalTexture.Load(int3(samplePix, 0)).rgb * 2.0f - 1.0f;
-        float3 sampleAlbedo = albedoTexture.Load(int3(samplePix, 0)).rgb;
+    float invSumWDirectSq = 1.0 / (sumWDirect * sumWDirect);
+    float invSumWIndirectSq = 1.0 / (sumWIndirect * sumWIndirect);
+    sumDirect.rgb /= sumWDirect;
+    sumDirect.a *= invSumWDirectSq;
 
-        float  sampleLuma   = Luminance(sampleAlbedo.rgb);
-        float lumaDiff   = abs(centerLuma - sampleLuma);
-        float depthDiff  = abs(centerDepth - sampleDepth) / max(centerDepth, 0.001);
-        
-        float sampleVariance = max(sampleValue.a, 0.001);
-        float minVariance = min(stabilizedCenterVariance, sampleVariance);
-        
-        float wDepth = BilateralWeight(depthDiff, AtrousPassCB.phiDepth);
-        float wNormal = pow(saturate(dot(centerNormal, sampleNormal)), AtrousPassCB.phiNormal);
-        
-        float adaptiveColorPhi = AtrousPassCB.phiColor * sqrt(max(minVariance, 0.01));
-        
-        float wLuma = BilateralWeight(lumaDiff, adaptiveColorPhi);
-        float weight = wLuma * wDepth * wNormal;
-        
-        weight = max(weight, 0.01);
-        
-        sum += sampleValue * weight * neighborKernelWeight;
-        weightSum += weight * neighborKernelWeight;
+    sumIndirect.rgb /= sumWIndirect;
+    sumIndirect.a *= invSumWIndirectSq;
+
+    if (AtrousPassCB.performModulation)
+    {
+        RWTexture2D<float4> feedbackDirectOut = ResourceDescriptorHeap[AtrousPassCB.feedbackDirectOutIdx];
+        RWTexture2D<float4> feedbackIndirectOut = ResourceDescriptorHeap[AtrousPassCB.feedbackIndirectOutIdx];
+        feedbackDirectOut[ipos] = sumDirect;
+        feedbackIndirectOut[ipos] = sumIndirect;
+
+        float3 directAlbedoColor = directAlbedo.Load(int3(ipos, 0)).rgb;
+        float3 indirectAlbedoColor = indirectAlbedo.Load(int3(ipos, 0)).rgb;
+        float3 finalColor = sumDirect.rgb * directAlbedoColor + sumIndirect.rgb * indirectAlbedoColor;
+        directOut[ipos] = float4(finalColor, 1.0);
     }
-    
-    float4 finalFiltered = sum / max(weightSum, 1e-6);
-    
-    float preservationFactor = exp(-stabilizedCenterVariance * 2.0);
-    finalFiltered.rgb = lerp(finalFiltered.rgb, centerSample.rgb, preservationFactor * 0.1);
-    
-    outputTexture[pix] = finalFiltered;
-
-    if (AtrousPassCB.historyColorUpdateIdx != 0)
+    else
     {
-        RWTexture2D<float4> historyColorUpdateTexture = ResourceDescriptorHeap[AtrousPassCB.historyColorUpdateIdx];
-        historyColorUpdateTexture[pix] = float4(finalFiltered.rgb, 1.0);
+        RWTexture2D<float4> indirectOut = ResourceDescriptorHeap[AtrousPassCB.indirectOutIdx];
+        directOut[ipos] = sumDirect;
+        indirectOut[ipos] = sumIndirect;
     }
 }

@@ -12,6 +12,7 @@ namespace adria
 	class GfxStateObject;
 	class SVGFDenoiserPass;
 	class GfxComputePipelineState;
+	class GfxGraphicsPipelineState;
 
 	class PathTracingPass
 	{
@@ -34,7 +35,6 @@ namespace adria
 
 		std::unique_ptr<GfxStateObject> path_tracing_so;
 		std::unique_ptr<GfxStateObject> path_tracing_svgf_enabled_so;
-		std::unique_ptr<GfxComputePipelineState> remodulate_pso;
 		std::unique_ptr<GfxGraphicsPipelineState> pt_gbuffer_pso;
 
 		std::unique_ptr<GfxTexture> accumulation_texture = nullptr;
@@ -51,7 +51,6 @@ namespace adria
 
 		void AddPTGBufferPass(RenderGraph&);
 		void AddPathTracingPass(RenderGraph&);
-		void AddRemodulatePass(RenderGraph&);
 
 		void CreateAccumulationTexture();
 	};

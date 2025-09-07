@@ -82,8 +82,13 @@ void PT_RayGen()
             MaterialProperties matProps = GetMaterialProperties(materialData, vert.uv, 0);
             BrdfData brdf = GetBrdfData(matProps);
 
-            static const float S_PI = 3.14159265358979323846f;
-            float3 albedoSample = brdf.Diffuse / S_PI + brdf.Specular;
+#if SVGF_ENABLED
+            if (bounce == 0)
+            {
+                directAlbedo   = brdf.Diffuse;
+                indirectAlbedo = brdf.Diffuse;
+            }
+#endif
 
             int lightIndex = 0;
             float lightWeight = 0.0f;
@@ -95,22 +100,22 @@ void PT_RayGen()
                 float NdotL = saturate(dot(worldNormal, wi));
                 float3 lightContribution = vis * lightInfo.color.rgb * NdotL;
 
-                float3 diffuseBRDF = DiffuseBRDF(brdf.Diffuse);
-                float3 Ftmp;
-                float3 specularBRDF = SpecularBRDF(worldNormal, V, wi, brdf.Specular, brdf.Roughness, Ftmp);
-
 #if SVGF_ENABLED
+                float3 diffuseBRDF_White = DiffuseBRDF(float3(1.0, 1.0, 1.0));
+                float3 illumination = lightWeight * (diffuseBRDF_White * lightContribution) * throughput / pdf;
+
                 if (bounce == 0)
                 {
-                    radianceDirect += lightWeight * (diffuseBRDF * lightContribution + specularBRDF * lightContribution) * throughput / pdf;
-                    directAlbedo   += albedoSample;
+                    radianceDirect += illumination;
                 }
                 else
                 {
-                    radianceIndirect += lightWeight * (diffuseBRDF * lightContribution + specularBRDF * lightContribution) * throughput / pdf;
-                    indirectAlbedo   += albedoSample;
+                    radianceIndirect += illumination;
                 }
 #else
+                float3 diffuseBRDF = DiffuseBRDF(brdf.Diffuse);
+                float3 Ftmp;
+                float3 specularBRDF = SpecularBRDF(worldNormal, V, wi, brdf.Specular, brdf.Roughness, Ftmp);
                 radiance += lightWeight * (diffuseBRDF * lightContribution + specularBRDF * lightContribution) * throughput / pdf;
 #endif
             }
@@ -124,37 +129,11 @@ void PT_RayGen()
 
             if (bounce == PathTracingPassCB.bounceCount - 1) break;
 
-            float probDiffuse = ProbabilityToSampleDiffuse(brdf.Diffuse, brdf.Specular);
-            bool chooseDiffuse = (RNG_GetNext(rng) < probDiffuse);
-
-            float3 wi;
-            if (chooseDiffuse)
-            {
-                wi = GetCosHemisphereSample(rng, worldNormal);
-                float3 diffBRDF = DiffuseBRDF(brdf.Diffuse);
-                float NdotL = saturate(dot(worldNormal, wi));
-                throughput *= diffBRDF * NdotL;
-                pdf *= (NdotL / PI) * probDiffuse;
-            }
-            else
-            {
-                float2 u = float2(RNG_GetNext(rng), RNG_GetNext(rng));
-                float3 H = SampleGGX(u, brdf.Roughness, worldNormal);
-                float roughness = max(brdf.Roughness, 0.065f);
-                wi = reflect(-V, H);
-
-                float3 F;
-                float3 specBRDF = SpecularBRDF(worldNormal, V, wi, brdf.Specular, roughness, F);
-                float NdotL = saturate(dot(worldNormal, wi));
-                throughput *= specBRDF * NdotL;
-
-                float a = roughness * roughness;
-                float D = D_GGX(worldNormal, H, a);
-                float NdotH = saturate(dot(worldNormal, H));
-                float LdotH = saturate(dot(wi, H));
-                float samplePDF = D * NdotH / max(1e-6f, (4.0f * LdotH));
-                pdf *= samplePDF * (1.0f - probDiffuse);
-            }
+            float3 wi = GetCosHemisphereSample(rng, worldNormal);
+            float3 diffBRDF = DiffuseBRDF(brdf.Diffuse);
+            float NdotL = saturate(dot(worldNormal, wi));
+            throughput *= diffBRDF * NdotL;
+            pdf *= (NdotL / PI);
 
             ray.Origin = OffsetRay(worldPosition, worldNormal);
             ray.Direction = wi;

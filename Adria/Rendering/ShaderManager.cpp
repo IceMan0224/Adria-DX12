@@ -150,9 +150,8 @@ namespace adria
 			case CS_TensorToTexture:
 			case CS_TextureToTensor:
 			case CS_SVGF_Reprojection:
-			case CS_SVGF_Variance:
+			case CS_SVGF_FilterMoments:
 			case CS_SVGF_Atrous:
-			case CS_Remodulate:
 				return GfxShaderStage::CS;
 			case HS_OceanLOD:
 				return GfxShaderStage::HS;
@@ -338,11 +337,9 @@ namespace adria
 			case LIB_PathTracing:
 				return "RayTracing/PathTracer.hlsl";
 			case CS_SVGF_Reprojection:
-			case CS_SVGF_Variance:
+			case CS_SVGF_FilterMoments:
 			case CS_SVGF_Atrous:
 				return "RayTracing/SVGF.hlsl";
-			case CS_Remodulate:
-				return "RayTracing/Remodulate.hlsl";
 			case VS_PT_GBuffer:
 			case PS_PT_GBuffer:
 				return "RayTracing/PT_GBuffer.hlsl";
@@ -565,12 +562,10 @@ namespace adria
 				return "DDGIVisualizePS";
 			case CS_SVGF_Reprojection:
 				return "SVGF_ReprojectionCS";
-			case CS_SVGF_Variance:
-				return "SVGF_VarianceCS";
+			case CS_SVGF_FilterMoments:
+				return "SVGF_FilterMomentsCS";
 			case CS_SVGF_Atrous:
 				return "SVGF_AtrousCS";
-			case CS_Remodulate:
-				return "Remodulate_CS";
 			case VS_PT_GBuffer:
 				return "PT_GBufferVS";
 			case PS_PT_GBuffer:

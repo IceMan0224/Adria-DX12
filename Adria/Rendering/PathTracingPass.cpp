@@ -60,7 +60,6 @@ namespace adria
 			AddPTGBufferPass(rg);
 			AddPathTracingPass(rg);
 			svgf_denoiser_pass->AddPass(rg);
-			AddRemodulatePass(rg);
 		}
 		else
 		{
@@ -119,10 +118,6 @@ namespace adria
 
 	void PathTracingPass::CreatePSOs()
 	{
-		GfxComputePipelineStateDesc compute_pso_desc{};
-		compute_pso_desc.CS = CS_Remodulate;
-		remodulate_pso = gfx->CreateComputePipelineState(compute_pso_desc);
-
 		GfxGraphicsPipelineStateDesc pt_gbuffer_pso_desc{};
 		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_PT_GBuffer), pt_gbuffer_pso_desc.input_layout);
 		pt_gbuffer_pso_desc.root_signature = GfxRootSignatureID::Common;
@@ -387,69 +382,6 @@ namespace adria
 				}
 
 			}, RGPassType::Compute, RGPassFlags::None);
-	}
-
-	void PathTracingPass::AddRemodulatePass(RenderGraph& rg)
-	{
-		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
-
-		struct RemodulatePassData
-		{
-			RGTextureReadOnlyId denoised_lighting;
-			RGTextureReadOnlyId albedo;
-			RGTextureReadOnlyId specular;
-			RGTextureReadWriteId output;
-		};
-
-		rg.AddPass<RemodulatePassData>("Remodulation Pass",
-			[=](RemodulatePassData& data, RenderGraphBuilder& builder)
-			{
-				RGTextureDesc desc{};
-				desc.width = width;
-				desc.height = height;
-				desc.format = GfxFormat::R16G16B16A16_FLOAT;
-				builder.DeclareTexture(RG_NAME(PT_Denoised), desc);
-
-				data.denoised_lighting = builder.ReadTexture(svgf_denoiser_pass->GetOutputName(), ReadAccess_NonPixelShader);
-				data.albedo = builder.ReadTexture(RG_NAME(PT_Albedo), ReadAccess_NonPixelShader);
-				data.specular = builder.ReadTexture(RG_NAME(PT_Specular), ReadAccess_NonPixelShader); 
-				data.output = builder.WriteTexture(RG_NAME(PT_Denoised));
-			},
-			[=](RemodulatePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
-			{
-				GfxDevice* gfx = cmd_list->GetDevice();
-
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.denoised_lighting),
-					ctx.GetReadOnlyTexture(data.albedo),
-					ctx.GetReadOnlyTexture(data.specular),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
-
-				struct RemodulatePassConstants
-				{
-					Uint32 denoised_lighting_idx;
-					Uint32 albedo_idx;
-					Uint32 specular_idx;
-					Uint32 output_idx;
-				} constants = 
-				{
-					.denoised_lighting_idx = i,
-					.albedo_idx = i + 1,
-					.specular_idx = i + 2, 
-					.output_idx = i + 3 
-				};
-
-				cmd_list->SetPipelineState(remodulate_pso.get());
-				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-				cmd_list->SetRootConstants(1, constants);
-				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
-
-			}, RGPassType::Compute);
 	}
 
 	void PathTracingPass::CreateAccumulationTexture()

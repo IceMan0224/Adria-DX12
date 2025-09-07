@@ -12,7 +12,7 @@
 namespace adria
 {
 	
-	static TAutoConsoleVariable<Int>   SVGF_AtrousIterations("r.SVGF.Atrous.Iterations", 5, "Number of a-trous filter iterations.");
+	static TAutoConsoleVariable<Int>   SVGF_AtrousIterations("r.SVGF.Atrous.Iterations", 3, "Number of a-trous filter iterations.");
 	static TAutoConsoleVariable<Float> SVGF_Alpha("r.SVGF.Alpha", 0.05f, "Temporal feedback factor for color.");
 	static TAutoConsoleVariable<Float> SVGF_MomentsAlpha("r.SVGF.Moments.Alpha", 0.1f, "Temporal feedback factor for moments.");
 	static TAutoConsoleVariable<Float> SVGF_PhiColor("r.SVGF.Phi.Color", 8.0f, "Edge-stopping function parameter for color.");
@@ -33,13 +33,21 @@ namespace adria
 	{
 		RG_SCOPE(rg, "SVGF Denoiser");
 
-		AddReprojectionPass(rg);
-		
-		rg.ExportTexture(RG_NAME(SVGF_Output_NormalDepth), history_normal_depth_texture.get());
-		rg.ExportTexture(RG_NAME(SVGF_Output_MeshID), history_mesh_id_texture.get());
+		rg.ImportTexture(RG_NAME(SVGF_History_DirectIllum), history_direct_illum_texture.get());
+		rg.ImportTexture(RG_NAME(SVGF_History_IndirectIllum), history_indirect_illum_texture.get());
+		rg.ImportTexture(RG_NAME(SVGF_History_Moments), history_moments_texture.get());
+		rg.ImportTexture(RG_NAME(SVGF_History_Length), history_length_texture.get());
+		rg.ImportTexture(RG_NAME(SVGF_History_NormalDepth), history_normal_depth_texture.get());
 
-		AddVarianceEstimationPass(rg);
-		AddAtrousFilteringPass(rg);
+		AddReprojectionPass(rg);
+		AddFilterMomentsPass(rg);
+		AddAtrousPass(rg);
+
+		rg.ExportTexture(final_direct_illum_name_for_history, history_direct_illum_texture.get());
+		rg.ExportTexture(final_indirect_illum_name_for_history, history_indirect_illum_texture.get());
+		rg.ExportTexture(RG_NAME(SVGF_Reprojected_Moments), history_moments_texture.get());
+		rg.ExportTexture(RG_NAME(SVGF_Output_HistoryLength), history_length_texture.get());
+		rg.ExportTexture(RG_NAME(SVGF_Output_NormalDepth), history_normal_depth_texture.get());
 	}
 
 	void SVGFDenoiserPass::OnResize(Uint32 w, Uint32 h)
@@ -78,8 +86,8 @@ namespace adria
 		compute_pso_desc.CS = CS_SVGF_Reprojection;
 		reprojection_pso = gfx->CreateComputePipelineState(compute_pso_desc);
 
-		compute_pso_desc.CS = CS_SVGF_Variance;
-		variance_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		compute_pso_desc.CS = CS_SVGF_FilterMoments;
+		filter_moments_pso = gfx->CreateComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_SVGF_Atrous;
 		atrous_pso = gfx->CreateComputePipelineState(compute_pso_desc);
@@ -94,33 +102,34 @@ namespace adria
 		desc.initial_state = GfxResourceState::ComputeUAV;
 
 		desc.format = GfxFormat::R16G16B16A16_FLOAT;
-		history_color_texture = gfx->CreateTexture(desc);
+		history_direct_illum_texture = gfx->CreateTexture(desc);
+		history_indirect_illum_texture = gfx->CreateTexture(desc);
+
+		desc.format = GfxFormat::R16_FLOAT;
+		history_length_texture = gfx->CreateTexture(desc);
 
 		desc.format = GfxFormat::R32G32_FLOAT;
 		history_moments_texture = gfx->CreateTexture(desc);
 
 		desc.format = GfxFormat::R32G32_UINT;
 		history_normal_depth_texture = gfx->CreateTexture(desc);
-
-		desc.format = GfxFormat::R32_UINT;
-		history_mesh_id_texture = gfx->CreateTexture(desc);
 	}
 
 	void SVGFDenoiserPass::AddReprojectionPass(RenderGraph& rg)
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
-		rg.ImportTexture(RG_NAME(SVGF_History_Color), history_color_texture.get());
+		rg.ImportTexture(RG_NAME(SVGF_History_DirectIllum), history_direct_illum_texture.get());
+		rg.ImportTexture(RG_NAME(SVGF_History_IndirectIllum), history_indirect_illum_texture.get());
 		rg.ImportTexture(RG_NAME(SVGF_History_Moments), history_moments_texture.get());
 		rg.ImportTexture(RG_NAME(SVGF_History_NormalDepth), history_normal_depth_texture.get());
-		rg.ImportTexture(RG_NAME(SVGF_History_MeshID), history_mesh_id_texture.get());
-
+		rg.ImportTexture(RG_NAME(SVGF_History_Length), history_length_texture.get());
 
 		struct ReprojectionPassData
 		{
-			RGTextureReadOnlyId noisy_input, motion_vectors, depth, normal, albedo, mesh_id;
-			RGTextureReadOnlyId history_color, history_moments, history_normal_depth, history_mesh_id;
-			RGTextureReadWriteId output_color, output_moments, output_normal_depth, output_mesh_id;
+			RGTextureReadOnlyId direct_illum, indirect_illum, motion_vectors, compact_norm_depth;
+			RGTextureReadOnlyId history_direct, history_indirect, history_moments, history_normal_depth, history_length;
+			RGTextureReadWriteId output_direct, output_indirect, output_moments, output_normal_depth, output_history_length;
 		};
 
 		rg.AddPass<ReprojectionPassData>("SVGF Reprojection Pass",
@@ -130,43 +139,48 @@ namespace adria
 				desc.width = width;
 				desc.height = height;
 				desc.format = GfxFormat::R16G16B16A16_FLOAT;
-				builder.DeclareTexture(RG_NAME(SVGF_Reprojected_Color), desc);
+				builder.DeclareTexture(RG_NAME(SVGF_Reprojected_Direct), desc);
+				builder.DeclareTexture(RG_NAME(SVGF_Reprojected_Indirect), desc);
+
 				desc.format = GfxFormat::R32G32_FLOAT;
 				builder.DeclareTexture(RG_NAME(SVGF_Reprojected_Moments), desc);
 				desc.format = GfxFormat::R32G32_UINT;
 				builder.DeclareTexture(RG_NAME(SVGF_Output_NormalDepth), desc);
-				desc.format = GfxFormat::R32_UINT;
-				builder.DeclareTexture(RG_NAME(SVGF_Output_MeshID), desc);
+				desc.format = GfxFormat::R16_FLOAT;
+				builder.DeclareTexture(RG_NAME(SVGF_Output_HistoryLength), desc);
 
-				data.noisy_input = builder.ReadTexture(RG_NAME(PT_Output), ReadAccess_NonPixelShader);
-				data.motion_vectors = builder.ReadTexture(RG_NAME(PT_MotionVectors), ReadAccess_NonPixelShader);
-				data.depth = builder.ReadTexture(RG_NAME(PT_Depth), ReadAccess_NonPixelShader);
-				data.normal = builder.ReadTexture(RG_NAME(PT_Normal), ReadAccess_NonPixelShader);
-				data.albedo = builder.ReadTexture(RG_NAME(PT_Albedo), ReadAccess_NonPixelShader);
-				data.mesh_id = builder.ReadTexture(RG_NAME(PT_MeshID), ReadAccess_NonPixelShader);
+				data.direct_illum = builder.ReadTexture(RG_NAME(PT_DirectRadiance), ReadAccess_NonPixelShader);
+				data.indirect_illum = builder.ReadTexture(RG_NAME(PT_IndirectRadiance), ReadAccess_NonPixelShader);
+				data.motion_vectors = builder.ReadTexture(RG_NAME(PT_GBuffer_MotionVectors), ReadAccess_NonPixelShader);
+				data.compact_norm_depth = builder.ReadTexture(RG_NAME(PT_GBuffer_CompactNormDepth), ReadAccess_NonPixelShader);
 
-				data.history_color = builder.ReadTexture(RG_NAME(SVGF_History_Color), ReadAccess_NonPixelShader);
+				data.history_direct = builder.ReadTexture(RG_NAME(SVGF_History_DirectIllum), ReadAccess_NonPixelShader);
+				data.history_indirect = builder.ReadTexture(RG_NAME(SVGF_History_IndirectIllum), ReadAccess_NonPixelShader);
 				data.history_moments = builder.ReadTexture(RG_NAME(SVGF_History_Moments), ReadAccess_NonPixelShader);
 				data.history_normal_depth = builder.ReadTexture(RG_NAME(SVGF_History_NormalDepth), ReadAccess_NonPixelShader);
-				data.history_mesh_id = builder.ReadTexture(RG_NAME(SVGF_History_MeshID), ReadAccess_NonPixelShader);
+				data.history_length = builder.ReadTexture(RG_NAME(SVGF_History_Length), ReadAccess_NonPixelShader);
 
-				data.output_color = builder.WriteTexture(RG_NAME(SVGF_Reprojected_Color));
+				data.output_direct = builder.WriteTexture(RG_NAME(SVGF_Reprojected_Direct));
+				data.output_indirect = builder.WriteTexture(RG_NAME(SVGF_Reprojected_Indirect));
 				data.output_moments = builder.WriteTexture(RG_NAME(SVGF_Reprojected_Moments));
 				data.output_normal_depth = builder.WriteTexture(RG_NAME(SVGF_Output_NormalDepth));
-				data.output_mesh_id = builder.WriteTexture(RG_NAME(SVGF_Output_MeshID));
+				data.output_history_length = builder.WriteTexture(RG_NAME(SVGF_Output_HistoryLength));
 			},
 			[=](ReprojectionPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
 			{
 				GfxDevice* gfx = cmd_list->GetDevice();
 				GfxDescriptor src_descriptors[] =
 				{
-					ctx.GetReadOnlyTexture(data.noisy_input), ctx.GetReadOnlyTexture(data.motion_vectors),
-					ctx.GetReadOnlyTexture(data.depth), ctx.GetReadOnlyTexture(data.normal),
-					ctx.GetReadOnlyTexture(data.albedo), ctx.GetReadOnlyTexture(data.mesh_id),
-					ctx.GetReadOnlyTexture(data.history_color), ctx.GetReadOnlyTexture(data.history_moments),
-					ctx.GetReadOnlyTexture(data.history_normal_depth), ctx.GetReadOnlyTexture(data.history_mesh_id),
-					ctx.GetReadWriteTexture(data.output_color), ctx.GetReadWriteTexture(data.output_moments),
-					ctx.GetReadWriteTexture(data.output_normal_depth), ctx.GetReadWriteTexture(data.output_mesh_id)
+					ctx.GetReadOnlyTexture(data.direct_illum), ctx.GetReadOnlyTexture(data.indirect_illum),
+					ctx.GetReadOnlyTexture(data.motion_vectors), ctx.GetReadOnlyTexture(data.compact_norm_depth),
+
+					ctx.GetReadOnlyTexture(data.history_direct), ctx.GetReadOnlyTexture(data.history_indirect),
+					ctx.GetReadOnlyTexture(data.history_moments), ctx.GetReadOnlyTexture(data.history_normal_depth),
+					ctx.GetReadOnlyTexture(data.history_length),
+
+					ctx.GetReadWriteTexture(data.output_direct), ctx.GetReadWriteTexture(data.output_indirect),
+					ctx.GetReadWriteTexture(data.output_moments), ctx.GetReadWriteTexture(data.output_normal_depth),
+					ctx.GetReadWriteTexture(data.output_history_length)
 				};
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
 				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
@@ -177,27 +191,26 @@ namespace adria
 					Bool32 reset;
 					Float alpha;
 					Float moments_alpha;
-					Float phi_albedo_rejection;
-					Uint32 input_idx;
+					Uint32 direct_illum_idx;
+					Uint32 indirect_illum_idx;
 					Uint32 motion_idx;
-					Uint32 depth_idx;
-					Uint32 normal_idx;
-					Uint32 albedo_idx;
-					Uint32 mesh_id_idx;
-					Uint32 history_color_idx;
+					Uint32 compact_norm_depth_idx;
+					Uint32 history_direct_idx;
+					Uint32 history_indirect_idx;
 					Uint32 history_moments_idx;
 					Uint32 history_normal_depth_idx;
-					Uint32 history_mesh_id_idx;
-					Uint32 output_color_idx;
+					Uint32 history_length_idx;
+					Uint32 output_direct_idx;
+					Uint32 output_indirect_idx;
 					Uint32 output_moments_idx;
 					Uint32 output_normal_depth_idx;
-					Uint32 output_mesh_id_idx;
+					Uint32 output_history_length_idx;
 				} constants =
 				{
-					.reset = reset_history, .alpha = SVGF_Alpha.Get(), .moments_alpha = SVGF_MomentsAlpha.Get(), .phi_albedo_rejection = 0.2f,
-					.input_idx = i, .motion_idx = i + 1, .depth_idx = i + 2, .normal_idx = i + 3, .albedo_idx = i + 4, .mesh_id_idx = i + 5,
-					.history_color_idx = i + 6, .history_moments_idx = i + 7, .history_normal_depth_idx = i + 8, .history_mesh_id_idx = i + 9,
-					.output_color_idx = i + 10, .output_moments_idx = i + 11, .output_normal_depth_idx = i + 12, .output_mesh_id_idx = i + 13
+					.reset = reset_history, .alpha = SVGF_Alpha.Get(), .moments_alpha = SVGF_MomentsAlpha.Get(),
+					.direct_illum_idx = i + 0, .indirect_illum_idx = i + 1, .motion_idx = i + 2, .compact_norm_depth_idx = i + 3,
+					.history_direct_idx = i + 4, .history_indirect_idx = i + 5, .history_moments_idx = i + 6, .history_normal_depth_idx = i + 7, .history_length_idx = i + 8,
+					.output_direct_idx = i + 9, .output_indirect_idx = i + 10, .output_moments_idx = i + 11, .output_normal_depth_idx = i + 12, .output_history_length_idx = i + 13
 				};
 				reset_history = false;
 
@@ -206,93 +219,109 @@ namespace adria
 				cmd_list->SetRootCBV(2, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::Compute);
-
 	}
 
-	void SVGFDenoiserPass::AddVarianceEstimationPass(RenderGraph& rg)
+	void SVGFDenoiserPass::AddFilterMomentsPass(RenderGraph& rg)
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
-		struct VarianceEstimationPassData
+		struct FilterMomentsData
 		{
-			RGTextureReadOnlyId color;
-			RGTextureReadOnlyId moments;
-			RGTextureReadWriteId output_color;
-			RGTextureReadWriteId output_moments;
+			RGTextureReadOnlyId direct_illum, indirect_illum, moments, history_length, compact_norm_depth;
+			RGTextureReadWriteId output_direct, output_indirect;
 		};
-		rg.AddPass<VarianceEstimationPassData>("SVGF Variance Estimation Pass",
-			[=](VarianceEstimationPassData& data, RenderGraphBuilder& builder)
+
+		rg.AddPass<FilterMomentsData>("SVGF Filter Moments Pass",
+			[=](FilterMomentsData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc desc{};
 				desc.width = width;
 				desc.height = height;
 				desc.format = GfxFormat::R16G16B16A16_FLOAT;
 				builder.DeclareTexture(RG_NAME(SVGF_Ping), desc);
+				builder.DeclareTexture(RG_NAME(SVGF_Filtered_Indirect), desc); 
 
-				data.color = builder.ReadTexture(RG_NAME(SVGF_Reprojected_Color), ReadAccess_NonPixelShader);
+				data.direct_illum = builder.ReadTexture(RG_NAME(SVGF_Reprojected_Direct), ReadAccess_NonPixelShader);
+				data.indirect_illum = builder.ReadTexture(RG_NAME(SVGF_Reprojected_Indirect), ReadAccess_NonPixelShader);
 				data.moments = builder.ReadTexture(RG_NAME(SVGF_Reprojected_Moments), ReadAccess_NonPixelShader);
-				data.output_color = builder.WriteTexture(RG_NAME(SVGF_Ping));
-				data.output_moments = builder.WriteTexture(RG_NAME(SVGF_History_Moments));
+				data.history_length = builder.ReadTexture(RG_NAME(SVGF_Output_HistoryLength), ReadAccess_NonPixelShader);
+				data.compact_norm_depth = builder.ReadTexture(RG_NAME(PT_GBuffer_CompactNormDepth), ReadAccess_NonPixelShader);
+
+				data.output_direct = builder.WriteTexture(RG_NAME(SVGF_Ping));
+				data.output_indirect = builder.WriteTexture(RG_NAME(SVGF_Filtered_Indirect));
 			},
-			[=](VarianceEstimationPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](FilterMomentsData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
 			{
 				GfxDevice* gfx = cmd_list->GetDevice();
 				GfxDescriptor src_descriptors[] =
 				{
-					ctx.GetReadOnlyTexture(data.color), ctx.GetReadOnlyTexture(data.moments),
-					ctx.GetReadWriteTexture(data.output_color), ctx.GetReadWriteTexture(data.output_moments)
+					ctx.GetReadOnlyTexture(data.direct_illum), ctx.GetReadOnlyTexture(data.indirect_illum),
+					ctx.GetReadOnlyTexture(data.moments), ctx.GetReadOnlyTexture(data.history_length),
+					ctx.GetReadOnlyTexture(data.compact_norm_depth),
+					ctx.GetReadWriteTexture(data.output_direct), ctx.GetReadWriteTexture(data.output_indirect)
 				};
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
 				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
 				Uint32 const i = dst_descriptor.GetIndex();
 
-				struct VariancePassDataConstants
+				struct FilterMomentsConstants
 				{
-					Uint32 color_idx;
+					Float phi_color;
+					Float phi_normal;
+					Uint32 direct_illum_idx;
+					Uint32 indirect_illum_idx;
 					Uint32 moments_idx;
-					Uint32 output_color_idx;
-					Uint32 output_moments_idx;
-				}
-				constants = { .color_idx = i, .moments_idx = i + 1, .output_color_idx = i + 2, .output_moments_idx = i + 3 };
-				cmd_list->SetPipelineState(variance_pso.get());
+					Uint32 history_length_idx;
+					Uint32 compact_norm_depth_idx;
+					Uint32 output_direct_idx;
+					Uint32 output_indirect_idx;
+				} constants =
+				{
+					.phi_color = SVGF_PhiColor.Get(), .phi_normal = SVGF_PhiNormal.Get(),
+					.direct_illum_idx = i, .indirect_illum_idx = i + 1, .moments_idx = i + 2,
+					.history_length_idx = i + 3, .compact_norm_depth_idx = i + 4,
+					.output_direct_idx = i + 5, .output_indirect_idx = i + 6
+				};
+
+				cmd_list->SetPipelineState(filter_moments_pso.get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-				cmd_list->SetRootConstants(1, constants);
+				cmd_list->SetRootCBV(2, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
-
 			}, RGPassType::Compute);
-
 	}
 
-	void SVGFDenoiserPass::AddAtrousFilteringPass(RenderGraph& rg)
+	void SVGFDenoiserPass::AddAtrousPass(RenderGraph& rg)
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
 		struct AtrousPassData
 		{
-			RGTextureReadOnlyId input, moments, normal, depth, albedo, mesh_id;
-			RGTextureReadWriteId output;
-			RGTextureReadWriteId history_color_update;
+			RGTextureReadOnlyId direct_in, indirect_in, history_length, compact_norm_depth, direct_albedo, indirect_albedo;
+			RGTextureReadWriteId direct_out, indirect_out;
+			RGTextureReadWriteId feedback_direct_out, feedback_indirect_out;
 		};
 
-		RGResourceName AtrousArguments[] = { RG_NAME(SVGF_Ping), RG_NAME(SVGF_Pong) };
+		RGResourceName AtrousDirectPingPong[] = { RG_NAME(SVGF_Ping), RG_NAME(SVGF_Pong) };
+		RGResourceName AtrousIndirectPingPong[] = { RG_NAME(SVGF_Filtered_Indirect), RG_NAME(SVGF_Filtered_Indirect_Pong) };
 
-		Int const atrous_iterations = SVGF_AtrousIterations.Get();
+		Int const atrous_iterations = std::max(SVGF_AtrousIterations.Get(), 1);
 		for (Int i = 0; i < atrous_iterations; ++i)
 		{
-			RGResourceName atrous_input = AtrousArguments[i % 2];
-			RGResourceName atrous_output = AtrousArguments[(i + 1) % 2];
+			RGResourceName direct_input = AtrousDirectPingPong[i % 2];
+			RGResourceName direct_output = AtrousDirectPingPong[(i + 1) % 2];
+			RGResourceName indirect_input = AtrousIndirectPingPong[i % 2];
+			RGResourceName indirect_output = AtrousIndirectPingPong[(i + 1) % 2];
+
+			Bool const is_final_iteration = (i == atrous_iterations - 1);
+			if (is_final_iteration)
+			{
+				direct_output = RG_NAME(PT_Denoised);
+			}
 
 			std::string pass_name = "SVGF Atrous Filtering Pass " + std::to_string(i);
 			rg.AddPass<AtrousPassData>(pass_name.c_str(),
 				[=](AtrousPassData& data, RenderGraphBuilder& builder)
 				{
-					data.input = builder.ReadTexture(atrous_input, ReadAccess_NonPixelShader);
-					data.moments = builder.ReadTexture(RG_NAME(SVGF_History_Moments), ReadAccess_NonPixelShader);
-					data.normal = builder.ReadTexture(RG_NAME(PT_Normal), ReadAccess_NonPixelShader);
-					data.depth = builder.ReadTexture(RG_NAME(PT_Depth), ReadAccess_NonPixelShader);
-					data.albedo = builder.ReadTexture(RG_NAME(PT_Albedo), ReadAccess_NonPixelShader);
-					data.mesh_id = builder.ReadTexture(RG_NAME(PT_MeshID), ReadAccess_NonPixelShader);
-
 					if (i == 0)
 					{
 						RGTextureDesc desc{};
@@ -300,23 +329,59 @@ namespace adria
 						desc.height = height;
 						desc.format = GfxFormat::R16G16B16A16_FLOAT;
 						builder.DeclareTexture(RG_NAME(SVGF_Pong), desc);
-
-						data.history_color_update = builder.WriteTexture(RG_NAME(SVGF_History_Color));
+						builder.DeclareTexture(RG_NAME(SVGF_Filtered_Indirect_Pong), desc);
 					}
-					data.output = builder.WriteTexture(atrous_output);
+
+					if (is_final_iteration)
+					{
+						RGTextureDesc desc{};
+						desc.width = width;
+						desc.height = height;
+						desc.format = GfxFormat::R16G16B16A16_FLOAT;
+						builder.DeclareTexture(RG_NAME(PT_Denoised), desc);
+						builder.DeclareTexture(RG_NAME(SVGF_Feedback_Direct), desc);
+						builder.DeclareTexture(RG_NAME(SVGF_Feedback_Indirect), desc);
+					}
+
+					data.direct_in = builder.ReadTexture(direct_input, ReadAccess_NonPixelShader);
+					data.indirect_in = builder.ReadTexture(indirect_input, ReadAccess_NonPixelShader);
+					data.history_length = builder.ReadTexture(RG_NAME(SVGF_Output_HistoryLength), ReadAccess_NonPixelShader);
+					data.compact_norm_depth = builder.ReadTexture(RG_NAME(PT_GBuffer_CompactNormDepth), ReadAccess_NonPixelShader);
+					data.direct_albedo = builder.ReadTexture(RG_NAME(PT_DirectAlbedo), ReadAccess_NonPixelShader);
+					data.indirect_albedo = builder.ReadTexture(RG_NAME(PT_IndirectAlbedo), ReadAccess_NonPixelShader);
+
+					data.direct_out = builder.WriteTexture(direct_output);
+					if (!is_final_iteration)
+					{
+						data.indirect_out = builder.WriteTexture(indirect_output);
+					}
+					else
+					{
+						data.feedback_direct_out = builder.WriteTexture(RG_NAME(SVGF_Feedback_Direct));
+						data.feedback_indirect_out = builder.WriteTexture(RG_NAME(SVGF_Feedback_Indirect));
+					}
 				},
 				[=](AtrousPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
 				{
 					GfxDevice* gfx = cmd_list->GetDevice();
 					std::vector<GfxDescriptor> src_descriptors;
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.input));
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.moments));
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.normal));
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.depth));
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.albedo));
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.mesh_id));
-					src_descriptors.push_back(ctx.GetReadWriteTexture(data.output));
-					if (i == 0) src_descriptors.push_back(ctx.GetReadWriteTexture(data.history_color_update));
+					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.direct_in));
+					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.indirect_in));
+					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.history_length));
+					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.compact_norm_depth));
+					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.direct_albedo));
+					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.indirect_albedo));
+					src_descriptors.push_back(ctx.GetReadWriteTexture(data.direct_out));
+
+					if (!is_final_iteration)
+					{
+						src_descriptors.push_back(ctx.GetReadWriteTexture(data.indirect_out));
+					}
+					else
+					{
+						src_descriptors.push_back(ctx.GetReadWriteTexture(data.feedback_direct_out));
+						src_descriptors.push_back(ctx.GetReadWriteTexture(data.feedback_indirect_out));
+					}
 
 					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU((Uint32)src_descriptors.size());
 					gfx->CopyDescriptors(dst_descriptor, src_descriptors);
@@ -325,25 +390,29 @@ namespace adria
 					struct AtrousPassConstants
 					{
 						Int32 step_size;
+						Bool32 perform_modulation;
 						Float phi_color;
 						Float phi_normal;
 						Float phi_depth;
-						Float phi_albedo;
-						Uint32 input_idx;
-						Uint32 moments_idx;
-						Uint32 normal_idx;
-						Uint32 depth_idx;
-						Uint32 albedo_idx;
-						Uint32 mesh_id_idx;
-						Uint32 output_idx;
-						Uint32 history_color_update_idx;
+						Uint32 direct_in_idx;
+						Uint32 indirect_in_idx;
+						Uint32 history_length_idx;
+						Uint32 compact_norm_depth_idx;
+						Uint32 direct_albedo_idx;
+						Uint32 indirect_albedo_idx;
+						Uint32 direct_out_idx;
+						Uint32 indirect_out_idx;
+						Uint32 feedback_direct_out_idx;
+						Uint32 feedback_indirect_out_idx;
 					} constants =
 					{
-						.step_size = 1 << i, .phi_color = SVGF_PhiColor.Get(), .phi_normal = SVGF_PhiNormal.Get(),
-						.phi_depth = SVGF_PhiDepth.Get(), .phi_albedo = SVGF_PhiAlbedo.Get(),
-						.input_idx = base_index, .moments_idx = base_index + 1, .normal_idx = base_index + 2, .depth_idx = base_index + 3,
-						.albedo_idx = base_index + 4, .mesh_id_idx = base_index + 5, .output_idx = base_index + 6,
-						.history_color_update_idx = (i == 0) ? (base_index + 7) : 0
+						.step_size = 1 << i, .perform_modulation = is_final_iteration,
+						.phi_color = SVGF_PhiColor.Get(), .phi_normal = SVGF_PhiNormal.Get(), .phi_depth = SVGF_PhiDepth.Get(),
+						.direct_in_idx = base_index, .indirect_in_idx = base_index + 1, .history_length_idx = base_index + 2, .compact_norm_depth_idx = base_index + 3,
+						.direct_albedo_idx = base_index + 4, .indirect_albedo_idx = base_index + 5, .direct_out_idx = base_index + 6,
+						.indirect_out_idx = is_final_iteration ? 0 : (base_index + 7),
+						.feedback_direct_out_idx = is_final_iteration ? (base_index + 7) : 0,
+						.feedback_indirect_out_idx = is_final_iteration ? (base_index + 8) : 0
 					};
 
 					cmd_list->SetPipelineState(atrous_pso.get());
@@ -351,9 +420,13 @@ namespace adria
 					cmd_list->SetRootCBV(2, constants);
 					cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 				}, RGPassType::Compute);
+
+			if (is_final_iteration)
+			{
+				output_name = direct_output;
+				final_direct_illum_name_for_history = RG_NAME(SVGF_Feedback_Direct);
+				final_indirect_illum_name_for_history = RG_NAME(SVGF_Feedback_Indirect);
+			}
 		}
-
-		output_name = AtrousArguments[atrous_iterations % 2];
 	}
-
 }

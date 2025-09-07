@@ -27,15 +27,18 @@ namespace adria
 		Uint32 width, height;
 
 		std::unique_ptr<GfxComputePipelineState> reprojection_pso;
-		std::unique_ptr<GfxComputePipelineState> variance_pso;
+		std::unique_ptr<GfxComputePipelineState> filter_moments_pso; 
 		std::unique_ptr<GfxComputePipelineState> atrous_pso;
 
-		std::unique_ptr<GfxTexture> history_color_texture;
+		std::unique_ptr<GfxTexture> history_direct_illum_texture;
+		std::unique_ptr<GfxTexture> history_indirect_illum_texture;
+		std::unique_ptr<GfxTexture> history_length_texture;
 		std::unique_ptr<GfxTexture> history_moments_texture;
-		std::unique_ptr<GfxTexture> history_normal_depth_texture; 
-		std::unique_ptr<GfxTexture> history_mesh_id_texture;
+		std::unique_ptr<GfxTexture> history_normal_depth_texture;
 
 		RGResourceName output_name;
+		RGResourceName final_direct_illum_name_for_history;
+		RGResourceName final_indirect_illum_name_for_history;
 		Bool reset_history = true;
 
 	private:
@@ -43,7 +46,7 @@ namespace adria
 		void CreateHistoryTextures();
 
 		void AddReprojectionPass(RenderGraph& rg);
-		void AddVarianceEstimationPass(RenderGraph& rg);
-		void AddAtrousFilteringPass(RenderGraph& rg);
+		void AddFilterMomentsPass(RenderGraph& rg);
+		void AddAtrousPass(RenderGraph& rg);
 	};
 }
