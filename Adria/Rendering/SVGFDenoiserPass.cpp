@@ -220,7 +220,6 @@ namespace adria
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::Compute);
 	}
-
 	void SVGFDenoiserPass::AddFilterMomentsPass(RenderGraph& rg)
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
@@ -238,8 +237,9 @@ namespace adria
 				desc.width = width;
 				desc.height = height;
 				desc.format = GfxFormat::R16G16B16A16_FLOAT;
-				builder.DeclareTexture(RG_NAME(SVGF_Ping), desc);
-				builder.DeclareTexture(RG_NAME(SVGF_Filtered_Indirect), desc); 
+
+				builder.DeclareTexture(RG_NAME(SVGF_Filtered_Direct), desc);
+				builder.DeclareTexture(RG_NAME(SVGF_Filtered_Indirect), desc);
 
 				data.direct_illum = builder.ReadTexture(RG_NAME(SVGF_Reprojected_Direct), ReadAccess_NonPixelShader);
 				data.indirect_illum = builder.ReadTexture(RG_NAME(SVGF_Reprojected_Indirect), ReadAccess_NonPixelShader);
@@ -247,7 +247,7 @@ namespace adria
 				data.history_length = builder.ReadTexture(RG_NAME(SVGF_Output_HistoryLength), ReadAccess_NonPixelShader);
 				data.compact_norm_depth = builder.ReadTexture(RG_NAME(PT_GBuffer_CompactNormDepth), ReadAccess_NonPixelShader);
 
-				data.output_direct = builder.WriteTexture(RG_NAME(SVGF_Ping));
+				data.output_direct = builder.WriteTexture(RG_NAME(SVGF_Filtered_Direct));
 				data.output_indirect = builder.WriteTexture(RG_NAME(SVGF_Filtered_Indirect));
 			},
 			[=](FilterMomentsData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
@@ -293,6 +293,37 @@ namespace adria
 	void SVGFDenoiserPass::AddAtrousPass(RenderGraph& rg)
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
+		Int const atrous_iterations = SVGF_AtrousIterations.Get();
+
+		if (atrous_iterations <= 0)
+		{
+			final_direct_illum_name_for_history = RG_NAME(SVGF_Filtered_Direct);
+			final_indirect_illum_name_for_history = RG_NAME(SVGF_Filtered_Indirect);
+
+			output_name = RG_NAME(PT_Denoised);
+			struct PassData { RGTextureReadOnlyId direct, indirect, albedo_d, albedo_i; RGTextureReadWriteId output; };
+			rg.AddPass<PassData>("SVGF Modulation Only Pass",
+				[&](PassData& data, RenderGraphBuilder& builder) 
+				{
+					builder.DeclareTexture(RG_NAME(PT_Denoised), { .width = width, .height = height, .format = GfxFormat::R16G16B16A16_FLOAT });
+					data.direct = builder.ReadTexture(RG_NAME(SVGF_Filtered_Direct));
+					data.indirect = builder.ReadTexture(RG_NAME(SVGF_Filtered_Indirect));
+					data.albedo_d = builder.ReadTexture(RG_NAME(PT_DirectAlbedo));
+					data.albedo_i = builder.ReadTexture(RG_NAME(PT_IndirectAlbedo));
+					data.output = builder.WriteTexture(RG_NAME(PT_Denoised));
+				},
+				[=](PassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list) 
+				{
+					ADRIA_TODO();
+				}, RGPassType::Compute);
+			return;
+		}
+
+		std::vector<RGResourceName> direct_chain(atrous_iterations + 1);
+		std::vector<RGResourceName> indirect_chain(atrous_iterations + 1);
+
+		direct_chain[0] = RG_NAME(SVGF_Filtered_Direct);
+		indirect_chain[0] = RG_NAME(SVGF_Filtered_Indirect);
 
 		struct AtrousPassData
 		{
@@ -301,16 +332,16 @@ namespace adria
 			RGTextureReadWriteId feedback_direct_out, feedback_indirect_out;
 		};
 
-		RGResourceName AtrousDirectPingPong[] = { RG_NAME(SVGF_Ping), RG_NAME(SVGF_Pong) };
-		RGResourceName AtrousIndirectPingPong[] = { RG_NAME(SVGF_Filtered_Indirect), RG_NAME(SVGF_Filtered_Indirect_Pong) };
-
-		Int const atrous_iterations = std::max(SVGF_AtrousIterations.Get(), 1);
 		for (Int i = 0; i < atrous_iterations; ++i)
 		{
-			RGResourceName direct_input = AtrousDirectPingPong[i % 2];
-			RGResourceName direct_output = AtrousDirectPingPong[(i + 1) % 2];
-			RGResourceName indirect_input = AtrousIndirectPingPong[i % 2];
-			RGResourceName indirect_output = AtrousIndirectPingPong[(i + 1) % 2];
+			RGResourceName direct_input = direct_chain[i];
+			RGResourceName indirect_input = indirect_chain[i];
+
+			RGResourceName direct_output = RG_NAME_IDX(SVGF_Atrous_Direct, i);
+			RGResourceName indirect_output = RG_NAME_IDX(SVGF_Atrous_Indirect, i);
+
+			direct_chain[i + 1] = direct_output;
+			indirect_chain[i + 1] = indirect_output;
 
 			Bool const is_final_iteration = (i == atrous_iterations - 1);
 			if (is_final_iteration)
@@ -322,23 +353,18 @@ namespace adria
 			rg.AddPass<AtrousPassData>(pass_name.c_str(),
 				[=](AtrousPassData& data, RenderGraphBuilder& builder)
 				{
-					if (i == 0)
-					{
-						RGTextureDesc desc{};
-						desc.width = width;
-						desc.height = height;
-						desc.format = GfxFormat::R16G16B16A16_FLOAT;
-						builder.DeclareTexture(RG_NAME(SVGF_Pong), desc);
-						builder.DeclareTexture(RG_NAME(SVGF_Filtered_Indirect_Pong), desc);
-					}
+					RGTextureDesc desc{};
+					desc.width = width;
+					desc.height = height;
+					desc.format = GfxFormat::R16G16B16A16_FLOAT;
 
-					if (is_final_iteration)
+					builder.DeclareTexture(direct_output, desc);
+					if (!is_final_iteration)
 					{
-						RGTextureDesc desc{};
-						desc.width = width;
-						desc.height = height;
-						desc.format = GfxFormat::R16G16B16A16_FLOAT;
-						builder.DeclareTexture(RG_NAME(PT_Denoised), desc);
+						builder.DeclareTexture(indirect_output, desc);
+					}
+					else
+					{
 						builder.DeclareTexture(RG_NAME(SVGF_Feedback_Direct), desc);
 						builder.DeclareTexture(RG_NAME(SVGF_Feedback_Indirect), desc);
 					}
@@ -420,13 +446,10 @@ namespace adria
 					cmd_list->SetRootCBV(2, constants);
 					cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 				}, RGPassType::Compute);
-
-			if (is_final_iteration)
-			{
-				output_name = direct_output;
-				final_direct_illum_name_for_history = RG_NAME(SVGF_Feedback_Direct);
-				final_indirect_illum_name_for_history = RG_NAME(SVGF_Feedback_Indirect);
-			}
 		}
+
+		output_name = RG_NAME(PT_Denoised);
+		final_direct_illum_name_for_history = RG_NAME(SVGF_Feedback_Direct);
+		final_indirect_illum_name_for_history = RG_NAME(SVGF_Feedback_Indirect);
 	}
 }

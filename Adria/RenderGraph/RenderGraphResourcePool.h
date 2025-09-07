@@ -32,7 +32,10 @@ namespace adria
 					std::swap(texture_pool[i], texture_pool.back());
 					texture_pool.pop_back();
 				}
-				else ++i;
+				else
+				{
+					++i;
+				}
 			}
 			++frame_index;
 		}
@@ -59,6 +62,7 @@ namespace adria
 				if (active && texture_ptr.get() == texture)
 				{
 					active = false;
+					return;
 				}
 			}
 		}
@@ -85,6 +89,7 @@ namespace adria
 				if (active && buffer_ptr.get() == buffer)
 				{
 					active = false;
+					return;
 				}
 			}
 		}

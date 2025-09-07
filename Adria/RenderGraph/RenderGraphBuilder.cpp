@@ -76,8 +76,11 @@ namespace adria
 			DummyReadTexture(name);
 		}
 		rg_pass.texture_writes.insert(res_id);
-		auto* texture = rg.GetRGTexture(res_id);
-		if (texture->imported) rg_pass.flags |= RGPassFlags::ForceNoCull;
+		RGTexture* rg_texture = rg.GetRGTexture(res_id);
+		if (rg_texture->imported)
+		{
+			rg_pass.flags |= RGPassFlags::ForceNoCull;
+		}
 		return copy_dst_id;
 	}
 
@@ -123,8 +126,11 @@ namespace adria
 			DummyReadTexture(name);
 		}
 		rg_pass.texture_writes.insert(res_id);
-		auto* texture = rg.GetRGTexture(res_id);
-		if (texture->imported) rg_pass.flags |= RGPassFlags::ForceNoCull;
+		RGTexture* rg_texture = rg.GetRGTexture(res_id);
+		if (rg_texture->imported)
+		{
+			rg_pass.flags |= RGPassFlags::ForceNoCull;
+		}
 		return read_write_id;
 	}
 
@@ -140,8 +146,11 @@ namespace adria
 			DummyReadTexture(name);
 		}
 		rg_pass.texture_writes.insert(res_id);
-		auto* rg_texture = rg.GetRGTexture(res_id);
-		if (rg_texture->imported) rg_pass.flags |= RGPassFlags::ForceNoCull;
+		RGTexture* rg_texture = rg.GetRGTexture(res_id);
+		if (rg_texture->imported)
+		{
+			rg_pass.flags |= RGPassFlags::ForceNoCull;
+		}
 		return render_target_id;
 	}
 
@@ -157,8 +166,11 @@ namespace adria
 			DummyReadTexture(name);
 		}
 		rg_pass.texture_writes.insert(res_id);
-		auto* rg_texture = rg.GetRGTexture(res_id);
-		if (rg_texture->imported) rg_pass.flags |= RGPassFlags::ForceNoCull;
+		RGTexture* rg_texture = rg.GetRGTexture(res_id);
+		if (rg_texture->imported)
+		{
+			rg_pass.flags |= RGPassFlags::ForceNoCull;
+		}
 		return depth_stencil_id;
 	}
 
@@ -169,10 +181,13 @@ namespace adria
 		RGTextureId res_id = depth_stencil_id.GetResourceId();
 
 		rg_pass.depth_stencil = RenderGraphPassBase::DepthStencilInfo{ .depth_stencil_handle = depth_stencil_id, .depth_access = load_store_op,.stencil_access = stencil_load_store_op, .depth_read_only = true };
-		auto* rg_texture = rg.GetRGTexture(res_id);
+		RGTexture* rg_texture = rg.GetRGTexture(res_id);
 		rg_pass.texture_reads.insert(res_id);
 
-		if (rg_texture->imported) rg_pass.flags |= RGPassFlags::ForceNoCull;
+		if (rg_texture->imported)
+		{
+			rg_pass.flags |= RGPassFlags::ForceNoCull;
+		}
 		rg_pass.texture_state_map[res_id] = GfxResourceState::DSV_ReadOnly;
 		return depth_stencil_id;
 	}
@@ -196,8 +211,11 @@ namespace adria
 			DummyReadBuffer(name);
 		}
 		rg_pass.buffer_writes.insert(res_id);
-		auto* buffer = rg.GetRGBuffer(res_id);
-		if (buffer->imported) rg_pass.flags |= RGPassFlags::ForceNoCull;
+		RGBuffer* rg_buffer = rg.GetRGBuffer(res_id);
+		if (rg_buffer->imported)
+		{
+			rg_pass.flags |= RGPassFlags::ForceNoCull;
+		}
 		return copy_dst_id;
 	}
 
@@ -223,7 +241,10 @@ namespace adria
 	{
 		ADRIA_ASSERT_MSG(rg_pass.type != RGPassType::Copy, "Invalid Call in Copy Pass");
 		RGBufferReadOnlyId read_only_id = rg.ReadBuffer(name, desc);
-		if (rg_pass.type == RGPassType::Compute) read_access = ReadAccess_NonPixelShader;
+		if (rg_pass.type == RGPassType::Compute)
+		{
+			read_access = ReadAccess_NonPixelShader;
+		}
 
 		RGBufferId res_id = read_only_id.GetResourceId();
 		if (rg_pass.type == RGPassType::Graphics)
@@ -262,8 +283,11 @@ namespace adria
 			DummyReadBuffer(name);
 		}
 		rg_pass.buffer_writes.insert(res_id);
-		auto* buffer = rg.GetRGBuffer(res_id);
-		if (buffer->imported) rg_pass.flags |= RGPassFlags::ForceNoCull;
+		RGBuffer* rg_buffer = rg.GetRGBuffer(res_id);
+		if (rg_buffer->imported)
+		{
+			rg_pass.flags |= RGPassFlags::ForceNoCull;
+		}
 		return read_write_id;
 	}
 
@@ -284,8 +308,11 @@ namespace adria
 			DummyReadBuffer(counter_name);
 		}
 		rg_pass.buffer_writes.insert(res_id);
-		auto* buffer = rg.GetRGBuffer(res_id);
-		if (buffer->imported) rg_pass.flags |= RGPassFlags::ForceNoCull;
+		RGBuffer* rg_buffer = rg.GetRGBuffer(res_id);
+		if (rg_buffer->imported)
+		{
+			rg_pass.flags |= RGPassFlags::ForceNoCull;
+		}
 		return read_write_id;
 	}
 

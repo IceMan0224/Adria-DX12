@@ -287,7 +287,6 @@ namespace adria
 				render_target_desc.width = width;
 				render_target_desc.height = height;
 				render_target_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
-				builder.DeclareTexture(RG_NAME(PT_Output), render_target_desc);
 
 				if (denoiser_active)
 				{
@@ -308,6 +307,7 @@ namespace adria
 				}
 				else
 				{
+					builder.DeclareTexture(RG_NAME(PT_Output), render_target_desc);
 					data.accumulation = builder.WriteTexture(RG_NAME(PT_AccumulationTexture));
 					data.output = builder.WriteTexture(RG_NAME(PT_Output));
 				}

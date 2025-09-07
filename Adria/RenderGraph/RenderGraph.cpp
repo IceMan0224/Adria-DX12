@@ -116,7 +116,10 @@ namespace adria
 
 		for (auto& [buf_id, view_vector] : buffer_view_map)
 		{
-			for (auto [view, type] : view_vector) gfx->FreeDescriptorCPU(view, GfxDescriptorHeapType::CBV_SRV_UAV);
+			for (auto [view, type] : view_vector)
+			{
+				gfx->FreeDescriptorCPU(view, GfxDescriptorHeapType::CBV_SRV_UAV);
+			}
 		}
 	}
 
@@ -147,7 +150,11 @@ namespace adria
 		{
 			dependency_level.Setup();
 		}
-		if (g_DumpRenderGraph) Dump("rendergraph.gv");
+
+		if (g_DumpRenderGraph)
+		{
+			Dump("rendergraph.gv");
+		}
 	}
 
 	void RenderGraph::Execute()
@@ -172,6 +179,7 @@ namespace adria
 		exec_ctx.compute_fence = &gfx->GetComputeFence();
 		exec_ctx.graphics_fence_value = gfx->GetGraphicsFenceValue();
 		exec_ctx.compute_fence_value = gfx->GetComputeFenceValue();
+
 		for (Uint64 i = 0; i < dependency_levels.size(); ++i)
 		{
 			DependencyLevel& dependency_level = dependency_levels[i];
@@ -186,11 +194,18 @@ namespace adria
 
 	void RenderGraph::AddExportBufferCopyPass(RGResourceName export_buffer, GfxBuffer* buffer)
 	{
+#if RG_DEBUG
+		std::string const buffer_copy_pass_name = "Export Buffer Copy Pass " + std::string(export_buffer.name);
+#else 
+		std::string const buffer_copy_pass_name = "Export Texture Copy Pass " + std::to_string(export_buffer.hashed_name);
+#endif
+
 		struct ExportBufferCopyPassData
 		{
 			RGBufferCopySrcId src;
 		};
-		AddPass<ExportBufferCopyPassData>("Export Buffer Copy Pass",
+
+		AddPass<ExportBufferCopyPassData>(buffer_copy_pass_name.c_str(),
 			[=](ExportBufferCopyPassData& data, RenderGraphBuilder& builder)
 			{
 				ADRIA_ASSERT(IsBufferDeclared(export_buffer));
@@ -205,12 +220,18 @@ namespace adria
 
 	void RenderGraph::AddExportTextureCopyPass(RGResourceName export_texture, GfxTexture* texture)
 	{
+#if RG_DEBUG
+		std::string const texture_copy_pass_name = "Export Texture Copy Pass " + std::string(export_texture.name);
+#else 
+		std::string const texture_copy_pass_name = "Export Texture Copy Pass " + std::to_string(export_texture.hashed_name);
+#endif
+
 		struct ExportTextureCopyPassData
 		{
 			RGTextureCopySrcId src;
 		};
 
-		AddPass<ExportTextureCopyPassData>("Export Texture Copy Pass",
+		AddPass<ExportTextureCopyPassData>(texture_copy_pass_name.c_str(),
 			[=](ExportTextureCopyPassData& data, RenderGraphBuilder& builder)
 			{
 				ADRIA_ASSERT(IsTextureDeclared(export_texture));
@@ -243,7 +264,11 @@ namespace adria
 						break;
 					}
 				}
-				if (depends) continue;
+
+				if (depends)
+				{
+					continue;
+				}
 
 				for (RGBufferId other_node_read : other_pass->buffer_reads)
 				{
@@ -263,7 +288,10 @@ namespace adria
 		std::vector<Bool>  visited(passes.size(), false);
 		for (Uint64 i = 0; i < passes.size(); i++)
 		{
-			if (visited[i] == false) DepthFirstSearch(i, visited, topologically_sorted_passes);
+			if (visited[i] == false)
+			{
+				DepthFirstSearch(i, visited, topologically_sorted_passes);
+			}
 		}
 		std::reverse(topologically_sorted_passes.begin(), topologically_sorted_passes.end());
 	}
@@ -276,7 +304,10 @@ namespace adria
 			Uint64 i = topologically_sorted_passes[u];
 			for (Uint64 v : adjacency_lists[i])
 			{
-				if (distances[v] < distances[i] + 1) distances[v] = distances[i] + 1;
+				if (distances[v] < distances[i] + 1)
+				{
+					distances[v] = distances[i] + 1;
+				}
 			}
 		}
 
@@ -327,26 +358,50 @@ namespace adria
 		}
 
 		std::stack<RenderGraphResource*> zero_ref_resources;
-		for (auto& texture : textures) if (texture->ref_count == 0) zero_ref_resources.push(texture.get());
-		for (auto& buffer : buffers)   if (buffer->ref_count == 0) zero_ref_resources.push(buffer.get());
+		for (auto& texture : textures)
+		{
+			if (texture->ref_count == 0)
+			{
+				zero_ref_resources.push(texture.get());
+			}
+		}
+		for (auto& buffer : buffers)
+		{
+			if (buffer->ref_count == 0)
+			{
+				zero_ref_resources.push(buffer.get());
+			}
+		}
 
 		while (!zero_ref_resources.empty())
 		{
 			RenderGraphResource* unreferenced_resource = zero_ref_resources.top();
 			zero_ref_resources.pop();
+
 			RGPassBase* writer = unreferenced_resource->writer;
-			if (writer == nullptr || !writer->CanBeCulled()) continue;
+			if (writer == nullptr || !writer->CanBeCulled())
+			{
+				continue;
+			}
+
 			if (--writer->ref_count == 0)
 			{
 				for (RGTextureId id : writer->texture_reads)
 				{
 					RGTexture* texture = GetRGTexture(id);
-					if (--texture->ref_count == 0) zero_ref_resources.push(texture);
+					if (--texture->ref_count == 0)
+					{
+						zero_ref_resources.push(texture);
+					}
 				}
+
 				for (RGBufferId id : writer->buffer_reads)
 				{
 					RGBuffer* buffer = GetRGBuffer(id);
-					if (--buffer->ref_count == 0) zero_ref_resources.push(buffer);
+					if (--buffer->ref_count == 0)
+					{
+						zero_ref_resources.push(buffer);
+					}
 				}
 			}
 		}
@@ -358,29 +413,51 @@ namespace adria
 		{
 			for (RGPassBase* pass : dependency_level.passes)
 			{
-				if (pass->IsCulled()) continue;
+				if (pass->IsCulled())
+				{
+					continue;
+				}
+
 				for (RGTextureId id : pass->texture_writes)
 				{
-					if (!pass->texture_state_map.contains(id)) continue;
+					if (!pass->texture_state_map.contains(id))
+					{
+						continue;
+					}
+
 					RGTexture* rg_texture = GetRGTexture(id);
 					rg_texture->last_used_by = pass;
 				}
+
 				for (RGBufferId id : pass->buffer_writes)
 				{
-					if (!pass->buffer_state_map.contains(id)) continue;
+					if (!pass->buffer_state_map.contains(id))
+					{
+						continue;
+					}
+
 					RGBuffer* rg_buffer = GetRGBuffer(id);
 					rg_buffer->last_used_by = pass;
 				}
 
 				for (RGTextureId id : pass->texture_reads)
 				{
-					if (!pass->texture_state_map.contains(id)) continue;
+					if (!pass->texture_state_map.contains(id))
+					{
+						continue;
+					}
+
 					RGTexture* rg_texture = GetRGTexture(id);
 					rg_texture->last_used_by = pass;
 				}
+
 				for (RGBufferId id : pass->buffer_reads)
 				{
-					if (!pass->buffer_state_map.contains(id)) continue;
+					if (!pass->buffer_state_map.contains(id))
+					{
+						continue;
+					}
+
 					RGBuffer* rg_buffer = GetRGBuffer(id);
 					rg_buffer->last_used_by = pass;
 				}
@@ -389,13 +466,27 @@ namespace adria
 
 		for (Uint64 i = 0; i < textures.size(); ++i)
 		{
-			if (textures[i]->last_used_by != nullptr) textures[i]->last_used_by->texture_destroys.insert(RGTextureId(i));
-			if (textures[i]->imported) CreateTextureViews(RGTextureId(i));
+			if (textures[i]->last_used_by != nullptr)
+			{
+				textures[i]->last_used_by->texture_destroys.insert(RGTextureId(i));
+			}
+
+			if (textures[i]->imported)
+			{
+				CreateTextureViews(RGTextureId(i));
+			}
 		}
 		for (Uint64 i = 0; i < buffers.size(); ++i)
 		{
-			if (buffers[i]->last_used_by != nullptr) buffers[i]->last_used_by->buffer_destroys.insert(RGBufferId(i));
-			if (buffers[i]->imported) CreateBufferViews(RGBufferId(i));
+			if (buffers[i]->last_used_by != nullptr)
+			{
+				buffers[i]->last_used_by->buffer_destroys.insert(RGBufferId(i));
+			}
+
+			if (buffers[i]->imported)
+			{
+				CreateBufferViews(RGBufferId(i));
+			}
 		}
 	}
 
@@ -404,7 +495,10 @@ namespace adria
 		visited[i] = true;
 		for (auto j : adjacency_lists[i])
 		{
-			if (!visited[j]) DepthFirstSearch(j, visited, topologically_sorted_passes);
+			if (!visited[j])
+			{
+				DepthFirstSearch(j, visited, topologically_sorted_passes);
+			}
 		}
 		topologically_sorted_passes.push_back(i);
 	}
@@ -426,7 +520,10 @@ namespace adria
 		for (Uint64 pass_index : topologically_sorted_passes)
 		{
 			RGPassBase* pass = passes[pass_index];
-			if (pass->IsCulled()) continue;
+			if (pass->IsCulled())
+			{
+				continue;
+			}
 
 			if (pass->type == RGPassType::AsyncCompute)
 			{
@@ -435,7 +532,10 @@ namespace adria
 					for (Int64 i = (Int64)pass_index - 1; i >= 0; --i)
 					{
 						RGPassBase* pre_pass = passes[i];
-						if (pre_pass->IsCulled() || pre_pass->type == RGPassType::AsyncCompute) continue;
+						if (pre_pass->IsCulled() || pre_pass->type == RGPassType::AsyncCompute)
+						{
+							continue;
+						}
 
 						if (pre_pass->texture_writes.find(read_texture) != pre_pass->texture_writes.end())
 						{
@@ -449,7 +549,10 @@ namespace adria
 					for (Int64 i = (Int64)pass_index - 1; i >= 0; --i)
 					{
 						RGPassBase* pre_pass = passes[i];
-						if (pre_pass->IsCulled() || pre_pass->type == RGPassType::AsyncCompute) continue;
+						if (pre_pass->IsCulled() || pre_pass->type == RGPassType::AsyncCompute)
+						{
+							continue;
+						}
 
 						if (pre_pass->buffer_writes.find(read_buffer) != pre_pass->buffer_writes.end())
 						{
@@ -463,7 +566,10 @@ namespace adria
 					for (Uint64 i = pass_index + 1; i < passes.size(); ++i)
 					{
 						RGPassBase* post_pass = passes[i];
-						if (post_pass->IsCulled() || post_pass->type == RGPassType::AsyncCompute) continue;
+						if (post_pass->IsCulled() || post_pass->type == RGPassType::AsyncCompute)
+						{
+							continue;
+						}
 
 						if (post_pass->texture_reads.find(write_texture) != post_pass->texture_reads.end())
 						{
@@ -477,7 +583,10 @@ namespace adria
 					for (Uint64 i = pass_index + 1; i < passes.size(); ++i)
 					{
 						RGPassBase* post_pass = passes[i];
-						if (post_pass->IsCulled() || post_pass->type == RGPassType::AsyncCompute) continue;
+						if (post_pass->IsCulled() || post_pass->type == RGPassType::AsyncCompute)
+						{
+							continue;
+						}
 
 						if (post_pass->buffer_reads.find(write_buffer) != post_pass->buffer_reads.end())
 						{
@@ -546,19 +655,28 @@ namespace adria
 					pass->num_events_to_end--;
 					pass->events_to_start.pop_back();
 				}
-				for (Uint32 event_idx : pass->events_to_start) events_to_start.push_back(event_idx);
+				for (Uint32 event_idx : pass->events_to_start)
+				{
+					events_to_start.push_back(event_idx);
+				}
 				events_to_add += pass->num_events_to_end;
 			}
 			else
 			{
-				for (Uint32 eventIndex : events_to_start) pass->events_to_start.push_back(eventIndex);
+				for (Uint32 eventIndex : events_to_start)
+				{
+					pass->events_to_start.push_back(eventIndex);
+				}
 				pass->num_events_to_end += events_to_add;
 				events_to_start.clear();
 				events_to_add = 0;
 				last_active_pass = pass;
 			}
 		}
-		if (last_active_pass) last_active_pass->num_events_to_end += events_to_add;
+		if (last_active_pass)
+		{
+			last_active_pass->num_events_to_end += events_to_add;
+		}
 		ADRIA_ASSERT(events_to_start.empty());
 	}
 
@@ -633,7 +751,10 @@ namespace adria
 					GfxBuffer* counter_buffer = GetBuffer(buffer_uav_counter_map[rw_id]);
 					view = gfx->CreateBufferUAV(buffer, counter_buffer, &view_desc);
 				}
-				else view = gfx->CreateBufferUAV(buffer, &view_desc);
+				else
+				{
+					view = gfx->CreateBufferUAV(buffer, &view_desc);
+				}
 				break;
 			}
 			case RGDescriptorType::RenderTarget:
@@ -771,7 +892,10 @@ namespace adria
 		for (Uint64 i = 0; i < view_descs.size(); ++i)
 		{
 			auto const& [_desc, _type] = view_descs[i];
-			if (desc == _desc && _type == RGDescriptorType::RenderTarget) return RGRenderTargetId(i, handle);
+			if (desc == _desc && _type == RGDescriptorType::RenderTarget)
+			{
+				return RGRenderTargetId(i, handle);
+			}
 		}
 		Uint64 view_id = view_descs.size();
 		view_descs.emplace_back(desc, RGDescriptorType::RenderTarget);
@@ -792,7 +916,10 @@ namespace adria
 		for (Uint64 i = 0; i < view_descs.size(); ++i)
 		{
 			auto const& [_desc, _type] = view_descs[i];
-			if (desc == _desc && _type == RGDescriptorType::DepthStencil) return RGDepthStencilId(i, handle);
+			if (desc == _desc && _type == RGDescriptorType::DepthStencil)
+			{
+				return RGDepthStencilId(i, handle);
+			}
 		}
 		Uint64 view_id = view_descs.size();
 		view_descs.emplace_back(desc, RGDescriptorType::DepthStencil);
@@ -813,7 +940,10 @@ namespace adria
 		for (Uint64 i = 0; i < view_descs.size(); ++i)
 		{
 			auto const& [_desc, _type] = view_descs[i];
-			if (desc == _desc && _type == RGDescriptorType::ReadOnly) return RGTextureReadOnlyId(i, handle);
+			if (desc == _desc && _type == RGDescriptorType::ReadOnly)
+			{
+				return RGTextureReadOnlyId(i, handle);
+			}
 		}
 		Uint64 view_id = view_descs.size();
 		view_descs.emplace_back(desc, RGDescriptorType::ReadOnly);
@@ -834,7 +964,10 @@ namespace adria
 		for (Uint64 i = 0; i < view_descs.size(); ++i)
 		{
 			auto const& [_desc, _type] = view_descs[i];
-			if (desc == _desc && _type == RGDescriptorType::ReadWrite) return RGTextureReadWriteId(i, handle);
+			if (desc == _desc && _type == RGDescriptorType::ReadWrite)
+			{
+				return RGTextureReadWriteId(i, handle);
+			}
 		}
 		Uint64 view_id = view_descs.size();
 		view_descs.emplace_back(desc, RGDescriptorType::ReadWrite);
@@ -851,7 +984,10 @@ namespace adria
 		for (Uint64 i = 0; i < view_descs.size(); ++i)
 		{
 			auto const& [_desc, _type] = view_descs[i];
-			if (desc == _desc && _type == RGDescriptorType::ReadOnly) return RGBufferReadOnlyId(i, handle);
+			if (desc == _desc && _type == RGDescriptorType::ReadOnly)
+			{
+				return RGBufferReadOnlyId(i, handle);
+			}
 		}
 		Uint64 view_id = view_descs.size();
 		view_descs.emplace_back(desc, RGDescriptorType::ReadOnly);
@@ -868,7 +1004,10 @@ namespace adria
 		for (Uint64 i = 0; i < view_descs.size(); ++i)
 		{
 			auto const& [_desc, _type] = view_descs[i];
-			if (desc == _desc && _type == RGDescriptorType::ReadWrite) return RGBufferReadWriteId(i, handle);
+			if (desc == _desc && _type == RGDescriptorType::ReadWrite)
+			{
+				return RGBufferReadWriteId(i, handle);
+			}
 		}
 		Uint64 view_id = view_descs.size();
 		view_descs.emplace_back(desc, RGDescriptorType::ReadWrite);
@@ -897,7 +1036,10 @@ namespace adria
 				RGBufferReadWriteId rw_id(i, handle);
 				if (auto it = buffer_uav_counter_map.find(rw_id); it != buffer_uav_counter_map.end())
 				{
-					if (it->second == counter_handle) return rw_id;
+					if (it->second == counter_handle)
+					{
+						return rw_id;
+					}
 				}
 			}
 		}
@@ -1003,7 +1145,10 @@ namespace adria
 	{
 		for (RGPassBase* pass : passes)
 		{
-			if (pass->IsCulled()) continue;
+			if (pass->IsCulled())
+			{
+				continue;
+			}
 
 			texture_creates.insert(pass->texture_creates.begin(), pass->texture_creates.end());
 			texture_destroys.insert(pass->texture_destroys.begin(), pass->texture_destroys.end());
@@ -1026,7 +1171,10 @@ namespace adria
 		PreExecute(exec_ctx.graphics_cmd_list);
 		for (auto& pass : passes)
 		{
-			if (pass->IsCulled()) continue;
+			if (pass->IsCulled())
+			{
+				continue;
+			}
 
 #if GFX_ASYNC_COMPUTE
 			GfxCommandList* cmd_list = pass->type == RGPassType::AsyncCompute && RGAsyncCompute.Get() ? exec_ctx.compute_cmd_list : exec_ctx.graphics_cmd_list;
@@ -1191,7 +1339,7 @@ namespace adria
 
 					dsv_desc.cpu_handle = rg.GetDepthStencil(depth_stencil_info.depth_stencil_handle);
 
-					//todo add stencil
+					ADRIA_TODO("Add Stencil Support");
 					render_pass_desc.dsv_attachment = dsv_desc;
 				}
 				ADRIA_ASSERT_MSG((pass->viewport_width != 0 && pass->viewport_height != 0), "Viewport Width/Height is 0! The call to builder.SetViewport is probably missing...");
@@ -1246,17 +1394,24 @@ namespace adria
 		for (RGTextureId tex_id : texture_creates)
 		{
 			RGTexture* rg_texture = rg.GetRGTexture(tex_id);
-			rg_texture->resource = rg.pool.AllocateTexture(rg_texture->desc);
+			if (!rg_texture->imported)
+			{
+				rg_texture->resource = rg.pool.AllocateTexture(rg_texture->desc);
+			}
 			rg.CreateTextureViews(tex_id);
 			rg_texture->SetName();
 		}
 		for (RGBufferId buf_id : buffer_creates)
 		{
 			RGBuffer* rg_buffer = rg.GetRGBuffer(buf_id);
-			rg_buffer->resource = rg.pool.AllocateBuffer(rg_buffer->desc);
+			if (!rg_buffer->imported)
+			{
+				rg_buffer->resource = rg.pool.AllocateBuffer(rg_buffer->desc);
+			}
 			rg.CreateBufferViews(buf_id);
 			rg_buffer->SetName();
 		}
+
 		for (auto const& [tex_id, state] : texture_state_map)
 		{
 			RGTexture* rg_texture = rg.GetRGTexture(tex_id);
@@ -1276,7 +1431,10 @@ namespace adria
 				if (prev_dependency_level.texture_state_map.contains(tex_id))
 				{
 					GfxResourceState prev_state = prev_dependency_level.texture_state_map[tex_id];
-					if (prev_state != state) cmd_list->TextureBarrier(*texture, prev_state, state);
+					if (prev_state != state)
+					{
+						cmd_list->TextureBarrier(*texture, prev_state, state);
+					}
 					found = true;
 					break;
 				}
@@ -1284,7 +1442,10 @@ namespace adria
 			if (!found && rg_texture->imported)
 			{
 				GfxResourceState prev_state = rg_texture->desc.initial_state;
-				if (prev_state != state) cmd_list->TextureBarrier(*texture, prev_state, state);
+				if (prev_state != state)
+				{
+					cmd_list->TextureBarrier(*texture, prev_state, state);
+				}
 			}
 		}
 		for (auto const& [buf_id, state] : buffer_state_map)
@@ -1306,14 +1467,20 @@ namespace adria
 				if (prev_dependency_level.buffer_state_map.contains(buf_id))
 				{
 					GfxResourceState prev_state = prev_dependency_level.buffer_state_map[buf_id];
-					if (prev_state != state) cmd_list->BufferBarrier(*buffer, prev_state, state);
+					if (prev_state != state)
+					{
+						cmd_list->BufferBarrier(*buffer, prev_state, state);
+					}
 					found = true;
 					break;
 				}
 			}
 			if (!found && rg_buffer->imported)
 			{
-				if (GfxResourceState::Common != state) cmd_list->BufferBarrier(*buffer, GfxResourceState::Common, state);
+				if (GfxResourceState::Common != state)
+				{
+					cmd_list->BufferBarrier(*buffer, GfxResourceState::Common, state);
+				}
 			}
 		}
 		cmd_list->FlushBarriers();
@@ -1328,8 +1495,14 @@ namespace adria
 			GfxResourceState initial_state = texture->GetDesc().initial_state;
 			ADRIA_ASSERT(texture_state_map.contains(tex_id));
 			GfxResourceState state = texture_state_map[tex_id];
-			if (initial_state != state) cmd_list->TextureBarrier(*texture, state, initial_state);
-			if (!rg_texture->imported) rg.pool.ReleaseTexture(rg_texture->resource);
+			if (initial_state != state)
+			{
+				cmd_list->TextureBarrier(*texture, state, initial_state);
+			}
+			if (!rg_texture->imported)
+			{
+				rg.pool.ReleaseTexture(rg_texture->resource);
+			}
 		}
 		for (RGBufferId buf_id : buffer_destroys)
 		{
@@ -1337,21 +1510,34 @@ namespace adria
 			GfxBuffer* buffer = rg_buffer->resource;
 			ADRIA_ASSERT(buffer_state_map.contains(buf_id));
 			GfxResourceState state = buffer_state_map[buf_id];
-			if (state != GfxResourceState::Common) cmd_list->BufferBarrier(*buffer, state, GfxResourceState::Common);
-			if (!rg_buffer->imported) rg.pool.ReleaseBuffer(rg_buffer->resource);
+			if (state != GfxResourceState::Common)
+			{
+				cmd_list->BufferBarrier(*buffer, state, GfxResourceState::Common);
+			}
+			if (!rg_buffer->imported)
+			{
+				rg.pool.ReleaseBuffer(rg_buffer->resource);
+			}
 		}
 		cmd_list->FlushBarriers();
 	}
 
 	void RenderGraph::PushEvent(Char const* name)
 	{
-		if (g_UseDependencyLevels) return;
+		if (g_UseDependencyLevels)
+		{
+			return;
+		}
 		pending_event_indices.push_back(AddEvent(name));
 	}
 
 	void RenderGraph::PopEvent()
 	{
-		if (g_UseDependencyLevels) return;
+		if (g_UseDependencyLevels)
+		{
+			return;
+		}
+
 		if (!pending_event_indices.empty())
 		{
 			pending_event_indices.pop_back();
