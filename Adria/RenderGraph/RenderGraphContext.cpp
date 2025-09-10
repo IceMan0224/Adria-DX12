@@ -4,12 +4,22 @@
 namespace adria
 {
 
-	RenderGraphContext::RenderGraphContext(RenderGraph& rg, RenderGraphPassBase& rg_pass) : rg(rg), rg_pass(rg_pass)
+	RenderGraphContext::RenderGraphContext(RenderGraph& rg, RenderGraphPassBase& rg_pass, GfxCommandList* cmd_list) : rg(rg), rg_pass(rg_pass), cmd_list(cmd_list)
 	{}
 
 	RGBlackboard& RenderGraphContext::GetBlackboard()
 	{
 		return rg.GetBlackboard();
+	}
+
+	GfxDevice* RenderGraphContext::GetDevice() const
+	{
+		return cmd_list->GetDevice();
+	}
+
+	GfxCommandList* RenderGraphContext::GetCommandList() const
+	{
+		return cmd_list;
 	}
 
 	GfxTexture& RenderGraphContext::GetTexture(RGTextureId res_id) const

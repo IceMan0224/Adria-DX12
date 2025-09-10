@@ -43,13 +43,14 @@ namespace adria
 			{
 				data.output = builder.WriteTexture(postprocessor->GetFinalResource());
 			},
-			[=](RainDropsPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](RainDropsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{
-					context.GetReadWriteTexture(data.output),
+					ctx.GetReadWriteTexture(data.output),
 					g_TextureManager.GetSRV(noise_texture_handle)
 				};
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));

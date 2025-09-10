@@ -90,7 +90,7 @@ namespace adria
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](XeSS2PassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](XeSS2PassData const& data, RenderGraphContext& ctx)
 			{
 				if (needs_init)
 				{
@@ -118,6 +118,7 @@ namespace adria
 				xessSetJitterScale(context, 1.0f, 1.0f);
 				xessSetVelocityScale(context, (Float)render_width, (Float)render_height);
 
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				xess_result_t result = xessD3D12Execute(context, cmd_list->GetNative(), &execute_params);
 				ADRIA_ASSERT(result == XESS_RESULT_SUCCESS);
 

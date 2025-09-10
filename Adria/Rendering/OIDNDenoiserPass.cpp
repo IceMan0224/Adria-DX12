@@ -90,8 +90,10 @@ namespace adria
 				data.albedo = builder.ReadCopySrcTexture(RG_NAME(PT_Albedo));
 				data.normal = builder.ReadCopySrcTexture(RG_NAME(PT_Normal));
 			},
-			[&](OIDNDenoiserPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[&](OIDNDenoiserPassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxTexture& color  = ctx.GetTexture(data.color);
 				GfxTexture const& albedo = ctx.GetTexture(data.albedo);
 				GfxTexture const& normal = ctx.GetTexture(data.normal);
@@ -108,9 +110,9 @@ namespace adria
 			{
 				data.color = builder.WriteCopyDstTexture(RG_NAME(PT_Output));
 			},
-			[=](OIDNCopyPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](OIDNCopyPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				GfxTexture& color_texture = ctx.GetTexture(data.color);
 				cmd_list->CopyBufferToTexture(color_texture, 0, 0, *color_buffer, 0);
 			}, RGPassType::Copy);

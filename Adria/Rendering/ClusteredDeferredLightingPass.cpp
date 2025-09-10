@@ -57,11 +57,13 @@ namespace adria
 				{
 					data.clusters = builder.WriteBuffer(RG_NAME(ClustersBuffer));
 				},
-				[=](ClusterBuildingPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+				[=](ClusterBuildingPassData const& data, RenderGraphContext& ctx)
 				{
-					GfxDevice* gfx = cmd_list->GetDevice();
+					GfxDevice* gfx = ctx.GetDevice();
+					GfxCommandList* cmd_list = ctx.GetCommandList();
+
 					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU();
-					gfx->CopyDescriptors(1, dst_descriptor, context.GetReadWriteBuffer(data.clusters));
+					gfx->CopyDescriptors(1, dst_descriptor, ctx.GetReadWriteBuffer(data.clusters));
 
 					cmd_list->SetPipelineState(clustered_building_pso.get());
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
@@ -85,14 +87,15 @@ namespace adria
 				data.light_grid = builder.WriteBuffer(RG_NAME(LightGrid));
 				data.light_list = builder.WriteBuffer(RG_NAME(LightList));
 			},
-			[=](ClusterCullingPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](ClusterCullingPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { context.GetReadOnlyBuffer(data.clusters),
-												context.GetReadWriteBuffer(data.light_counter),
-												context.GetReadWriteBuffer(data.light_list),
-												context.GetReadWriteBuffer(data.light_grid) };
+				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.clusters),
+												ctx.GetReadWriteBuffer(data.light_counter),
+												ctx.GetReadWriteBuffer(data.light_list),
+												ctx.GetReadWriteBuffer(data.light_grid) };
 	
 				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_handles));
 				gfx->CopyDescriptors(dst_handle, src_handles);
@@ -148,32 +151,38 @@ namespace adria
 				data.light_list = builder.ReadBuffer(RG_NAME(LightList), ReadAccess_PixelShader);
 
 				if (builder.IsTextureDeclared(RG_NAME(AmbientOcclusion)))
+				{
 					data.ambient_occlusion = builder.ReadTexture(RG_NAME(AmbientOcclusion), ReadAccess_NonPixelShader);
-				else data.ambient_occlusion.Invalidate();
+				}
+				else
+				{
+					data.ambient_occlusion.Invalidate();
+				}
 
 				data.output = builder.WriteTexture(RG_NAME(HDR_RenderTarget));
 			},
-			[=](ClusteredDeferredLightingPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](ClusteredDeferredLightingPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] = { 
-												context.GetReadOnlyTexture(data.gbuffer_normal), 
-												context.GetReadOnlyTexture(data.gbuffer_albedo), 
-												context.GetReadOnlyTexture(data.gbuffer_emissive),
-												context.GetReadOnlyTexture(data.gbuffer_custom),
-												context.GetReadOnlyTexture(data.depth), 
-												data.ambient_occlusion.IsValid() ? context.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
-												context.GetReadWriteTexture(data.output),
-												context.GetReadOnlyBuffer(data.light_list), context.GetReadOnlyBuffer(data.light_grid)
+												ctx.GetReadOnlyTexture(data.gbuffer_normal), 
+												ctx.GetReadOnlyTexture(data.gbuffer_albedo), 
+												ctx.GetReadOnlyTexture(data.gbuffer_emissive),
+												ctx.GetReadOnlyTexture(data.gbuffer_custom),
+												ctx.GetReadOnlyTexture(data.depth), 
+												data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
+												ctx.GetReadWriteTexture(data.output),
+												ctx.GetReadOnlyBuffer(data.light_list), ctx.GetReadOnlyBuffer(data.light_grid)
 				};
 				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_handles));
 				Uint32 i = dst_handle.GetIndex();
 				gfx->CopyDescriptors(dst_handle, src_handles);
 
 				Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-				cmd_list->ClearUAV(context.GetTexture(*data.output), gfx->GetDescriptorGPU(i + 5),
-					context.GetReadWriteTexture(data.output), clear);
+				cmd_list->ClearUAV(ctx.GetTexture(*data.output), gfx->GetDescriptorGPU(i + 5),
+					ctx.GetReadWriteTexture(data.output), clear);
 				
 				struct ClusteredDeferredLightingConstants
 				{

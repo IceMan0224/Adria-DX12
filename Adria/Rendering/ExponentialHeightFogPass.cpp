@@ -48,9 +48,10 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(FogOutput));
 				builder.SetViewport(width, height);
 			},
-			[=](ExponentialHeightFogPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](ExponentialHeightFogPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{

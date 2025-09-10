@@ -81,9 +81,10 @@ namespace adria
 				data.output = builder.WriteTexture(destination);
 				builder.SetViewport(width, height);
 			},
-			[=](ToneMapPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](ToneMapPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{

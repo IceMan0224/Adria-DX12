@@ -60,12 +60,14 @@ namespace adria
 				data.clouds_src = builder.ReadTexture(RG_NAME(CloudsOutput), ReadAccess_PixelShader);
 				builder.SetViewport(width, height);
 			},
-			[=](CloudsCombinePassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](CloudsCombinePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				cmd_list->SetPipelineState(clouds_combine_pso.get());
 				GfxDescriptor dst = gfx->AllocateDescriptorsGPU();
-				gfx->CopyDescriptors(1, dst, context.GetReadOnlyTexture(data.clouds_src));
+				gfx->CopyDescriptors(1, dst, ctx.GetReadOnlyTexture(data.clouds_src));
 
 				cmd_list->SetRootConstant(1, dst.GetIndex(), 0);
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
@@ -269,9 +271,11 @@ namespace adria
 					{
 						data.shape = builder.WriteTexture(RG_NAME(CloudShape), i, 1);
 					},
-					[=](CloudShapePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+					[=](CloudShapePassData const& data, RenderGraphContext& ctx)
 					{
-						GfxDevice* gfx = cmd_list->GetDevice();
+						GfxDevice* gfx = ctx.GetDevice();
+						GfxCommandList* cmd_list = ctx.GetCommandList();
+
 						Uint32 resolution = cloud_shape_noise->GetDesc().width >> i;
 
 						GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(1);
@@ -304,9 +308,11 @@ namespace adria
 					{
 						data.detail = builder.WriteTexture(RG_NAME(CloudDetail), i, 1);
 					},
-					[=](CloudShapePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+					[=](CloudShapePassData const& data, RenderGraphContext& ctx)
 					{
-						GfxDevice* gfx = cmd_list->GetDevice();
+						GfxDevice* gfx = ctx.GetDevice();
+						GfxCommandList* cmd_list = ctx.GetCommandList();
+
 						Uint32 resolution = cloud_detail_noise->GetDesc().width >> i;
 
 						GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(1);
@@ -337,9 +343,11 @@ namespace adria
 				{
 					data.type = builder.WriteTexture(RG_NAME(CloudType));
 				},
-				[=](CloudTypePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+				[=](CloudTypePassData const& data, RenderGraphContext& ctx)
 				{
-					GfxDevice* gfx = cmd_list->GetDevice();
+					GfxDevice* gfx = ctx.GetDevice();
+					GfxCommandList* cmd_list = ctx.GetCommandList();
+
 					Uint32 resolution = cloud_type->GetDesc().width;
 
 					GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(1);
@@ -397,16 +405,17 @@ namespace adria
 				data.detail = builder.ReadTexture(RG_NAME(CloudDetail), ReadAccess_NonPixelShader);
 				data.prev_output = builder.ReadTexture(RG_NAME(PreviousCloudsOutput), ReadAccess_NonPixelShader);
 			},
-			[=](VolumetricCloudsPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](VolumetricCloudsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.type),
-												context.GetReadOnlyTexture(data.shape),
-												context.GetReadOnlyTexture(data.detail),
-												context.GetReadOnlyTexture(data.depth),
-												context.GetReadOnlyTexture(data.prev_output),
-												context.GetReadWriteTexture(data.output) };
+				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.type),
+												ctx.GetReadOnlyTexture(data.shape),
+												ctx.GetReadOnlyTexture(data.detail),
+												ctx.GetReadOnlyTexture(data.depth),
+												ctx.GetReadOnlyTexture(data.prev_output),
+												ctx.GetReadWriteTexture(data.output) };
 				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_handles));
 				gfx->CopyDescriptors(dst_handle, src_handles);
 
@@ -508,10 +517,11 @@ namespace adria
 				data.copy_dst = builder.WriteCopyDstTexture(RG_NAME(PreviousCloudsOutput));
 				data.copy_src = builder.ReadCopySrcTexture(RG_NAME(CloudsOutput));
 			},
-			[=](CopyCloudsPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](CopyCloudsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxTexture const& src_texture = context.GetCopySrcTexture(data.copy_src);
-				GfxTexture& dst_texture = context.GetCopyDstTexture(data.copy_dst);
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+				GfxTexture const& src_texture = ctx.GetCopySrcTexture(data.copy_src);
+				GfxTexture& dst_texture = ctx.GetCopyDstTexture(data.copy_dst);
 				cmd_list->CopyTexture(dst_texture, src_texture);
 			}, RGPassType::Copy, RGPassFlags::ForceNoCull);
 	}

@@ -57,9 +57,10 @@ namespace adria
 				if (builder.IsTextureDeclared(RG_NAME(VelocityBuffer))) data.motion_vectors = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				else data.motion_vectors.Invalidate();
 			},
-			[=](RendererDebugViewPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](RendererDebugViewPassData const& data, RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
 				
 				GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.gbuffer_normal),
 												context.GetReadOnlyTexture(data.gbuffer_albedo),

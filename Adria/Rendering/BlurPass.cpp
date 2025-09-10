@@ -44,15 +44,17 @@ namespace adria
 				data.dst_texture = builder.WriteTexture(RG_NAME_IDX(Intermediate, counter));
 				data.src_texture = builder.ReadTexture(src_texture, ReadAccess_NonPixelShader);
 			},
-			[=](BlurPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](BlurPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
-				GfxTextureDesc const& src_desc = context.GetTexture(*data.src_texture).GetDesc();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
+				GfxTextureDesc const& src_desc = ctx.GetTexture(*data.src_texture).GetDesc();
 
 				GfxDescriptor src_descriptors[] =
 				{
-					context.GetReadOnlyTexture(data.src_texture),
-					context.GetReadWriteTexture(data.dst_texture)
+					ctx.GetReadOnlyTexture(data.src_texture),
+					ctx.GetReadWriteTexture(data.dst_texture)
 				};
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
 				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
@@ -81,15 +83,17 @@ namespace adria
 				data.dst_texture = builder.WriteTexture(blurred_texture);
 				data.src_texture = builder.ReadTexture(RG_NAME_IDX(Intermediate, counter), ReadAccess_NonPixelShader);
 			},
-			[=](BlurPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](BlurPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
-				GfxTextureDesc const& src_desc = context.GetTexture(*data.src_texture).GetDesc();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
+				GfxTextureDesc const& src_desc = ctx.GetTexture(*data.src_texture).GetDesc();
 
 				GfxDescriptor src_descriptors[] =
 				{
-					context.GetReadOnlyTexture(data.src_texture),
-					context.GetReadWriteTexture(data.dst_texture)
+					ctx.GetReadOnlyTexture(data.src_texture),
+					ctx.GetReadWriteTexture(data.dst_texture)
 				};
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
 				gfx->CopyDescriptors(dst_descriptor, src_descriptors);

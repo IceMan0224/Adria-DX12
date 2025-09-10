@@ -23,7 +23,11 @@ namespace adria
 
 	void DecalsPass::AddPass(RenderGraph& rendergraph)
 	{
-		if (reg.view<Decal>().size() == 0) return;
+		if (reg.view<Decal>().size() == 0)
+		{
+			return;
+		}
+
 		FrameBlackboardData const& frame_data = rendergraph.GetBlackboard().Get<FrameBlackboardData>();
 
 		struct DecalsPassData
@@ -38,12 +42,13 @@ namespace adria
 				builder.WriteRenderTarget(RG_NAME(GBufferNormal), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](DecalsPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](DecalsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				
 				GfxDescriptor depth_srv = gfx->AllocateDescriptorsGPU();
-				gfx->CopyDescriptors(1, depth_srv, context.GetReadOnlyTexture(data.depth_srv));
+				gfx->CopyDescriptors(1, depth_srv, ctx.GetReadOnlyTexture(data.depth_srv));
 
 				Uint32 depth_idx = depth_srv.GetIndex();
 				struct DecalsConstants

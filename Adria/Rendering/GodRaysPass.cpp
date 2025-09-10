@@ -26,7 +26,10 @@ namespace adria
 		for (entt::entity light : lights)
 		{
 			Light const& light_data = lights.get<Light>(light);
-			if (!light_data.active) continue;
+			if (!light_data.active)
+			{
+				continue;
+			}
 
 			if (light_data.type == LightType::Directional)
 			{
@@ -80,9 +83,10 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(GodRaysOutput));
 				data.sun = builder.ReadTexture(RG_NAME(SunOutput));
 			},
-			[=](GodRaysPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](GodRaysPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				if (light.type != LightType::Directional)
 				{

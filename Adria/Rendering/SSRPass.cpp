@@ -52,9 +52,10 @@ namespace adria
 				data.roughness = builder.ReadTexture(RG_NAME(GBufferAlbedo), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](SSRPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](SSRPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{

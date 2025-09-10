@@ -63,9 +63,10 @@ namespace adria
 
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](TiledDeferredLightingPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](TiledDeferredLightingPassData const& data, RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
 
 				GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.gbuffer_normal),
 												context.GetReadOnlyTexture(data.gbuffer_albedo),

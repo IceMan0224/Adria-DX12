@@ -49,8 +49,9 @@ namespace adria
 					data.src = builder.ReadCopySrcTexture(RG_NAME(HDR_RenderTarget));
 					data.dst = builder.WriteCopyDstTexture(RG_NAME(HDR_RenderTarget_Copy));
 				},
-				[=](SceneTextureCopyPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+				[=](SceneTextureCopyPassData const& data, RenderGraphContext& context)
 				{
+					GfxCommandList* cmd_list = context.GetCommandList();
 					GfxTexture const& src_texture = context.GetCopySrcTexture(data.src);
 					GfxTexture& dst_texture = context.GetCopyDstTexture(data.dst);
 					cmd_list->CopyTexture(dst_texture, src_texture);
@@ -76,9 +77,11 @@ namespace adria
 				}
 				builder.SetViewport(width, height);
 			},
-			[=](TransparentPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](TransparentPassData const& data, RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
+
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 
 				Vector3 camera_position(frame_data.camera_position);

@@ -62,9 +62,10 @@ namespace adria
 				{
 					data.initial_spectrum = builder.WriteTexture(RG_NAME(InitialSpectrum));
 				},
-				[=](InitialSpectrumPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+				[=](InitialSpectrumPassData const& data, RenderGraphContext& context)
 				{
-					GfxDevice* gfx = cmd_list->GetDevice();
+					GfxDevice* gfx = context.GetDevice();
+					GfxCommandList* cmd_list = context.GetCommandList();
 					
 					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU();
 					gfx->CopyDescriptors(1, dst_descriptor, context.GetReadWriteTexture(data.initial_spectrum));
@@ -97,9 +98,11 @@ namespace adria
 				data.phase_srv = builder.ReadTexture(RG_NAME(PongPhase), ReadAccess_NonPixelShader);
 				data.phase_uav = builder.WriteTexture(RG_NAME(PingPhase));
 			},
-			[=](PhasePassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](PhasePassData const& data, RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
+
 				Uint32 i = gfx->AllocateDescriptorsGPU(2).GetIndex();
 				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), context.GetReadOnlyTexture(data.phase_srv));
 				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 1), context.GetReadWriteTexture(data.phase_uav));
@@ -137,9 +140,11 @@ namespace adria
 				data.initial_spectrum_srv = builder.ReadTexture(RG_NAME(InitialSpectrum), ReadAccess_NonPixelShader);
 				data.spectrum_uav = builder.WriteTexture(RG_NAME(PongSpectrum));
 			},
-			[=](SpectrumPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](SpectrumPassData const& data, RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
+
 				Uint32 i = gfx->AllocateDescriptorsGPU(3).GetIndex();
 				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), context.GetReadOnlyTexture(data.initial_spectrum_srv));
 				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 1), context.GetReadOnlyTexture(data.phase_srv));
@@ -191,10 +196,10 @@ namespace adria
 					data.spectrum_srv = builder.ReadTexture(pong_spectrum_texture, ReadAccess_NonPixelShader);
 					data.spectrum_uav = builder.WriteTexture(ping_spectrum_texture);
 				},
-				[=](FFTHorizontalPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+				[=](FFTHorizontalPassData const& data, RenderGraphContext& ctx)
 				{
-					GfxDevice* gfx = cmd_list->GetDevice();
-					
+					GfxDevice* gfx = ctx.GetDevice();
+					GfxCommandList* cmd_list = ctx.GetCommandList();
 
 					cmd_list->SetPipelineState(fft_horizontal_pso.get());
 
@@ -231,10 +236,10 @@ namespace adria
 					data.spectrum_srv = builder.ReadTexture(pong_spectrum_texture, ReadAccess_NonPixelShader);
 					data.spectrum_uav = builder.WriteTexture(ping_spectrum_texture);
 				},
-				[=](FFTVerticalPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+				[=](FFTVerticalPassData const& data, RenderGraphContext& ctx)
 				{
-					GfxDevice* gfx = cmd_list->GetDevice();
-					
+					GfxDevice* gfx = ctx.GetDevice();
+					GfxCommandList* cmd_list = ctx.GetCommandList();
 
 					cmd_list->SetPipelineState(fft_vertical_pso.get());
 
@@ -273,12 +278,14 @@ namespace adria
 				data.spectrum_srv = builder.ReadTexture(pong_spectrum_texture, ReadAccess_NonPixelShader);
 				data.normals_uav = builder.WriteTexture(RG_NAME(OceanNormals));
 			},
-			[=](OceanNormalsPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](OceanNormalsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				Uint32 i = gfx->AllocateDescriptorsGPU(2).GetIndex();
-				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), context.GetReadOnlyTexture(data.spectrum_srv));
-				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 1), context.GetReadWriteTexture(data.normals_uav));
+				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), ctx.GetReadOnlyTexture(data.spectrum_srv));
+				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 1), ctx.GetReadWriteTexture(data.normals_uav));
 
 				struct OceanNormalsConstants
 				{
@@ -315,9 +322,11 @@ namespace adria
 				builder.WriteDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](OceanDrawPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](OceanDrawPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				if (ocean_tesselation)
 				{
 					if (ocean_wireframe) ocean_lod_psos->SetFillMode(GfxFillMode::Wireframe);
@@ -337,7 +346,7 @@ namespace adria
 
 					Uint32 i = gfx->AllocateDescriptorsGPU(3).GetIndex();
 					GfxDescriptor dst_handle = gfx->GetDescriptorGPU(i);
-					GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.displacement), context.GetReadOnlyTexture(data.normals), g_TextureManager.GetSRV(foam_handle) };
+					GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.displacement), ctx.GetReadOnlyTexture(data.normals), g_TextureManager.GetSRV(foam_handle) };
 					gfx->CopyDescriptors(dst_handle, src_handles);
 
 					struct OceanIndices

@@ -141,9 +141,10 @@ namespace adria
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_PixelShader);
 				builder.SetViewport(width, height);
 			},
-			[=](LensFlarePassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](LensFlarePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				if (light.type != LightType::Directional)
 				{
@@ -162,7 +163,7 @@ namespace adria
 				}
 
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(1);
-				gfx->CopyDescriptors(1, dst_descriptor, context.GetReadOnlyTexture(data.depth));
+				gfx->CopyDescriptors(1, dst_descriptor, ctx.GetReadOnlyTexture(data.depth));
 				Uint32 i = dst_descriptor.GetIndex();
 
 				ADRIA_ASSERT(lens_flare_textures.size() == 7);
@@ -226,9 +227,10 @@ namespace adria
 				data.output = builder.WriteTexture(postprocessor->GetFinalResource());
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](LensFlarePassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](LensFlarePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				if (light.type != LightType::Directional)
 				{
@@ -246,8 +248,8 @@ namespace adria
 				}
 				GfxDescriptor src_descriptors[] =
 				{
-					context.GetReadOnlyTexture(data.depth),
-					context.GetReadWriteTexture(data.output)
+					ctx.GetReadOnlyTexture(data.depth),
+					ctx.GetReadWriteTexture(data.output)
 				};
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
 				gfx->CopyDescriptors(dst_descriptor, src_descriptors);

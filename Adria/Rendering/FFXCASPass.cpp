@@ -45,8 +45,10 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(FFXCASOutput));
 				data.input = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
 			},
-			[=](FFXCASPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](FFXCASPassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxTexture& input_texture = ctx.GetTexture(*data.input);
 				GfxTexture& output_texture = ctx.GetTexture(*data.output);
 

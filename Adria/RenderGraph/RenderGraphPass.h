@@ -101,7 +101,7 @@ namespace adria
 	protected:
 
 		virtual void Setup(RenderGraphBuilder&) = 0;
-		virtual void Execute(RenderGraphContext&, GfxCommandList*) const = 0;
+		virtual void Execute(RenderGraphContext&) const = 0;
 
 		Bool IsCulled() const { return CanBeCulled() && ref_count == 0; }
 		Bool CanBeCulled() const { return !HasFlag(flags, RGPassFlags::ForceNoCull); }
@@ -145,7 +145,7 @@ namespace adria
 	{
 	public:
 		using SetupFunc = std::function<void(PassData&, RenderGraphBuilder&)>;
-		using ExecuteFunc = std::function<void(PassData const&, RenderGraphContext&, GfxCommandList*)>;
+		using ExecuteFunc = std::function<void(PassData const&, RenderGraphContext&)>;
 
 	public:
 		RenderGraphPass(Char const* name, SetupFunc&& setup, ExecuteFunc&& execute, RGPassType type = RGPassType::Graphics, RGPassFlags flags = RGPassFlags::None)
@@ -170,10 +170,10 @@ namespace adria
 			setup(data, builder);
 		}
 
-		void Execute(RenderGraphContext& context, GfxCommandList* ctx) const override
+		void Execute(RenderGraphContext& context) const override
 		{
 			ADRIA_ASSERT_MSG(execute != nullptr, "execute function is null!");
-			execute(data, context, ctx);
+			execute(data, context);
 		}
 	};
 
@@ -182,7 +182,7 @@ namespace adria
 	{
 	public:
 		using SetupFunc = std::function<void(RenderGraphBuilder&)>;
-		using ExecuteFunc = std::function<void(RenderGraphContext&, GfxCommandList*)>;
+		using ExecuteFunc = std::function<void(RenderGraphContext&)>;
 
 	public:
 		RenderGraphPass(Char const* name, SetupFunc&& setup, ExecuteFunc&& execute, RGPassType type = RGPassType::Graphics, RGPassFlags flags = RGPassFlags::None)
@@ -199,17 +199,16 @@ namespace adria
 		ExecuteFunc execute;
 
 	private:
-
 		void Setup(RenderGraphBuilder& builder) override
 		{
 			ADRIA_ASSERT_MSG(setup != nullptr, "setup function is null!");
 			setup(builder);
 		}
 
-		void Execute(RenderGraphContext& context, GfxCommandList* ctx) const override
+		void Execute(RenderGraphContext& context) const override
 		{
 			ADRIA_ASSERT_MSG(execute != nullptr, "execute function is null!");
-			execute(context, ctx);
+			execute(context);
 		}
 	};
 

@@ -50,30 +50,39 @@ namespace adria
 				data.gbuffer_custom   = builder.ReadTexture(RG_NAME(GBufferCustom),  ReadAccess_NonPixelShader);
 				data.depth			  = builder.ReadTexture(RG_NAME(DepthStencil),  ReadAccess_NonPixelShader);
 
-				if (builder.IsTextureDeclared(RG_NAME(AmbientOcclusion))) data.ambient_occlusion = builder.ReadTexture(RG_NAME(AmbientOcclusion), ReadAccess_NonPixelShader);
-				else data.ambient_occlusion.Invalidate();
-
-				for (auto& shadow_texture : shadow_textures) std::ignore = builder.ReadTexture(shadow_texture);
+				if (builder.IsTextureDeclared(RG_NAME(AmbientOcclusion)))
+				{
+					data.ambient_occlusion = builder.ReadTexture(RG_NAME(AmbientOcclusion), ReadAccess_NonPixelShader);
+				}
+				else
+				{
+					data.ambient_occlusion.Invalidate();
+				}
+				for (RGResourceName shadow_texture : shadow_textures)
+				{
+					std::ignore = builder.ReadTexture(shadow_texture);
+				}
 			},
-			[=](LightingPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](LightingPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.gbuffer_normal),
-												context.GetReadOnlyTexture(data.gbuffer_albedo),
-												context.GetReadOnlyTexture(data.gbuffer_emissive),
-												context.GetReadOnlyTexture(data.gbuffer_custom),
-												context.GetReadOnlyTexture(data.depth),
-												data.ambient_occlusion.IsValid() ? context.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
-												context.GetReadWriteTexture(data.output) };
+				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.gbuffer_normal),
+												ctx.GetReadOnlyTexture(data.gbuffer_albedo),
+												ctx.GetReadOnlyTexture(data.gbuffer_emissive),
+												ctx.GetReadOnlyTexture(data.gbuffer_custom),
+												ctx.GetReadOnlyTexture(data.depth),
+												data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
+												ctx.GetReadWriteTexture(data.output) };
 
 				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_handles));
 				Uint32 i = dst_handle.GetIndex();
 				gfx->CopyDescriptors(dst_handle, src_handles);
 
 				Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-				cmd_list->ClearUAV(context.GetTexture(*data.output), gfx->GetDescriptorGPU(i + 6),
-					context.GetReadWriteTexture(data.output), clear);
+				cmd_list->ClearUAV(ctx.GetTexture(*data.output), gfx->GetDescriptorGPU(i + 6),
+					ctx.GetReadWriteTexture(data.output), clear);
 
 				struct DeferredLightingConstants
 				{

@@ -63,7 +63,10 @@ namespace adria
 
 	void FFXVRSPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
-		if (!IsSupported()) return;
+		if (!IsSupported())
+		{
+			return;
+		}
 
 		GfxShadingRate shading_rate = shading_rates[VariableRateShadingMode.Get()];
 		GfxShadingRateCombiner shading_rate_combiner = static_cast<GfxShadingRateCombiner>(VariableRateShadingCombiner.Get());
@@ -104,8 +107,10 @@ namespace adria
 				data.color_history = builder.ReadTexture(RG_NAME(HistoryBuffer), ReadAccess_NonPixelShader);
 				data.motion_vectors = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 			},
-			[=](FFXVRSPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](FFXVRSPassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxTexture& color_history_texture = ctx.GetTexture(*data.color_history);
 				GfxTexture& motion_vectors_texture = ctx.GetTexture(*data.motion_vectors);
 
@@ -142,8 +147,11 @@ namespace adria
 					builder.WriteRenderTarget(postprocessor->GetFinalResource(), RGLoadStoreAccessOp::Preserve_Preserve);
 					builder.SetViewport(width, height);
 				},
-				[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+				[=](RenderGraphContext& ctx)
 				{
+					GfxDevice* gfx = ctx.GetDevice();
+					GfxCommandList* cmd_list = ctx.GetCommandList();
+
 					GfxDescriptor dst = gfx->AllocateDescriptorsGPU();
 					gfx->CopyDescriptors(1, dst, vrs_image_srv);
 

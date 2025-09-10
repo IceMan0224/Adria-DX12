@@ -61,7 +61,10 @@ namespace adria
 
 	void FogVolumesPass::GUI()
 	{
-		if (fog_volumes.empty()) return;
+		if (fog_volumes.empty())
+		{
+			return;
+		}
 
 		FogVolume& fog_volume = fog_volumes[0];
 		if (ImGui::TreeNode("Fog Volumes"))
@@ -124,9 +127,10 @@ namespace adria
 				data.light_injection_target = builder.WriteTexture(RG_NAME(FogLightInjectionTarget));
 				data.light_injection_target_history = builder.ReadTexture(RG_NAME(FogLightInjectionTargetHistory));
 			},
-			[=](LightInjectionPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](LightInjectionPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				
 				Uint32 i = gfx->AllocateDescriptorsGPU(2).GetIndex();
 				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 0), ctx.GetReadWriteTexture(data.light_injection_target));
@@ -188,9 +192,10 @@ namespace adria
 				data.integrated_scattering = builder.WriteTexture(RG_NAME(FogFinal));
 				data.injected_light = builder.ReadTexture(RG_NAME(FogLightInjectionTarget));
 			},
-			[=](ScatteringIntegrationPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](ScatteringIntegrationPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				Uint32 i = gfx->AllocateDescriptorsGPU(2).GetIndex();
 				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 0), ctx.GetReadOnlyTexture(data.injected_light));
@@ -233,12 +238,14 @@ namespace adria
 				data.fog = builder.ReadTexture(RG_NAME(FogFinal), ReadAccess_PixelShader);
 				builder.SetViewport(width, height);
 			},
-			[=](CombinePassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](CombinePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				cmd_list->SetPipelineState(combine_fog_pso.get());
 
-				GfxDescriptor src_descriptors[] = { context.GetReadOnlyTexture(data.fog), context.GetReadOnlyTexture(data.depth) };
+				GfxDescriptor src_descriptors[] = { ctx.GetReadOnlyTexture(data.fog), ctx.GetReadOnlyTexture(data.depth) };
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
 				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
 				Uint32 const i = dst_descriptor.GetIndex();

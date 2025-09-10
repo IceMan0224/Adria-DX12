@@ -685,8 +685,9 @@ namespace adria
 		rg.AddPass<void>("Clear Triangle Overdraw Texture Pass",
 			[=](RenderGraphBuilder& builder)
 			{},
-			[&](RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[&](RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				Uint32 clear[] = { 0,0,0,0 };
 				cmd_list->ClearUAV(*overdraw_texture, overdraw_texture_uav_gpu, overdraw_texture_uav, clear);
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
@@ -706,8 +707,9 @@ namespace adria
 				data.dst = builder.WriteCopyDstTexture(RG_NAME(Backbuffer));
 				data.src = builder.ReadCopySrcTexture(RG_NAME(FinalTexture));
 			},
-			[=](CopyToBackbufferPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](CopyToBackbufferPassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				GfxTexture const& src_texture = ctx.GetCopySrcTexture(data.src);
 				GfxTexture& dst_texture = ctx.GetCopyDstTexture(data.dst);
 				cmd_list->CopyTexture(dst_texture, src_texture);
@@ -740,8 +742,9 @@ namespace adria
 				data.dst = builder.WriteCopyDstBuffer(RG_NAME(ScreenshotBuffer));
 				data.src = builder.ReadCopySrcTexture(RG_NAME(FinalTexture));
 			},
-			[=](ScreenshotPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](ScreenshotPassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				GfxTexture const& src_texture = ctx.GetCopySrcTexture(data.src);
 				GfxBuffer& dst_buffer = ctx.GetCopyDstBuffer(data.dst);
 				cmd_list->CopyTextureToBuffer(dst_buffer, 0, src_texture, 0, 0);

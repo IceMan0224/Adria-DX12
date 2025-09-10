@@ -43,9 +43,10 @@ namespace adria
 				data.gbuffer_normal_srv = builder.ReadTexture(RG_NAME(GBufferNormal), ReadAccess_NonPixelShader);
 				data.depth_stencil_srv = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[&](HBAOPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[&](HBAOPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{

@@ -33,9 +33,10 @@ namespace adria
 				ADRIA_ASSERT(builder.IsTextureDeclared(RG_NAME(FinalTexture)));
 				data.output = builder.WriteTexture(RG_NAME(FinalTexture));
 			},
-			[=](FXAAPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](FXAAPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{

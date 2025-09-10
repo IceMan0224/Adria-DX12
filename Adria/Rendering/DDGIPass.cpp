@@ -88,7 +88,10 @@ namespace adria
 
 	void DDGIPass::OnResize(Uint32 w, Uint32 h)
 	{
-		if (!IsSupported()) return;
+		if (!IsSupported())
+		{
+			return;
+		}
 		width = w, height = h;
 	}
 
@@ -126,8 +129,10 @@ namespace adria
 					data.irradiance_history = builder.WriteTexture(RG_NAME(DDGIIrradianceHistory));
 					data.distance_history = builder.WriteTexture(RG_NAME(DDGIDistanceHistory));
 				},
-				[=](DDGIClearHistoryPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list) mutable
+				[=](DDGIClearHistoryPassData const& data, RenderGraphContext& ctx) mutable
 				{
+					GfxCommandList* cmd_list = ctx.GetCommandList();
+
 					static constexpr Float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 					Uint32 i = gfx->AllocateDescriptorsGPU(2).GetIndex();
@@ -161,9 +166,11 @@ namespace adria
 				data.irradiance_history = builder.ReadTexture(RG_NAME(DDGIIrradianceHistory));
 				data.distance_history = builder.ReadTexture(RG_NAME(DDGIDistanceHistory));
 			},
-			[=](DDGIRayTracePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list) mutable
+			[=](DDGIRayTracePassData const& data, RenderGraphContext& ctx) mutable
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				Uint32 i = gfx->AllocateDescriptorsGPU(1).GetIndex();
 				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), ctx.GetReadWriteBuffer(data.ray_buffer));
 				ctx.GetBlackboard().Create<DDGIBlackboardData>(i);
@@ -215,9 +222,11 @@ namespace adria
 				data.ray_buffer		= builder.ReadBuffer(RG_NAME(DDGIRayBuffer));
 				data.irradiance_history = builder.ReadTexture(RG_NAME(DDGIIrradianceHistory));
 			},
-			[=](DDGIUpdateIrradiancePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list) mutable
+			[=](DDGIUpdateIrradiancePassData const& data, RenderGraphContext& ctx) mutable
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				DDGIBlackboardData const& ddgi_blackboard = ctx.GetBlackboard().Get<DDGIBlackboardData>();
 
 				Uint32 i = gfx->AllocateDescriptorsGPU(1).GetIndex();
@@ -267,9 +276,10 @@ namespace adria
 				data.ray_buffer = builder.ReadBuffer(RG_NAME(DDGIRayBuffer));
 				data.distance_history = builder.ReadTexture(RG_NAME(DDGIDistanceHistory));
 			},
-			[=](DDGIUpdateDistancePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list) mutable
+			[=](DDGIUpdateDistancePassData const& data, RenderGraphContext& ctx) mutable
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				DDGIBlackboardData const& ddgi_blackboard = ctx.GetBlackboard().Get<DDGIBlackboardData>();
 
@@ -316,9 +326,10 @@ namespace adria
 				builder.WriteDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RenderGraphContext& ctx, GfxCommandList* cmd_list) mutable
+			[=](RenderGraphContext& ctx) mutable
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				struct DDGIVisualizeParameters
 				{
 					Uint32 visualize_mode;
@@ -336,7 +347,10 @@ namespace adria
 
 	void DDGIPass::GUI()
 	{
-		if (!is_supported) return;
+		if (!is_supported)
+		{
+			return;
+		}
 
 		QueueGUI([&]()
 			{
@@ -376,7 +390,10 @@ namespace adria
 
 	Int32 DDGIPass::GetDDGIVolumeIndex()
 	{
-		if (!IsSupported())  return -1;
+		if (!IsSupported())
+		{
+			return -1;
+		}
 
 		std::vector<DDGIVolumeGPU> ddgi_data;
 		DDGIVolumeGPU& ddgi_gpu = ddgi_data.emplace_back();

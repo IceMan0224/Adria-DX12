@@ -217,8 +217,11 @@ namespace adria
 				builder.WriteDepthStencil(RG_NAME(PT_DepthStencil), RGLoadStoreAccessOp::Clear_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](RenderGraphContext& context)
 			{
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
+
 				reg.sort<Batch>([&frame_data](Batch const& lhs, Batch const& rhs)
 					{
 						if (lhs.alpha_mode != rhs.alpha_mode)
@@ -236,7 +239,6 @@ namespace adria
 					});
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-				GfxDevice* gfx = cmd_list->GetDevice();
 
 				auto view = reg.view<Batch>();
 				for (entt::entity batch_entity : view)
@@ -314,10 +316,10 @@ namespace adria
 					data.output = builder.WriteTexture(RG_NAME(PT_Output));
 				}
 			},
-			[=](PathTracingPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](PathTracingPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
-				static GfxDescriptor const null_uav = gfxcommon::GetCommonView(GfxCommonViewType::NullTexture2D_UAV);
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				if (denoiser_active)
 				{

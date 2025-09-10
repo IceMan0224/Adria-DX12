@@ -208,9 +208,10 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(CoCTexture));
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](ComputeCircleOfConfusionPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](ComputeCircleOfConfusionPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				cmd_list->SetPipelineState(compute_coc_pso.get());
 
@@ -268,9 +269,10 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME_IDX(CoCDilationMip, 0));
 				data.input = builder.ReadTexture(RG_NAME(CoCTexture), ReadAccess_NonPixelShader);
 			},
-			[=](SeparatedCircleOfConfusionPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](SeparatedCircleOfConfusionPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				cmd_list->SetPipelineState(compute_separated_coc_pso.get());
 
@@ -329,9 +331,10 @@ namespace adria
 					data.output = builder.WriteTexture(coc_mips[i]);
 					data.input = builder.ReadTexture(coc_mips[i - 1], ReadAccess_NonPixelShader);
 				},
-				[=](DownsampleCircleOfConfusionPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+				[=](DownsampleCircleOfConfusionPassData const& data, RenderGraphContext& ctx)
 				{
-					GfxDevice* gfx = cmd_list->GetDevice();
+					GfxDevice* gfx = ctx.GetDevice();
+					GfxCommandList* cmd_list = ctx.GetCommandList();
 
 					cmd_list->SetPipelineState(downsample_coc_pso.get());
 
@@ -391,9 +394,10 @@ namespace adria
 				data.coc = builder.ReadTexture(RG_NAME(CoCTexture), ReadAccess_NonPixelShader);
 				data.coc_dilation = builder.ReadTexture(RG_NAME(CoCDilation), ReadAccess_NonPixelShader);
 			},
-			[=](ComputePrefilteredTexturePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](ComputePrefilteredTexturePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				cmd_list->SetPipelineState(compute_prefiltered_texture_pso.get());
 
@@ -464,9 +468,10 @@ namespace adria
 				data.coc_near = builder.ReadTexture(RG_NAME(NearCoC));
 				data.coc_far = builder.ReadTexture(RG_NAME(FarCoC));
 			},
-			[=](BokehFirstPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](BokehFirstPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				if (BokehKarisInverse.Get())
 				{
@@ -543,9 +548,10 @@ namespace adria
 				data.coc_near = builder.ReadTexture(RG_NAME(BokehTexture0));
 				data.coc_far = builder.ReadTexture(RG_NAME(BokehTexture1));
 			},
-			[=](BokehSecondPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](BokehSecondPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				if (BokehKarisInverse.Get())
 				{
@@ -619,9 +625,10 @@ namespace adria
 				data.near_coc = builder.ReadTexture(RG_NAME(BokehTexture3), ReadAccess_NonPixelShader);
 				data.far_coc = builder.ReadTexture(RG_NAME(BokehTexture4), ReadAccess_NonPixelShader);
 			},
-			[=](ComputePostfilteredTexturePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](ComputePostfilteredTexturePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				cmd_list->SetPipelineState(compute_posfiltered_texture_pso.get());
 
@@ -686,9 +693,10 @@ namespace adria
 				data.far_coc = builder.ReadTexture(RG_NAME(FinalFarCoC), ReadAccess_NonPixelShader);
 				data.color = builder.ReadTexture(color_texture, ReadAccess_NonPixelShader);
 			},
-			[=](CombinePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](CombinePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				cmd_list->SetPipelineState(combine_pso.get());
 

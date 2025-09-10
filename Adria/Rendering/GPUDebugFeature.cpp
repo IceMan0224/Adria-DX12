@@ -42,8 +42,9 @@ namespace adria
 			{
 				data.printf_buffer = builder.WriteBuffer(gpu_buffer_name);
 			},
-			[=](ClearBufferPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](ClearBufferPassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				Uint32 clear[] = { 0,0,0,0 };
 				cmd_list->ClearUAV(*gpu_buffer, gpu_uav_descriptor, uav_descriptor, clear);
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
@@ -61,8 +62,9 @@ namespace adria
 				data.gpu_buffer = builder.ReadCopySrcBuffer(gpu_buffer_name);
 				std::ignore = builder.ReadCopySrcTexture(RG_NAME(FinalTexture)); //forcing dependency with the final texture so the debug pass doesn't run before some other pass
 			},
-			[&](CopyBufferPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[&](CopyBufferPassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				GfxDevice* gfx = cmd_list->GetDevice();
 				Uint64 current_backbuffer_index = gfx->GetBackbufferIndex();
 				GfxBuffer& readback_buffer = *cpu_readback_buffers[current_backbuffer_index];

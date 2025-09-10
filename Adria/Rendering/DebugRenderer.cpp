@@ -65,9 +65,11 @@ namespace adria
 				builder.ReadDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
+
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 
 				constexpr Uint32 vb_stride = (Uint32)sizeof(DebugVertex);
@@ -115,8 +117,7 @@ namespace adria
 					cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 					cmd_list->Draw(vb_count);
 					transient_triangles.clear();
-				}
-				
+				}	
 			}, RGPassType::Graphics, RGPassFlags::None);
 	}
 

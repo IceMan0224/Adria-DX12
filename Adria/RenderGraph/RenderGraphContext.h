@@ -87,6 +87,9 @@ namespace adria
 
 		RGBlackboard& GetBlackboard();
 
+		GfxDevice* GetDevice() const;
+		GfxCommandList* GetCommandList() const;
+
 		GfxTexture& GetTexture(RGTextureId res_id) const;
 		GfxBuffer& GetBuffer(RGBufferId res_id) const;
 
@@ -109,9 +112,10 @@ namespace adria
 	private:
 		RenderGraph& rg;
 		RenderGraphPassBase& rg_pass;
+		GfxCommandList* cmd_list;
 
 	private:
-		RenderGraphContext(RenderGraph& rg, RenderGraphPassBase& rg_pass);
+		RenderGraphContext(RenderGraph& rg, RenderGraphPassBase& rg_pass, GfxCommandList* cmd_list);
 	};
 	using RGContext = RenderGraphContext;
 }

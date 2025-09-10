@@ -61,7 +61,11 @@ namespace adria
 
 	void GPUDrivenGBufferPass::AddPasses(RenderGraph& rg)
 	{
-		if (!IsSupported()) return;
+		if (!IsSupported())
+		{
+			return;
+		}
+
 		RG_SCOPE(rg, "GBuffer - Meshlets");
 		AddClearCountersPass(rg);
 		Add1stPhasePasses(rg);
@@ -242,9 +246,10 @@ namespace adria
 				builder.DeclareBuffer(RG_NAME(OccludedInstancesCounter), counter_desc);
 				data.occluded_instances_counter = builder.WriteBuffer(RG_NAME(OccludedInstancesCounter));
 			},
-			[=](ClearCountersPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](ClearCountersPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(3);
 				GfxDescriptor src_handles[] = { ctx.GetReadWriteBuffer(data.candidate_meshlets_counter),
@@ -308,9 +313,10 @@ namespace adria
 				data.candidate_meshlets = builder.WriteBuffer(RG_NAME(CandidateMeshlets));
 				data.candidate_meshlets_counter = builder.WriteBuffer(RG_NAME(CandidateMeshletsCounter));
 			},
-			[=](CullInstancesPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](CullInstancesPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.hzb),
 												ctx.GetReadWriteBuffer(data.occluded_instances),
@@ -369,9 +375,10 @@ namespace adria
 				data.meshlet_cull_args = builder.WriteBuffer(RG_NAME(MeshletCullArgs));
 				data.candidate_meshlets_counter = builder.ReadBuffer(RG_NAME(CandidateMeshletsCounter));
 			},
-			[=](BuildMeshletCullArgsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](BuildMeshletCullArgsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.candidate_meshlets_counter),
 												ctx.GetReadWriteBuffer(data.meshlet_cull_args)
@@ -423,9 +430,10 @@ namespace adria
 				data.visible_meshlets = builder.WriteBuffer(RG_NAME(VisibleMeshlets));
 				data.visible_meshlets_counter = builder.WriteBuffer(RG_NAME(VisibleMeshletsCounter));
 			},
-			[=](CullMeshletsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](CullMeshletsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.hzb),
 												ctx.GetReadWriteBuffer(data.candidate_meshlets),
@@ -481,9 +489,10 @@ namespace adria
 				data.meshlet_draw_args = builder.WriteBuffer(RG_NAME(MeshletDrawArgs));
 				data.visible_meshlets_counter = builder.ReadBuffer(RG_NAME(VisibleMeshletsCounter));
 			},
-			[=](BuildMeshletDrawArgsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](BuildMeshletDrawArgsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.visible_meshlets_counter),
 												ctx.GetReadWriteBuffer(data.meshlet_draw_args)
@@ -543,9 +552,11 @@ namespace adria
 				data.visible_meshlets = builder.ReadBuffer(RG_NAME(VisibleMeshlets));
 				data.draw_args = builder.ReadIndirectArgsBuffer(RG_NAME(MeshletDrawArgs));
 			},
-			[=](DrawMeshletsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](DrawMeshletsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxDescriptor src_handles[] =
 				{
 					ctx.GetReadOnlyBuffer(data.visible_meshlets)
@@ -606,9 +617,10 @@ namespace adria
 				data.instance_cull_args = builder.WriteBuffer(RG_NAME(InstanceCullArgs));
 				data.occluded_instances_counter = builder.ReadBuffer(RG_NAME(OccludedInstancesCounter));
 			},
-			[=](BuildInstanceCullArgsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](BuildInstanceCullArgsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.occluded_instances_counter),
 												ctx.GetReadWriteBuffer(data.instance_cull_args)
@@ -652,9 +664,11 @@ namespace adria
 				data.candidate_meshlets = builder.WriteBuffer(RG_NAME(CandidateMeshlets));
 				data.candidate_meshlets_counter = builder.WriteBuffer(RG_NAME(CandidateMeshletsCounter));
 			},
-			[=](CullInstancesPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](CullInstancesPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.hzb),
 												ctx.GetReadWriteBuffer(data.occluded_instances),
 												ctx.GetReadWriteBuffer(data.occluded_instances_counter),
@@ -705,9 +719,10 @@ namespace adria
 				data.meshlet_cull_args = builder.WriteBuffer(RG_NAME(MeshletCullArgs));
 				data.candidate_meshlets_counter = builder.ReadBuffer(RG_NAME(CandidateMeshletsCounter));
 			},
-			[=](BuildMeshletCullArgsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](BuildMeshletCullArgsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.candidate_meshlets_counter),
 												ctx.GetReadWriteBuffer(data.meshlet_cull_args)
@@ -753,9 +768,10 @@ namespace adria
 				data.visible_meshlets = builder.WriteBuffer(RG_NAME(VisibleMeshlets));
 				data.visible_meshlets_counter = builder.WriteBuffer(RG_NAME(VisibleMeshletsCounter));
 			},
-			[=](CullMeshletsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](CullMeshletsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.hzb),
 												ctx.GetReadWriteBuffer(data.candidate_meshlets),
@@ -804,9 +820,10 @@ namespace adria
 				data.meshlet_draw_args = builder.WriteBuffer(RG_NAME(MeshletDrawArgs));
 				data.visible_meshlets_counter = builder.ReadBuffer(RG_NAME(VisibleMeshletsCounter));
 			},
-			[=](BuildMeshletDrawArgsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](BuildMeshletDrawArgsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.visible_meshlets_counter),
 												ctx.GetReadWriteBuffer(data.meshlet_draw_args)
@@ -849,9 +866,10 @@ namespace adria
 				data.visible_meshlets = builder.ReadBuffer(RG_NAME(VisibleMeshlets));
 				data.draw_args = builder.ReadIndirectArgsBuffer(RG_NAME(MeshletDrawArgs));
 			},
-			[=](DrawMeshletsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](DrawMeshletsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] =
 				{
@@ -892,7 +910,10 @@ namespace adria
 
 	void GPUDrivenGBufferPass::AddHZBPasses(RenderGraph& rg, Bool second_phase)
 	{
-		if (!occlusion_culling) return;
+		if (!occlusion_culling)
+		{
+			return;
+		}
 
 		struct InitializeHZBPassData
 		{
@@ -907,9 +928,10 @@ namespace adria
 				data.hzb = builder.WriteTexture(RG_NAME(HZB));
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil));
 			},
-			[=](InitializeHZBPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](InitializeHZBPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_handles[] = 
 				{
@@ -965,9 +987,10 @@ namespace adria
 				}
 				data.spd_counter = builder.WriteBuffer(RG_NAME(SPDCounter));
 			},
-			[=](HZBMipsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](HZBMipsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				varAU2(dispatchThreadGroupCountXY);
 				varAU2(workGroupOffset);
@@ -1048,12 +1071,14 @@ namespace adria
 				data.visible_meshlets_counter = builder.ReadCopySrcBuffer(RG_NAME(VisibleMeshletsCounter));
 				data.occluded_instances_counter = builder.ReadCopySrcBuffer(RG_NAME(OccludedInstancesCounter));
 			},
-			[&](GPUDrivenDebugPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[&](GPUDrivenDebugPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxBuffer const& src_buffer1 = context.GetCopySrcBuffer(data.occluded_instances_counter);
-				GfxBuffer const& src_buffer2 = context.GetCopySrcBuffer(data.visible_meshlets_counter);
-				GfxBuffer const& src_buffer3 = context.GetCopySrcBuffer(data.candidate_meshlets_counter);
-				GfxBuffer& debug_buffer = context.GetCopyDstBuffer(data.debug_buffer);
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
+				GfxBuffer const& src_buffer1 = ctx.GetCopySrcBuffer(data.occluded_instances_counter);
+				GfxBuffer const& src_buffer2 = ctx.GetCopySrcBuffer(data.visible_meshlets_counter);
+				GfxBuffer const& src_buffer3 = ctx.GetCopySrcBuffer(data.candidate_meshlets_counter);
+				GfxBuffer& debug_buffer = ctx.GetCopyDstBuffer(data.debug_buffer);
 
 				Uint32 backbuffer_index = gfx->GetBackbufferIndex();
 				Uint32 buffer_offset = 6 * sizeof(Uint32) * backbuffer_index;

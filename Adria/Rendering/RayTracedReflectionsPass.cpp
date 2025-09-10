@@ -52,9 +52,11 @@ namespace adria
 				data.diffuse = builder.ReadTexture(RG_NAME(GBufferAlbedo));
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil));
 			},
-			[=](RayTracedReflectionsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](RayTracedReflectionsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxDescriptor src_descriptors[] =
 				{
 					ctx.GetReadOnlyTexture(data.depth),

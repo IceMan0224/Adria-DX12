@@ -211,8 +211,9 @@ namespace adria
 				ADRIA_ASSERT(IsBufferDeclared(export_buffer));
 				data.src = builder.ReadCopySrcBuffer(export_buffer);
 			},
-			[=](ExportBufferCopyPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](ExportBufferCopyPassData const& data, RenderGraphContext& context)
 			{
+				GfxCommandList* cmd_list = context.GetCommandList();
 				GfxBuffer const& src_buffer = context.GetCopySrcBuffer(data.src);
 				cmd_list->CopyBuffer(*buffer, src_buffer);
 			}, RGPassType::Copy, RGPassFlags::ForceNoCull);
@@ -237,8 +238,9 @@ namespace adria
 				ADRIA_ASSERT(IsTextureDeclared(export_texture));
 				data.src = builder.ReadCopySrcTexture(export_texture);
 			},
-			[=](ExportTextureCopyPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](ExportTextureCopyPassData const& data, RenderGraphContext& context)
 			{
+				GfxCommandList* cmd_list = context.GetCommandList();
 				GfxTexture const& src_texture = context.GetCopySrcTexture(data.src);
 				cmd_list->CopyTexture(*texture, src_texture);
 			}, RGPassType::Copy, RGPassFlags::ForceNoCull);
@@ -1201,7 +1203,7 @@ namespace adria
 				cmd_list->BeginEvent(rg.events[event_idx].name, GfxEventColor(0x5E, 0xC4, 0xFF));
 			}
 
-			RenderGraphContext rg_resources(rg, *pass);
+			RenderGraphContext render_graph_ctx(rg, *pass, cmd_list);
 			if (pass->type == RGPassType::Graphics)
 			{
 				GfxRenderPassDesc render_pass_desc{};
@@ -1352,7 +1354,7 @@ namespace adria
 				TracyGfxProfileScope(cmd_list->GetNative(), pass->name.c_str());
 				cmd_list->SetContext(GfxCommandList::Context::Graphics);
 				cmd_list->BeginRenderPass(render_pass_desc);
-				pass->Execute(rg_resources, cmd_list);
+				pass->Execute(render_graph_ctx);
 				cmd_list->EndRenderPass();
 			}
 			else
@@ -1361,7 +1363,7 @@ namespace adria
 				AdriaGfxScopedEvent(cmd_list, pass->name.c_str());
 				TracyGfxProfileScope(cmd_list->GetNative(), pass->name.c_str());
 				cmd_list->SetContext(GfxCommandList::Context::Compute);
-				pass->Execute(rg_resources, cmd_list);
+				pass->Execute(render_graph_ctx);
 			}
 
 			for (Uint32 i = 0; i < pass->num_events_to_end; ++i)

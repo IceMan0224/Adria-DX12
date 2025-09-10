@@ -33,11 +33,11 @@ namespace adria
 				data.texture_src = builder.ReadTexture(texture_src, ReadAccess_PixelShader);
 				builder.SetViewport(width, height);
 			},
-			[=](CopyToTexturePassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](CopyToTexturePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
-				
-				
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				switch (mode)
 				{
 				case BlendMode::None:
@@ -68,7 +68,7 @@ namespace adria
 				}
 
 				GfxDescriptor dst = gfx->AllocateDescriptorsGPU();
-				gfx->CopyDescriptors(1, dst, context.GetReadOnlyTexture(data.texture_src));
+				gfx->CopyDescriptors(1, dst, ctx.GetReadOnlyTexture(data.texture_src));
 
 				cmd_list->SetRootConstant(1, dst.GetIndex(), 0);
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
@@ -124,9 +124,11 @@ namespace adria
 				data.texture_src2 = builder.ReadTexture(texture_src2, ReadAccess_PixelShader);
 				builder.SetViewport(width, height);
 			},
-			[=](CopyToTexturePassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](CopyToTexturePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				switch (mode)
 				{
 				case BlendMode::None:
@@ -157,7 +159,7 @@ namespace adria
 				}
 
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(2);
-				GfxDescriptor src_descriptors[] = { context.GetReadOnlyTexture(data.texture_src1), context.GetReadOnlyTexture(data.texture_src2) };
+				GfxDescriptor src_descriptors[] = { ctx.GetReadOnlyTexture(data.texture_src1), ctx.GetReadOnlyTexture(data.texture_src2) };
 				Uint32 i = dst_descriptor.GetIndex();
 				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
 

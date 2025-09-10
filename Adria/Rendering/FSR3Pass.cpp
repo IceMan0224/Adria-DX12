@@ -31,7 +31,11 @@ namespace adria
 
 	FSR3Pass::FSR3Pass(GfxDevice* _gfx, Uint32 w, Uint32 h) : gfx(_gfx), display_width(w), display_height(h), render_width(), render_height(), ffx_interface(nullptr)
 	{
-		if (!gfx->GetCapabilities().SupportsShaderModel(SM_6_6)) return;
+		if (!gfx->GetCapabilities().SupportsShaderModel(SM_6_6))
+		{
+			return;
+		}
+
 		sprintf(name_version, "FSR %d.%d.%d", FFX_FSR3_VERSION_MAJOR, FFX_FSR3_VERSION_MINOR, FFX_FSR3_VERSION_PATCH);
 		ffx_interface = CreateFfxInterface(gfx, FFX_FSR3UPSCALER_CONTEXT_COUNT);
 		fsr3_context_desc.backendInterfaceUpscaling = *ffx_interface;
@@ -79,8 +83,10 @@ namespace adria
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](FSR3PassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](FSR3PassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxTexture& input_texture = ctx.GetTexture(*data.input);
 				GfxTexture& velocity_texture = ctx.GetTexture(*data.velocity);
 				GfxTexture& depth_texture = ctx.GetTexture(*data.depth);

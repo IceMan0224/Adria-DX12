@@ -51,10 +51,10 @@ namespace adria
 				builder.WriteRenderTarget(RG_NAME(SunOutput), RGLoadStoreAccessOp::Clear_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=, &reg](RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=, &reg](RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
-				GfxLinearDynamicAllocator* dynamic_allocator = gfx->GetDynamicAllocator();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
 
 				cmd_list->SetPipelineState(sun_pso.get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

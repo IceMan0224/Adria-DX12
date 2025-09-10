@@ -133,8 +133,10 @@ namespace adria
 				Vector2u display_resolution = engine->renderer->GetDisplayResolution();
 				builder.SetViewport(display_resolution.x, display_resolution.y);
 			},
-			[=](EditorPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](EditorPassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxDescriptor src_descriptor = ctx.GetReadOnlyTexture(data.src);
 				gui->Begin();
 				{

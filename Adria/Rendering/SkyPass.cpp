@@ -59,11 +59,12 @@ namespace adria
 			{
 				data.sky_uav = builder.WriteTexture(RG_NAME(Sky));
 			},
-			[&](ComputeSkyPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[&](ComputeSkyPassData const& data, RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
-				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
 
+				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				GfxDescriptor sky = gfx->AllocateDescriptorsGPU(1);
 				gfx->CopyDescriptors(1, sky, context.GetReadWriteTexture(data.sky_uav));
 				cmd_list->SetRootConstant(1, sky.GetIndex());
@@ -127,9 +128,11 @@ namespace adria
 				builder.ReadDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
+
 				cmd_list->SetPipelineState(sky_pso.get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);

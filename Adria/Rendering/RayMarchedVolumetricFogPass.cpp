@@ -55,9 +55,10 @@ namespace adria
 
 				for (auto& shadow_texture : shadow_textures) std::ignore = builder.ReadTexture(shadow_texture);
 			},
-			[=](LightingPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](LightingPassData const& data, RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
 				
 				GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.depth),
 												context.GetReadWriteTexture(data.output) };

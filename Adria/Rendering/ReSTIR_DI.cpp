@@ -91,9 +91,11 @@ namespace adria
 				data.albedo = builder.ReadTexture(RG_NAME(GBufferAlbedo));
 				data.reservoir = builder.WriteBuffer(RG_NAME(ReSTIR_DI_Reservoir));
 			},
-			[=](InitialSamplingPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list) 
+			[=](InitialSamplingPassData const& data, RenderGraphContext& ctx) 
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxDescriptor src_descriptors[] =
 				{
 					ctx.GetReadOnlyTexture(data.depth),
@@ -136,7 +138,7 @@ namespace adria
 			{
 				
 			},
-			[=](TemporalResamplingPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list) mutable
+			[=](TemporalResamplingPassData const& data, RenderGraphContext& ctx)
 			{
 				
 			}, RGPassType::Compute);
@@ -154,7 +156,7 @@ namespace adria
 			{
 
 			},
-			[=](SpatialResamplingPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list) 
+			[=](SpatialResamplingPassData const& data, RenderGraphContext& ctx) 
 			{
 
 			}, RGPassType::Compute);
@@ -172,7 +174,7 @@ namespace adria
 			{
 
 			},
-			[=](FusedTemporalSpatialResamplingPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list) 
+			[=](FusedTemporalSpatialResamplingPassData const& data, RenderGraphContext& ctx) 
 			{
 
 			}, RGPassType::Compute);

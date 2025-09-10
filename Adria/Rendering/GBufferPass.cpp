@@ -55,8 +55,10 @@ namespace adria
 				builder.WriteDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Clear_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				reg.sort<Batch>([&frame_data](Batch const& lhs, Batch const& rhs)
 					{ 
 						if (lhs.alpha_mode != rhs.alpha_mode)

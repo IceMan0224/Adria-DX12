@@ -142,9 +142,10 @@ namespace adria
 			{
 				data.rain_data_buffer = builder.WriteBuffer(RG_NAME(RainDataBuffer));
 			},
-			[=](RainSimulationPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](RainSimulationPassData const& data, RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
 
 				GfxDescriptor src_handle = context.GetReadWriteBuffer(data.rain_data_buffer);
 				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU();
@@ -189,9 +190,10 @@ namespace adria
 				builder.WriteDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RainDrawPassData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](RainDrawPassData const& data, RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
 
 				GfxDescriptor src_handles[] = { context.GetReadOnlyBuffer(data.rain_data_buffer) };
 				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_handles));

@@ -71,8 +71,9 @@ namespace adria
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](DLSS3PassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](DLSS3PassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				if (needs_create)
 				{
 					ReleaseDLSS();

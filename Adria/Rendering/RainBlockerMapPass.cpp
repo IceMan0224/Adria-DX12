@@ -59,9 +59,10 @@ namespace adria
 				builder.WriteDepthStencil(RG_NAME(RainBlocker), RGLoadStoreAccessOp::Clear_Preserve);
 				builder.SetViewport(BLOCKER_DIM, BLOCKER_DIM);
 			},
-			[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=](RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				struct RainBlockerConstants

@@ -459,8 +459,9 @@ namespace adria
 								builder.WriteDepthStencil(RG_NAME_IDX(ShadowMap, light_matrix_index + i), RGLoadStoreAccessOp::Clear_Preserve);
 								builder.SetViewport(SHADOW_CASCADE_MAP_SIZE, SHADOW_CASCADE_MAP_SIZE);
 							},
-							[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+							[=](RenderGraphContext& context)
 							{
+								GfxCommandList* cmd_list = context.GetCommandList();
 								cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 								ShadowMapPass_Common(cmd_list, light.type, light_index, light_matrix_index, i);
 							}, RGPassType::Graphics);
@@ -478,8 +479,9 @@ namespace adria
 							builder.WriteDepthStencil(RG_NAME_IDX(ShadowMap, light.shadow_matrix_index), RGLoadStoreAccessOp::Clear_Preserve);
 							builder.SetViewport(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 						},
-						[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+						[=](RenderGraphContext& context)
 						{
+							GfxCommandList* cmd_list = context.GetCommandList();
 							cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 							ShadowMapPass_Common(cmd_list, light.type, light_index, light_matrix_index, 0);
 						}, RGPassType::Graphics);
@@ -499,8 +501,9 @@ namespace adria
 							builder.WriteDepthStencil(RG_NAME_IDX(ShadowMap, light.shadow_matrix_index + i), RGLoadStoreAccessOp::Clear_Preserve);
 							builder.SetViewport(SHADOW_CUBE_SIZE, SHADOW_CUBE_SIZE);
 						},
-						[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+						[=](RenderGraphContext& context)
 						{
+							GfxCommandList* cmd_list = context.GetCommandList();
 							cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 							ShadowMapPass_Common(cmd_list, light.type, light_index, light_matrix_index, i);
 						}, RGPassType::Graphics);
@@ -518,8 +521,9 @@ namespace adria
 						builder.WriteDepthStencil(RG_NAME_IDX(ShadowMap, light_matrix_index), RGLoadStoreAccessOp::Clear_Preserve);
 						builder.SetViewport(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 					},
-					[=](RenderGraphContext& context, GfxCommandList* cmd_list)
+					[=](RenderGraphContext& context)
 					{
+						GfxCommandList* cmd_list = context.GetCommandList();
 						cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 						ShadowMapPass_Common(cmd_list, light.type, light_index, light_matrix_index, 0);
 					}, RGPassType::Graphics);

@@ -153,9 +153,10 @@ namespace adria
 				data.tensor = builder.WriteBuffer(RG_NAME(ModelInput));
 				data.texture = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
 			},
-			[=](TextureToTensorPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](TextureToTensorPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{
@@ -196,8 +197,9 @@ namespace adria
 				builder.DummyReadBuffer(RG_NAME(ModelInput));
 				builder.DummyWriteBuffer(RG_NAME(ModelOutput));
 			},
-			[=](RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				cmd_list->SetHeap(dml_heap.get());
 				dml_command_recorder->RecordDispatch(cmd_list->GetNative(), dml_graph.Get(), dml_binding_table.Get());
 				cmd_list->ResetState();
@@ -225,9 +227,10 @@ namespace adria
 				data.tensor = builder.ReadBuffer(RG_NAME(ModelOutput));
 				data.texture = builder.WriteTexture(RG_NAME(DMLUpscalerOutput));
 			},
-			[=](TensorToTexturePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](TensorToTexturePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{

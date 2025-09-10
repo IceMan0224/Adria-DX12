@@ -48,15 +48,16 @@ namespace adria
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 				data.normal = builder.ReadTexture(RG_NAME(GBufferNormal), ReadAccess_NonPixelShader);
 			},
-			[=](PickingPassDispatchData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](PickingPassDispatchData const& data, RenderGraphContext& context)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = context.GetDevice();
+				GfxCommandList* cmd_list = context.GetCommandList();
 				
 				GfxDescriptor src_descriptors[] =
 				{
-					ctx.GetReadOnlyTexture(data.depth),
-					ctx.GetReadOnlyTexture(data.normal),
-					ctx.GetReadWriteBuffer(data.pick_buffer)
+					context.GetReadOnlyTexture(data.depth),
+					context.GetReadOnlyTexture(data.normal),
+					context.GetReadWriteBuffer(data.pick_buffer)
 				};	
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
 				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
@@ -89,9 +90,10 @@ namespace adria
 			{
 				data.src = builder.ReadCopySrcBuffer(RG_NAME(PickBuffer));
 			},
-			[=, backbuffer_index = gfx->GetBackbufferIndex()](PickingPassCopyData const& data, RenderGraphContext& context, GfxCommandList* cmd_list)
+			[=, backbuffer_index = gfx->GetBackbufferIndex()](PickingPassCopyData const& data, RenderGraphContext& ctx)
 			{
-				GfxBuffer const& buffer = context.GetCopySrcBuffer(data.src);
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+				GfxBuffer const& buffer = ctx.GetCopySrcBuffer(data.src);
 				cmd_list->CopyBuffer(*read_picking_buffers[backbuffer_index], buffer);
 			}, RGPassType::Copy, RGPassFlags::ForceNoCull);
 	}

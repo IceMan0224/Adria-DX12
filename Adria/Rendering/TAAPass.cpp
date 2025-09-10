@@ -46,9 +46,10 @@ namespace adria
 				data.history = builder.ReadTexture(RG_NAME(HistoryBuffer), ReadAccess_PixelShader);
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_PixelShader);
 			},
-			[=](TAAPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](TAAPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{

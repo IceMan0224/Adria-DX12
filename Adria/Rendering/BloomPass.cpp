@@ -113,9 +113,10 @@ namespace adria
 				builder.DeclareTexture(output, desc);
 				data.output = builder.WriteTexture(output);
 			},
-			[=](BloomDownsamplePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](BloomDownsamplePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{
@@ -182,9 +183,10 @@ namespace adria
 				builder.DeclareTexture(output, desc);
 				data.output = builder.WriteTexture(output);
 			},
-			[=](BloomUpsamplePassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](BloomUpsamplePassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{

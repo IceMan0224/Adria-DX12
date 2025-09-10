@@ -49,8 +49,10 @@ namespace adria
 				data.input = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](FFXDoFPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](FFXDoFPassData const& data, RenderGraphContext& ctx)
 			{
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxTexture& input_texture = ctx.GetTexture(*data.input);
 				GfxTexture& depth_texture = ctx.GetTexture(*data.depth);
 				GfxTexture& output_texture = ctx.GetTexture(*data.output);

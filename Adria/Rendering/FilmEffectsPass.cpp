@@ -39,9 +39,10 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(FilmEffectsOutput));
 				data.input = builder.ReadTexture(postprocessor->GetFinalResource());
 			},
-			[=](FilmEffectsPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](FilmEffectsPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				GfxDescriptor src_descriptors[] =
 				{

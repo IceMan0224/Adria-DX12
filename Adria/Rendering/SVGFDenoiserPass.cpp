@@ -171,9 +171,11 @@ namespace adria
 				data.output_normal_depth = builder.WriteTexture(RG_NAME(SVGF_Output_NormalDepth));
 				data.output_history_length = builder.WriteTexture(RG_NAME(SVGF_Output_HistoryLength));
 			},
-			[=](ReprojectionPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](ReprojectionPassData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxDescriptor src_descriptors[] =
 				{
 					ctx.GetReadOnlyTexture(data.direct_illum), ctx.GetReadOnlyTexture(data.indirect_illum),
@@ -255,9 +257,11 @@ namespace adria
 				data.output_direct = builder.WriteTexture(RG_NAME(SVGF_Filtered_Direct));
 				data.output_indirect = builder.WriteTexture(RG_NAME(SVGF_Filtered_Indirect));
 			},
-			[=](FilterMomentsData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](FilterMomentsData const& data, RenderGraphContext& ctx)
 			{
-				GfxDevice* gfx = cmd_list->GetDevice();
+				GfxDevice* gfx = ctx.GetDevice();
+				GfxCommandList* cmd_list = ctx.GetCommandList();
+
 				GfxDescriptor src_descriptors[] =
 				{
 					ctx.GetReadOnlyTexture(data.direct_illum), ctx.GetReadOnlyTexture(data.indirect_illum),
@@ -294,7 +298,6 @@ namespace adria
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::Compute);
 	}
-
 	void SVGFDenoiserPass::AddAtrousPass(RenderGraph& rg)
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
@@ -317,8 +320,10 @@ namespace adria
 					data.albedo_i = builder.ReadTexture(RG_NAME(PT_IndirectAlbedo));
 					data.output = builder.WriteTexture(RG_NAME(PT_Denoised));
 				},
-				[=](PassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list) 
+				[=](PassData const& data, RenderGraphContext& ctx) 
 				{
+					GfxDevice* gfx = ctx.GetDevice();
+					GfxCommandList* cmd_list = ctx.GetCommandList();
 					ADRIA_TODO();
 				}, RGPassType::Compute);
 			return;
@@ -392,9 +397,11 @@ namespace adria
 						data.feedback_indirect_out = builder.WriteTexture(RG_NAME(SVGF_Feedback_Indirect));
 					}
 				},
-				[=](AtrousPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+				[=](AtrousPassData const& data, RenderGraphContext& ctx)
 				{
-					GfxDevice* gfx = cmd_list->GetDevice();
+					GfxDevice* gfx = ctx.GetDevice();
+					GfxCommandList* cmd_list = ctx.GetCommandList();
+
 					std::vector<GfxDescriptor> src_descriptors;
 					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.direct_in));
 					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.indirect_in));

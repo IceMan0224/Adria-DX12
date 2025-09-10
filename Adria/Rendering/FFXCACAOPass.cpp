@@ -310,7 +310,7 @@ namespace adria
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 				data.gbuffer_normal = builder.ReadTexture(RG_NAME(GBufferNormal), ReadAccess_NonPixelShader);
 			},
-			[=](FFXCACAOPassData const& data, RenderGraphContext& ctx, GfxCommandList* cmd_list)
+			[=](FFXCACAOPassData const& data, RenderGraphContext& ctx)
 			{
 				static_assert(sizeof(Matrix) == sizeof(FfxFloat32x4x4));
 
@@ -323,6 +323,7 @@ namespace adria
 				FfxErrorCode error_code = ffxCacaoUpdateSettings(current_cacao_context, &cacao_settings, use_downsampled_ssao);
 				ADRIA_ASSERT(error_code == FFX_OK);
 
+				GfxCommandList* cmd_list = ctx.GetCommandList();
 				FfxCacaoDispatchDescription cacao_dispatch_desc{};
 				cacao_dispatch_desc.commandList = ffxGetCommandListDX12(cmd_list->GetNative());
 
