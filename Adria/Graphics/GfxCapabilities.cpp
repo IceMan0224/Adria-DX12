@@ -86,7 +86,7 @@ namespace adria
 		shading_rate_image_tile_size = feature_support.ShadingRateImageTileSize();
 		additional_shading_rates_supported = feature_support.AdditionalShadingRatesSupported();
 
-		if (shader_model < SM_6_6)
+		if (shader_model < SM_6_7)
 		{
 			ADRIA_LOG(ERROR, "Device doesn't support Shader Model 6.6 which is required!");
 			return false;

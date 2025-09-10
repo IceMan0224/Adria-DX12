@@ -222,8 +222,14 @@ namespace adria
 		if (!CommandLineOptions::GetDebugDevice() && vendor == GfxVendor::Nvidia)
 		{
 			GfxNsightPerfMode perf_mode = GfxNsightPerfMode::None;
-			if (CommandLineOptions::GetPerfReport()) perf_mode = GfxNsightPerfMode::HTMLReport;
-			if (CommandLineOptions::GetPerfHUD()) perf_mode = GfxNsightPerfMode::HUD;
+			if (CommandLineOptions::GetPerfReport())
+			{
+				perf_mode = GfxNsightPerfMode::HTMLReport;
+			}
+			if (CommandLineOptions::GetPerfHUD())
+			{
+				perf_mode = GfxNsightPerfMode::HUD;
+			}
 			nsight_perf_manager = std::make_unique<GfxNsightPerfManager>(this, perf_mode);
 		}
 
@@ -532,10 +538,12 @@ namespace adria
 
 		std::vector<Uint32> src_range_sizes(src_descriptors.size(), 1);
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> src_handles(src_descriptors.size());
-		for (Uint64 i = 0; i < src_handles.size(); ++i) src_handles[i] = src_descriptors[i];
+		for (Uint64 i = 0; i < src_handles.size(); ++i)
+		{
+			src_handles[i] = src_descriptors[i];
+		}
 
-		device->CopyDescriptors(dst_ranges_count, dst_handles, dst_range_sizes,
-			src_ranges_count, src_handles.data(), src_range_sizes.data(), ToD3D12HeapType(type));
+		device->CopyDescriptors(dst_ranges_count, dst_handles, dst_range_sizes, src_ranges_count, src_handles.data(), src_range_sizes.data(), ToD3D12HeapType(type));
 	}
 	void GfxDevice::CopyDescriptors(std::span<std::pair<GfxDescriptor, Uint32>> dst_range_starts_and_size, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size, GfxDescriptorHeapType type /*= GfxDescriptorHeapType::CBV_SRV_UAV*/)
 	{
@@ -557,8 +565,7 @@ namespace adria
 			src_range_sizes[i] = src_range_starts_and_size[i].second;
 		}
 
-		device->CopyDescriptors(dst_ranges_count, dst_handles.data(), dst_range_sizes.data(),
-			src_ranges_count, src_handles.data(), src_range_sizes.data(), ToD3D12HeapType(type));
+		device->CopyDescriptors(dst_ranges_count, dst_handles.data(), dst_range_sizes.data(), src_ranges_count, src_handles.data(), src_range_sizes.data(), ToD3D12HeapType(type));
 	}
 	GfxDescriptor	GfxDevice::AllocateDescriptorCPU(GfxDescriptorHeapType type)
 	{
@@ -582,8 +589,7 @@ namespace adria
 	}
 	GfxLinearDynamicAllocator*		GfxDevice::GetDynamicAllocator() const
 	{
-		if (rendering_not_started) return dynamic_allocator_on_init.get();
-		else return dynamic_allocators[swapchain->GetBackbufferIndex()].get();
+		return rendering_not_started ? dynamic_allocator_on_init.get() : dynamic_allocators[swapchain->GetBackbufferIndex()].get();
 	}
 	void GfxDevice::InitShaderVisibleAllocator(Uint32 reserve)
 	{
@@ -645,6 +651,7 @@ namespace adria
 		{
 			ADRIA_ASSERT(view_type == GfxSubresourceType::UAV);
 		}
+
 		GfxBufferDesc desc = buffer->GetDesc();
 		GfxFormat format = desc.format;
 		GfxDescriptor heap_descriptor = AllocateDescriptorCPU(GfxDescriptorHeapType::CBV_SRV_UAV);
@@ -660,7 +667,6 @@ namespace adria
 			{
 				if (HasAllFlags(desc.misc_flags, GfxBufferMiscFlag::BufferRaw))
 				{
-					// This is a Raw Buffer
 					srv_desc.Format = DXGI_FORMAT_R32_TYPELESS;
 					srv_desc.Buffer.FirstElement = (Uint32)view_desc.offset / sizeof(Uint32);
 					srv_desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
@@ -668,7 +674,6 @@ namespace adria
 				}
 				else if (HasAllFlags(desc.misc_flags, GfxBufferMiscFlag::BufferStructured))
 				{
-					// This is a Structured Buffer
 					srv_desc.Format = DXGI_FORMAT_UNKNOWN;
 					srv_desc.Buffer.FirstElement = (Uint32)view_desc.offset / desc.stride;
 					srv_desc.Buffer.NumElements = (Uint32)std::min<Uint64>(view_desc.size, desc.size - view_desc.offset) / desc.stride;
@@ -683,7 +688,6 @@ namespace adria
 			}
 			else
 			{
-				// This is a Typed Buffer
 				Uint32 stride = GetGfxFormatStride(format);
 				srv_desc.Format = ConvertGfxFormat(format);
 				srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
@@ -720,7 +724,6 @@ namespace adria
 					uav_desc.Format = DXGI_FORMAT_R32_UINT;
 					uav_desc.Buffer.FirstElement = (Uint32)view_desc.offset / sizeof(Uint32);
 					uav_desc.Buffer.NumElements = (Uint32)std::min<Uint64>(view_desc.size, desc.size - view_desc.offset) / sizeof(Uint32);
-
 				}
 			}
 			else
@@ -730,7 +733,6 @@ namespace adria
 				uav_desc.Buffer.FirstElement = (Uint32)view_desc.offset / stride;
 				uav_desc.Buffer.NumElements = (Uint32)std::min<Uint64>(view_desc.size, desc.size - view_desc.offset) / stride;
 			}
-
 			device->CreateUnorderedAccessView(buffer->GetNative(), uav_counter ? uav_counter->GetNative() : nullptr, &uav_desc, heap_descriptor);
 		}
 		break;
@@ -1174,7 +1176,10 @@ namespace adria
 	{
 		while (!release_queue.empty())
 		{
-			if (!release_fence.IsCompleted(release_queue.front().fence_value)) break;
+			if (!release_fence.IsCompleted(release_queue.front().fence_value))
+			{
+				break;
+			}
 			release_queue.pop();
 		}
 		graphics_queue.Signal(release_fence, release_queue_fence_value);
@@ -1185,7 +1190,6 @@ namespace adria
 		Ref<ID3D12InfoQueue> info_queue;
 		if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(info_queue.GetAddressOf()))))
 		{
-			//D3D12_MESSAGE_CATEGORY Categories[0] = {};
 			D3D12_MESSAGE_SEVERITY Severities[] =
 			{
 				D3D12_MESSAGE_SEVERITY_INFO

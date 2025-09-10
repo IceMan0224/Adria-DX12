@@ -168,6 +168,7 @@ namespace adria
 			gpu_crash_dump_data,
 			gpu_crash_dump_size,
 			&decoder);
+
 		if (result != GFSDK_Aftermath_Result_Success)
 		{
 			return;

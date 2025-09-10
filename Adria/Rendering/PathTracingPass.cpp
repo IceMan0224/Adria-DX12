@@ -97,15 +97,19 @@ namespace adria
 	{
 		QueueGUI([&]()
 			{
-				ImGui::SliderInt("Max Bounces", MaxBounces.GetPtr(), 1, 8);
-				if (!denoiser_active)
+				if (ImGui::TreeNodeEx("Path Tracing Settings", ImGuiTreeNodeFlags_None))
 				{
-					ImGui::Checkbox("Accumulate Radiance", AccumulateRadiance.GetPtr());
+					ImGui::SliderInt("Max Bounces", MaxBounces.GetPtr(), 1, 8);
+					if (!denoiser_active)
+					{
+						ImGui::Checkbox("Accumulate Radiance", AccumulateRadiance.GetPtr());
+					}
+					ImGui::Combo("Denoiser Type", Denoiser.GetPtr(), "None\0SVGF\0", 2);
+
+					ImGui::TreePop();
+					ImGui::Separator();
 				}
-				ImGui::Combo("Denoiser Type", Denoiser.GetPtr(), "None\0SVGF\0", 2);
-				ImGui::Separator();
-			}, GUICommandGroup_PathTracer
-		);
+			}, GUICommandGroup_Renderer);
 
 		if (denoiser_active)
 		{

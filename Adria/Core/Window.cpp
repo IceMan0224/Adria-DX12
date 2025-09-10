@@ -59,7 +59,12 @@ namespace adria
         window_width = rect.right - rect.left;
         window_height = rect.bottom - rect.top;
 
-        if (!RegisterClassExW(&wcex)) MessageBoxA(nullptr, "Window class registration failed!", "Fatal Error!", MB_ICONEXCLAMATION | MB_OK);
+        if (!RegisterClassExW(&wcex))
+        {
+            MessageBoxA(nullptr, "Window class registration failed!", "Fatal Error!", MB_ICONEXCLAMATION | MB_OK);
+            return;
+        }
+
         hwnd = CreateWindowExW
         (
             0, class_name,
@@ -78,8 +83,14 @@ namespace adria
 		SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_MINIMIZEBOX);
         SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
-        if(init.maximize) ShowWindow(hwnd, SW_SHOWMAXIMIZED);
-        else ShowWindow(hwnd, SW_SHOWNORMAL);
+        if (init.maximize)
+        {
+            ShowWindow(hwnd, SW_SHOWMAXIMIZED);
+        }
+        else
+        {
+            ShowWindow(hwnd, SW_SHOWNORMAL);
+        }
 
 		UpdateWindow(hwnd);
 		SetFocus(hwnd);
@@ -87,7 +98,10 @@ namespace adria
 
 	Window::~Window()
 	{
-		if (hwnd) DestroyWindow(hwnd);
+        if (hwnd)
+        {
+            DestroyWindow(hwnd);
+        }
 	}
 
 	Uint32 Window::Width() const

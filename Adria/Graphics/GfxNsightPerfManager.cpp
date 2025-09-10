@@ -37,7 +37,10 @@ namespace adria
 		}
 		~GfxNsightPerfReporter()
 		{
-			if(active) report_generator.Reset();
+			if (active)
+			{
+				report_generator.Reset();
+			}
 		}
 
 		void Update()
@@ -53,7 +56,10 @@ namespace adria
 		}
 		void BeginFrame()
 		{
-			if (active) report_generator.OnFrameStart(gfx->GetGraphicsCommandQueue());
+			if (active)
+			{
+				report_generator.OnFrameStart(gfx->GetGraphicsCommandQueue());
+			}
 		}
 		void EndFrame()
 		{
@@ -76,12 +82,18 @@ namespace adria
 		}
 		void PushRange(GfxCommandList* cmd_list, Char const* name)
 		{
-			if (!active) return;
+			if (!active)
+			{
+				return;
+			}
 			report_generator.rangeCommands.PushRange(cmd_list->GetNative(), name);
 		}
 		void PopRange(GfxCommandList* cmd_list)
 		{
-			if (!active) return;
+			if (!active)
+			{
+				return;
+			}
 			report_generator.rangeCommands.PopRange(cmd_list->GetNative());
 		}
 
@@ -138,7 +150,10 @@ namespace adria
 		}
 		~GfxNsightPerfHUD()
 		{
-			if (active) periodic_sampler.Reset();
+			if (active)
+			{
+				periodic_sampler.Reset();
+			}
 		}
 
 		void Update()
@@ -161,13 +176,20 @@ namespace adria
 		void BeginFrame()
 		{
 		}
+
 		void Render()
 		{
-			if (active) hud_renderer.Render();
+			if (active)
+			{
+				hud_renderer.Render();
+			}
 		}
 		void EndFrame()
 		{
-			if (active) periodic_sampler.OnFrameEnd();
+			if (active)
+			{
+				periodic_sampler.OnFrameEnd();
+			}
 		}
 
 	private:

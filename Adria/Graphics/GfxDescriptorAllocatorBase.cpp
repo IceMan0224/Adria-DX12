@@ -20,7 +20,10 @@ namespace adria
 	{
 		CreateHeap();
 		head_descriptor.cpu = heap->GetCPUDescriptorHandleForHeapStart();
-		if(shader_visible) head_descriptor.gpu = heap->GetGPUDescriptorHandleForHeapStart();
+		if (shader_visible)
+		{
+			head_descriptor.gpu = heap->GetGPUDescriptorHandleForHeapStart();
+		}
 		head_descriptor.index = 0;
 	}
 

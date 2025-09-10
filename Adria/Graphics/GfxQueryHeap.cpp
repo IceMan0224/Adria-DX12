@@ -24,7 +24,7 @@ namespace adria
 		heap_desc.Count = desc.count;
 		heap_desc.NodeMask = 0;
 		heap_desc.Type = ToD3D12QueryHeapType(desc.type);
-		gfx->GetDevice()->CreateQueryHeap(&heap_desc, IID_PPV_ARGS(query_heap.GetAddressOf()));
+		GFX_CHECK_HR(gfx->GetDevice()->CreateQueryHeap(&heap_desc, IID_PPV_ARGS(query_heap.GetAddressOf())));
 	}
 }
 

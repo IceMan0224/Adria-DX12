@@ -105,12 +105,7 @@ namespace adria
 			GfxLinearDynamicAllocator* dynamic_allocator = gfx->GetDynamicAllocator();
 			GfxDynamicAllocation upload_alloc = dynamic_allocator->Allocate(buffer_size);
 			upload_alloc.Update(initial_data, desc.size);
-			cmd_list->CopyBuffer(
-				*this,
-				0,
-				*upload_alloc.buffer,
-				upload_alloc.offset,
-				desc.size);
+			cmd_list->CopyBuffer(*this, 0, *upload_alloc.buffer, upload_alloc.offset, desc.size);
 
 			if (HasFlag(desc.bind_flags, GfxBindFlag::ShaderResource))
 			{

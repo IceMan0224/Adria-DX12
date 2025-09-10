@@ -58,7 +58,10 @@ namespace adria
 	GfxRayTracingBLAS::GfxRayTracingBLAS(GfxDevice* gfx, std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags)
 	{
 		std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geo_descs; geo_descs.reserve(geometries.size());
-		for (auto&& geometry : geometries)	geo_descs.push_back(ConvertRayTracingGeometry(geometry));
+		for (GfxRayTracingGeometry& geometry : geometries)
+		{
+			geo_descs.push_back(ConvertRayTracingGeometry(geometry));
+		}
 
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
 		inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
@@ -104,7 +107,6 @@ namespace adria
 
 	GfxRayTracingTLAS::GfxRayTracingTLAS(GfxDevice* gfx, std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
 	{
-		// First, get the size of the TLAS buffers and create them
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
 		inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
 		inputs.Flags = ConvertASFlags(flags);

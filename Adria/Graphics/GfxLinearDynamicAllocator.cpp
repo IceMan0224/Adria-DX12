@@ -14,7 +14,7 @@ namespace adria
 
 	GfxDynamicAllocation GfxLinearDynamicAllocator::Allocate(Uint64 size_in_bytes, Uint64 alignment)
 	{
-		if (alignment == 0) alignment = 1;
+		alignment = std::max(alignment, 1ull);
 
 		GfxAllocationPage* last_page = &alloc_pages[current_page]; // Use pointer to allow changing page
 		Uint64 current_page_offset = last_page->linear_offset_allocator.Top(); 
@@ -62,17 +62,27 @@ namespace adria
 	{
 		{
 			std::lock_guard<std::mutex> guard(alloc_mutex);
-			for (auto& page : alloc_pages) page.linear_offset_allocator.Clear();
+			for (GfxAllocationPage& page : alloc_pages)
+			{
+				page.linear_offset_allocator.Clear();
+			}
 		}
 		
 		Uint32 i = gfx->GetFrameIndex() % PAGE_COUNT_HISTORY_SIZE;
 		used_page_count_history[i] = current_page;
+
 		Uint64 max_used_page_count = 0;
-		for (Uint32 j = 0; j < PAGE_COUNT_HISTORY_SIZE; ++j) max_used_page_count = std::max(max_used_page_count, used_page_count_history[j]);
+		for (Uint32 j = 0; j < PAGE_COUNT_HISTORY_SIZE; ++j)
+		{
+			max_used_page_count = std::max(max_used_page_count, used_page_count_history[j]);
+		}
+
 		if (max_used_page_count < alloc_pages.size())
 		{
-			while (alloc_pages.size() == max_used_page_count) 
+			while (alloc_pages.size() == max_used_page_count)
+			{
 				alloc_pages.pop_back();
+			}
 		}
 		current_page = 0;
 	}

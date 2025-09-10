@@ -178,11 +178,8 @@ namespace adria
 	void GfxCommandList::Submit()
 	{
 		WaitAll();
-		if (command_count >= 0) 
-		{
-			GfxCommandList* cmd_list_array[] = { this };
-			cmd_queue.ExecuteCommandLists(cmd_list_array);
-		}
+		GfxCommandList* cmd_list_array[] = { this };
+		cmd_queue.ExecuteCommandLists(cmd_list_array);
 		SignalAll();
 	}
 
@@ -197,7 +194,6 @@ namespace adria
 
 	void GfxCommandList::ResetState()
 	{
-		command_count = 0;
 		current_pso = nullptr;
 		current_render_pass = nullptr;
 		current_state_object = nullptr;
@@ -293,7 +289,6 @@ namespace adria
 			return;
 		}
 		cmd_list->DrawInstanced(vertex_count, instance_count, start_vertex_location, start_instance_location);
-		++command_count;
 	}
 
 	void GfxCommandList::DrawIndexed(Uint32 index_count, Uint32 instance_count, Uint32 index_offset, Uint32 base_vertex_location, Uint32 start_instance_location)
@@ -304,7 +299,6 @@ namespace adria
 			return;
 		}
 		cmd_list->DrawIndexedInstanced(index_count, instance_count, index_offset, base_vertex_location, start_instance_location);
-		++command_count;
 	}
 
 	void GfxCommandList::Dispatch(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z)
@@ -315,7 +309,6 @@ namespace adria
 			return;
 		}
 		cmd_list->Dispatch(group_count_x, group_count_y, group_count_z);
-		++command_count;
 	}
 
 	void GfxCommandList::DispatchMesh(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z)
@@ -326,35 +319,30 @@ namespace adria
 			return;
 		}
 		cmd_list->DispatchMesh(group_count_x, group_count_y, group_count_z);
-		++command_count;
 	}
 
 	void GfxCommandList::DrawIndirect(GfxBuffer const& buffer, Uint32 offset)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
 		cmd_list->ExecuteIndirect(gfx->GetDrawIndirectSignature(), 1, buffer.GetNative(), offset, nullptr, 0);
-		++command_count;
 	}
 
 	void GfxCommandList::DrawIndexedIndirect(GfxBuffer const& buffer, Uint32 offset)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
 		cmd_list->ExecuteIndirect(gfx->GetDrawIndexedIndirectSignature(), 1, buffer.GetNative(), offset, nullptr, 0);
-		++command_count;
 	}
 
 	void GfxCommandList::DispatchIndirect(GfxBuffer const& buffer, Uint32 offset)
 	{
 		ADRIA_ASSERT(current_context == Context::Compute);
 		cmd_list->ExecuteIndirect(gfx->GetDispatchIndirectSignature(), 1, buffer.GetNative(), offset, nullptr, 0);
-		++command_count;
 	}
 
 	void GfxCommandList::DispatchMeshIndirect(GfxBuffer const& buffer, Uint32 offset)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
 		cmd_list->ExecuteIndirect(gfx->GetDispatchMeshIndirectSignature(), 1, buffer.GetNative(), offset, nullptr, 0);
-		++command_count;
 	}
 
 	void GfxCommandList::DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth)
@@ -486,7 +474,6 @@ namespace adria
 			{
 				cmd_list->ResourceBarrier((Uint32)legacy_barriers.size(), legacy_barriers.data());
 				legacy_barriers.clear();
-				++command_count;
 			}
 		}
 		else
@@ -510,7 +497,6 @@ namespace adria
 			if (!barrier_groups.empty())
 			{
 				cmd_list->Barrier((Uint32)barrier_groups.size(), barrier_groups.data());
-				++command_count;
 			}
 
 			texture_barriers.clear();
@@ -522,13 +508,11 @@ namespace adria
 	void GfxCommandList::CopyBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxBuffer const& src, Uint64 src_offset, Uint64 size)
 	{
 		cmd_list->CopyBufferRegion(dst.GetNative(), dst_offset, src.GetNative(), src_offset, size);
-		++command_count;
 	}
 
 	void GfxCommandList::CopyBuffer(GfxBuffer& dst, GfxBuffer const& src)
 	{
 		cmd_list->CopyResource(dst.GetNative(), src.GetNative());
-		++command_count;
 	}
 
 	void GfxCommandList::CopyTexture(GfxTexture& dst, Uint32 dst_mip, Uint32 dst_array, GfxTexture const& src, Uint32 src_mip, Uint32 src_array)
@@ -544,7 +528,6 @@ namespace adria
 		src_texture.SubresourceIndex = src_mip + src.GetDesc().mip_levels * src_array;
 
 		cmd_list->CopyTextureRegion(&dst_texture, 0, 0, 0, &src_texture, nullptr);
-		++command_count;
 	}
 
 	void GfxCommandList::CopyTexture(GfxTexture& dst, GfxTexture const& src)
@@ -552,7 +535,6 @@ namespace adria
 		ADRIA_ASSERT(dst.GetWidth() == src.GetWidth());
 		ADRIA_ASSERT(dst.GetHeight() == src.GetHeight());
 		cmd_list->CopyResource(dst.GetNative(), src.GetNative());
-		++command_count;
 	}
 
 	void GfxCommandList::CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array)
@@ -575,7 +557,6 @@ namespace adria
 		src_texture.SubresourceIndex = src_mip + src.GetDesc().mip_levels * src_array;
 
 		cmd_list->CopyTextureRegion(&dst_texture, (Uint32)dst_offset, 0, 0, &src_texture, nullptr);
-		++command_count;
 	}
 
 	void GfxCommandList::CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset)
@@ -608,25 +589,21 @@ namespace adria
 	void GfxCommandList::ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Float* clear_value)
 	{
 		cmd_list->ClearUnorderedAccessViewFloat(uav, uav_cpu, resource.GetNative(), clear_value, 0, nullptr);
-		++command_count;
 	}
 
 	void GfxCommandList::ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Uint32* clear_value)
 	{
 		cmd_list->ClearUnorderedAccessViewUint(uav, uav_cpu, resource.GetNative(), clear_value, 0, nullptr);
-		++command_count;
 	}
 
 	void GfxCommandList::ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Float* clear_value)
 	{
 		cmd_list->ClearUnorderedAccessViewFloat(uav, uav_cpu, resource.GetNative(), clear_value, 0, nullptr);
-		++command_count;
 	}
 
 	void GfxCommandList::ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Uint32* clear_value)
 	{
 		cmd_list->ClearUnorderedAccessViewUint(uav, uav_cpu, resource.GetNative(), clear_value, 0, nullptr);
-		++command_count;
 	}
 
 	void GfxCommandList::WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data)
@@ -635,7 +612,6 @@ namespace adria
 		parameter.Dest = buffer.GetGpuAddress() + offset;
 		parameter.Value = data;
 		cmd_list->WriteBufferImmediate(1, &parameter, nullptr);
-		++command_count;
 	}
 
 	void GfxCommandList::BeginRenderPass(GfxRenderPassDesc const& render_pass_desc)

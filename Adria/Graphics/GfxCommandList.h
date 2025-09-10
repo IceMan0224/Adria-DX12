@@ -151,7 +151,6 @@ namespace adria
 		Ref<ID3D12GraphicsCommandList7> cmd_list = nullptr;
 		Ref<ID3D12CommandAllocator> cmd_allocator = nullptr;
 
-		Uint32 command_count = 0;
 		GfxPipelineState const* current_pso = nullptr;
 		GfxRenderPassDesc const* current_render_pass = nullptr;
 

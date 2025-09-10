@@ -125,7 +125,10 @@ namespace adria
 			keys[(Uint64)Insert] = IsPressed(VK_INSERT);
 			keys[(Uint64)Tilde] = IsPressed(VK_OEM_3);
 
-			if (GetKey(KeyCode::Esc)) PostQuitMessage(0);
+			if (GetKey(KeyCode::Esc))
+			{
+				PostQuitMessage(0);
+			}
 		}
 
 	}
@@ -183,7 +186,10 @@ namespace adria
 		if (handle == ::GetActiveWindow())
 		{
 			POINT mouse_screen_pos = POINT{ static_cast<LONG>(xpos), static_cast<LONG>(ypos) };
-			if (::ClientToScreen(handle, &mouse_screen_pos))  ::SetCursorPos(mouse_screen_pos.x, mouse_screen_pos.y);
+			if (::ClientToScreen(handle, &mouse_screen_pos))
+			{
+				::SetCursorPos(mouse_screen_pos.x, mouse_screen_pos.y);
+			}
 		}
 	}
 

@@ -82,7 +82,7 @@ namespace adria
 					ImGui::SliderFloat("Phi Albedo", SVGF_PhiAlbedo.GetPtr(), 1.0f, 16.0f);
 					ImGui::TreePop();
 				}
-			}, GUICommandGroup_PathTracer, GUICommandSubGroup_Denoising);
+			}, GUICommandGroup_Renderer, GUICommandSubGroup_None);
 	}
 
 	void SVGFDenoiserPass::CreatePSOs()

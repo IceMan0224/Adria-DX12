@@ -27,30 +27,53 @@ namespace adria
 		queue_desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 		queue_desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 		queue_desc.NodeMask = 0;
+
 		HRESULT hr = device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(command_queue.GetAddressOf()));
-		if (FAILED(hr)) return false;
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
 		command_queue->SetName(ToWideString(name).c_str());
-		if(type != GfxCommandListType::Copy) command_queue->GetTimestampFrequency(&timestamp_frequency);
+		if (type != GfxCommandListType::Copy)
+		{
+			command_queue->GetTimestampFrequency(&timestamp_frequency);
+		}
 		return true;
 	}
 
 	void GfxCommandQueue::ExecuteCommandLists(std::span<GfxCommandList*> cmd_lists)
 	{
-		if (cmd_lists.empty()) return;
+		if (cmd_lists.empty())
+		{
+			return;
+		}
 
-		for (GfxCommandList* cmd_list : cmd_lists) cmd_list->WaitAll();
+		for (GfxCommandList* cmd_list : cmd_lists)
+		{
+			cmd_list->WaitAll();
+		}
 
 		std::vector<ID3D12CommandList*> d3d12_cmd_lists(cmd_lists.size());
-		for (Uint64 i = 0; i < d3d12_cmd_lists.size(); ++i) d3d12_cmd_lists[i] = cmd_lists[i]->GetNative();
+		for (Uint64 i = 0; i < d3d12_cmd_lists.size(); ++i)
+		{
+			d3d12_cmd_lists[i] = cmd_lists[i]->GetNative();
+		}
 		command_queue->ExecuteCommandLists((Uint32)d3d12_cmd_lists.size(), d3d12_cmd_lists.data());
 
-		for (GfxCommandList* cmd_list : cmd_lists) cmd_list->SignalAll();
+		for (GfxCommandList* cmd_list : cmd_lists)
+		{
+			cmd_list->SignalAll();
+		}
 	}
 
 	void GfxCommandQueue::ExecuteCommandListPool(GfxCommandListPool& cmd_list_pool)
 	{
 		std::vector<GfxCommandList*> cmd_lists; cmd_lists.reserve(cmd_list_pool.cmd_lists.size());
-		for (auto& cmd_list : cmd_list_pool.cmd_lists) cmd_lists.push_back(cmd_list.get());
+		for (auto& cmd_list : cmd_list_pool.cmd_lists)
+		{
+			cmd_lists.push_back(cmd_list.get());
+		}
 		ExecuteCommandLists(cmd_lists);
 	}
 

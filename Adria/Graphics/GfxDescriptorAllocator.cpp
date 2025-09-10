@@ -17,7 +17,10 @@ namespace adria
 		GfxDescriptorRange& range = free_descriptor_ranges.front();
 		GfxDescriptor handle = range.begin;
 		range.begin.Increment(descriptor_handle_size);
-		if (range.begin == range.end) free_descriptor_ranges.pop_front();
+		if (range.begin == range.end)
+		{
+			free_descriptor_ranges.pop_front();
+		}
 		return handle;
 	}
 
@@ -26,14 +29,10 @@ namespace adria
 		GfxDescriptor incremented_handle = handle;
 		incremented_handle.Increment(descriptor_handle_size);
 
-		GfxDescriptorRange rng{
-			.begin = handle,
-			.end = incremented_handle
-		};
+		GfxDescriptorRange rng{ .begin = handle, .end = incremented_handle };
 
 		Bool found = false;
-		for (auto range = std::begin(free_descriptor_ranges);
-			range != std::end(free_descriptor_ranges) && found == false; ++range)
+		for (auto range = std::begin(free_descriptor_ranges); range != std::end(free_descriptor_ranges) && found == false; ++range)
 		{
 			if (range->begin == incremented_handle)
 			{
@@ -51,7 +50,10 @@ namespace adria
 				found = true;
 			}
 		}
-		if (!found) free_descriptor_ranges.push_back(rng);
+		if (!found)
+		{
+			free_descriptor_ranges.push_back(rng);
+		}
 	}
 
 }

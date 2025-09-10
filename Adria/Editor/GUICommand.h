@@ -7,7 +7,6 @@ namespace adria
 	{
 		GUICommandGroup_None,
 		GUICommandGroup_Renderer,
-		GUICommandGroup_PathTracer,
 		GUICommandGroup_PostProcessing,
 		GUICommandGroup_Count
 	};
@@ -15,7 +14,6 @@ namespace adria
 	{
 		"",
 		"Renderer",
-		"PathTracer",
 		"Postprocessing"
 	};
 	enum GUICommandSubGroup
@@ -26,7 +24,6 @@ namespace adria
 		GUICommandSubGroup_DepthOfField,
 		GUICommandSubGroup_Upscaler,
 		GUICommandSubGroup_Antialiasing,
-		GUICommandSubGroup_Denoising,
 		GUICommandSubGroup_Count
 	};
 	static Char const* GUICommandSubGroupNames[] =
@@ -37,7 +34,6 @@ namespace adria
 		"Depth Of Field",
 		"Upscaler",
 		"Antialiasing",
-		"Denoising",
 		""
 	};
 

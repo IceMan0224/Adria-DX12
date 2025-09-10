@@ -86,8 +86,14 @@ namespace adria
 	void Editor::Run()
 	{
 		HandleInput();
-		if (gui->IsVisible()) engine->SetViewportData(&viewport_data);
-		else engine->SetViewportData(nullptr);
+		if (gui->IsVisible())
+		{
+			engine->SetViewportData(&viewport_data);
+		}
+		else
+		{
+			engine->SetViewportData(nullptr);
+		}
 
 		engine->Run();
 
@@ -266,7 +272,11 @@ namespace adria
 
 	void Editor::AddEntities()
 	{
-		if (!visibility_flags[Flag_AddEntities]) return;
+		if (!visibility_flags[Flag_AddEntities])
+		{
+			return;
+		}
+
 		if (ImGui::Begin("Add Entities", &visibility_flags[Flag_AddEntities]))
 		{
 			if (ImGui::TreeNodeEx("Point Lights", 0))
@@ -320,7 +330,9 @@ namespace adria
 						light_params.light_data.volumetric = false;
 						light_params.light_data.volumetric_strength = 0.004f;
 						if (light_params.light_data.inner_cosine > light_params.light_data.outer_cosine)
+						{
 							std::swap(light_params.light_data.inner_cosine, light_params.light_data.outer_cosine);
+						}
 						engine->scene_loader->LoadLight(light_params);
 					}
 				}
@@ -355,7 +367,10 @@ namespace adria
 
 				if (ImGui::Button(ICON_FA_ERASER" Clear"))
 				{
-					for (auto e : engine->reg.view<Ocean>()) engine->reg.destroy(e);
+					for (auto e : engine->reg.view<Ocean>())
+					{
+						engine->reg.destroy(e);
+					}
 				}
 				ImGui::TreePop();
 				ImGui::Separator();
@@ -403,7 +418,7 @@ namespace adria
 				ImGui::DragFloat("Rotation", &params.rotation, 1.0f, -180.0f, 180.0f);
 				ImGui::Checkbox("Modify GBuffer Normals", &params.modify_gbuffer_normals);
 
-				auto const& picking_data = engine->renderer->GetPickingData();
+				PickingData const& picking_data = engine->renderer->GetPickingData();
 				ImGui::Text("Picked Position: %f %f %f", picking_data.position.x, picking_data.position.y, picking_data.position.z);
 				ImGui::Text("Picked Normal: %f %f %f", picking_data.normal.x, picking_data.normal.y, picking_data.normal.z);
 				if (ImGui::Button("Load Decal"))
@@ -416,7 +431,10 @@ namespace adria
 				}
 				if (ImGui::Button(ICON_FA_ERASER" Clear Decals"))
 				{
-					for (auto e : engine->reg.view<Decal>()) engine->reg.destroy(e);
+					for (auto e : engine->reg.view<Decal>())
+					{
+						engine->reg.destroy(e);
+					}
 				}
 				ImGui::TreePop();
 				ImGui::Separator();
@@ -426,7 +444,11 @@ namespace adria
 	}
 	void Editor::ListEntities()
 	{
-		if (!visibility_flags[Flag_Entities]) return;
+		if (!visibility_flags[Flag_Entities]) 
+		{
+			return;
+		}
+
 		auto all_entities = engine->reg.view<Tag>();
 		if (ImGui::Begin(ICON_FA_LIST" Entities ", &visibility_flags[Flag_Entities]))
 		{
@@ -434,7 +456,7 @@ namespace adria
 			std::function<void(entt::entity, Bool)> ShowEntity;
 			ShowEntity = [&](entt::entity e, Bool first_iteration)
 			{
-				auto& tag = all_entities.get<Tag>(e);
+				Tag& tag = all_entities.get<Tag>(e);
 
 				ImGuiTreeNodeFlags flags = ((selected_entity == e) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
 				flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -442,8 +464,14 @@ namespace adria
 
 				if (ImGui::IsItemClicked())
 				{
-					if (e == selected_entity) selected_entity = entt::null;
-					else selected_entity = e;
+					if (e == selected_entity)
+					{
+						selected_entity = entt::null;
+					}
+					else
+					{
+						selected_entity = e;
+					}
 				}
 
 				if (opened)
@@ -451,13 +479,20 @@ namespace adria
 					ImGui::TreePop();
 				}
 			};
-			for (auto e : all_entities) ShowEntity(e, true);
+			for (auto e : all_entities)
+			{
+				ShowEntity(e, true);
+			}
 		}
 		ImGui::End();
 	}
 	void Editor::Properties()
 	{
-		if (!visibility_flags[Flag_Entities]) return;
+		if (!visibility_flags[Flag_Entities])
+		{
+			return;
+		}
+
 		if (ImGui::Begin("Properties", &visibility_flags[Flag_Entities]))
 		{
 			GfxDevice* gfx = engine->gfx.get();
@@ -470,15 +505,17 @@ namespace adria
 					memset(buffer, 0, sizeof(buffer));
 					std::strncpy(buffer, tag->name.c_str(), sizeof(buffer));
 					if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
+					{
 						tag->name = std::string(buffer);
+					}
 				}
 
 				Light* light = engine->reg.try_get<Light>(selected_entity);
 				if (light && ImGui::CollapsingHeader("Light"))
 				{
-					if (light->type == LightType::Directional)	ImGui::Text("Directional Light");
-					else if (light->type == LightType::Spot)	ImGui::Text("Spot Light");
-					else if (light->type == LightType::Point)	ImGui::Text("Point Light");
+					if (light->type == LightType::Directional)	{ ImGui::Text("Directional Light"); }
+					else if (light->type == LightType::Spot)	{ ImGui::Text("Spot Light"); }
+					else if (light->type == LightType::Point)	{ ImGui::Text("Point Light"); }
 
 					Bool changed = false;
 					Float color[3] = { light->color.x, light->color.y, light->color.z };
@@ -489,7 +526,7 @@ namespace adria
 
 					if (engine->reg.all_of<Material>(selected_entity))
 					{
-						auto& material = engine->reg.get<Material>(selected_entity);
+						Material& material = engine->reg.get<Material>(selected_entity);
 						memcpy(material.albedo_color, color, 3 * sizeof(Float));
 					}
 
@@ -525,7 +562,7 @@ namespace adria
 
 					if (engine->reg.all_of<Transform>(selected_entity))
 					{
-						auto& tr = engine->reg.get<Transform>(selected_entity);
+						Transform& tr = engine->reg.get<Transform>(selected_entity);
 						Vector3 translation(light->position.x, light->position.y, light->position.z);
 						tr.current_transform = Matrix::CreateTranslation(translation);
 					}
@@ -610,8 +647,7 @@ namespace adria
 						GfxDescriptor tex_handle = g_TextureManager.GetSRV(material->metallic_roughness_texture);
 						GfxDescriptor dst_descriptor = gui->AllocateDescriptorsGPU();
 						gfx->CopyDescriptors(1, dst_descriptor, tex_handle);
-						ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr,
-							ImVec2(48.0f, 48.0f));
+						ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr, ImVec2(48.0f, 48.0f));
 					}
 
 
@@ -639,8 +675,7 @@ namespace adria
 						GfxDescriptor tex_handle = g_TextureManager.GetSRV(material->emissive_texture);
 						GfxDescriptor dst_descriptor = gui->AllocateDescriptorsGPU();
 						gfx->CopyDescriptors(1, dst_descriptor, tex_handle);
-						ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr,
-							ImVec2(48.0f, 48.0f));
+						ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr, ImVec2(48.0f, 48.0f));
 					}
 
 					ImGui::PushID(2);
@@ -692,11 +727,13 @@ namespace adria
 					GfxDescriptor tex_handle = g_TextureManager.GetSRV(decal->albedo_decal_texture);
 					GfxDescriptor dst_descriptor = gui->AllocateDescriptorsGPU();
 					gfx->CopyDescriptors(1, dst_descriptor, tex_handle);
-					ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr,
-						ImVec2(48.0f, 48.0f));
+					ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr, ImVec2(48.0f, 48.0f));
 
 					ImGui::PushID(4);
-					if (ImGui::Button("Remove")) decal->albedo_decal_texture = INVALID_TEXTURE_HANDLE;
+					if (ImGui::Button("Remove"))
+					{
+						decal->albedo_decal_texture = INVALID_TEXTURE_HANDLE;
+					}
 					if (ImGui::Button("Select"))
 					{
 						nfdchar_t* file_path = NULL;
@@ -714,8 +751,7 @@ namespace adria
 					tex_handle = g_TextureManager.GetSRV(decal->normal_decal_texture);
 					dst_descriptor = gui->AllocateDescriptorsGPU();
 					gfx->CopyDescriptors(1, dst_descriptor, tex_handle);
-					ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr,
-						ImVec2(48.0f, 48.0f));
+					ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr, ImVec2(48.0f, 48.0f));
 
 					ImGui::PushID(5);
 					if (ImGui::Button("Remove")) decal->normal_decal_texture = INVALID_TEXTURE_HANDLE;
@@ -756,7 +792,10 @@ namespace adria
 	}
 	void Editor::Camera()
 	{
-		if (!visibility_flags[Flag_Camera]) return;
+		if (!visibility_flags[Flag_Camera])
+		{
+			return;
+		}
 
 		auto& camera = *engine->camera;
 		if (ImGui::Begin(ICON_FA_CAMERA" Camera", &visibility_flags[Flag_Camera]))
@@ -855,7 +894,11 @@ namespace adria
 	}
 	void Editor::Log()
 	{
-		if (!visibility_flags[Flag_Log]) return;
+		if (!visibility_flags[Flag_Log])
+		{
+			return;
+		}
+
 		editor_sink->Draw(ICON_FA_COMMENT" Log", &visibility_flags[Flag_Log]);
 	}
 	void Editor::Console()
@@ -866,16 +909,24 @@ namespace adria
 			ImGui::SetNextWindowPos(ImVec2(viewport_data.scene_viewport_pos_x, viewport_data.scene_viewport_pos_y + viewport_data.scene_viewport_size_y - 65));
 			console->DrawBasic(ICON_FA_TERMINAL "BasicConsole ", nullptr);
 		}
-		if (!visibility_flags[Flag_Console]) return;
+
+		if (!visibility_flags[Flag_Console]) 
+		{
+			return;
+		}
+
 		console->Draw(ICON_FA_TERMINAL "Console ", &visibility_flags[Flag_Console]);
 	}
 
 	void Editor::Settings()
 	{
-		if (!visibility_flags[Flag_Settings]) return;
+		if (!visibility_flags[Flag_Settings]) 
+		{
+			return;
+		}
 
 		std::array<std::vector<GUICommand*>, GUICommandGroup_Count> grouped_commands;
-		for (auto&& cmd : commands)
+		for (GUICommand& cmd : commands)
 		{
 			grouped_commands[cmd.group].push_back(&cmd);
 		}
@@ -889,23 +940,33 @@ namespace adria
 					ImGui::SeparatorText(GUICommandGroupNames[i]);
 				}
 				std::array<std::vector<GUICommand*>, GUICommandSubGroup_Count> subgrouped_commands;
-				for (auto&& cmd : grouped_commands[i])
+				for (GUICommand*& cmd : grouped_commands[i])
 				{
 					subgrouped_commands[cmd->subgroup].push_back(cmd);
 				}
+
 				for (Uint32 i = 0; i < GUICommandSubGroup_Count; ++i)
 				{
-					if (subgrouped_commands[i].empty()) continue;
+					if (subgrouped_commands[i].empty())
+					{
+						continue;
+					}
 
 					if (i == GUICommandSubGroup_None)
 					{
-						for (auto* cmd : subgrouped_commands[i]) cmd->callback();
+						for (GUICommand* cmd : subgrouped_commands[i])
+						{
+							cmd->callback();
+						}
 					}
 					else
 					{
 						if (ImGui::TreeNode(GUICommandSubGroupNames[i]))
 						{
-							for (auto* cmd : subgrouped_commands[i]) cmd->callback();
+							for (GUICommand* cmd : subgrouped_commands[i])
+							{
+								cmd->callback();
+							}
 							ImGui::TreePop();
 						}
 					}
@@ -917,7 +978,11 @@ namespace adria
 	}
 	void Editor::Profiling()
 	{
-		if (!visibility_flags[Flag_Profiler]) return;
+		if (!visibility_flags[Flag_Profiler])
+		{
+			return;
+		}
+
 		if (ImGui::Begin(ICON_FA_CLOCK" Profiling", &visibility_flags[Flag_Profiler]))
 		{
 			ImGuiIO io = ImGui::GetIO();
@@ -938,10 +1003,16 @@ namespace adria
 				static Float FrameTimeArray[NUM_FRAMES] = { 0 };
 				static Float RecentHighestFrameTime = 0.0f;
 				static Float FrameTimeGraphMaxValues[ARRAYSIZE(FRAME_TIME_GRAPH_MAX_FPS)] = { 0 };
-				for (Uint64 i = 0; i < ARRAYSIZE(FrameTimeGraphMaxValues); ++i) { FrameTimeGraphMaxValues[i] = 1000.f / FRAME_TIME_GRAPH_MAX_FPS[i]; }
+				for (Uint64 i = 0; i < ARRAYSIZE(FrameTimeGraphMaxValues); ++i) 
+				{ 
+					FrameTimeGraphMaxValues[i] = 1000.f / FRAME_TIME_GRAPH_MAX_FPS[i]; 
+				}
 
 				FrameTimeArray[NUM_FRAMES - 1] = 1000.0f / io.Framerate;
-				for (Uint32 i = 0; i < NUM_FRAMES - 1; i++) FrameTimeArray[i] = FrameTimeArray[i + 1];
+				for (Uint32 i = 0; i < NUM_FRAMES - 1; i++)
+				{
+					FrameTimeArray[i] = FrameTimeArray[i + 1];
+				}
 				RecentHighestFrameTime = std::max(RecentHighestFrameTime, FrameTimeArray[NUM_FRAMES - 1]);
 
 				Float frame_time_ms = FrameTimeArray[NUM_FRAMES - 1];
@@ -983,8 +1054,7 @@ namespace adria
 					const Float64 current_time = MillisecondsNow();
 
 					Bool reset_accumulating_state = false;
-					if ((state.accumulating_frame_count > 1) &&
-						((current_time - state.last_reset_time) > avg_timestamp_update_interval))
+					if ((state.accumulating_frame_count > 1) && ((current_time - state.last_reset_time) > avg_timestamp_update_interval))
 					{
 						std::swap(state.displayed_timestamps, state.accumulating_timestamps);
 						for (Uint32 i = 0; i < state.displayed_timestamps.size(); i++)
@@ -1064,7 +1134,10 @@ namespace adria
 							ImGui::TableNextRow();
 							ImGui::TableSetColumnIndex(0);
 
-							if (node_depth > 0) ImGui::Indent(node_depth * 16.0f);
+							if (node_depth > 0)
+							{
+								ImGui::Indent(node_depth * 16.0f);
+							}
 							Bool is_open = s_ProfilerNodeState.IsNodeOpen(node_name.data());
 
 							ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_FramePadding;
@@ -1090,7 +1163,8 @@ namespace adria
 							ImGui::Text("%.2f ms", node_time);
 							if (state.show_average) 
 							{
-								if (state.displayed_timestamps.size() == profiler_tree_size) {
+								if (state.displayed_timestamps.size() == profiler_tree_size) 
+								{
 									ImGui::SameLine();
 									ImGui::Text("  avg: %.2f ms", state.displayed_timestamps[i].sum);
 									ImGui::SameLine();
@@ -1103,7 +1177,10 @@ namespace adria
 								accumulating_timestamp->minimum = std::min<Float>(accumulating_timestamp->minimum, node_time);
 								accumulating_timestamp->maximum = std::max<Float>(accumulating_timestamp->maximum, node_time);
 							}
-							if (node_depth > 0) ImGui::Unindent(node_depth * 16.0f);
+							if (node_depth > 0)
+							{
+								ImGui::Unindent(node_depth * 16.0f);
+							}
 							if (node_opened && !(flags & ImGuiTreeNodeFlags_NoTreePushOnOpen))
 							{
 								ImGui::TreePop();
@@ -1161,7 +1238,11 @@ namespace adria
 	}
 	void Editor::Debug()
 	{
-		if (!visibility_flags[Flag_Debug]) return;
+		if (!visibility_flags[Flag_Debug])
+		{
+			return;
+		}
+
 		if(ImGui::Begin(ICON_FA_BUG" Debug", &visibility_flags[Flag_Debug]))
 		{
 			if (ImGui::TreeNode("Debug Renderer"))
