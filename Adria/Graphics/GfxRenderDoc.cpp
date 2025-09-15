@@ -5,7 +5,6 @@
 #include "Core/Paths.h"
 #include "renderdoc_app.h"
 #endif
-#include "Core/Logging/Log.h"
 
 
 namespace adria::GfxRenderDoc

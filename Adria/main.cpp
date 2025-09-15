@@ -2,8 +2,8 @@
 #include "Core/Engine.h"
 #include "Core/Input.h"
 #include "Core/CommandLineOptions.h"
-#include "Core/Logging/LogSinks/FileSink.h"
-#include "Core/Logging/LogSinks/DebuggerSink.h"
+#include "Logging/FileSink.h"
+#include "Logging/DebuggerSink.h"
 #include "Editor/Editor.h"
 #include "Utilities/CLIParser.h"
 

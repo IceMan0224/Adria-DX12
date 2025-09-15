@@ -152,11 +152,8 @@
     <Filter Include="External\ImPlot">
       <UniqueIdentifier>{cadfcff4-f3ad-4fcb-aab0-5b61c7f672f9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Core\Logging">
-      <UniqueIdentifier>{8af224b1-d154-4ee5-be9c-2e327db81959}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Logging\LogSinks">
-      <UniqueIdentifier>{7064909d-d353-471f-b43a-628c938a9f85}</UniqueIdentifier>
+    <Filter Include="Logging">
+      <UniqueIdentifier>{2dcd922e-9c7a-4e44-a520-4ba7a32b636b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -618,21 +615,6 @@
     <ClCompile Include="Rendering\NNAOPass.cpp">
       <Filter>Rendering\Passes</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Logging\Log.cpp">
-      <Filter>Core\Logging</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Logging\LogSinks\CallbackSink.cpp">
-      <Filter>Core\Logging\LogSinks</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Logging\LogSinks\ConsoleSink.cpp">
-      <Filter>Core\Logging\LogSinks</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Logging\LogSinks\DebuggerSink.cpp">
-      <Filter>Core\Logging\LogSinks</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Logging\LogSinks\FileSink.cpp">
-      <Filter>Core\Logging\LogSinks</Filter>
-    </ClCompile>
     <ClCompile Include="Graphics\GfxRenderDoc.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
@@ -644,6 +626,21 @@
     </ClCompile>
     <ClCompile Include="Rendering\SVGFDenoiserPass.cpp">
       <Filter>Rendering\Passes</Filter>
+    </ClCompile>
+    <ClCompile Include="Logging\Log.cpp">
+      <Filter>Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Logging\CallbackSink.cpp">
+      <Filter>Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Logging\ConsoleSink.cpp">
+      <Filter>Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Logging\DebuggerSink.cpp">
+      <Filter>Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Logging\FileSink.cpp">
+      <Filter>Logging</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1701,21 +1698,6 @@
     <ClInclude Include="Rendering\NNAOPass.h">
       <Filter>Rendering\Passes</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Logging\Log.h">
-      <Filter>Core\Logging</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Logging\LogSinks\CallbackSink.h">
-      <Filter>Core\Logging\LogSinks</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Logging\LogSinks\ConsoleSink.h">
-      <Filter>Core\Logging\LogSinks</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Logging\LogSinks\DebuggerSink.h">
-      <Filter>Core\Logging\LogSinks</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Logging\LogSinks\FileSink.h">
-      <Filter>Core\Logging\LogSinks</Filter>
-    </ClInclude>
     <ClInclude Include="Graphics\GfxRenderDoc.h">
       <Filter>Graphics</Filter>
     </ClInclude>
@@ -1727,6 +1709,21 @@
     </ClInclude>
     <ClInclude Include="Rendering\SVGFDenoiserPass.h">
       <Filter>Rendering\Passes</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\Log.h">
+      <Filter>Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\CallbackSink.h">
+      <Filter>Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\ConsoleSink.h">
+      <Filter>Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\DebuggerSink.h">
+      <Filter>Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\FileSink.h">
+      <Filter>Logging</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2097,9 +2094,6 @@
       <Filter>Shaders\Postprocess</Filter>
     </FxCompile>
     <FxCompile Include="Resources\Shaders\RayTracing\SVGF.hlsl">
-      <Filter>Shaders\RayTracing</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\Shaders\RayTracing\Remodulate.hlsl">
       <Filter>Shaders\RayTracing</Filter>
     </FxCompile>
     <FxCompile Include="Resources\Shaders\RayTracing\PT_GBuffer.hlsl">

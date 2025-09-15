@@ -6,7 +6,6 @@
 #include "Utilities/StringUtil.h"
 #include "pix3.h"
 #endif
-#include "Core/Logging/Log.h"
 
 namespace adria::GfxPIX
 {

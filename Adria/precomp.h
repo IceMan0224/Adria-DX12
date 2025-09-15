@@ -52,7 +52,7 @@
 #include "imgui.h"
 #include "Core/Types.h"
 #include "Core/Macros.h"
-#include "Core/Logging/Log.h"
+#include "Logging/Log.h"
 #include "Graphics/GfxMacros.h"
 #include "Math/MathCommon.h"
 #include "Utilities/Ref.h"

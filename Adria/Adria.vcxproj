@@ -385,11 +385,6 @@
     <ClCompile Include="Core\ConsoleManager.cpp" />
     <ClCompile Include="Core\Engine.cpp" />
     <ClCompile Include="Core\Input.cpp" />
-    <ClCompile Include="Core\Logging\Log.cpp" />
-    <ClCompile Include="Core\Logging\LogSinks\CallbackSink.cpp" />
-    <ClCompile Include="Core\Logging\LogSinks\ConsoleSink.cpp" />
-    <ClCompile Include="Core\Logging\LogSinks\DebuggerSink.cpp" />
-    <ClCompile Include="Core\Logging\LogSinks\FileSink.cpp" />
     <ClCompile Include="Core\Paths.cpp" />
     <ClCompile Include="Core\Window.cpp" />
     <ClCompile Include="Editor\Editor.cpp" />
@@ -427,6 +422,11 @@
     <ClCompile Include="Graphics\GfxShaderCompiler.cpp" />
     <ClCompile Include="Graphics\GfxTracyProfiler.cpp" />
     <ClCompile Include="Graphics\GfxNsightPerfManager.cpp" />
+    <ClCompile Include="Logging\CallbackSink.cpp" />
+    <ClCompile Include="Logging\ConsoleSink.cpp" />
+    <ClCompile Include="Logging\DebuggerSink.cpp" />
+    <ClCompile Include="Logging\FileSink.cpp" />
+    <ClCompile Include="Logging\Log.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Math\Packing.cpp" />
     <ClCompile Include="precomp.cpp">
@@ -695,11 +695,6 @@
     <ClInclude Include="Core\ConsoleManager.h" />
     <ClInclude Include="Core\FatalAssert.h" />
     <ClInclude Include="Core\IConsoleManager.h" />
-    <ClInclude Include="Core\Logging\Log.h" />
-    <ClInclude Include="Core\Logging\LogSinks\CallbackSink.h" />
-    <ClInclude Include="Core\Logging\LogSinks\ConsoleSink.h" />
-    <ClInclude Include="Core\Logging\LogSinks\DebuggerSink.h" />
-    <ClInclude Include="Core\Logging\LogSinks\FileSink.h" />
     <ClInclude Include="Core\Types.h" />
     <ClInclude Include="Core\Engine.h" />
     <ClInclude Include="Core\Macros.h" />
@@ -760,6 +755,11 @@
     <ClInclude Include="Graphics\GfxTracyProfiler.h" />
     <ClInclude Include="Graphics\GfxVertexFormat.h" />
     <ClInclude Include="Graphics\GfxNsightPerfManager.h" />
+    <ClInclude Include="Logging\CallbackSink.h" />
+    <ClInclude Include="Logging\ConsoleSink.h" />
+    <ClInclude Include="Logging\DebuggerSink.h" />
+    <ClInclude Include="Logging\FileSink.h" />
+    <ClInclude Include="Logging\Log.h" />
     <ClInclude Include="Math\BoundingVolumeUtil.h" />
     <ClInclude Include="Math\MathCommon.h" />
     <ClInclude Include="Math\NormalsUtil.h" />
