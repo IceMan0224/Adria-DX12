@@ -22,8 +22,8 @@
 #include "Graphics/GfxRenderDoc.h"
 #include "Graphics/GfxPIX.h"
 #include "RenderGraph/RenderGraph.h"
-#include "Utilities/FilesUtil.h"
-#include "Utilities/StringUtil.h"
+#include "Utilities/PathHelpers.h"
+#include "Utilities/StringConversions.h"
 #include "Utilities/Random.h"
 #include "Math/BoundingVolumeUtil.h"
 

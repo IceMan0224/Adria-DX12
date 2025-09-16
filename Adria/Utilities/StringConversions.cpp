@@ -1,7 +1,7 @@
 #include <sstream>
 #include <codecvt>
 #include <locale>
-#include "StringUtil.h"
+#include "StringConversions.h"
 
 namespace adria
 {

@@ -1,8 +1,8 @@
 #include "SceneConfig.h"
 #include "Core/Paths.h"
 #include "Math/Constants.h"
-#include "Utilities/JsonUtil.h"
-#include "Utilities/FilesUtil.h"
+#include "Utilities/Json.h"
+#include "Utilities/PathHelpers.h"
 
 using json = nlohmann::json;
 using namespace DirectX;

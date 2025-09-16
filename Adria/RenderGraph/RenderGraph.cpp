@@ -2,11 +2,11 @@
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxScopedEvent.h"
-#include "Utilities/StringUtil.h"
-#include "Utilities/FilesUtil.h"
+#include "Graphics/GfxTracyProfiler.h"
 #include "Core/Paths.h"
 #include "Core/ConsoleManager.h"
-#include "Graphics/GfxTracyProfiler.h"
+#include "Utilities/StringConversions.h"
+#include "Utilities/PathHelpers.h"
 
 #if GFX_MULTITHREADED
 #define RG_MULTITHREADED 1

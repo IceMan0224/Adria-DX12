@@ -1,8 +1,8 @@
 #pragma once
 #include "GfxFormat.h"
 #include "D3D12MemAlloc.h"
-#include "Utilities/EnumUtil.h"
-#include "Utilities/StringUtil.h"
+#include "Utilities/Enum.h"
+#include "Utilities/StringConversions.h"
 #include "Utilities/Ref.h"
 #include "Utilities/Releasable.h"
 

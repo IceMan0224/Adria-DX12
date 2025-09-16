@@ -1,6 +1,6 @@
 #pragma once
 #include "GfxFormat.h"
-#include "Utilities/EnumUtil.h"
+#include "Utilities/Enum.h"
 
 namespace adria
 {

@@ -7,8 +7,8 @@ namespace adria
 	{
 	public:
 
-		LinearOffsetAllocator(Uint64 max_size, Uint64 reserve = 0) noexcept :
-			max_size{ max_size }, reserve{ reserve }, top{ reserve }
+		LinearOffsetAllocator(Uint64 max_size, Uint64 reserve = 0)
+			: max_size{ max_size }, reserve{ reserve }, top{ reserve }
 		{}
 		ADRIA_DEFAULT_COPYABLE_MOVABLE(LinearOffsetAllocator)
 		~LinearOffsetAllocator() = default;

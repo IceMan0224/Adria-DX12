@@ -1,6 +1,6 @@
 #include "Window.h"
 #include "resource.h"
-#include "Utilities/StringUtil.h"
+#include "Utilities/StringConversions.h"
 
 namespace adria
 {

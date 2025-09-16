@@ -13,7 +13,7 @@
 #include "Utilities/ThreadPool.h"
 #include "Utilities/Random.h"
 #include "Utilities/Timer.h"
-#include "Utilities/StringUtil.h"
+#include "Utilities/StringConversions.h"
 #include "Editor/EditorEvents.h"
 
 

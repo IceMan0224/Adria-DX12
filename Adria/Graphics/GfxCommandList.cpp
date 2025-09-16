@@ -15,7 +15,7 @@
 #include "GfxProfiler.h"
 #include "GfxNsightPerfManager.h"
 #include "pix3.h"
-#include "Utilities/StringUtil.h"
+#include "Utilities/StringConversions.h"
 
 namespace adria
 {

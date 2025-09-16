@@ -1,5 +1,5 @@
 #include "ConsoleManager.h"
-#include "Utilities/StringUtil.h"
+#include "Utilities/StringConversions.h"
 
 namespace adria
 {

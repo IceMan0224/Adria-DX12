@@ -6,9 +6,9 @@
 #include "GfxShaderCompiler.h"
 #include "GfxMacros.h"
 #include "Core/Paths.h"
-#include "Utilities/StringUtil.h"
-#include "Utilities/FilesUtil.h"
-#include "Utilities/HashUtil.h"
+#include "Utilities/StringConversions.h"
+#include "Utilities/PathHelpers.h"
+#include "Utilities/Hash.h"
 #include "Utilities/Ref.h"
 
 

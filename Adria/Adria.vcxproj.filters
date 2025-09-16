@@ -245,7 +245,7 @@
     <ClCompile Include="Rendering\PathTracingPass.cpp">
       <Filter>Rendering\Passes</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities\StringUtil.cpp">
+    <ClCompile Include="Utilities\StringConversions.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
     <ClCompile Include="Utilities\Heightmap.cpp">
@@ -411,7 +411,7 @@
     <ClCompile Include="Core\Paths.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities\FilesUtil.cpp">
+    <ClCompile Include="Utilities\PathHelpers.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\GpuPrintf.cpp">
@@ -650,13 +650,13 @@
     <ClInclude Include="Utilities\ConcurrentQueue.h">
       <Filter>Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\HashUtil.h">
+    <ClInclude Include="Utilities\Hash.h">
       <Filter>Utilities</Filter>
     </ClInclude>
     <ClInclude Include="Utilities\Random.h">
       <Filter>Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\StringUtil.h">
+    <ClInclude Include="Utilities\StringConversions.h">
       <Filter>Utilities</Filter>
     </ClInclude>
     <ClInclude Include="Utilities\TemplatesUtil.h">
@@ -716,13 +716,13 @@
     <ClInclude Include="Editor\Editor.h">
       <Filter>Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\FilesUtil.h">
+    <ClInclude Include="Utilities\PathHelpers.h">
       <Filter>Utilities</Filter>
     </ClInclude>
     <ClInclude Include="Utilities\Timer.h">
       <Filter>Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\EnumUtil.h">
+    <ClInclude Include="Utilities\Enum.h">
       <Filter>Utilities</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\GfxDevice.h">
@@ -734,7 +734,7 @@
     <ClInclude Include="Rendering\SkyModel.h">
       <Filter>Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\JsonUtil.h">
+    <ClInclude Include="Utilities\Json.h">
       <Filter>Utilities</Filter>
     </ClInclude>
     <ClInclude Include="RenderGraph\RenderGraph.h">
@@ -833,7 +833,7 @@
     <ClInclude Include="Editor\GUICommand.h">
       <Filter>Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\Hwbp.h">
+    <ClInclude Include="Utilities\HardwareBreakpoint.h">
       <Filter>Utilities</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\GfxInputLayout.h">

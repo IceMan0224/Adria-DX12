@@ -526,11 +526,11 @@
     <ClCompile Include="Rendering\RayMarchedVolumetricFogPass.cpp" />
     <ClCompile Include="Rendering\XeSS2Pass.cpp" />
     <ClCompile Include="Utilities\CLIParser.cpp" />
-    <ClCompile Include="Utilities\FilesUtil.cpp" />
+    <ClCompile Include="Utilities\PathHelpers.cpp" />
     <ClCompile Include="Utilities\Heightmap.cpp" />
     <ClCompile Include="Utilities\Image.cpp" />
     <ClCompile Include="Utilities\ImageWrite.cpp" />
-    <ClCompile Include="Utilities\StringUtil.cpp" />
+    <ClCompile Include="Utilities\StringConversions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\External\cgltf\cgltf.h" />
@@ -891,25 +891,25 @@
     <ClInclude Include="Utilities\Ref.h" />
     <ClInclude Include="Utilities\CLIParser.h" />
     <ClInclude Include="Utilities\Delegate.h" />
-    <ClInclude Include="Utilities\EnumUtil.h" />
-    <ClInclude Include="Utilities\FilesUtil.h" />
+    <ClInclude Include="Utilities\Enum.h" />
+    <ClInclude Include="Utilities\PathHelpers.h" />
     <ClInclude Include="Utilities\FileWatcher.h" />
     <ClInclude Include="Utilities\Heightmap.h" />
     <ClInclude Include="Utilities\HosekDataRGB.h" />
-    <ClInclude Include="Utilities\Hwbp.h" />
+    <ClInclude Include="Utilities\HardwareBreakpoint.h" />
     <ClInclude Include="Utilities\ImageWrite.h" />
-    <ClInclude Include="Utilities\JsonUtil.h" />
+    <ClInclude Include="Utilities\Json.h" />
     <ClInclude Include="Utilities\LinearOffsetAllocator.h" />
     <ClInclude Include="Utilities\Releasable.h" />
     <ClInclude Include="Utilities\RingOffsetAllocator.h" />
     <ClInclude Include="Utilities\RingBuffer.h" />
     <ClInclude Include="Utilities\ConcurrentQueue.h" />
-    <ClInclude Include="Utilities\HashUtil.h" />
+    <ClInclude Include="Utilities\Hash.h" />
     <ClInclude Include="Utilities\Image.h" />
     <ClInclude Include="Utilities\MemoryLeakDetector.h" />
     <ClInclude Include="Utilities\Random.h" />
     <ClInclude Include="Utilities\Singleton.h" />
-    <ClInclude Include="Utilities\StringUtil.h" />
+    <ClInclude Include="Utilities\StringConversions.h" />
     <ClInclude Include="Utilities\TemplatesUtil.h" />
     <ClInclude Include="Utilities\ThreadPool.h" />
     <ClInclude Include="Utilities\Timer.h" />

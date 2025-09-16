@@ -1,6 +1,7 @@
 #pragma once
 #include <type_traits>
 
+#if 0
 namespace adria
 {
 	template <typename ... Trest>
@@ -40,3 +41,4 @@ namespace adria
 	template<typename T, typename... Args, std::enable_if_t<std::is_constructible_v<Class, Args...>>* = nullptr>
 #endif
 }
+#endif

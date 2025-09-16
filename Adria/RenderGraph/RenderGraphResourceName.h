@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/HashUtil.h"
+#include "Utilities/Hash.h"
 
 #if defined(_DEBUG) || defined(_PROFILE)
 #define RG_DEBUG 1

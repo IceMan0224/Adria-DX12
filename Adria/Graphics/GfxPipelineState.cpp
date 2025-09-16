@@ -5,7 +5,7 @@
 #include "GfxShader.h"
 #include "GfxResourceCommon.h"
 #include "Rendering/ShaderManager.h"
-#include "Utilities/HashUtil.h"
+#include "Utilities/Hash.h"
 
 namespace adria
 {

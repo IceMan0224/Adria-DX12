@@ -1,5 +1,5 @@
 #pragma once
-#include "StringUtil.h"
+#include "StringConversions.h"
 
 namespace adria
 {

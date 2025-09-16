@@ -2,7 +2,7 @@
 #include "GfxStateObject.h"
 #include "GfxLinearDynamicAllocator.h"
 #include "GfxRingDynamicAllocator.h"
-#include "Utilities/StringUtil.h"
+#include "Utilities/StringConversions.h"
 
 namespace adria
 {

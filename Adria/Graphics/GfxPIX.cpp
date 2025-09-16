@@ -3,7 +3,7 @@
 #if defined(GFX_PIX_AVAILABLE)
 #include "Core/Paths.h"
 #include "Core/ConsoleManager.h"
-#include "Utilities/StringUtil.h"
+#include "Utilities/StringConversions.h"
 #include "pix3.h"
 #endif
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/EnumUtil.h"
+#include "Utilities/Enum.h"
 
 namespace adria
 {

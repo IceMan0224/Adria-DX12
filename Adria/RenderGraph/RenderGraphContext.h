@@ -5,7 +5,7 @@
 #include "RenderGraphResourceId.h"
 #include "RenderGraphBlackboard.h"
 #if RG_DEBUG
-#include "Utilities/StringUtil.h"
+#include "Utilities/StringConversions.h"
 #endif
 
 namespace adria

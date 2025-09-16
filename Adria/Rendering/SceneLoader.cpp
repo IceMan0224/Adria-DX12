@@ -10,8 +10,8 @@
 #include "Graphics/GfxLinearDynamicAllocator.h"
 #include "Math/BoundingVolumeUtil.h"
 #include "Core/Paths.h"
-#include "Utilities/StringUtil.h"
-#include "Utilities/FilesUtil.h"
+#include "Utilities/StringConversions.h"
+#include "Utilities/PathHelpers.h"
 #include "Utilities/Heightmap.h"
 
 
