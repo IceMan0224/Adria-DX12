@@ -9,6 +9,8 @@ using namespace DirectX;
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(Scene);
+
 	Bool ParseSceneConfig(std::string const& scene_file, SceneConfig& config, Bool append_dir)
 	{
 		json models, lights, camera, skybox;

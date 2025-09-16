@@ -8,7 +8,7 @@ namespace adria
 	{
 	public:
 		EditorSink(LogLevel logger_level = LogLevel::LOG_DEBUG);
-		virtual void Log(LogLevel level, Char const* entry, Char const* file, Uint32 line) override;
+		virtual void Log(LogLevel level, LogChannel channel, Char const* entry, Char const* file, Uint32 line) override;
 		void Draw(const Char* title, Bool* p_open = nullptr);
 
 	private:

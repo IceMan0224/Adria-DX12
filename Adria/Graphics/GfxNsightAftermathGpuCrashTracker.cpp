@@ -8,6 +8,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(NSight);
+
 	template<typename T>
 	static std::string ToHexString(T n)
 	{

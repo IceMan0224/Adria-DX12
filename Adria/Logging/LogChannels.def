@@ -1,0 +1,18 @@
+
+#ifndef LOG_CHANNEL
+#define LOG_CHANNEL(X)
+#endif
+
+LOG_CHANNEL(Graphics)
+LOG_CHANNEL(RenderGraph)
+LOG_CHANNEL(Editor)
+LOG_CHANNEL(Scene)
+LOG_CHANNEL(Renderer)
+LOG_CHANNEL(PostProcessor)
+LOG_CHANNEL(ShaderManager)
+LOG_CHANNEL(ShaderCompiler)
+LOG_CHANNEL(TextureManager)
+LOG_CHANNEL(RenderDoc)
+LOG_CHANNEL(PIX)
+LOG_CHANNEL(NSight)
+LOG_CHANNEL(CommandLine)

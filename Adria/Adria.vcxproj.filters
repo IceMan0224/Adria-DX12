@@ -1725,6 +1725,9 @@
     <ClInclude Include="Logging\FileSink.h">
       <Filter>Logging</Filter>
     </ClInclude>
+    <ClInclude Include="Logging\LogChannels.def">
+      <Filter>Logging</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Adria.rc">

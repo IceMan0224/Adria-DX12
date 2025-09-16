@@ -11,6 +11,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(NSight);
+
 #if defined(GFX_ENABLE_NV_PERF)
 	class GfxNsightPerfReporter
 	{

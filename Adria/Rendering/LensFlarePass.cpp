@@ -15,6 +15,8 @@ using namespace DirectX;
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(PostProcessor);
+
 	static TAutoConsoleVariable<Int> LensFlare("r.LensFlare.Type", 0, "0 - procedural, 1 - texture-based");
 	enum LensFlareType : Uint8
 	{

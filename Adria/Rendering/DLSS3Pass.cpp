@@ -10,6 +10,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(PostProcessor);
+
 	static constexpr Char const* project_guid = "a0f57b54-1daf-4934-90ae-c4035c19df04";
 	namespace
 	{

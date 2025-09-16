@@ -27,6 +27,8 @@ extern "C" { __declspec(dllexport) extern UINT NvOptimusEnablement = true; }
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(Graphics);
+
 	static constexpr Wchar const* DredBreadcrumbOpName(D3D12_AUTO_BREADCRUMB_OP);
 	static constexpr Wchar const* DredAllocationName(D3D12_DRED_ALLOCATION_TYPE);
 	static void LogDredInfo(ID3D12Device5*, ID3D12DeviceRemovedExtendedData1*);

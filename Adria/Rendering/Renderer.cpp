@@ -29,6 +29,8 @@ using namespace DirectX;
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(Renderer);
+
 	static TAutoConsoleVariable<Int>  LightingPathType("r.LightingPath", 0, "0 - Deferred, 1 - Tiled Deferred, 2 - Clustered Deferred, 3 - Path Tracing");
 
 	Renderer::Renderer(entt::registry& reg, GfxDevice* gfx, Uint32 width, Uint32 height) : reg(reg), gfx(gfx), resource_pool(gfx),

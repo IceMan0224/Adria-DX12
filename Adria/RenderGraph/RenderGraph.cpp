@@ -16,6 +16,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(RenderGraph);
+
 	extern Bool g_DumpRenderGraph = false;
 #if GFX_PROFILING
 	static constexpr Bool g_UseDependencyLevels = false;

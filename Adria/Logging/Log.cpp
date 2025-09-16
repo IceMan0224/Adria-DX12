@@ -7,6 +7,7 @@ namespace adria
 	struct QueueEntry
 	{
 		LogLevel level;
+		LogChannel channel;
 		std::string str;
 		std::string filename;
 		Uint32 line;
@@ -31,24 +32,27 @@ namespace adria
 		{
 			return log_sinks.back().get();
 		}
-		void Log(LogLevel level, Char const* str, Char const* filename, Uint32 line)
+		void Log(LogLevel level, LogChannel channel, Char const* str, Char const* filename, Uint32 line)
 		{
-			log_queue.Push(QueueEntry{ level, str, filename, line });
+			log_queue.Push(QueueEntry{ level, channel, str, filename, line });
 		}
-		void LogSync(LogLevel level, Char const* str, Char const* filename, Uint32 line)
+		void LogSync(LogLevel level, LogChannel channel, Char const* str, Char const* filename, Uint32 line)
 		{
 			for (auto& log_sink : log_sinks)
 			{
 				if (log_sink)
 				{
-					log_sink->Log(level, str, filename, line);
+					log_sink->Log(level, channel, str, filename, line);
 				}
 			}
 		}
 		void Flush()
 		{
 			pause.store(true);
-			for (auto& logger : log_sinks) logger->Flush();
+			for (auto& logger : log_sinks)
+			{
+				logger->Flush();
+			}
 			pause.store(false);
 		}
 
@@ -76,7 +80,7 @@ namespace adria
 					{
 						if (log_sink)
 						{
-							log_sink->Log(entry.level, entry.str.c_str(), entry.filename.c_str(), entry.line);
+							log_sink->Log(entry.level, entry.channel, entry.str.c_str(), entry.filename.c_str(), entry.line);
 						}
 					}
 				}
@@ -88,9 +92,9 @@ namespace adria
 		}
 	};
 
-	std::string LevelToString(LogLevel type)
+	std::string LevelToString(LogLevel level)
 	{
-		switch (type)
+		switch (level)
 		{
 		case LogLevel::LOG_DEBUG:
 			return "[DEBUG]";
@@ -103,6 +107,18 @@ namespace adria
 		}
 		return "";
 	}
+
+	std::string ChannelToString(LogChannel channel)
+	{
+		static std::string LogChannelNames[] =
+		{
+			#define LOG_CHANNEL(X) "["#X"] ",
+			#include "LogChannels.def"
+			#undef LOG_CHANNEL
+		};
+		return LogChannelNames[(Uint8)channel];
+	}
+
 	std::string GetLogTime()
 	{
 		auto time = std::chrono::system_clock::now();
@@ -129,14 +145,14 @@ namespace adria
 		return pimpl->GetLastSink();
 	}
 
-	void LogManager::Log(LogLevel level, Char const* str, Char const* filename, Uint32 line)
+	void LogManager::Log(LogLevel level, LogChannel channel, Char const* str, Char const* filename, Uint32 line)
 	{
-		pimpl->Log(level, str, filename, line);
+		pimpl->Log(level, channel, str, filename, line);
 	}
 
-	void LogManager::LogSync(LogLevel level, Char const* str, Char const* filename, Uint32 line)
+	void LogManager::LogSync(LogLevel level, LogChannel channel, Char const* str, Char const* filename, Uint32 line)
 	{
-		pimpl->LogSync(level, str, filename, line);
+		pimpl->LogSync(level, channel, str, filename, line);
 	}
 
 	void LogManager::Flush()

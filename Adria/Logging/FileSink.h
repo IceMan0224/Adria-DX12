@@ -10,7 +10,7 @@ namespace adria
 		virtual ~FileSink() override;
 		ADRIA_NONCOPYABLE_NONMOVABLE(FileSink)
 
-		virtual void Log(LogLevel level, Char const* entry, Char const* file, Uint32 line) override;
+		virtual void Log(LogLevel level, LogChannel channel, Char const* entry, Char const* file, Uint32 line) override;
 		virtual void Flush() override;
 
 	private:

@@ -9,6 +9,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(PostProcessor);
+
 	static TAutoConsoleVariable<Int>  Upscaler("r.Upscaler", 0, "0 - No Upscaler, 1 - FSR2, 2 - FSR3, 3 - XeSS2, 4 - DLSS3, 5 - DirectML");
 	
 	enum class UpscalerType : Uint8

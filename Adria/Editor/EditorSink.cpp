@@ -104,10 +104,13 @@ namespace adria
 	EditorSink::EditorSink(LogLevel logger_level) : logger_level{ logger_level }, imgui_log(new ImGuiLogger{})
 	{
 	}
-	void EditorSink::Log(LogLevel level, Char const* entry, Char const* file, Uint32 line)
+	void EditorSink::Log(LogLevel level, LogChannel channel, Char const* entry, Char const* file, Uint32 line)
 	{
-		if (level < logger_level) return;
-		std::string log_entry = GetLogTime() + LevelToString(level) + std::string(entry) + "\n";
+		if (level < logger_level)
+		{
+			return;
+		}
+		std::string log_entry = GetLogTime() + LevelToString(level) + ChannelToString(channel) + std::string(entry) + "\n";
 		imgui_log->AddLog(log_entry.c_str());
 	}
 	void EditorSink::Draw(const Char* title, Bool* p_open)

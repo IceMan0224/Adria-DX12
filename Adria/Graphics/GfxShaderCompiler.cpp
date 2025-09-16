@@ -14,6 +14,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(ShaderCompiler);
+
 	namespace
 	{
 		Ref<IDxcLibrary> library = nullptr;

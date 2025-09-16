@@ -760,6 +760,7 @@
     <ClInclude Include="Logging\DebuggerSink.h" />
     <ClInclude Include="Logging\FileSink.h" />
     <ClInclude Include="Logging\Log.h" />
+    <ClInclude Include="Logging\LogChannels.def" />
     <ClInclude Include="Math\BoundingVolumeUtil.h" />
     <ClInclude Include="Math\MathCommon.h" />
     <ClInclude Include="Math\NormalsUtil.h" />

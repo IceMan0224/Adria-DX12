@@ -12,6 +12,7 @@ using namespace DirectX;
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(PostProcessor);
 
 	GodRaysPass::GodRaysPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), copy_to_texture_pass(gfx, w, h)
 	{

@@ -10,13 +10,15 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(Renderer);
+
 	Bool DirectMLUpscalerPass::LoadWeights(std::string const& weights_file_name, std::unordered_map<std::string, std::vector<Float>>& weight_map)
 	{
 		static constexpr Uint32 BUFFER_LENGTH = 256;
 		std::ifstream input(weights_file_name, std::ifstream::binary);
 		if (!(input) || !(input.good()) || !(input.is_open()))
 		{
-			ADRIA_ERROR("[DirectML] Unable to open weight file: %s", weights_file_name.c_str());
+			ADRIA_ERROR("Unable to open weight file: %s", weights_file_name.c_str());
 			return false;
 		}
 

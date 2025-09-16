@@ -9,30 +9,28 @@
 
 namespace adria
 {
-	namespace
+	ADRIA_LOG_CHANNEL(PostProcessor);
+
+	static void XeSS2Log(Char const* message, xess_logging_level_t logging_level)
 	{
-		void XeSS2Log(Char const* message, xess_logging_level_t logging_level)
+		switch (logging_level)
 		{
-			switch (logging_level)
-			{
-			case XESS_LOGGING_LEVEL_DEBUG:
-				ADRIA_LOG(DEBUG, message);
-				break;
-			case XESS_LOGGING_LEVEL_INFO:
-				ADRIA_LOG(INFO, message);
-				break;
-			case XESS_LOGGING_LEVEL_WARNING:
-				ADRIA_LOG(WARNING, message);
-				break;
-			case XESS_LOGGING_LEVEL_ERROR:
-				ADRIA_LOG(ERROR, message);
-				break;
-			default:
-				break;
-			}
+		case XESS_LOGGING_LEVEL_DEBUG:
+			ADRIA_LOG(DEBUG, message);
+			break;
+		case XESS_LOGGING_LEVEL_INFO:
+			ADRIA_LOG(INFO, message);
+			break;
+		case XESS_LOGGING_LEVEL_WARNING:
+			ADRIA_LOG(WARNING, message);
+			break;
+		case XESS_LOGGING_LEVEL_ERROR:
+			ADRIA_LOG(ERROR, message);
+			break;
+		default:
+			break;
 		}
 	}
-	
 
 	XeSS2Pass::XeSS2Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
 		: gfx(gfx), display_width(), display_height(), render_width(), render_height()

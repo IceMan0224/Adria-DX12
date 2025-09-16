@@ -22,20 +22,23 @@ namespace adria
 		}
 	}
 
-	void FileSink::Log(LogLevel level, Char const* entry, Char const* file, Uint32 line)
+	void FileSink::Log(LogLevel level, LogChannel channel, Char const* entry, Char const* file, Uint32 line)
 	{
 		if (level < log_level || !log_handle)
 		{
 			return;
 		}
 
-		std::string time_str = GetLogTime();
-		std::string line_info_str = LineInfoToString(file, line);
-		std::string level_str = LevelToString(level);
-		fprintf(log_handle, "%s%s%s%s\n",
+		std::string const time_str = GetLogTime();
+		std::string const line_info_str = LineInfoToString(file, line);
+		std::string const level_str = LevelToString(level);
+		std::string const channel_str = ChannelToString(channel);
+
+		fprintf(log_handle, "%s%s%s%s%s\n",
 			time_str.c_str(),
 			line_info_str.c_str(),
 			level_str.c_str(),
+			channel_str.c_str(),
 			entry); 
 	}
 

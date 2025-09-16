@@ -11,6 +11,8 @@ namespace adria::GfxRenderDoc
 {
 #if defined(GFX_RENDERDOC_AVAILABLE)
 
+	ADRIA_LOG_CHANNEL(RenderDoc);
+
 	static AutoConsoleCommand RenderDoc_TakeCapture("r.RenderDoc", " Takes RenderDoc capture. Optional arguments are: [capture name, frame count]",
 		ConsoleCommandWithArgsDelegate::CreateLambda([](std::span<Char const*> args)
 		{
@@ -64,7 +66,7 @@ namespace adria::GfxRenderDoc
 			renderdoc_module = LoadLibraryA(g_RenderDocDLLName);
 			if (!renderdoc_module)
 			{
-				ADRIA_LOG(WARNING, "[RenderDoc] Couldn't load the RenderDoc DLL.");
+				ADRIA_LOG(WARNING, "Couldn't load the RenderDoc DLL.");
 				return false;
 			}
 		}
@@ -79,7 +81,7 @@ namespace adria::GfxRenderDoc
 			Int rval = (*RENDERDOC_GetAPI)(eRENDERDOC_API_Version_1_6_0, (void**)&g_RenderDocApi);
 			if (rval != 1)
 			{
-				ADRIA_LOG(WARNING, "[RenderDoc] RENDERDOC_GetAPI failed with return code %d", rval);
+				ADRIA_LOG(WARNING, "RENDERDOC_GetAPI failed with return code %d", rval);
 				return false;
 			}
 			g_RenderDocApi->SetActiveWindow(nullptr, nullptr);
@@ -102,12 +104,12 @@ namespace adria::GfxRenderDoc
 	{
 		if (!g_RenderDocApi)
 		{
-			ADRIA_LOG(WARNING, "[RenderDoc] RenderDoc is not initialized, did you forget to use -renderdoc?");
+			ADRIA_LOG(WARNING, "RenderDoc is not initialized, did you forget to use -renderdoc?");
 			return;
 		}
 		if (g_IsRenderDocCapturing)
 		{
-			ADRIA_LOG(WARNING, "[RenderDoc] There's already a capture running.");
+			ADRIA_LOG(WARNING, "There's already a capture running.");
 			return;
 		}
 		if (g_RenderDocApi->SetCaptureFilePathTemplate)

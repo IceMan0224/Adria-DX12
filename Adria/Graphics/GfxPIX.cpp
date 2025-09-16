@@ -11,6 +11,8 @@ namespace adria::GfxPIX
 {
 #if defined(GFX_PIX_AVAILABLE)
 
+	ADRIA_LOG_CHANNEL(PIX);
+
 	static AutoConsoleCommand PIX_TakeCapture("r.PIX", " Takes PIX capture. Optional arguments are: [capture name, frame count]",
 		ConsoleCommandWithArgsDelegate::CreateLambda([](std::span<Char const*> args)
 			{

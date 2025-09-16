@@ -4,6 +4,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(Graphics);
+
 	namespace
 	{
 		constexpr RayTracingSupport ConvertRayTracingTier(D3D12_RAYTRACING_TIER tier)

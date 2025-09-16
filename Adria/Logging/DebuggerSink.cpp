@@ -10,13 +10,13 @@ namespace adria
 	DebuggerSink::~DebuggerSink()
 	{}
 
-	void DebuggerSink::Log(LogLevel level, Char const* entry, Char const* file, Uint32 line)
+	void DebuggerSink::Log(LogLevel level, LogChannel channel, Char const* entry, Char const* file, Uint32 line)
 	{
 		if (level < log_level)
 		{
 			return;
 		}
-		std::string log = GetLogTime() + LineInfoToString(file, line) + LevelToString(level) + std::string(entry) + "\n";
+		std::string const log = GetLogTime() + LineInfoToString(file, line) + LevelToString(level) + ChannelToString(channel) + std::string(entry) + "\n";
 		OutputDebugStringA(log.c_str());
 	}
 

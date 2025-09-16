@@ -10,6 +10,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(PostProcessor);
+
 	namespace
 	{
 		void FSR2Log(FfxMsgType type, const Wchar* message)

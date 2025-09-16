@@ -4,6 +4,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(Renderer);
+
 	static void OIDNErrorCallback(void* ptr, OIDNError code, const char* message)
 	{
 		static Char const* code_names[] =

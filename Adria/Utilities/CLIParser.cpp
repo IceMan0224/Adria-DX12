@@ -3,6 +3,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(CommandLine);
+
 	CLIParseResult::CLIParseResult(std::vector<CLIArg> const& args, std::unordered_map<std::string, Uint32> const& prefix_index_map)
 	{
 		for (auto const& [prefix, index] : prefix_index_map)
