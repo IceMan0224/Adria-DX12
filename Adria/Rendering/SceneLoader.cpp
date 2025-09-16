@@ -623,7 +623,7 @@ namespace adria
 		{
 			Uint64 current_copy_size = _data.size() * sizeof(T);
 			staging_buffer.Update(_data.data(), current_copy_size, current_offset);
-			current_offset += (Uint32)Align(current_copy_size, 16);
+			current_offset += (Uint32)AlignUp(current_copy_size, 16);
 		};
 
 		mesh.submeshes.reserve(mesh_datas.size());
@@ -851,7 +851,7 @@ namespace adria
 		{
 			Uint64 current_copy_size = _data.size() * sizeof(T);
 			staging_buffer.Update(_data.data(), current_copy_size, current_offset);
-			current_offset += (Uint32)Align(current_copy_size, 16);
+			current_offset += (Uint32)AlignUp(current_copy_size, 16);
 		};
 
 		mesh.submeshes.reserve(mesh_datas.size());
@@ -925,11 +925,11 @@ namespace adria
 					mesh_data.normals_stream.data(), mesh_data.uvs_stream.data(), vertex_count, mesh_data.tangents_stream.data());
 			}
 
-			total_buffer_size += Align(mesh_data.indices.size() * sizeof(Uint32), 16);
-			total_buffer_size += Align(mesh_data.positions_stream.size() * sizeof(Vector3), 16);
-			total_buffer_size += Align(mesh_data.uvs_stream.size() * sizeof(Vector2), 16);
-			total_buffer_size += Align(mesh_data.normals_stream.size() * sizeof(Vector3), 16);
-			total_buffer_size += Align(mesh_data.tangents_stream.size() * sizeof(Vector4), 16);
+			total_buffer_size += AlignUp(mesh_data.indices.size() * sizeof(Uint32), 16);
+			total_buffer_size += AlignUp(mesh_data.positions_stream.size() * sizeof(Vector3), 16);
+			total_buffer_size += AlignUp(mesh_data.uvs_stream.size() * sizeof(Vector2), 16);
+			total_buffer_size += AlignUp(mesh_data.normals_stream.size() * sizeof(Vector3), 16);
+			total_buffer_size += AlignUp(mesh_data.tangents_stream.size() * sizeof(Vector4), 16);
 
 			mesh_data.bounding_box = AABBFromPositions(mesh_data.positions_stream);
 
@@ -995,9 +995,9 @@ namespace adria
 
 			}
 			mesh_data.meshlet_triangles.resize(triangle_offset);
-			total_buffer_size += Align(mesh_data.meshlets.size() * sizeof(Meshlet), 16);
-			total_buffer_size += Align(mesh_data.meshlet_vertices.size() * sizeof(Uint32), 16);
-			total_buffer_size += Align(mesh_data.meshlet_triangles.size() * sizeof(MeshletTriangle), 16);
+			total_buffer_size += AlignUp(mesh_data.meshlets.size() * sizeof(Meshlet), 16);
+			total_buffer_size += AlignUp(mesh_data.meshlet_vertices.size() * sizeof(Uint32), 16);
+			total_buffer_size += AlignUp(mesh_data.meshlet_triangles.size() * sizeof(MeshletTriangle), 16);
 		}
 		return total_buffer_size;
 	}

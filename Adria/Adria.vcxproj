@@ -884,7 +884,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="Resources\Shaders\SPD\ffx_a.h" />
     <ClInclude Include="Resources\Shaders\SPD\ffx_spd.h" />
-    <ClInclude Include="Utilities\AllocatorUtil.h" />
+    <ClInclude Include="Utilities\Align.h" />
     <ClInclude Include="Utilities\BufferReader.h" />
     <ClInclude Include="Utilities\FloatCompressor.h" />
     <ClInclude Include="Utilities\LinearAllocator.h" />

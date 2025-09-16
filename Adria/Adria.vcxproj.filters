@@ -704,7 +704,7 @@
     <ClInclude Include="Utilities\LinearOffsetAllocator.h">
       <Filter>Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\AllocatorUtil.h">
+    <ClInclude Include="Utilities\Align.h">
       <Filter>Utilities</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\GfxConstantBuffer.h">

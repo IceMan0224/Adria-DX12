@@ -1,5 +1,5 @@
 #pragma once
-#include "AllocatorUtil.h"
+#include "Align.h"
 
 namespace adria
 {
@@ -15,7 +15,7 @@ namespace adria
 
 		Uint64 Allocate(Uint64 size, Uint64 align = 0)
 		{
-			Uint64 aligned_top = Align(top, align);
+			Uint64 aligned_top = AlignUp(top, align);
 			if (aligned_top + size > max_size)
 			{
 				return INVALID_ALLOC_OFFSET;

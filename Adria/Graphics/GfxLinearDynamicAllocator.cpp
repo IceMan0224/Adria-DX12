@@ -21,7 +21,7 @@ namespace adria
 
 		Uint64 base_gpu_address = last_page->buffer->GetGpuAddress();
 		Uint64 current_gpu_address = base_gpu_address + current_page_offset;
-		Uint64 aligned_gpu_address = Align(current_gpu_address, alignment);
+		Uint64 aligned_gpu_address = AlignUp(current_gpu_address, alignment);
 		Uint64 padding = aligned_gpu_address - current_gpu_address;
 		Uint64 total_allocation_size = padding + size_in_bytes;
 
@@ -51,7 +51,7 @@ namespace adria
 			++current_page;
 			if (current_page >= alloc_pages.size())
 			{
-				Uint64 required_page_size = Align(size_in_bytes, alignment); 
+				Uint64 required_page_size = AlignUp(size_in_bytes, alignment);
 				Uint64 new_page_size = std::max(page_size, std::max(size_in_bytes, required_page_size)); 
 				alloc_pages.emplace_back(gfx, new_page_size);
 			}

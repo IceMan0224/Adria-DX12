@@ -11,7 +11,7 @@ namespace adria
 		Uint64 buffer_size = desc.size;
 		if (HasFlag(desc.misc_flags, GfxBufferMiscFlag::ConstantBuffer))
 		{
-			buffer_size = Align(buffer_size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+			buffer_size = AlignUp(buffer_size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 		}
 
 		D3D12_RESOURCE_DESC resource_desc{};

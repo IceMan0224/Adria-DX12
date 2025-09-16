@@ -54,12 +54,12 @@ namespace adria
 		{
 			Uint32 total_size = 0;
 			Uint32 rg_section = ray_gen_record_size;
-			Uint32 rg_section_aligned = (Uint32)Align(rg_section, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+			Uint32 rg_section_aligned = (Uint32)AlignUp(rg_section, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
 			Uint32 miss_section = miss_shader_record_size * (Uint32)miss_shader_records.size();
-			Uint32 miss_section_aligned = (Uint32)Align(miss_section, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+			Uint32 miss_section_aligned = (Uint32)AlignUp(miss_section, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
 			Uint32 hit_section = hit_group_record_size * (Uint32)hit_group_records.size();
-			Uint32 hit_section_aligned = (Uint32)Align(hit_section, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
-			total_size = (Uint32)Align(rg_section_aligned + miss_section_aligned + hit_section_aligned, 256);
+			Uint32 hit_section_aligned = (Uint32)AlignUp(hit_section, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+			total_size = (Uint32)AlignUp(rg_section_aligned + miss_section_aligned + hit_section_aligned, 256);
 
 			GfxDynamicAllocation allocation = allocator.Allocate(total_size, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
 

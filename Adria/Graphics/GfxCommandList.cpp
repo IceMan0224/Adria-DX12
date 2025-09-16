@@ -549,7 +549,7 @@ namespace adria
 		dst_texture.PlacedFootprint.Footprint.Depth = 1;
 		dst_texture.PlacedFootprint.Footprint.Height = desc.height;
 		dst_texture.PlacedFootprint.Footprint.Format = ConvertGfxFormat(desc.format);
-		dst_texture.PlacedFootprint.Footprint.RowPitch = (Uint32)Align(GetRowPitch(desc.format, dst_texture.PlacedFootprint.Footprint.Width), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+		dst_texture.PlacedFootprint.Footprint.RowPitch = (Uint32)AlignUp(GetRowPitch(desc.format, dst_texture.PlacedFootprint.Footprint.Width), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 
 		D3D12_TEXTURE_COPY_LOCATION src_texture;
 		src_texture.pResource = src.GetNative();
