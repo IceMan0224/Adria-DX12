@@ -12,7 +12,9 @@
 
 namespace adria
 {
-	static TAutoConsoleVariable<Bool> SSR("r.SSR", true, "0 - Disabled, 1 - Enabled");
+	static TAutoConsoleVariable<Bool>	SSR("r.SSR", true, "0 - Disabled, 1 - Enabled");
+	static TAutoConsoleVariable<Float>	SSRRayStep("r.SSR.RayStep", 1.60f, "Ray Step in SSR Ray March");
+	static TAutoConsoleVariable<Float>  SSRRayHitThreshold("r.SSR.HitThreshold", 2.0f, "Ray Hit Threshold in SSR Ray March");
 
 	SSRPass::SSRPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h)
 	{
@@ -81,7 +83,7 @@ namespace adria
 					Uint32 output_idx;
 				} constants =
 				{
-					.ssr_ray_step = params.ssr_ray_step, .ssr_ray_hit_threshold = params.ssr_ray_hit_threshold,
+					.ssr_ray_step = SSRRayStep.Get(), .ssr_ray_hit_threshold = SSRRayHitThreshold.Get(),
 					.depth_idx = i, .normal_idx = i + 1, .diffuse_idx = i + 2, .scene_idx = i + 3, .output_idx = i + 4
 				};
 
@@ -107,8 +109,8 @@ namespace adria
 				ImGui::Checkbox("Enable SSR", SSR.GetPtr());
 				if (SSR.Get())
 				{
-					ImGui::SliderFloat("Ray Step", &params.ssr_ray_step, 1.0f, 3.0f);
-					ImGui::SliderFloat("Ray Hit Threshold", &params.ssr_ray_hit_threshold, 0.25f, 5.0f);
+					ImGui::SliderFloat("Ray Step", SSRRayStep.GetPtr(), 1.0f, 3.0f);
+					ImGui::SliderFloat("Ray Hit Threshold", SSRRayHitThreshold.GetPtr(), 0.25f, 5.0f);
 				}
 				ImGui::TreePop();
 				ImGui::Separator();

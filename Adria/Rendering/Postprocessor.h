@@ -41,6 +41,7 @@ namespace adria
 			PostEffectType_CAS,
 			PostEffectType_ToneMap,
 			PostEffectType_VRS,
+			PostEffectType_CRT,
 			PostEffectType_FXAA,
 			PostEffectType_Count
 		};

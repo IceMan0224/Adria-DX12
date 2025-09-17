@@ -20,6 +20,7 @@
 #include "TAAPass.h"
 #include "UpscalerPassGroup.h"
 #include "FFXCASPass.h"
+#include "CRTFilterPass.h"
 #include "FXAAPass.h"
 #include "ToneMapPass.h"
 #include "RenderGraph/RenderGraph.h"
@@ -208,6 +209,7 @@ namespace adria
 		post_effects[PostEffectType_Bloom]			= std::make_unique<BloomPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_CAS]			= std::make_unique<FFXCASPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_ToneMap]		= std::make_unique<ToneMapPass>(gfx, render_width, render_height);
+		post_effects[PostEffectType_CRT]			= std::make_unique<CRTFilterPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_FXAA]			= std::make_unique<FXAAPass>(gfx, render_width, render_height);
 
 		GetPostEffect<UpscalerPassGroup>()->AddRenderResolutionChangedCallback(RenderResolutionChangedDelegate::CreateMember(&PostProcessor::OnRenderResolutionChanged, *this));
@@ -306,6 +308,10 @@ namespace adria
 		else if constexpr (std::is_same_v<PostEffectT, FXAAPass>)
 		{
 			return static_cast<PostEffectT*>(post_effects[PostEffectType_FXAA].get());
+		}
+		else if constexpr (std::is_same_v<PostEffectT, CRTFilterPass>)
+		{
+			return static_cast<PostEffectT*>(post_effects[PostEffectType_CRT].get());
 		}
 		else
 		{

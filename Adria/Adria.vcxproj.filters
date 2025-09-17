@@ -642,6 +642,9 @@
     <ClCompile Include="Logging\FileSink.cpp">
       <Filter>Logging</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\CRTFilterPass.cpp">
+      <Filter>Rendering\Passes\Post Effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utilities\RingBuffer.h">
@@ -1728,6 +1731,9 @@
     <ClInclude Include="Logging\LogChannels.def">
       <Filter>Logging</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\CRTFilterPass.h">
+      <Filter>Rendering\Passes\Post Effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Adria.rc">
@@ -2101,6 +2107,9 @@
     </FxCompile>
     <FxCompile Include="Resources\Shaders\RayTracing\PT_GBuffer.hlsl">
       <Filter>Shaders\RayTracing</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\Shaders\Postprocess\CRTFilter.hlsl">
+      <Filter>Shaders\Postprocess</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

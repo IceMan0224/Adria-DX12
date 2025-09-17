@@ -7,10 +7,10 @@ namespace adria
 	class GfxComputePipelineState;
 	class RenderGraph;
 
-	class SSRPass : public PostEffect
+	class CRTFilterPass : public PostEffect
 	{
 	public:
-		SSRPass(GfxDevice* gfx, Uint32 w, Uint32 h);
+		CRTFilterPass(GfxDevice* gfx, Uint32 w, Uint32 h);
 
 		virtual Bool IsEnabled(PostProcessor const*) const override;
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
@@ -21,8 +21,8 @@ namespace adria
 	private:
 		GfxDevice* gfx;
 		Uint32 width, height;
-		std::unique_ptr<GfxComputePipelineState> ssr_pso;
-		
+		std::unique_ptr<GfxComputePipelineState> crt_pso;
+
 	private:
 		void CreatePSO();
 	};

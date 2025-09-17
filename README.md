@@ -31,7 +31,7 @@ Graphics engine written in C++ using DirectX12.
 * Reflections: SSR, RTR (DXR)
 * Antialiasing: FXAA, TAA
 * Contrast Adaptive Sharpening (FFX)
-* Film effects: Lens distortion, Chromatic aberration, Vignette, Film grain
+* Film effects: Lens distortion, Chromatic aberration, Vignette, Film grain, CRT filter
 * Screen-space god rays
 * Lens flare: texture-based and procedural
 * Profiler: custom and tracy profiler

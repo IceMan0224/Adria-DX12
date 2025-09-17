@@ -77,6 +77,7 @@ namespace adria
 		VS_CloudsCombine,
 		PS_CloudsCombine,
 		CS_Taa,
+		CS_CrtFilter,
 		CS_RainDrops,
 		CS_DeferredLighting,
 		CS_VolumetricLighting,

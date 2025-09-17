@@ -111,6 +111,7 @@ namespace adria
 			case CS_CloudDetail:
 			case CS_CloudType:
 			case CS_Taa:
+			case CS_CrtFilter:
 			case CS_RainDrops:
 			case CS_DeferredLighting:
 			case CS_VolumetricLighting:
@@ -282,6 +283,8 @@ namespace adria
 				return "Postprocess/FXAA.hlsl";
 			case CS_Taa:
 				return "Postprocess/TAA.hlsl";
+			case CS_CrtFilter:
+				return "Postprocess/CRTFilter.hlsl";
 			case CS_RainDrops:
 				return "Postprocess/RainDrops.hlsl";
 			case CS_Ambient:
@@ -422,6 +425,8 @@ namespace adria
 				return "FilmEffectsCS";
 			case CS_Fxaa:
 				return "FXAA_CS";
+			case CS_CrtFilter:
+				return "CRTFilterCS";
 			case CS_Ambient:
 				return "AmbientCS";
 			case VS_GBuffer:
@@ -630,9 +635,7 @@ namespace adria
 			{
 				return;
 			}
-
 			shader_map[shader] = std::move(output.shader);
-
 			file_shader_map[fs::path(shader_desc.file)].insert(shader);
 			for (std::string const& include : output.includes)
 			{
