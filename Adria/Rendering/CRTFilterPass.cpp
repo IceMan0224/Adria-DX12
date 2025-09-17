@@ -13,8 +13,10 @@
 namespace adria
 {
 	static TAutoConsoleVariable<Bool>	CRT("r.CRT", false, "0 - Disabled, 1 - Enabled");
-	//static TAutoConsoleVariable<Float>	SSRRayStep("r.SSR.RayStep", 1.60f, "Ray Step in SSR Ray March");
-	//static TAutoConsoleVariable<Float>  SSRRayHitThreshold("r.SSR.HitThreshold", 2.0f, "Ray Hit Threshold in SSR Ray March");
+	static TAutoConsoleVariable<Float>	CRTHardScan("r.CRT.HardScan", -10.0f, "CRT Hard Scan");
+	static TAutoConsoleVariable<Float>	CRTPixelHardness("r.CRT.PixelHardness", -3.0f, "CRT Pixel Hardness");
+	static TAutoConsoleVariable<Float>	CRTWarpX("r.CRT.WarpX", 1.0f / 32.0f, "CRT Warp X");
+	static TAutoConsoleVariable<Float>	CRTWarpY("r.CRT.WarpY", 1.0f / 24.0f, "CRT Warp Y");
 
 	CRTFilterPass::CRTFilterPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h)
 	{
@@ -67,9 +69,15 @@ namespace adria
 				{
 					Uint32 input_idx;
 					Uint32 output_idx;
+					Float  hard_scan;
+					Float  pixel_hardness;
+					Float  warp_x;
+					Float  warp_y;
 				} constants =
 				{
-					.input_idx = i, .output_idx = i + 1
+					.input_idx = i, .output_idx = i + 1,
+					.hard_scan = CRTHardScan.Get(), .pixel_hardness = CRTPixelHardness.Get(),
+					.warp_x = CRTWarpX.Get(), .warp_y = CRTWarpY.Get()
 				};
 
 				cmd_list->SetPipelineState(crt_pso.get());
@@ -94,8 +102,34 @@ namespace adria
 				ImGui::Checkbox("Enable CRT", CRT.GetPtr());
 				if (CRT.Get())
 				{
-					//ImGui::SliderFloat("Ray Step", SSRRayStep.GetPtr(), 1.0f, 3.0f);
-					//ImGui::SliderFloat("Ray Hit Threshold", SSRRayHitThreshold.GetPtr(), 0.25f, 5.0f);
+					ImGui::SliderFloat("Hard Scan", CRTHardScan.GetPtr(), -16.0f, -8.0f);
+					ImGui::SliderFloat("Pixel Hardness", CRTPixelHardness.GetPtr(), -4.0f, -2.0f);
+
+					auto SnapToValidWarp = [](Float value)
+					{
+						static const Float valid_values[] = { 0.0f, 1.0f / 32.0f, 1.0f / 24.0f, 1.0f / 16.0f, 1.0f / 12.0f, 1.0f / 8.0f };
+						Float closest = valid_values[0];
+						Float min_diff = abs(value - closest);
+						for (Int i = 1; i < 6; i++)
+						{
+							Float diff = abs(value - valid_values[i]);
+							if (diff < min_diff)
+							{
+								min_diff = diff;
+								closest = valid_values[i];
+							}
+						}
+						return closest;
+					};
+					if (ImGui::SliderFloat("Warp X", CRTWarpX.GetPtr(), 0.0f, 1.0f / 8.0f, "%.4f")) 
+					{
+						CRTWarpX.AsVariable()->Set(SnapToValidWarp(CRTWarpX.Get()));
+					}
+					if (ImGui::SliderFloat("Warp Y", CRTWarpY.GetPtr(), 0.0f, 1.0f / 8.0f, "%.4f"))
+					{
+						CRTWarpY.AsVariable()->Set(SnapToValidWarp(CRTWarpY.Get()));
+					}
+					
 				}
 				ImGui::TreePop();
 				ImGui::Separator();
