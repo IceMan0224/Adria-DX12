@@ -35,6 +35,7 @@ namespace adria
 		void Log(LogLevel level, LogChannel channel, Char const* str, Char const* filename, Uint32 line)
 		{
 			log_queue.Push(QueueEntry{ level, channel, str, filename, line });
+			HandleFatalLogs(level);
 		}
 		void LogSync(LogLevel level, LogChannel channel, Char const* str, Char const* filename, Uint32 line)
 		{
@@ -45,6 +46,7 @@ namespace adria
 					log_sink->Log(level, channel, str, filename, line);
 				}
 			}
+			HandleFatalLogs(level);
 		}
 		void Flush()
 		{
@@ -90,6 +92,15 @@ namespace adria
 				}
 			}
 		}
+
+		void HandleFatalLogs(LogLevel level)
+		{
+			if (level == LogLevel::LOG_FATAL)
+			{
+				Flush();
+				std::abort();
+			}
+		}
 	};
 
 	std::string LevelToString(LogLevel level)
@@ -104,8 +115,10 @@ namespace adria
 			return "[WARNING]";
 		case LogLevel::LOG_ERROR:
 			return "[ERROR]";
+		case LogLevel::LOG_FATAL:
+			return "[FATAL]";
 		}
-		return "";
+		return "[UNKNOWN]";
 	}
 
 	std::string ChannelToString(LogChannel channel)

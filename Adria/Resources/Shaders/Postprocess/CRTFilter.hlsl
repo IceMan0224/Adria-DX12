@@ -155,7 +155,7 @@ void CRTFilterCS(CSInput input)
 	float4 color = 0.0f;
 	float2 uv = ((float2) input.DispatchThreadId.xy + 0.5f) * 1.0f / (FrameCB.displayResolution);
 	uv = Warp(uv);
-	color.rgb=Tri(uv)*Mask(input.DispatchThreadId.xy);
-	color.rgb=ToSrgb(color.rgb);
+	color.rgb = Tri(uv) * Mask(input.DispatchThreadId.xy);
+	color.rgb = ToSrgb(color.rgb);
 	outputTexture[input.DispatchThreadId.xy] = color;
 }

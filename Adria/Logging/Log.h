@@ -8,7 +8,8 @@ namespace adria
 		LOG_DEBUG,
 		LOG_INFO,
 		LOG_WARNING,
-		LOG_ERROR
+		LOG_ERROR,
+		LOG_FATAL
 	};
 
 	enum class LogChannel : Uint8
@@ -71,6 +72,7 @@ namespace adria
 	#define ADRIA_INFO(...)		ADRIA_LOG(INFO, __VA_ARGS__)
 	#define ADRIA_WARNING(...)  ADRIA_LOG(WARNING, __VA_ARGS__)
 	#define ADRIA_ERROR(...)	ADRIA_LOG(ERROR, __VA_ARGS__)
+	#define ADRIA_FATAL(...)	ADRIA_LOG(FATAL, __VA_ARGS__)
 
 	#define ADRIA_LOG_SYNC(level, ... ) [&]()  \
 		{ \
