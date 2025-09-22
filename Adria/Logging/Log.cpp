@@ -129,6 +129,7 @@ namespace adria
 			#include "LogChannels.def"
 			#undef LOG_CHANNEL
 		};
+		static_assert(ARRAYSIZE(LogChannelNames) == (Uint32)LogChannel::MaxCount);
 		return LogChannelNames[(Uint8)channel];
 	}
 

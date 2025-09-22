@@ -3,6 +3,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(FatalAssert);
+
 	namespace details
 	{
 		ADRIA_NORETURN void TriggerFatalAssert(

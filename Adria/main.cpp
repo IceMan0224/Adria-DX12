@@ -1,6 +1,7 @@
 #include "Core/Window.h"
 #include "Core/Engine.h"
 #include "Core/Input.h"
+#include "Core/FatalAssert.h"
 #include "Core/CommandLineOptions.h"
 #include "Logging/FileSink.h"
 #include "Logging/DebuggerSink.h"
