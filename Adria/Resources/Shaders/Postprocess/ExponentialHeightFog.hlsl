@@ -28,9 +28,8 @@ float4 CalculateExponentialHeightFog(float4 viewPosition)
 	float4 worldPosition = mul(viewPosition, FrameCB.inverseView);
 	worldPosition /= worldPosition.w;
 
-	float4 cameraPosition = FrameCB.cameraPosition;
-
-	float3 cameraToPos = (worldPosition - cameraPosition).xyz;
+	float3 cameraPosition = FrameCB.cameraPosition;
+	float3 cameraToPos = worldPosition.xyz - cameraPosition;
 	float distance = length(cameraToPos);
 	float fogStartDistance = ExponentialHeightFogPassCB.fogStart;
 	float3 cameraToPosNormalized = cameraToPos / distance;

@@ -17,14 +17,15 @@ namespace adria
 		Matrix prev_view_projection;
 		Matrix reprojection;
 		Matrix rain_view_projection;
+
 		Vector3 camera_position;
-		PAD;
+		Float  camera_near;
 		Vector3 camera_forward;
-		PAD;
+		Float  camera_far;
 		Float  camera_jitter_x;
 		Float  camera_jitter_y;
-		Float  camera_near;
-		Float  camera_far;
+		Float  prev_camera_jitter_x;
+		Float  prev_camera_jitter_y;
 
 		Vector4 ambient_color;
 		Vector4 wind_params;

@@ -323,7 +323,7 @@ void CloudsCS(CSInput input)
 	float3 worldDir = mul(rayView, FrameCB.inverseView).xyz;
 
 	Ray ray;
-	ray.origin = FrameCB.cameraPosition.xyz;
+	ray.origin = FrameCB.cameraPosition;
 	ray.direction = normalize(worldDir);
 
 	float3 rayStart, rayEnd;

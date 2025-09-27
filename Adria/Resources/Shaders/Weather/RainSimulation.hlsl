@@ -39,7 +39,7 @@ void RainSimulationCS(CSInput input)
 	RainData rainDrop = rainDataBuffer[GroupIdx];
 	rainDrop.Pos += rainDrop.Vel * FrameCB.deltaTime * RainSimulationPassCB.simulationSpeed; 
 	
-	const float3 boundsCenter = FrameCB.cameraPosition.xyz;
+	const float3 boundsCenter = FrameCB.cameraPosition;
 	const float3 boundsExtents = float3(RainSimulationPassCB.rangeRadius, RainSimulationPassCB.rangeRadius, RainSimulationPassCB.rangeRadius); 
 	
 	float2 offsetAmount = (rainDrop.Pos.xz - boundsCenter.xz) / boundsExtents.xz;

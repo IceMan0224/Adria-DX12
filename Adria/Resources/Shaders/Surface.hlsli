@@ -58,7 +58,7 @@ Surface GetSurface(uint2 pixelCoords, uint albedoIdx, uint normalIdx, uint depth
     viewNormal = 2.0f * viewNormal - 1.0f;
     surface.worldNormal = normalize(mul(viewNormal, (float3x3)FrameCB.view));
     surface.worldPos = GetWorldPosition(FullScreenPosition(pixelCoords), surface.depth);
-    surface.viewDir = normalize(FrameCB.cameraPosition.xyz - surface.worldPos);
+    surface.viewDir = normalize(FrameCB.cameraPosition - surface.worldPos);
 
     float4 albedoRoughness = albedoRT[pixelCoords];
 	float3 albedo = albedoRoughness.rgb; float  roughness = albedoRoughness.a;

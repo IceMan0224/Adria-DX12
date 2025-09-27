@@ -58,7 +58,7 @@ float4 OceanPS(VSToPS input) : SV_TARGET
 	float  foamFactor = normalAndFoam.a;
 	float3 n = normalize(normalAndFoam.xyz);
 
-	float3 worldV = FrameCB.cameraPosition.xyz - input.WorldPos.xyz;
+	float3 worldV = FrameCB.cameraPosition - input.WorldPos.xyz;
 
 	float3 v = normalize(worldV);
 	float3 l = reflect(-v, n);

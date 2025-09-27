@@ -47,7 +47,7 @@ void RTR_RayGen()
 		float3 worldNormal = normalize(mul(viewNormal, (float3x3) transpose(FrameCB.view)));
 		float3 worldPosition = GetWorldPosition(uv, depth);
 
-		float3 V = normalize(worldPosition - FrameCB.cameraPosition.xyz);
+		float3 V = normalize(worldPosition - FrameCB.cameraPosition);
 		float3 rayDir = reflect(V, worldNormal);
 
 		RNG rng = RNG_Initialize(launchIndex.x + launchIndex.y * launchDim.x, 0, 16);
@@ -89,7 +89,7 @@ void RTR_ClosestHitPrimaryRay(inout RTR_Payload payloadData, in HitAttributes at
 	float4 posWS = mul(float4(vertex.pos, 1.0), instanceData.worldMatrix);
 	float3 worldPosition = posWS.xyz / posWS.w;
     float3 worldNormal = mul(vertex.nor, (float3x3) transpose(instanceData.inverseWorldMatrix));
-	float3 V = normalize(FrameCB.cameraPosition.xyz - worldPosition.xyz);
+	float3 V = normalize(FrameCB.cameraPosition - worldPosition.xyz);
 
 	MaterialProperties materialProperties = GetMaterialProperties(materialData, vertex.uv, 2);
 	float3 albedoColor = materialProperties.baseColor;

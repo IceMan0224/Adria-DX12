@@ -60,7 +60,7 @@ struct HSConstantDataOutput
 
 int CalcTessFactor(float3 p)
 {
-	float d = distance(p, FrameCB.cameraPosition.xyz);
+	float d = distance(p, FrameCB.cameraPosition);
 	float s = saturate((d - MinDest) / (MaxDest - MinDest));
 	return pow(2, lerp(MaxTess, MinTess, s));
 }

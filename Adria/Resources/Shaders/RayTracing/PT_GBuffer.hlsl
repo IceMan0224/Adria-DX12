@@ -78,6 +78,8 @@ PSOutput PT_GBufferPS(VSToPS input)
     float maxChangeZ = max(abs(ddx(linearZ)), abs(ddy(linearZ)));
 
     float4 prevClipPos = mul(float4(input.PositionWS, 1.0f), FrameCB.prevViewProjection);
+    prevClipPos.xy += FrameCB.prevCameraJitter * prevClipPos.w; 
+    prevClipPos.xyz /= prevClipPos.w; 
 
     uint packedNormalOS = EncodeNormal16x2(normalOS);
     float packedNormalOS_asFloat = asfloat(packedNormalOS);
@@ -85,19 +87,19 @@ PSOutput PT_GBufferPS(VSToPS input)
     float2 currentPixelPos = input.Position.xy; 
     float2 invFrameSize = rcp(FrameCB.renderResolution);
 
-    float2 prevPosNDC = (prevClipPos.xy / prevClipPos.w) * float2(0.5, -0.5) + float2(0.5, 0.5);
-    float2 motionVec = prevPosNDC - (currentPixelPos * invFrameSize);
+    float2 prevPosNDC = prevClipPos.xy * float2(0.5, -0.5) + float2(0.5, 0.5);
+    float2 currentUV = currentPixelPos * invFrameSize; 
+
+    float2 motionVec = currentUV - prevPosNDC; 
 
     const float eps = 1e-5;
-    if (prevClipPos.w < eps) motionVec = float2(0.0, 0.0);
-
-    motionVec += float2(FrameCB.cameraJitter.x, -FrameCB.cameraJitter.y);
+    if (prevClipPos.w < eps) motionVec = float2(0.0, 0.0); 
 
     float posFwidth    = length(fwidth(input.PositionWS));
     float normalFwidth = length(fwidth(normal));
 
-    output.LinearZ = float4(linearZ, maxChangeZ, prevClipPos.z, packedNormalOS_asFloat);
     output.MotionVectors = float4(motionVec, posFwidth, normalFwidth);
+    output.LinearZ = float4(linearZ, maxChangeZ, prevClipPos.z, packedNormalOS_asFloat);
 
     uint packedShadingNormal = EncodeNormal16x2(normal);
     output.SvgfCompact = float4(asfloat(packedShadingNormal), linearZ, maxChangeZ, 0.0f);

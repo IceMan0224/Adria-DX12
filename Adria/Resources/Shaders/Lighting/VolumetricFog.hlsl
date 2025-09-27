@@ -102,7 +102,7 @@ void LightInjectionCS(CSInput input)
 
 	float3 inScattering = cellAbsorption;
 	float3 totalLighting = 0.0f;
-	float3 viewDirection = normalize(FrameCB.cameraPosition.xyz - worldPosition);
+	float3 viewDirection = normalize(FrameCB.cameraPosition - worldPosition);
 
 	if(any(inScattering > 0.0f))
 	{
@@ -160,7 +160,7 @@ void ScatteringIntegrationCS(CSInput input)
 
 	float3 accumulatedScattering = 0.0f;
 	float  accumulatedTransmittance = 1.0f;
-	float3 prevWorldPosition = FrameCB.cameraPosition.xyz;
+	float3 prevWorldPosition = FrameCB.cameraPosition;
 	
 	[unroll(VOXEL_GRID_SIZE_Z)]
 	for (int z = 0; z < VOXEL_GRID_SIZE_Z; ++z)

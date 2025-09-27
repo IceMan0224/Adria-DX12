@@ -107,7 +107,7 @@ void RTAOFilterCS(CSInput input)
 				float depth = depthTexture.Load(int3(srcPixel, 0));
 				float2 texCoords = (srcPixel + 0.5f) / float2(RTAOFilterPassCB2.filterWidth, RTAOFilterPassCB2.filterHeight);
 				float3 worldPosition = GetWorldPosition(texCoords, depth);
-				float distance = length(worldPosition - FrameCB.cameraPosition.xyz);
+				float distance = length(worldPosition - FrameCB.cameraPosition);
 				float occlusion = rtaoTexture.Load(int3(srcPixel, 0));
 				DistanceAndAO[paddedPixel.x][paddedPixel.y] = float2(distance, occlusion);
 			}

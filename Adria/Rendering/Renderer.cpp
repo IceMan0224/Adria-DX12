@@ -388,7 +388,7 @@ namespace adria
 		rain_pass.Update(dt);
 
 		camera_jitter = Vector2(0.0f, 0.0f);
-		if (postprocessor.NeedsJitter())
+		if (postprocessor.NeedsJitter() || lighting_path == LightingPath::PathTracing)
 		{
 			camera_jitter = camera->Jitter(gfx->GetFrameIndex());
 		}
@@ -466,6 +466,8 @@ namespace adria
 		frame_cbuf_data.prev_view_projection = camera->ViewProj();
 		frame_cbuf_data.prev_view = camera->View();
 		frame_cbuf_data.prev_projection = camera->Proj();
+		frame_cbuf_data.prev_camera_jitter_x = frame_cbuf_data.camera_jitter_x;
+		frame_cbuf_data.prev_camera_jitter_y = frame_cbuf_data.camera_jitter_y;
 	}
 	void Renderer::CameraFrustumCulling()
 	{

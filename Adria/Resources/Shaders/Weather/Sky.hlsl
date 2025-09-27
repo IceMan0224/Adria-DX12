@@ -14,7 +14,7 @@ struct VSToPS
 VSToPS SkyVS(VertexIn input)
 {
 	VSToPS output = (VSToPS)0;
-	output.Pos = float4(input.PosL + FrameCB.cameraPosition.xyz, 1.0f);
+	output.Pos = float4(input.PosL + FrameCB.cameraPosition, 1.0f);
 	output.Pos = mul(output.Pos, FrameCB.viewProjection).xyww;
 	output.Pos.z = 0.0f;
 	output.PosL = input.PosL;
@@ -110,7 +110,7 @@ void HosekWilkieSkyCS(CSInput input)
 	RWTexture2DArray<float4> envMapTx = ResourceDescriptorHeap[EnvMapPassCB.envMapIdx];
 	uint3 threadId = input.DispatchThreadId;
 
-	float3 rayStart = FrameCB.cameraPosition.xyz;
+	float3 rayStart = FrameCB.cameraPosition;
 	float3 rayDir = GetRayDir(threadId);
 	float rayLength = INFINITY;
 
@@ -124,7 +124,7 @@ void MinimalAtmosphereSkyCS(CSInput input)
 	RWTexture2DArray<float4> envMapTx = ResourceDescriptorHeap[EnvMapPassCB.envMapIdx];
 	uint3 threadId = input.DispatchThreadId;
 
-	float3 rayStart = FrameCB.cameraPosition.xyz;
+	float3 rayStart = FrameCB.cameraPosition;
 	float3 rayDir = GetRayDir(threadId);
 	float rayLength = INFINITY;
 

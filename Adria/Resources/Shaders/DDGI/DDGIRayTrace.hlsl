@@ -68,7 +68,7 @@ void DDGI_ClosestHit(inout DDGIPayload payload, in HitAttributes attribs)
 	float4 posWS = mul(float4(vertex.pos, 1.0), instanceData.worldMatrix);
 	float3 worldPosition = posWS.xyz / posWS.w;
 	float3 worldNormal = mul(vertex.nor, (float3x3) transpose(instanceData.inverseWorldMatrix));
-	float3 V = normalize(FrameCB.cameraPosition.xyz - worldPosition.xyz);
+	float3 V = normalize(FrameCB.cameraPosition - worldPosition.xyz);
 
 	MaterialProperties matProperties = GetMaterialProperties(materialData, vertex.uv, 6);
 	BrdfData brdfData = GetBrdfData(matProperties);

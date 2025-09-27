@@ -14,11 +14,12 @@ struct FrameCBuffer
 	row_major matrix prevViewProjection;
 	row_major matrix reprojection;
 	row_major matrix rainViewProjection;
-	float4 cameraPosition;
-	float4 cameraForward;
-	float2 cameraJitter;
+	float3 cameraPosition;
 	float  cameraNear;
+	float3 cameraForward;
 	float  cameraFar;
+	float2 cameraJitter;
+	float2 prevCameraJitter;
 
 	float4 ambientColor;
     float4 windParams;
