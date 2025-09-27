@@ -11,7 +11,7 @@ Graphics engine written in C++ using DirectX12.
 * DDGI
 * GPU-Driven Rendering : GPU frustum culling + 2 phase GPU occlusion culling
 * Reference path tracer + SVGF denoiser (wip)
-* Upscalers : FSR2, FSR3, XeSS, DLSS3, DirectML 
+* Upscalers : FSR2, FSR3, XeSS2, DLSS3.5 
 * Ultimate Bindless resource binding
 * Variable Rate Shading (FFX)
 * Volumetric lighting: Raymarching, Fog volumes
@@ -97,7 +97,7 @@ Graphics engine written in C++ using DirectX12.
 |---|---|
 |  ![](Adria/Saved/Screenshots/ssao.png) | ![](Adria/Saved/Screenshots/rtao.png) |
 
-### Triangle Overdraw Debug View
+### Triangle Overdraw
 ![](Adria/Saved/Screenshots/bistrooverdraw.png "Bistro Triangle Overdraw") 
 
 ### Transparent Objects

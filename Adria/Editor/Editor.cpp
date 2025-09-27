@@ -210,7 +210,7 @@ namespace adria
 				}
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu(ICON_FA_WINDOW_MAXIMIZE "Windows"))
+			if (ImGui::BeginMenu(ICON_FA_WINDOW_MAXIMIZE " Windows"))
 			{
 				if (ImGui::MenuItem(ICON_FA_CLOCK" Profiler", 0, visibility_flags[Flag_Profiler]))			 visibility_flags[Flag_Profiler] = !visibility_flags[Flag_Profiler];
 				if (ImGui::MenuItem(ICON_FA_COMMENT" Log", 0, visibility_flags[Flag_Log]))					 visibility_flags[Flag_Log] = !visibility_flags[Flag_Log];
