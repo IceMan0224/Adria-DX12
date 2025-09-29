@@ -1,5 +1,7 @@
 #include "FileSink.h"
-#include "Core/Paths.h"      
+#include "Core/Paths.h" 
+
+namespace fs = std::filesystem;
 
 namespace adria
 {
@@ -7,9 +9,19 @@ namespace adria
 	FileSink::FileSink(Char const* log_file, LogLevel log_level, Bool append_mode)
 		: log_level{ log_level }
 	{
-		std::string full_path = paths::LogDir + log_file;
+		fs::path fullLogPath = fs::path(paths::LogDir) / log_file;
+		fs::path directoryPath = fullLogPath.parent_path();
+		if (!directoryPath.empty() && !fs::exists(directoryPath))
+		{
+			std::error_code ec;
+			if (!fs::create_directories(directoryPath, ec))
+			{
+				return;
+			}
+		}
+
 		Char const* mode = append_mode ? "a" : "w";
-		log_handle = fopen(full_path.c_str(), mode);
+		log_handle = fopen(fullLogPath.string().c_str(), mode);
 	}
 
 	FileSink::~FileSink()
