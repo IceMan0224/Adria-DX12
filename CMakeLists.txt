@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.20)
+project(Adria VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE} /Zi" CACHE STRING "Flags for Profile build")
+set(CMAKE_EXE_LINKER_FLAGS_PROFILE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF" CACHE STRING "Linker flags for Profile build")
+
+set(CMAKE_CONFIGURATION_TYPES "Debug;Profile;Release;RelWithDebInfo" CACHE STRING "Available build types" FORCE)
+
+find_package(directx-headers CONFIG REQUIRED)
+find_package(winpixevent CONFIG REQUIRED)
+
+add_subdirectory(Adria)
