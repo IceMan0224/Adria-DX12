@@ -5,41 +5,75 @@ file(GLOB_RECURSE ADRIA_SOURCES
     "*.cpp"
     "*.rc"
 )
-
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${ADRIA_SOURCES})
 
-add_executable(Adria ${ADRIA_SOURCES})
-set_target_properties(Adria PROPERTIES VS_WINDOWS_TARGET_PLATFORM_VERSION "10.0") 
+set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/External")
+
+set(EXTERNAL_SOURCES
+    "${EXTERNAL_DIR}/ImGui/imgui.cpp"
+    "${EXTERNAL_DIR}/ImGui/imgui_draw.cpp"
+    "${EXTERNAL_DIR}/ImGui/imgui_tables.cpp"
+    "${EXTERNAL_DIR}/ImGui/imgui_widgets.cpp"
+    "${EXTERNAL_DIR}/ImGui/imgui_impl_dx12.cpp"
+    "${EXTERNAL_DIR}/ImGui/imgui_impl_win32.cpp"
+	
+	"${EXTERNAL_DIR}/SimpleMath/SimpleMath.cpp"
+	
+	"${EXTERNAL_DIR}/D3D12MA/D3D12MemAlloc.cpp"
+	
+	"${EXTERNAL_DIR}/ImPlot/implot.cpp"
+	"${EXTERNAL_DIR}/ImPlot/implot_items.cpp"
+	
+	"${EXTERNAL_DIR}/meshoptimizer/allocator.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/clusterizer.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/indexcodec.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/indexgenerator.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/overdrawanalyzer.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/overdrawoptimizer.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/partition.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/quantization.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/simplifier.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/spatialorder.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/stripifier.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/vcacheanalyzer.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/vcacheoptimizer.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/vfetchanalyzer.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/vfetchoptimizer.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/vertexcodec.cpp"
+    "${EXTERNAL_DIR}/meshoptimizer/vertexfilter.cpp"
+)
+
+add_executable(Adria ${ADRIA_SOURCES} ${EXTERNAL_SOURCES})
 
 target_precompile_headers(Adria PRIVATE precomp.h)
 
 target_include_directories(Adria PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_SOURCE_DIR}/External/d3dx12"
-    "${CMAKE_SOURCE_DIR}/External/DirectMLX"
-    "${CMAKE_SOURCE_DIR}/External/D3D12MA"
-    "${CMAKE_SOURCE_DIR}/External/stb"
-    "${CMAKE_SOURCE_DIR}/External/dxc/include"
-    "${CMAKE_SOURCE_DIR}/External/cgltf"
-    "${CMAKE_SOURCE_DIR}/External/tinyobjloader"
-    "${CMAKE_SOURCE_DIR}/External/FastNoiseLite"
-    "${CMAKE_SOURCE_DIR}/External/json"
-    "${CMAKE_SOURCE_DIR}/External/entt"
-    "${CMAKE_SOURCE_DIR}/External/nfd/include"
-    "${CMAKE_SOURCE_DIR}/External/FontAwesome"
-    "${CMAKE_SOURCE_DIR}/External/meshoptimizer"
-    "${CMAKE_SOURCE_DIR}/External/cereal"
-    "${CMAKE_SOURCE_DIR}/External/ImGui"
-    "${CMAKE_SOURCE_DIR}/External/Tracy"
-    "${CMAKE_SOURCE_DIR}/External/SimpleMath"
-    "${CMAKE_SOURCE_DIR}/External/XeSS/inc"
-    "${CMAKE_SOURCE_DIR}/External/DLSS/include"
-    "${CMAKE_SOURCE_DIR}/External/FidelityFX-SDK/include"
-    "${CMAKE_SOURCE_DIR}/External/NVIDIA_Aftermath_SDK/include"
-    "${CMAKE_SOURCE_DIR}/External/NvPerf"
-    "${CMAKE_SOURCE_DIR}/External/ImPlot"
-    "${CMAKE_SOURCE_DIR}/External/oidn-2.3.2/include"
-    "${CMAKE_SOURCE_DIR}/External/renderdoc"
+    "${EXTERNAL_DIR}/d3dx12"
+    "${EXTERNAL_DIR}/DirectMLX"
+    "${EXTERNAL_DIR}/D3D12MA"
+    "${EXTERNAL_DIR}/stb"
+    "${EXTERNAL_DIR}/dxc/include"
+    "${EXTERNAL_DIR}/cgltf"
+    "${EXTERNAL_DIR}/tinyobjloader"
+    "${EXTERNAL_DIR}/FastNoiseLite"
+    "${EXTERNAL_DIR}/json"
+    "${EXTERNAL_DIR}/entt"
+    "${EXTERNAL_DIR}/nfd/include"
+    "${EXTERNAL_DIR}/FontAwesome"
+    "${EXTERNAL_DIR}/meshoptimizer"
+    "${EXTERNAL_DIR}/cereal"
+    "${EXTERNAL_DIR}/ImGui"
+    "${EXTERNAL_DIR}/Tracy"
+    "${EXTERNAL_DIR}/SimpleMath"
+    "${EXTERNAL_DIR}/XeSS/inc"
+    "${EXTERNAL_DIR}/DLSS/include"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/include"
+    "${EXTERNAL_DIR}/NVIDIA_Aftermath_SDK/include"
+    "${EXTERNAL_DIR}/NvPerf"
+    "${EXTERNAL_DIR}/ImPlot"
+    "${EXTERNAL_DIR}/oidn-2.3.2/include"
+    "${EXTERNAL_DIR}/renderdoc"
 )
 
 target_compile_options(Adria PRIVATE /MP)
@@ -62,15 +96,6 @@ target_compile_definitions(Adria PRIVATE
     $<$<CONFIG:Release,RelWithDebInfo>:NDEBUG;_CONSOLE>
 )
 
-link_directories(
-    "${CMAKE_SOURCE_DIR}/External/nfd/lib"
-    "${CMAKE_SOURCE_DIR}/External/XeSS/lib"
-    "${CMAKE_SOURCE_DIR}/External/DLSS/lib"
-    "${CMAKE_SOURCE_DIR}/External/FidelityFX-SDK/lib"
-    "${CMAKE_SOURCE_DIR}/External/NVIDIA_Aftermath_SDK/lib"
-    "${CMAKE_SOURCE_DIR}/External/oidn-2.3.2/lib"
-)
-
 target_link_libraries(Adria PRIVATE
     Microsoft::DirectX-Headers
     Microsoft::WinPixEventRuntime
@@ -78,23 +103,38 @@ target_link_libraries(Adria PRIVATE
     dxgi.lib
     dxguid.lib
     DirectML.lib
-    dxcompiler.lib
-    GFSDK_Aftermath_Lib.lib
-    OpenImageDenoise.lib
-    OpenImageDenoise_core.lib
-    libxess.lib
+    "${EXTERNAL_DIR}/NVIDIA_Aftermath_SDK/lib/GFSDK_Aftermath_Lib.lib"
+    "${EXTERNAL_DIR}/XeSS/lib/libxess.lib"
 
     $<$<CONFIG:Debug>:
-        nfd_d.lib
-        nvsdk_ngx_d_dbg.lib
-        ffx_dof_x64d.lib;ffx_fsr2_x64d.lib;ffx_fsr3_x64d.lib;ffx_cas_x64d.lib;ffx_backend_dx12_x64d.lib;ffx_cacao_x64d.lib;ffx_frameinterpolation_x64d.lib;ffx_opticalflow_x64d.lib;ffx_fsr3upscaler_x64d.lib;ffx_vrs_x64d.lib
-    >
+    "${EXTERNAL_DIR}/nfd/lib/nfd_d.lib"
+    "${EXTERNAL_DIR}/DLSS/lib/nvsdk_ngx_d_dbg.lib"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_dof_x64d.lib"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr2_x64d.lib"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3_x64d.lib"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cas_x64d.lib"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_backend_dx12_x64d.lib"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cacao_x64d.lib"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_frameinterpolation_x64d.lib"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_opticalflow_x64d.lib"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3upscaler_x64d.lib"
+    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_vrs_x64d.lib"
+	>
 
-    $<$<CONFIG:Profile, Release,RelWithDebInfo>:
-        nfd.lib
-        nvsdk_ngx_d.lib
-        ffx_dof_x64.lib;ffx_fsr2_x64.lib;ffx_fsr3_x64.lib;ffx_cas_x64.lib;ffx_backend_dx12_x64.lib;ffx_cacao_x64.lib;ffx_frameinterpolation_x64.lib;ffx_opticalflow_x64.lib;ffx_fsr3upscaler_x64.lib;ffx_vrs_x64.lib
-    >
+	$<$<CONFIG:Profile,Release,RelWithDebInfo>:
+		"${EXTERNAL_DIR}/nfd/lib/nfd.lib"
+		"${EXTERNAL_DIR}/DLSS/lib/nvsdk_ngx_d.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_dof_x64.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr2_x64.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3_x64.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cas_x64.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_backend_dx12_x64.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cacao_x64.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_frameinterpolation_x64.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_opticalflow_x64.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3upscaler_x64.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_vrs_x64.lib"
+	>
 )
 
 function(copy_runtime_dll SOURCE_FILE TARGET_NAME)
@@ -105,6 +145,7 @@ function(copy_runtime_dll SOURCE_FILE TARGET_NAME)
         COMMENT "Copying ${SOURCE_FILE} to output directory"
     )
 endfunction()
+
 
 copy_runtime_dll("dxcompiler.dll" Adria)
 copy_runtime_dll("dxil.dll" Adria)
