@@ -22,7 +22,7 @@
 #include "tracy/Tracy.hpp"
 
 extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = D3D12_SDK_VERSION; }
-extern "C" { __declspec(dllexport) extern LPCSTR D3D12SDKPath = ".\\D3D12\\"; }
+extern "C" { __declspec(dllexport) extern LPCSTR D3D12SDKPath = ".\\"; }
 extern "C" { __declspec(dllexport) extern UINT NvOptimusEnablement = true; }
 
 namespace adria

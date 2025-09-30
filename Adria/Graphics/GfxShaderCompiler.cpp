@@ -209,7 +209,7 @@ namespace adria
 		{
 			dxcompiler.Open("dxcompiler.dll");
 			ADRIA_FATAL_ASSERT(dxcompiler.IsOpen(), "Couldn't open dxcompiler.dll!");
-			Bool const success = dxcompiler.GetSymbol<DxcCreateInstanceT*>("DxcCreateInstance", &PFN_DxcCreateInstance);
+			Bool const success = dxcompiler.GetSymbol("DxcCreateInstance", &PFN_DxcCreateInstance);
 			ADRIA_FATAL_ASSERT(success && PFN_DxcCreateInstance != nullptr, "Couldn't get DxcCreateInstance symbol from dxcompiler.dll!");
 
 			GFX_CHECK_HR(PFN_DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(library.GetAddressOf())));

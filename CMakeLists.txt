@@ -10,7 +10,4 @@ set(CMAKE_EXE_LINKER_FLAGS_PROFILE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG /OP
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Profile;Release;RelWithDebInfo" CACHE STRING "Available build types" FORCE)
 
-find_package(directx-headers CONFIG REQUIRED)
-find_package(winpixevent CONFIG REQUIRED)
-
 add_subdirectory(Adria)

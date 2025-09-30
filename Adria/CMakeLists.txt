@@ -74,6 +74,8 @@ target_include_directories(Adria PRIVATE
     "${EXTERNAL_DIR}/ImPlot"
     "${EXTERNAL_DIR}/oidn-2.3.2/include"
     "${EXTERNAL_DIR}/renderdoc"
+    "${EXTERNAL_DIR}/DirectX12 Agility SDK/include"
+    "${EXTERNAL_DIR}/winpixeventruntime/include/WinPixEventRuntime"
 )
 
 target_compile_options(Adria PRIVATE /MP)
@@ -97,14 +99,13 @@ target_compile_definitions(Adria PRIVATE
 )
 
 target_link_libraries(Adria PRIVATE
-    Microsoft::DirectX-Headers
-    Microsoft::WinPixEventRuntime
     d3d12.lib
     dxgi.lib
     dxguid.lib
     DirectML.lib
     "${EXTERNAL_DIR}/NVIDIA_Aftermath_SDK/lib/GFSDK_Aftermath_Lib.x64.lib"
     "${EXTERNAL_DIR}/XeSS/lib/libxess.lib"
+    "${EXTERNAL_DIR}/winpixeventruntime/lib/WinPixEventRuntime.lib"
 
     $<$<CONFIG:Debug>:
     "${EXTERNAL_DIR}/nfd/lib/nfd_d.lib"
@@ -147,6 +148,9 @@ function(copy_runtime_dll SOURCE_FILE TARGET_NAME)
 endfunction()
 
 
+copy_runtime_dll("D3D12Core.dll" Adria)
+copy_runtime_dll("d3d12SDKLayers.dll" Adria)
+copy_runtime_dll("D3D12StateObjectCompiler.dll" Adria)
 copy_runtime_dll("dxcompiler.dll" Adria)
 copy_runtime_dll("dxil.dll" Adria)
 copy_runtime_dll("GFSDK_Aftermath_Lib.x64.dll" Adria)

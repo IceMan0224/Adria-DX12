@@ -22,168 +22,6 @@ namespace adria
 {
 	ADRIA_LOG_CHANNEL(Scene);
 
-	std::vector<entt::entity> SceneLoader::LoadGrid(GridParameters const& params)
-	{
-		if (params.heightmap)
-		{
-			ADRIA_ASSERT(params.heightmap->Depth() == params.tile_count_z + 1);
-			ADRIA_ASSERT(params.heightmap->Width() == params.tile_count_x + 1);
-		}
-
-		std::vector<entt::entity> chunks;
-		std::vector<TexturedNormalVertex> vertices{};
-		for (Uint64 j = 0; j <= params.tile_count_z; j++)
-		{
-			for (Uint64 i = 0; i <= params.tile_count_x; i++)
-			{
-				TexturedNormalVertex vertex{};
-
-				Float height = params.heightmap ? params.heightmap->HeightAt(i, j) : 0.0f;
-
-				vertex.position = Vector3(i * params.tile_size_x, height, j * params.tile_size_z);
-				vertex.uv = Vector2(i * 1.0f * params.texture_scale_x / (params.tile_count_x - 1), j * 1.0f * params.texture_scale_z / (params.tile_count_z - 1));
-				vertex.normal = Vector3(0.0f, 1.0f, 0.0f);
-				vertices.push_back(vertex);
-			}
-		}
-
-		if (!params.split_to_chunks)
-		{
-			std::vector<Uint32> indices{};
-			Uint32 i1 = 0;
-			Uint32 i2 = 1;
-			Uint32 i3 = static_cast<Uint32>(i1 + params.tile_count_x + 1);
-			Uint32 i4 = static_cast<Uint32>(i2 + params.tile_count_x + 1);
-			for (Uint64 i = 0; i < params.tile_count_x * params.tile_count_z; ++i)
-			{
-				indices.push_back(i1);
-				indices.push_back(i3);
-				indices.push_back(i2);
-
-
-				indices.push_back(i2);
-				indices.push_back(i3);
-				indices.push_back(i4);
-
-
-				++i1;
-				++i2;
-				++i3;
-				++i4;
-
-				if (i1 % (params.tile_count_x + 1) == params.tile_count_x)
-				{
-					++i1;
-					++i2;
-					++i3;
-					++i4;
-				}
-			}
-
-			ComputeNormals(params.normal_type, vertices, indices);
-
-			entt::entity grid = reg.create();
-
-			GfxBufferDesc vb_desc{
-			.size = vertices.size() * sizeof(TexturedNormalVertex),
-			.bind_flags = GfxBindFlag::None,
-			.stride = sizeof(TexturedNormalVertex)
-			};
-
-			GfxBufferDesc ib_desc{
-				.size = indices.size() * sizeof(Uint32),
-				.bind_flags = GfxBindFlag::None,
-				.stride = sizeof(Uint32),
-				.format = GfxFormat::R32_UINT
-			};
-
-			SubMesh submesh{};
-			submesh.indices_count = (Uint32)indices.size();
-			submesh.vertex_buffer = std::make_shared<GfxBuffer>(gfx, vb_desc, vertices.data());
-			submesh.index_buffer = std::make_shared<GfxBuffer>(gfx, ib_desc, indices.data());
-			submesh.bounding_box = AABBFromRange(vertices.begin(), vertices.end());
-			reg.emplace<SubMesh>(grid, submesh);
-			reg.emplace<Transform>(grid);
-
-			chunks.push_back(grid);
-		}
-		else
-		{
-			std::vector<Uint32> indices{};
-			for (Uint64 j = 0; j < params.tile_count_z; j += params.chunk_count_z)
-			{
-				for (Uint64 i = 0; i < params.tile_count_x; i += params.chunk_count_x)
-				{
-					entt::entity chunk = reg.create();
-
-					Uint32 const indices_count = static_cast<Uint32>(params.chunk_count_z * params.chunk_count_x * 3 * 2);
-					Uint32 const indices_offset = static_cast<Uint32>(indices.size());
-
-
-					std::vector<TexturedNormalVertex> chunk_vertices_aabb{};
-					for (Uint64 k = j; k < j + params.chunk_count_z; ++k)
-					{
-						for (Uint64 m = i; m < i + params.chunk_count_x; ++m)
-						{
-
-							Uint32 i1 = static_cast<Uint32>(k * (params.tile_count_x + 1) + m);
-							Uint32 i2 = static_cast<Uint32>(i1 + 1);
-							Uint32 i3 = static_cast<Uint32>((k + 1) * (params.tile_count_x + 1) + m);
-							Uint32 i4 = static_cast<Uint32>(i3 + 1);
-
-							indices.push_back(i1);
-							indices.push_back(i3);
-							indices.push_back(i2);
-
-							indices.push_back(i2);
-							indices.push_back(i3);
-							indices.push_back(i4);
-
-
-							chunk_vertices_aabb.push_back(vertices[i1]);
-							chunk_vertices_aabb.push_back(vertices[i2]);
-							chunk_vertices_aabb.push_back(vertices[i3]);
-							chunk_vertices_aabb.push_back(vertices[i4]);
-						}
-					}
-
-					SubMesh submesh{};
-					submesh.indices_count = indices_count;
-					submesh.start_index_location = indices_offset;
-					submesh.bounding_box = AABBFromRange(chunk_vertices_aabb.begin(), chunk_vertices_aabb.end());
-					reg.emplace<SubMesh>(chunk, submesh);
-					reg.emplace<Transform>(chunk);
-					chunks.push_back(chunk);
-				}
-			}
-			ComputeNormals(params.normal_type, vertices, indices);
-
-			GfxBufferDesc vb_desc{
-			.size = vertices.size() * sizeof(TexturedNormalVertex),
-			.bind_flags = GfxBindFlag::None,
-			.stride = sizeof(TexturedNormalVertex)
-			};
-
-			GfxBufferDesc ib_desc{
-				.size = indices.size() * sizeof(Uint32),
-				.bind_flags = GfxBindFlag::None,
-				.stride = sizeof(Uint32),
-				.format = GfxFormat::R32_UINT
-			};
-
-			std::shared_ptr<GfxBuffer> vb = std::make_shared<GfxBuffer>(gfx, vb_desc, vertices.data());
-			std::shared_ptr<GfxBuffer> ib = std::make_shared<GfxBuffer>(gfx, ib_desc, indices.data());
-
-			for (entt::entity chunk : chunks)
-			{
-				auto& submesh = reg.get<SubMesh>(chunk);
-				submesh.vertex_buffer = vb;
-				submesh.index_buffer = ib;
-			}
-		}
-		return chunks;
-	}
-
 	SceneLoader::SceneLoader(entt::registry& reg, GfxDevice* gfx)
         : reg(reg), gfx(gfx)
     {
@@ -305,6 +143,172 @@ namespace adria
         }
         return light;
     }
+
+	std::vector<entt::entity> SceneLoader::LoadGrid(GridParameters const& params)
+	{
+		if (params.heightmap)
+		{
+			ADRIA_ASSERT(params.heightmap->Depth() == params.tile_count_z + 1);
+			ADRIA_ASSERT(params.heightmap->Width() == params.tile_count_x + 1);
+		}
+
+		std::vector<entt::entity> chunks;
+		std::vector<TexturedNormalVertex> vertices{};
+		Float offset_x = (params.tile_count_x * params.tile_size_x) * 0.5f;
+		Float offset_z = (params.tile_count_z * params.tile_size_z) * 0.5f;
+
+		for (Uint64 j = 0; j <= params.tile_count_z; j++)
+		{
+			for (Uint64 i = 0; i <= params.tile_count_x; i++)
+			{
+				TexturedNormalVertex vertex{};
+				Float height = params.heightmap ? params.heightmap->HeightAt(i, j) : 0.0f;
+
+				vertex.position = Vector3(
+					(i * params.tile_size_x) - offset_x,
+					height,
+					(j * params.tile_size_z) - offset_z
+				);
+				vertex.uv = Vector2(
+					i * 1.0f * params.texture_scale_x / (params.tile_count_x - 1),
+					j * 1.0f * params.texture_scale_z / (params.tile_count_z - 1)
+				);
+				vertex.normal = Vector3(0.0f, 1.0f, 0.0f);
+				vertices.push_back(vertex);
+			}
+		}
+
+		if (!params.split_to_chunks)
+		{
+			std::vector<Uint32> indices{};
+			Uint32 i1 = 0;
+			Uint32 i2 = 1;
+			Uint32 i3 = static_cast<Uint32>(i1 + params.tile_count_x + 1);
+			Uint32 i4 = static_cast<Uint32>(i2 + params.tile_count_x + 1);
+			for (Uint64 i = 0; i < params.tile_count_x * params.tile_count_z; ++i)
+			{
+				indices.push_back(i1);
+				indices.push_back(i3);
+				indices.push_back(i2);
+
+				indices.push_back(i2);
+				indices.push_back(i3);
+				indices.push_back(i4);
+
+				++i1;
+				++i2;
+				++i3;
+				++i4;
+
+				if (i1 % (params.tile_count_x + 1) == params.tile_count_x)
+				{
+					++i1;
+					++i2;
+					++i3;
+					++i4;
+				}
+			}
+
+			ComputeNormals(params.normal_type, vertices, indices);
+
+			entt::entity grid = reg.create();
+
+			GfxBufferDesc vb_desc{
+				.size = vertices.size() * sizeof(TexturedNormalVertex),
+				.bind_flags = GfxBindFlag::None,
+				.stride = sizeof(TexturedNormalVertex)
+			};
+
+			GfxBufferDesc ib_desc{
+				.size = indices.size() * sizeof(Uint32),
+				.bind_flags = GfxBindFlag::None,
+				.stride = sizeof(Uint32),
+				.format = GfxFormat::R32_UINT
+			};
+
+			SubMesh submesh{};
+			submesh.indices_count = (Uint32)indices.size();
+			submesh.vertex_buffer = std::make_shared<GfxBuffer>(gfx, vb_desc, vertices.data());
+			submesh.index_buffer = std::make_shared<GfxBuffer>(gfx, ib_desc, indices.data());
+			submesh.bounding_box = AABBFromRange(vertices.begin(), vertices.end());
+			reg.emplace<SubMesh>(grid, submesh);
+			reg.emplace<Transform>(grid);
+
+			chunks.push_back(grid);
+		}
+		else
+		{
+			std::vector<Uint32> indices{};
+			for (Uint64 j = 0; j < params.tile_count_z; j += params.chunk_count_z)
+			{
+				for (Uint64 i = 0; i < params.tile_count_x; i += params.chunk_count_x)
+				{
+					entt::entity chunk = reg.create();
+
+					Uint32 const indices_count = static_cast<Uint32>(params.chunk_count_z * params.chunk_count_x * 3 * 2);
+					Uint32 const indices_offset = static_cast<Uint32>(indices.size());
+
+					std::vector<TexturedNormalVertex> chunk_vertices_aabb{};
+					for (Uint64 k = j; k < j + params.chunk_count_z; ++k)
+					{
+						for (Uint64 m = i; m < i + params.chunk_count_x; ++m)
+						{
+							Uint32 i1 = static_cast<Uint32>(k * (params.tile_count_x + 1) + m);
+							Uint32 i2 = static_cast<Uint32>(i1 + 1);
+							Uint32 i3 = static_cast<Uint32>((k + 1) * (params.tile_count_x + 1) + m);
+							Uint32 i4 = static_cast<Uint32>(i3 + 1);
+
+							indices.push_back(i1);
+							indices.push_back(i3);
+							indices.push_back(i2);
+
+							indices.push_back(i2);
+							indices.push_back(i3);
+							indices.push_back(i4);
+
+							chunk_vertices_aabb.push_back(vertices[i1]);
+							chunk_vertices_aabb.push_back(vertices[i2]);
+							chunk_vertices_aabb.push_back(vertices[i3]);
+							chunk_vertices_aabb.push_back(vertices[i4]);
+						}
+					}
+
+					SubMesh submesh{};
+					submesh.indices_count = indices_count;
+					submesh.start_index_location = indices_offset;
+					submesh.bounding_box = AABBFromRange(chunk_vertices_aabb.begin(), chunk_vertices_aabb.end());
+					reg.emplace<SubMesh>(chunk, submesh);
+					reg.emplace<Transform>(chunk);
+					chunks.push_back(chunk);
+				}
+			}
+			ComputeNormals(params.normal_type, vertices, indices);
+
+			GfxBufferDesc vb_desc{
+				.size = vertices.size() * sizeof(TexturedNormalVertex),
+				.bind_flags = GfxBindFlag::None,
+				.stride = sizeof(TexturedNormalVertex)
+			};
+
+			GfxBufferDesc ib_desc{
+				.size = indices.size() * sizeof(Uint32),
+				.bind_flags = GfxBindFlag::None,
+				.stride = sizeof(Uint32),
+				.format = GfxFormat::R32_UINT
+			};
+
+			std::shared_ptr<GfxBuffer> vb = std::make_shared<GfxBuffer>(gfx, vb_desc, vertices.data());
+			std::shared_ptr<GfxBuffer> ib = std::make_shared<GfxBuffer>(gfx, ib_desc, indices.data());
+
+			for (entt::entity chunk : chunks)
+			{
+				auto& submesh = reg.get<SubMesh>(chunk);
+				submesh.vertex_buffer = vb;
+				submesh.index_buffer = ib;
+			}
+		}
+		return chunks;
+	}
 
 	std::vector<entt::entity> SceneLoader::LoadOcean(OceanParameters const& params)
 	{

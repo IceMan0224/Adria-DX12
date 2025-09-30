@@ -10,6 +10,7 @@
 #include "Graphics/GfxPipelineStatePermutations.h"
 #include "Graphics/GfxReflection.h"
 #include "Graphics/GfxCommon.h"
+#include "Core/ConsoleManager.h"
 #include "Editor/GUICommand.h"
 #include "Utilities/Random.h"
 #include "Math/Constants.h"
@@ -19,6 +20,7 @@ using namespace DirectX;
 
 namespace adria
 {
+	static TAutoConsoleVariable<Float>	OceanHeight("r.OceanHeight", 0.0f, "Ocean height which is value of y translation of Ocean transform");
 
 	OceanRenderer::OceanRenderer(entt::registry& reg, GfxDevice* gfx, Uint32 w, Uint32 h)
 		: reg{ reg }, gfx{ gfx }, width{ w }, height{ h }
@@ -390,6 +392,17 @@ namespace adria
 					ImGui::SliderFloat("Choppiness", &ocean_choppiness, 0.0f, 10.0f);
 					ocean_color_changed = ImGui::ColorEdit3("Ocean Color", ocean_color);
 					recreate_initial_spectrum = ImGui::SliderFloat2("Wind Direction", wind_direction, 0.0f, 50.0f);
+					if (ImGui::SliderFloat("Height", OceanHeight.GetPtr(), -100.0f, 100.0f))
+					{
+						auto ocean_view = reg.view<Ocean, Transform>();
+						for (entt::entity e : ocean_view)
+						{
+							Transform& transform = ocean_view.get<Transform>(e);
+							Vector3 const& current_translation = transform.current_transform.Translation();
+							Vector3 new_translation(current_translation.x, OceanHeight.Get(), current_translation.z);
+							transform.current_transform.Translation(new_translation);
+						}
+					}
 					ImGui::TreePop();
 					ImGui::Separator();
 				}
@@ -442,6 +455,7 @@ namespace adria
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_Ocean;
 		gfx_pso_desc.PS = PS_Ocean;
+		gfx_pso_desc.rasterizer_state.cull_mode = GfxCullMode::None;
 		gfx_pso_desc.depth_state.depth_enable = true;
 		gfx_pso_desc.depth_state.depth_write_mask = GfxDepthWriteMask::All;
 		gfx_pso_desc.depth_state.depth_func = GfxComparisonFunc::GreaterEqual;
