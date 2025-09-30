@@ -989,7 +989,8 @@ namespace adria
 #if GFX_PROFILING_USE_TRACY
 			if (ImGui::Button("Run Tracy"))
 			{
-				system("start ..\\External\\tracy\\Tracy-0.11.1\\tracy-profiler.exe");
+				static Char const* tracy_command = "start " SOLUTION_DIR"\\External\\tracy\\Tracy-0.11.1\\tracy-profiler.exe";
+				system(tracy_command);
 			}
 #endif
 			static Bool show_profiling = true;

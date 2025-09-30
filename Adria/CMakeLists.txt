@@ -41,6 +41,8 @@ set(EXTERNAL_SOURCES
     "${EXTERNAL_DIR}/meshoptimizer/vfetchoptimizer.cpp"
     "${EXTERNAL_DIR}/meshoptimizer/vertexcodec.cpp"
     "${EXTERNAL_DIR}/meshoptimizer/vertexfilter.cpp"
+	
+    "${EXTERNAL_DIR}/tracy/TracyClient.cpp"
 )
 
 add_executable(Adria WIN32 ${ADRIA_SOURCES} ${EXTERNAL_SOURCES})
