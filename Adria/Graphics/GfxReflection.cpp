@@ -4,9 +4,14 @@
 #include "GfxReflection.h"
 #include "GfxShader.h"
 #include "GfxInputLayout.h"
+#include "Core/FatalAssert.h"
+#include "Utilities/DynamicLibrary.h"
 
 namespace adria
 {
+	using DxcCreateInstanceT = decltype(DxcCreateInstance);
+	extern DxcCreateInstanceT* PFN_DxcCreateInstance;
+
 	class GfxReflectionBlob : public IDxcBlob
 	{
 	public:
@@ -41,6 +46,7 @@ namespace adria
 		}
 		virtual ULONG STDMETHODCALLTYPE AddRef(void) override { return 1; }
 		virtual ULONG STDMETHODCALLTYPE Release(void) override { return 1; }
+
 	private:
 		LPVOID bytecode = nullptr;
 		SIZE_T bytecode_size = 0;
@@ -48,8 +54,9 @@ namespace adria
 
 	void GfxReflection::FillInputLayoutDesc(GfxShader const& vertex_shader, GfxInputLayout& input_layout)
 	{
+		ADRIA_FATAL_ASSERT(PFN_DxcCreateInstance != nullptr, "Cannot do dxc reflection without PFN_DxcCreateInstance!");
 		Ref<IDxcContainerReflection> reflection;
-		HRESULT hr = DxcCreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(reflection.GetAddressOf()));
+		HRESULT hr = PFN_DxcCreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(reflection.GetAddressOf()));
 		GfxReflectionBlob my_blob{ vertex_shader.GetData(), vertex_shader.GetSize() };
 		GFX_CHECK_HR(hr);
 		hr = reflection->Load(&my_blob);

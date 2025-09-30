@@ -43,7 +43,7 @@ set(EXTERNAL_SOURCES
     "${EXTERNAL_DIR}/meshoptimizer/vertexfilter.cpp"
 )
 
-add_executable(Adria ${ADRIA_SOURCES} ${EXTERNAL_SOURCES})
+add_executable(Adria WIN32 ${ADRIA_SOURCES} ${EXTERNAL_SOURCES})
 
 target_precompile_headers(Adria PRIVATE precomp.h)
 
@@ -103,7 +103,7 @@ target_link_libraries(Adria PRIVATE
     dxgi.lib
     dxguid.lib
     DirectML.lib
-    "${EXTERNAL_DIR}/NVIDIA_Aftermath_SDK/lib/GFSDK_Aftermath_Lib.lib"
+    "${EXTERNAL_DIR}/NVIDIA_Aftermath_SDK/lib/GFSDK_Aftermath_Lib.x64.lib"
     "${EXTERNAL_DIR}/XeSS/lib/libxess.lib"
 
     $<$<CONFIG:Debug>:
@@ -149,7 +149,7 @@ endfunction()
 
 copy_runtime_dll("dxcompiler.dll" Adria)
 copy_runtime_dll("dxil.dll" Adria)
-copy_runtime_dll("GFSDK_Aftermath_Lib.dll" Adria)
+copy_runtime_dll("GFSDK_Aftermath_Lib.x64.dll" Adria)
 copy_runtime_dll("libxess.dll" Adria)
 copy_runtime_dll("nvperf_grfx_host.dll" Adria)
 copy_runtime_dll("renderdoc.dll" Adria)

@@ -6,15 +6,20 @@
 #include "GfxShaderCompiler.h"
 #include "GfxMacros.h"
 #include "Core/Paths.h"
+#include "Core/FatalAssert.h"
 #include "Utilities/StringConversions.h"
 #include "Utilities/PathHelpers.h"
 #include "Utilities/Hash.h"
 #include "Utilities/Ref.h"
+#include "Utilities/DynamicLibrary.h"
 
 
 namespace adria
 {
 	ADRIA_LOG_CHANNEL(ShaderCompiler);
+
+	using DxcCreateInstanceT = decltype(DxcCreateInstance);
+	extern DxcCreateInstanceT* PFN_DxcCreateInstance = nullptr;
 
 	namespace
 	{
@@ -22,6 +27,7 @@ namespace adria
 		Ref<IDxcCompiler3> compiler = nullptr;
 		Ref<IDxcUtils> utils = nullptr;
 		Ref<IDxcIncludeHandler> include_handler = nullptr;
+		DynamicLibrary dxcompiler;
 	}
 	class GfxIncludeHandler : public IDxcIncludeHandler
 	{
@@ -201,10 +207,15 @@ namespace adria
 
 		void Initialize()
 		{
-			GFX_CHECK_HR(DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(library.GetAddressOf())));
-			GFX_CHECK_HR(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(compiler.GetAddressOf())));
+			dxcompiler.Open("dxcompiler.dll");
+			ADRIA_FATAL_ASSERT(dxcompiler.IsOpen(), "Couldn't open dxcompiler.dll!");
+			Bool const success = dxcompiler.GetSymbol<DxcCreateInstanceT*>("DxcCreateInstance", &PFN_DxcCreateInstance);
+			ADRIA_FATAL_ASSERT(success && PFN_DxcCreateInstance != nullptr, "Couldn't get DxcCreateInstance symbol from dxcompiler.dll!");
+
+			GFX_CHECK_HR(PFN_DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(library.GetAddressOf())));
+			GFX_CHECK_HR(PFN_DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(compiler.GetAddressOf())));
 			GFX_CHECK_HR(library->CreateIncludeHandler(include_handler.GetAddressOf()));
-			GFX_CHECK_HR(DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(utils.GetAddressOf())));
+			GFX_CHECK_HR(PFN_DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(utils.GetAddressOf())));
 
 			std::filesystem::create_directory(paths::ShaderPDBDir);
 		}

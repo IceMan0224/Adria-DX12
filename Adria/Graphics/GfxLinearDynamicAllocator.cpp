@@ -43,7 +43,7 @@ namespace adria
 			allocation.size = size_in_bytes; 
 
 			ADRIA_ASSERT_MSG(allocation.gpu_address % alignment == 0, "Dynamic allocation final GPU address is misaligned!");
-			ADRIA_ASSERT_MSG(final_data_offset + size_in_bytes <= page_size, "Dynamic allocation exceeds page bounds!");
+			ADRIA_ASSERT_MSG(final_data_offset + size_in_bytes <= last_page->linear_offset_allocator.MaxSize(), "Dynamic allocation exceeds page bounds!");
 			return allocation;
 		}
 		else 

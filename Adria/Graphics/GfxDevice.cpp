@@ -206,6 +206,11 @@ namespace adria
 		copy_fence.Create(this, "Copy Fence");
 		compute_fence.Create(this, "Compute Fence");
 
+		for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
+		{
+			frame_fence_values[i] = 0;
+		}
+
 		draw_indirect_signature = std::make_unique<DrawIndirectSignature>(this);
 		draw_indexed_indirect_signature = std::make_unique<DrawIndexedIndirectSignature>(this);
 		dispatch_indirect_signature = std::make_unique<DispatchIndirectSignature>(this);

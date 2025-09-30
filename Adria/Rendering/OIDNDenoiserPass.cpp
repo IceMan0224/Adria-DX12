@@ -4,6 +4,7 @@
 
 namespace adria
 {
+#if ADRIA_ENABLE_OIDN
 	ADRIA_LOG_CHANNEL(Renderer);
 
 	static void OIDNErrorCallback(void* ptr, OIDNError code, const char* message)
@@ -185,5 +186,11 @@ namespace adria
 			denoised = true;
 		}
 	}
-
+#else
+	OIDNDenoiserPass::OIDNDenoiserPass(GfxDevice* gfx) {}
+	OIDNDenoiserPass::~OIDNDenoiserPass() {}
+	void OIDNDenoiserPass::AddPass(RenderGraph& rg) {}
+	void OIDNDenoiserPass::Reset() {}
+	void OIDNDenoiserPass::CreateBuffers(GfxTexture const& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture) {}
+#endif
 }
