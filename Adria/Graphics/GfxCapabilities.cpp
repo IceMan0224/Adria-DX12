@@ -21,18 +21,18 @@ namespace adria
 			}
 			return RayTracingSupport::TierNotSupported;
 		}
-		constexpr VSRSupport ConvertVSRTier(D3D12_VARIABLE_SHADING_RATE_TIER tier)
+		constexpr VRSSupport ConvertVRSTier(D3D12_VARIABLE_SHADING_RATE_TIER tier)
 		{
 			switch (tier)
 			{
 			case D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED:
-				return VSRSupport::TierNotSupported;
+				return VRSSupport::TierNotSupported;
 			case D3D12_VARIABLE_SHADING_RATE_TIER_1:
-				return VSRSupport::Tier1;
+				return VRSSupport::Tier1;
 			case D3D12_VARIABLE_SHADING_RATE_TIER_2:
-				return VSRSupport::Tier2;
+				return VRSSupport::Tier2;
 			}
-			return VSRSupport::TierNotSupported;
+			return VRSSupport::TierNotSupported;
 		}
 		constexpr MeshShaderSupport ConvertMeshShaderTier(D3D12_MESH_SHADER_TIER tier)
 		{
@@ -79,7 +79,7 @@ namespace adria
 		feature_support.Init(gfx->GetDevice());
 
 		ray_tracing_support = ConvertRayTracingTier(feature_support.RaytracingTier());
-		vsr_support			= ConvertVSRTier(feature_support.VariableShadingRateTier());
+		vrs_support			= ConvertVRSTier(feature_support.VariableShadingRateTier());
 		mesh_shader_support = ConvertMeshShaderTier(feature_support.MeshShaderTier());
 		work_graph_support = ConvertWorkGraphTier(feature_support.WorkGraphsTier());
 		shader_model		= ConvertShaderModel(feature_support.HighestShaderModel());
