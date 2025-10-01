@@ -280,6 +280,7 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommon.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxConstantBuffer.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptor.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorHeap.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorAllocator.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorAllocator.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorAllocatorBase.cpp"
@@ -351,6 +352,8 @@ set(ADRIA_D3D12_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Fence.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandSignature.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandSignature.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12DescriptorHeap.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12DescriptorHeap.cpp"
 
 )
 

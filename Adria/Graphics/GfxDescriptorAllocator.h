@@ -1,32 +1,28 @@
 #pragma once
-#include "GfxDescriptorAllocatorBase.h"
+#include "GfxDescriptorHeap.h"
 
 namespace adria
 {
-	struct GfxDescriptorAllocatorDesc
-	{
-		GfxDescriptorHeapType type = GfxDescriptorHeapType::Invalid;
-		Uint32 descriptor_count = 0;
-		Bool shader_visible = false;
-	};
-
-	class GfxDescriptorAllocator : public GfxDescriptorAllocatorBase
+	class GfxDescriptorAllocator
 	{
 		struct GfxDescriptorRange
 		{
 			GfxDescriptor begin;
-			GfxDescriptor end;
+			GfxDescriptor end; // Note: end is exclusive
 		};
 
 	public:
-		GfxDescriptorAllocator(GfxDevice* gfx_device, GfxDescriptorAllocatorDesc const& desc);
+		GfxDescriptorAllocator(std::unique_ptr<GfxDescriptorHeap> heap);
 		~GfxDescriptorAllocator();
+		ADRIA_NONCOPYABLE_NONMOVABLE(GfxDescriptorAllocator)
 
 		ADRIA_NODISCARD GfxDescriptor AllocateDescriptor();
 		void FreeDescriptor(GfxDescriptor handle);
 
+		GfxDescriptorHeap* GetHeap() const { return heap.get(); }
+
 	private:
-		GfxDescriptor tail_descriptor;
+		std::unique_ptr<GfxDescriptorHeap> heap;
 		std::list<GfxDescriptorRange> free_descriptor_ranges;
 	};
 }

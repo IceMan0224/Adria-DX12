@@ -2,11 +2,11 @@
 
 namespace adria
 {
-	GfxDescriptorAllocator::GfxDescriptorAllocator(GfxDevice* gfx, GfxDescriptorAllocatorDesc const& desc)
-		: GfxDescriptorAllocatorBase(gfx, desc.type, desc.descriptor_count, desc.shader_visible),
-		tail_descriptor(head_descriptor)
+	GfxDescriptorAllocator::GfxDescriptorAllocator(std::unique_ptr<GfxDescriptorHeap> heap)
+		: heap(std::move(heap))
 	{
-		tail_descriptor.Increment(descriptor_handle_size ,desc.descriptor_count - 1);
+		GfxDescriptor head_descriptor = this->heap->GetDescriptor(0);
+		GfxDescriptor tail_descriptor = this->heap->GetDescriptor(this->heap->GetCapacity());
 		free_descriptor_ranges.emplace_back(head_descriptor, tail_descriptor);
 	}
 
@@ -14,9 +14,11 @@ namespace adria
 
 	GfxDescriptor GfxDescriptorAllocator::AllocateDescriptor()
 	{
+		ADRIA_ASSERT(!free_descriptor_ranges.empty() && "Out of descriptor space!");
 		GfxDescriptorRange& range = free_descriptor_ranges.front();
 		GfxDescriptor handle = range.begin;
-		range.begin.Increment(descriptor_handle_size);
+
+		range.begin.Increment(1);
 		if (range.begin == range.end)
 		{
 			free_descriptor_ranges.pop_front();
@@ -26,35 +28,43 @@ namespace adria
 
 	void GfxDescriptorAllocator::FreeDescriptor(GfxDescriptor handle)
 	{
-		GfxDescriptor incremented_handle = handle;
-		incremented_handle.Increment(descriptor_handle_size);
+		GfxDescriptor next_handle = handle;
+		next_handle.Increment(1);
 
-		GfxDescriptorRange rng{ .begin = handle, .end = incremented_handle };
-
-		Bool found = false;
-		for (auto range = std::begin(free_descriptor_ranges); range != std::end(free_descriptor_ranges) && found == false; ++range)
+		GfxDescriptorRange new_range{ .begin = handle, .end = next_handle };
+		Bool merged = false;
+		for (auto it = free_descriptor_ranges.begin(); it != free_descriptor_ranges.end(); ++it)
 		{
-			if (range->begin == incremented_handle)
+			if (it->end == handle)
 			{
-				range->begin = handle;
-				found = true;
+				it->end.Increment(1);
+				auto next_it = std::next(it);
+				if (next_it != free_descriptor_ranges.end() && next_it->begin == it->end)
+				{
+					it->end = next_it->end;
+					free_descriptor_ranges.erase(next_it);
+				}
+				merged = true;
+				break;
 			}
-			else if (range->end == handle)
+			else if (it->begin == next_handle)
 			{
-				range->end.Increment(descriptor_handle_size);
-				found = true;
+				it->begin = handle;
+				merged = true;
+				break;
 			}
-			else if (range->begin.GetIndex() > handle.GetIndex())
+			else if (it->begin.GetIndex() > handle.GetIndex())
 			{
-				free_descriptor_ranges.insert(range, rng);
-				found = true;
+				free_descriptor_ranges.insert(it, new_range);
+				merged = true;
+				break;
 			}
 		}
-		if (!found)
+
+		if (!merged)
 		{
-			free_descriptor_ranges.push_back(rng);
+			free_descriptor_ranges.push_back(new_range);
 		}
 	}
-
 }
 
