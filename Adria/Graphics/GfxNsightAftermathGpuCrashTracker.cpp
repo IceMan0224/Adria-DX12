@@ -254,4 +254,3 @@ namespace adria
 		shader_hash_map[shader_hash.hash] = shader_key;
 	}
 }
-

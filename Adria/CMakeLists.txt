@@ -276,8 +276,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandListPool.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandQueue.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandQueue.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandSignature.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandSignature.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommon.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommon.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxConstantBuffer.h"
@@ -289,7 +287,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDevice.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDevice.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDynamicAllocation.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxFence.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxFence.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxFormat.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxInputLayout.h"
@@ -309,7 +306,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxProfiler.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxProfiler.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxProfilerFwd.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxQueryHeap.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxQueryHeap.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRayTracingAS.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRayTracingAS.h"
@@ -349,6 +345,13 @@ set(ADRIA_D3D12_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Buffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Texture.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Texture.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12QueryHeap.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12QueryHeap.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Fence.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Fence.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandSignature.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandSignature.cpp"
+
 )
 
 set(ADRIA_WIN32_SOURCES

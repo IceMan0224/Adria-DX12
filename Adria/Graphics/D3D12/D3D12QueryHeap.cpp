@@ -1,9 +1,9 @@
-#include "GfxQueryHeap.h"
-#include "GfxDevice.h"
+#include "D3D12QueryHeap.h"
+#include "Graphics/GfxDevice.h"
 
 namespace adria
 {
-	static constexpr D3D12_QUERY_HEAP_TYPE ToD3D12QueryHeapType(GfxQueryType query_type)
+	inline constexpr D3D12_QUERY_HEAP_TYPE ToD3D12QueryHeapType(GfxQueryType query_type)
 	{
 		switch (query_type)
 		{
@@ -18,7 +18,8 @@ namespace adria
 		return D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
 	}
 
-	GfxQueryHeap::GfxQueryHeap(GfxDevice* gfx, GfxQueryHeapDesc const& desc) : desc(desc)
+
+	D3D12QueryHeap::D3D12QueryHeap(GfxDevice* gfx, GfxQueryHeapDesc const& desc) : GfxQueryHeap(gfx, desc)
 	{
 		D3D12_QUERY_HEAP_DESC heap_desc{};
 		heap_desc.Count = desc.count;
@@ -27,5 +28,3 @@ namespace adria
 		GFX_CHECK_HR(gfx->GetDevice()->CreateQueryHeap(&heap_desc, IID_PPV_ARGS(query_heap.GetAddressOf())));
 	}
 }
-
-

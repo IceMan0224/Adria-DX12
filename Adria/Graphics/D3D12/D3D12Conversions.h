@@ -400,4 +400,5 @@ namespace adria
 		}
 		return D3D12_SHADING_RATE_COMBINER_PASSTHROUGH;
 	}
+
 }

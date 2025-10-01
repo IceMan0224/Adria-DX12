@@ -1,22 +1,18 @@
-#include "GfxFence.h"
-#include "GfxDevice.h"
-#include "GfxCommandQueue.h"
+#include "D3D12Fence.h"
+#include "Graphics/GfxDevice.h"
+#include "Graphics/GfxCommandQueue.h"
 #include "Utilities/StringConversions.h"
 
 namespace adria
 {
-
-	GfxFence::GfxFence() {}
-
-	GfxFence::~GfxFence()
+	D3D12Fence::~D3D12Fence()
 	{
 		CloseHandle(event);
 	}
 
-	Bool GfxFence::Create(GfxDevice* gfx, Char const* name)
+	Bool D3D12Fence::Create(GfxDevice* gfx, Char const* name)
 	{
 		ID3D12Device* device = gfx->GetDevice();
-
 		HRESULT hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
 		if (FAILED(hr))
 		{
@@ -28,7 +24,7 @@ namespace adria
 		return true;
 	}
 
-	void GfxFence::Wait(Uint64 value)
+	void D3D12Fence::Wait(Uint64 value)
 	{
 		if (!IsCompleted(value))
 		{
@@ -37,19 +33,24 @@ namespace adria
 		}
 	}
 
-	void GfxFence::Signal(Uint64 value)
+	void D3D12Fence::Signal(Uint64 value)
 	{
 		fence->Signal(value);
 	}
 
-	Bool GfxFence::IsCompleted(Uint64 value)
+	Bool D3D12Fence::IsCompleted(Uint64 value)
 	{
 		return GetCompletedValue() >= value;
 	}
 
-	Uint64 GfxFence::GetCompletedValue() const
+	Uint64 D3D12Fence::GetCompletedValue() const
 	{
 		return fence->GetCompletedValue();
+	}
+
+	void* D3D12Fence::GetHandle() const
+	{
+		return fence.Get(); 
 	}
 
 }

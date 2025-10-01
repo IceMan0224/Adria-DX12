@@ -20,12 +20,16 @@ namespace adria
 	class GfxQueryHeap
 	{
 	public:
-		GfxQueryHeap(GfxDevice* gfx, GfxQueryHeapDesc const& desc);
+		GfxQueryHeap(GfxDevice* gfx, GfxQueryHeapDesc const& desc) : gfx(gfx), desc(desc) {}
+		virtual ~GfxQueryHeap() {}
+
+		GfxDevice* GetParent() const { return gfx; }
 		GfxQueryHeapDesc const& GetDesc() const { return desc; }
-		operator ID3D12QueryHeap* () const { return query_heap.Get(); }
+
+		virtual void* GetHandle() const = 0;
 
 	private:
-		Ref<ID3D12QueryHeap> query_heap;
+		GfxDevice* gfx;
 		GfxQueryHeapDesc desc;
 	};
 

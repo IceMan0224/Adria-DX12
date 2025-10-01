@@ -2,7 +2,7 @@
 #include "GfxDevice.h"
 #include "GfxCommandList.h"
 #include "GfxQueryHeap.h"
-#include "GfxBuffer.h"
+#include "GfxBufferView.h"
 
 namespace adria
 {

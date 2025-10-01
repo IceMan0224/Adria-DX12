@@ -8,6 +8,20 @@ namespace adria
 	class GfxFence
 	{
 	public:
+		GfxFence() {}
+		virtual ~GfxFence() {}
+
+		virtual Bool Create(GfxDevice* gfx, Char const* name) = 0;
+		virtual void Wait(Uint64 value) = 0;
+		virtual void Signal(Uint64 value) = 0;
+		virtual Bool IsCompleted(Uint64 value) = 0;
+		virtual Uint64 GetCompletedValue() const = 0;
+		virtual void* GetHandle() const = 0;
+	};
+
+	class GfxFence
+	{
+	public:
 		GfxFence();
 		~GfxFence();
 
@@ -21,8 +35,5 @@ namespace adria
 
 		operator ID3D12Fence* () const { return fence.Get(); }
 
-	private:
-		Ref<ID3D12Fence> fence = nullptr;
-		HANDLE event = nullptr;
 	};
 }
