@@ -1,5 +1,5 @@
 #pragma once
-#include "Graphics/GfxMacros.h"
+#include "Graphics/GfxDefines.h"
 #include "Graphics/GfxDescriptor.h"
 #include "RenderGraph/RenderGraphResourceName.h"
 

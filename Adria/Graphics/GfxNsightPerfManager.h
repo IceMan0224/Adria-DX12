@@ -1,5 +1,5 @@
 #pragma once
-#include "GfxMacros.h"
+#include "GfxDefines.h"
 #if defined(GFX_ENABLE_NV_PERF)
 #include "Core/ConsoleManager.h"
 #include "NvPerfUtility/include/NvPerfPeriodicSamplerD3D12.h"

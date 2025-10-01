@@ -4,7 +4,7 @@
 #include "cereal/types/string.hpp"
 #include "cereal/types/vector.hpp"
 #include "GfxShaderCompiler.h"
-#include "GfxMacros.h"
+#include "GfxDefines.h"
 #include "Core/Paths.h"
 #include "Core/FatalAssert.h"
 #include "Utilities/StringConversions.h"

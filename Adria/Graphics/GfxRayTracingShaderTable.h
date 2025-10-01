@@ -1,5 +1,5 @@
 #pragma once
-#include "GfxMacros.h"
+#include "GfxDefines.h"
 #include "GfxDynamicAllocation.h"
 
 namespace adria

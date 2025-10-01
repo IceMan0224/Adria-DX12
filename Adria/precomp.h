@@ -51,8 +51,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "Core/Types.h"
-#include "Core/Macros.h"
+#include "Core/Defines.h"
 #include "Logging/Log.h"
-#include "Graphics/GfxMacros.h"
+#include "Graphics/GfxDefines.h"
 #include "Math/MathCommon.h"
 #include "Utilities/Ref.h"

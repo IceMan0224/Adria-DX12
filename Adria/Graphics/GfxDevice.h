@@ -6,7 +6,7 @@
 #include "GfxCommandQueue.h"
 #include "GfxCapabilities.h"
 #include "GfxDescriptorAllocatorBase.h"
-#include "GfxMacros.h"
+#include "GfxDefines.h"
 #include "GfxRayTracingAS.h"
 #include "GfxShadingRate.h"
 #include "Utilities/Releasable.h"

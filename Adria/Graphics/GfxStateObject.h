@@ -1,6 +1,6 @@
 #pragma once
 #include "d3dx12.h"
-#include "GfxMacros.h"
+#include "GfxDefines.h"
 
 namespace adria
 {

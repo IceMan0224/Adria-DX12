@@ -19,5 +19,25 @@
 #define GFX_ENABLE_NV_PERF
 #endif
 
+#if defined(ADRIA_PLATFORM_WINDOWS)
+#define GFX_BACKEND_DX12 1
+#elif defined(ADRIA_PLATFORM_LINUX)
+#define GFX_BACKEND_VULKAN 1
+#elif defined((ADRIA_PLATFORM_MACOS)
+#define GFX_BACKEND_METAL 1
+#endif
+
+#ifndef GFX_BACKEND_DX12
+#define GFX_BACKEND_DX12 0
+#endif
+
+#ifndef GFX_BACKEND_VULKAN
+#define GFX_BACKEND_VULKAN 0
+#endif
+
+#ifndef GFX_BACKEND_METAL
+#define GFX_BACKEND_METAL 0
+#endif
+
 
 
