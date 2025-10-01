@@ -11,7 +11,7 @@ namespace adria
 		Tier1_0,
 		Tier1_1
 	};
-	enum class VSRSupport : Uint8
+	enum class VRSSupport : Uint8
 	{
 		TierNotSupported,
 		Tier1,
@@ -42,9 +42,9 @@ namespace adria
 		{
 			return CheckMeshShaderSupport(MeshShaderSupport::Tier1);
 		}
-		Bool SupportsVSR() const
+		Bool SupportsVRS() const
 		{
-			return CheckVSRSupport(VSRSupport::Tier1);
+			return CheckVRSSupport(VRSSupport::Tier1);
 		}
 		Bool SupportsWorkGraphs() const
 		{
@@ -55,9 +55,9 @@ namespace adria
 		{
 			return ray_tracing_support >= rts;
 		}
-		Bool CheckVSRSupport(VSRSupport vsrs) const
+		Bool CheckVRSSupport(VRSSupport vsrs) const
 		{
-			return vsr_support >= vsrs;
+			return vrs_support >= vsrs;
 		}
 		Bool CheckMeshShaderSupport(MeshShaderSupport mss) const
 		{
@@ -87,7 +87,7 @@ namespace adria
 	private:
 		
 		RayTracingSupport ray_tracing_support = RayTracingSupport::TierNotSupported;
-		VSRSupport vsr_support = VSRSupport::TierNotSupported;
+		VRSSupport vrs_support = VRSSupport::TierNotSupported;
 		MeshShaderSupport mesh_shader_support = MeshShaderSupport::TierNotSupported;
 		WorkGraphSupport work_graph_support = WorkGraphSupport::TierNotSupported;
 		GfxShaderModel shader_model = SM_Unknown;
