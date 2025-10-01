@@ -3,7 +3,7 @@
 #include "GfxCommandQueue.h"
 #include "GfxCommandList.h"
 #include "GfxTexture.h"
-#include "Core/Window.h"
+#include "Platform/Window.h"
 
 namespace adria
 {
@@ -36,7 +36,7 @@ namespace adria
 
 		GFX_CHECK_HR(gfx->GetFactory()->CreateSwapChainForHwnd(
 			graphics_queue,
-			static_cast<HWND>(gfx->GetHwnd()),
+			static_cast<HWND>(gfx->GetWindowHandle()),
 			&swapchain_desc,
 			&fullscreen_desc,
 			nullptr,

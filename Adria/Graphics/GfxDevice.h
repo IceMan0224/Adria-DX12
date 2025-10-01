@@ -104,7 +104,7 @@ namespace adria
 		IDMLCommandRecorder* GetDMLCommandRecorder() const;
 		ID3D12RootSignature* GetCommonRootSignature() const;
 		D3D12MA::Allocator* GetAllocator() const;
-		void* GetHwnd() const { return hwnd; }
+		void* GetWindowHandle() const { return hwnd; }
 
 		GfxCapabilities const& GetCapabilities() const { return device_capabilities; }
 		GfxVendor GetVendor() const { return vendor; }

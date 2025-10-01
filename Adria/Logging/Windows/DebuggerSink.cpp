@@ -1,5 +1,5 @@
 #include "DebuggerSink.h"
-#include "Core/Windows.h"
+#include "Platform/Windows/Windows.h"
 
 namespace adria
 {

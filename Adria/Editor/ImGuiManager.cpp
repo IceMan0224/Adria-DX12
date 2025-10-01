@@ -6,8 +6,8 @@
 #include "implot.h"
 #include "Graphics/GfxDescriptor.h"
 #include "IconsFontAwesome6.h"
-#include "Core/Window.h"
 #include "Core/Paths.h"
+#include "Platform/Window.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxRingDescriptorAllocator.h"
@@ -41,7 +41,7 @@ namespace adria
 		std::string icon_path = paths::FontsDir + "FontAwesome/" FONT_ICON_FILE_NAME_FAS;
 		io.Fonts->AddFontFromFileTTF(icon_path.c_str(), 15.0f, &font_config, icon_ranges);
 		io.Fonts->Build();
-		ImGui_ImplWin32_Init(gfx->GetHwnd());
+		ImGui_ImplWin32_Init(gfx->GetWindowHandle());
 
 		imgui_allocator = std::make_unique<GUIDescriptorAllocator>(gfx, 30, 1); 
 		GfxDescriptor handle = imgui_allocator->GetHandle(0);

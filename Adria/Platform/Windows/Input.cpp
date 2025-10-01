@@ -1,6 +1,6 @@
 #include <windowsx.h>
-#include "Input.h"
-#include "Window.h"
+#include "Platform/Input.h"
+#include "Platform/Window.h"
 
 namespace adria
 {

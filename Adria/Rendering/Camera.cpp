@@ -1,5 +1,5 @@
 #include "Camera.h"
-#include "Core/Input.h"
+#include "Platform/Input.h"
 #include "Math/Constants.h"
 #include "Math/Halton.h"
 

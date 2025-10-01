@@ -1,12 +1,12 @@
 ﻿#include "nfd.h"
+#include "IconsFontAwesome6.h"
 #include "Editor.h"
 #include "ImGuiManager.h"
 #include "EditorSink.h"
 #include "EditorConsole.h"
 #include "Core/Engine.h"
-#include "Core/Input.h"
 #include "Core/Paths.h"
-#include "IconsFontAwesome6.h"
+#include "Platform/Input.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/Camera.h"
 #include "Rendering/SceneLoader.h"
@@ -56,6 +56,7 @@ namespace adria
 
 	Editor::Editor() = default;
 	Editor::~Editor() = default;
+
 	void Editor::Initialize(EditorInitParams&& init)
 	{
 		editor_sink = ADRIA_SINK(EditorSink);

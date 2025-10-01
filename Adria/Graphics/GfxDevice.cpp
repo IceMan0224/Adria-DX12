@@ -15,10 +15,10 @@
 #include "GfxRenderDoc.h"
 #include "GfxPIX.h"
 #include "d3dx12.h"
-#include "Core/Window.h"
 #include "Core/ConsoleManager.h"
 #include "Core/CommandLineOptions.h"
 #include "Core/Paths.h"
+#include "Platform/Window.h"
 #include "tracy/Tracy.hpp"
 
 extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = D3D12_SDK_VERSION; }
