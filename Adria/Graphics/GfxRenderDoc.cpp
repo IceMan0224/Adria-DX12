@@ -1,5 +1,4 @@
 #include "GfxRenderDoc.h"
-
 #if defined(GFX_RENDERDOC_AVAILABLE)
 #include "Core/ConsoleManager.h"
 #include "Core/Paths.h"

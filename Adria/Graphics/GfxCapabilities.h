@@ -1,5 +1,5 @@
 #pragma once
-#include "GfxShaderEnums.h"
+#include "GfxShader.h"
 
 namespace adria
 {

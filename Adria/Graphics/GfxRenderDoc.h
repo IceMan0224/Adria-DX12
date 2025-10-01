@@ -1,6 +1,6 @@
 #pragma once
 
-#if !defined(_RELEASE)
+#if !defined(_RELEASE) && GFX_BACKEND_DX12
 #define GFX_RENDERDOC_AVAILABLE
 #endif
 

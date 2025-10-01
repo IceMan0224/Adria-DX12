@@ -50,32 +50,4 @@ namespace adria
 		GfxShadingRateCombiner shading_rate_combiner = GfxShadingRateCombiner::Passthrough;
 		GfxTexture* shading_rate_image = nullptr;
 	};
-
-	inline D3D12_SHADING_RATE ToD3D12ShadingRate(GfxShadingRate shading_rate)
-	{
-		switch (shading_rate)
-		{
-		case GfxShadingRate_1X1: return D3D12_SHADING_RATE_1X1;
-		case GfxShadingRate_1X2: return D3D12_SHADING_RATE_1X2;
-		case GfxShadingRate_2X1: return D3D12_SHADING_RATE_2X1;
-		case GfxShadingRate_2X2: return D3D12_SHADING_RATE_2X2;
-		case GfxShadingRate_2X4: return D3D12_SHADING_RATE_2X4;
-		case GfxShadingRate_4X2: return D3D12_SHADING_RATE_4X2;
-		case GfxShadingRate_4X4: return D3D12_SHADING_RATE_4X4;
-		}
-		return D3D12_SHADING_RATE_1X1;
-	}
-
-	inline D3D12_SHADING_RATE_COMBINER ToD3D12ShadingRateCombiner(GfxShadingRateCombiner shading_rate_combiner)
-	{
-		switch (shading_rate_combiner)
-		{
-		case GfxShadingRateCombiner::Passthrough: return D3D12_SHADING_RATE_COMBINER_PASSTHROUGH;
-		case GfxShadingRateCombiner::Override:    return D3D12_SHADING_RATE_COMBINER_OVERRIDE;
-		case GfxShadingRateCombiner::Min:		  return D3D12_SHADING_RATE_COMBINER_MIN;		  
-		case GfxShadingRateCombiner::Max:		  return D3D12_SHADING_RATE_COMBINER_MAX;		  
-		case GfxShadingRateCombiner::Sum:		  return D3D12_SHADING_RATE_COMBINER_SUM;		  
-		}
-		return D3D12_SHADING_RATE_COMBINER_PASSTHROUGH;
-	}
 }

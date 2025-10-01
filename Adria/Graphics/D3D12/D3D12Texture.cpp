@@ -1,13 +1,16 @@
-#include "GfxTexture.h"
-#include "GfxDevice.h"
-#include "GfxBuffer.h"
-#include "GfxCommandList.h"
-#include "GfxLinearDynamicAllocator.h"
+#include "D3D12Texture.h"
+#include "D3D12Conversions.h"
+#include "Graphics/GfxTexture.h"
+#include "Graphics/GfxDevice.h"
+#include "Graphics/GfxBuffer.h"
+#include "Graphics/GfxCommandList.h"
+#include "Graphics/GfxLinearDynamicAllocator.h"
 #include "d3dx12.h"
 
 namespace adria
 {
-	GfxTexture::GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data) : gfx(gfx), desc(desc)
+
+	D3D12Texture::D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data) : GfxTexture(gfx, desc, data)
 	{
 		HRESULT hr = E_FAIL;
 		D3D12MA::ALLOCATION_DESC allocation_desc{};
@@ -208,7 +211,7 @@ namespace adria
 			Uint64 required_size;
 			device->GetCopyableFootprints(&resource_desc, 0, (Uint32)subresource_count, 0, nullptr, nullptr, nullptr, &required_size);
 			GfxDynamicAllocation dyn_alloc = dynamic_allocator->Allocate(required_size, D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT);
-			
+
 			std::vector<D3D12_SUBRESOURCE_DATA> subresource_data(subresource_count);
 			for (Uint32 i = 0; i < subresource_count; ++i)
 			{
@@ -217,7 +220,7 @@ namespace adria
 				subresource_data[i].RowPitch = init_data.row_pitch;
 				subresource_data[i].SlicePitch = init_data.slice_pitch;
 			}
-			UpdateSubresources(cmd_list->GetNative(), resource.Get(), dyn_alloc.buffer->GetNative(), dyn_alloc.offset, 0, subresource_count, subresource_data.data());
+			UpdateSubresources(cmd_list->GetNative(), resource.Get(), (ID3D12Resource*)dyn_alloc.buffer->GetNative(), dyn_alloc.offset, 0, subresource_count, subresource_data.data());
 
 			if (desc.initial_state != GfxResourceState::CopyDst)
 			{
@@ -227,15 +230,15 @@ namespace adria
 		}
 	}
 
-	GfxTexture::GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc, void* backbuffer) 
-		: gfx(gfx), desc(desc), resource((ID3D12Resource*)backbuffer), is_backbuffer(true)
-	{}
-
-	GfxTexture::GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc) : GfxTexture(gfx, desc, GfxTextureData{})
+	D3D12Texture::D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc) : GfxTexture(gfx, desc, GfxTextureData{})
 	{
 	}
 
-	GfxTexture::~GfxTexture()
+	D3D12Texture::D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc, void* backbuffer) : GfxTexture(gfx, desc, backbuffer), resource((ID3D12Resource*)backbuffer)
+	{
+	}
+
+	D3D12Texture::~D3D12Texture()
 	{
 		if (mapped_data != nullptr)
 		{
@@ -250,7 +253,22 @@ namespace adria
 		}
 	}
 
-	Uint32 GfxTexture::GetRowPitch(Uint32 mip_level) const
+	void* D3D12Texture::GetNative() const
+	{
+		return resource.Get();
+	}
+
+	void* D3D12Texture::GetSharedHandle() const
+	{
+		return shared_handle;
+	}
+
+	Uint64 D3D12Texture::GetGpuAddress() const
+	{
+		return resource->GetGPUVirtualAddress();
+	}
+
+	Uint32 D3D12Texture::GetRowPitch(Uint32 mip_level) const
 	{
 		ADRIA_ASSERT(mip_level < desc.mip_levels);
 		ID3D12Device* d3d12_device = gfx->GetDevice();
@@ -260,27 +278,7 @@ namespace adria
 		return footprint.Footprint.RowPitch;
 	}
 
-	Uint64 GfxTexture::GetGpuAddress() const
-	{
-		return resource->GetGPUVirtualAddress();
-	}
-
-	ID3D12Resource* GfxTexture::GetNative() const
-	{
-		return resource.Get();
-	}
-
-	Bool GfxTexture::IsMapped() const
-	{
-		return mapped_data != nullptr;
-	}
-
-	void* GfxTexture::GetMappedData() const
-	{
-		return mapped_data;
-	}
-
-	void* GfxTexture::Map()
+	void* D3D12Texture::Map()
 	{
 		HRESULT hr;
 		if (desc.heap_type == GfxResourceUsage::Readback)
@@ -297,16 +295,17 @@ namespace adria
 		return mapped_data;
 	}
 
-	void GfxTexture::Unmap()
+	void D3D12Texture::Unmap()
 	{
 		resource->Unmap(0, nullptr);
 	}
 
-	void GfxTexture::SetName(Char const* name)
+	void D3D12Texture::SetName(Char const* name)
 	{
 #if defined(_DEBUG) || defined(_PROFILE)
 		resource->SetName(ToWideString(name).c_str());
 #endif
 	}
-}
 
+
+}

@@ -1,6 +1,6 @@
 #pragma once
 #include "GfxPipelineState.h"
-#include "GfxShaderEnums.h"
+#include "GfxShader.h"
 #include "Utilities/Hash.h"
 
 namespace adria

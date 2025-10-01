@@ -1,12 +1,14 @@
-#include "GfxBuffer.h"
-#include "GfxDevice.h"
-#include "GfxCommandList.h"
-#include "GfxLinearDynamicAllocator.h"
+#include "D3D12Buffer.h"
+#include "D3D12MemAlloc.h"
+#include "Graphics/GfxDevice.h"
+#include "Graphics/GfxCommandList.h"
+#include "Graphics/GfxLinearDynamicAllocator.h"
+#include "Utilities/Align.h"
 
 namespace adria
 {
 
-	GfxBuffer::GfxBuffer(GfxDevice* gfx, GfxBufferDesc const& desc, GfxBufferData initial_data) : gfx(gfx), desc(desc)
+	D3D12Buffer::D3D12Buffer(GfxDevice* gfx, GfxBufferDesc const& desc, GfxBufferData initial_data /*= {}*/) : GfxBuffer(gfx, desc, initial_data)
 	{
 		Uint64 buffer_size = desc.size;
 		if (HasFlag(desc.misc_flags, GfxBufferMiscFlag::ConstantBuffer))
@@ -116,7 +118,7 @@ namespace adria
 
 	}
 
-	GfxBuffer::~GfxBuffer()
+	D3D12Buffer::~D3D12Buffer()
 	{
 		if (mapped_data != nullptr)
 		{
@@ -126,58 +128,22 @@ namespace adria
 		}
 	}
 
-	void* GfxBuffer::GetMappedData() const
-	{
-		return mapped_data;
-	}
-
-	ID3D12Resource* GfxBuffer::GetNative() const
+	void* D3D12Buffer::GetNative() const
 	{
 		return resource.Get();
 	}
 
-	GfxBufferDesc const& GfxBuffer::GetDesc() const
-	{
-		return desc;
-	}
-
-	Uint64 GfxBuffer::GetGpuAddress() const
+	Uint64 D3D12Buffer::GetGpuAddress() const
 	{
 		return resource->GetGPUVirtualAddress();
 	}
 
-	Uint64 GfxBuffer::GetSize() const
-	{
-		return desc.size;
-	}
-
-	Uint32 GfxBuffer::GetStride() const
-	{
-		return desc.stride;
-	}
-
-	Uint32 GfxBuffer::GetCount() const
-	{
-		ADRIA_ASSERT(desc.stride != 0);
-		return static_cast<Uint32>(desc.size / desc.stride);
-	}
-
-	GfxFormat GfxBuffer::GetFormat() const
-	{
-		return desc.format;
-	}
-
-	void* GfxBuffer::GetSharedHandle() const
+	void* D3D12Buffer::GetSharedHandle() const
 	{
 		return shared_handle;
 	}
 
-	Bool GfxBuffer::IsMapped() const
-	{
-		return mapped_data != nullptr;
-	}
-
-	void* GfxBuffer::Map()
+	ADRIA_MAYBE_UNUSED void* D3D12Buffer::Map()
 	{
 		if (mapped_data)
 		{
@@ -199,31 +165,18 @@ namespace adria
 		return mapped_data;
 	}
 
-	void GfxBuffer::Unmap()
+	void D3D12Buffer::Unmap()
 	{
 		resource->Unmap(0, nullptr);
 		mapped_data = nullptr;
 	}
 
-	void GfxBuffer::Update(void const* src_data, Uint64 data_size, Uint64 offset /*= 0*/)
-	{
-		ADRIA_ASSERT(desc.resource_usage == GfxResourceUsage::Upload);
-		if (mapped_data)
-		{
-			memcpy((Uint8*)mapped_data + offset, src_data, data_size);
-		}
-		else
-		{
-			Map();
-			ADRIA_ASSERT(mapped_data);
-			memcpy((Uint8*)mapped_data + offset, src_data, data_size);
-		}
-	}
-
-	void GfxBuffer::SetName(Char const* name)
+	void D3D12Buffer::SetName(Char const* name)
 	{
 #if defined(_DEBUG) || defined(_PROFILE)
 		resource->SetName(ToWideString(name).c_str());
 #endif
 	}
+
 }
+

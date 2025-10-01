@@ -1,6 +1,6 @@
 #pragma once
 #include "GfxDescriptor.h"
-#include "GfxResourceCommon.h"
+#include "GfxResource.h"
 #include "GfxDynamicAllocation.h"
 #include "GfxShadingRate.h"
 #include "GfxStates.h"

@@ -1,5 +1,5 @@
 #pragma once
-#include "GfxResourceCommon.h"
+#include "GfxResource.h"
 
 namespace adria
 {
@@ -26,138 +26,65 @@ namespace adria
 		GfxBufferData() {}
 		GfxBufferData(void const* _data) : data(_data) {}
 		operator void const* () const { return data; }
-
 		void const* data = nullptr;
 	};
 
+	class GfxDevice;
 	class GfxBuffer
 	{
 	public:
 		GfxBuffer(GfxDevice* gfx, GfxBufferDesc const& desc, GfxBufferData initial_data = {});
 		ADRIA_NONCOPYABLE_NONMOVABLE(GfxBuffer)
-		~GfxBuffer();
+		virtual ~GfxBuffer() {};
 
-		ID3D12Resource* GetNative() const;
+		virtual void* GetNative() const = 0;
+		virtual Uint64 GetGpuAddress() const = 0;
+		virtual void* GetSharedHandle() const = 0;
+		ADRIA_MAYBE_UNUSED virtual void* Map() = 0;
+		virtual void Unmap() = 0;
+		virtual void SetName(Char const* name) = 0;
 
-		GfxBufferDesc const& GetDesc() const;
-		Uint64 GetGpuAddress() const;
-		Uint64 GetSize() const;
-		Uint32 GetStride() const;
-		Uint32 GetCount() const;
-		GfxFormat GetFormat() const;
-		void* GetSharedHandle() const;
-
-		Bool IsMapped() const;
-		void* GetMappedData() const;
-		template<typename T>
-		T* GetMappedData() const;
-		ADRIA_MAYBE_UNUSED void* Map();
-		void Unmap();
-		void Update(void const* src_data, Uint64 data_size, Uint64 offset = 0);
-		template<typename T>
-		void Update(T const& src_data);
-
-		void SetName(Char const* name);
-
-	private:
-		GfxDevice* gfx;
-		Ref<ID3D12Resource> resource;
-		GfxBufferDesc desc;
-		ReleasablePtr<D3D12MA::Allocation> allocation = nullptr;
-		void* mapped_data = nullptr;
-		HANDLE shared_handle = nullptr;
-	};
-
-	template<typename T>
-	T* GfxBuffer::GetMappedData() const
-	{
-		return reinterpret_cast<T*>(mapped_data);
-	}
-	template<typename T>
-	void GfxBuffer::Update(T const& src_data)
-	{
-		Update(&src_data, sizeof(T));
-	}
-
-	struct GfxVertexBufferView
-	{
-		explicit GfxVertexBufferView(GfxBuffer* buffer)
-			: buffer_location(buffer->GetGpuAddress()), size_in_bytes((Uint32)buffer->GetSize()), stride_in_bytes(buffer->GetStride())
-		{}
-
-		GfxVertexBufferView(Uint64 buffer_location, Uint32 count, Uint32 stride_in_bytes)
-			: buffer_location(buffer_location), size_in_bytes(count * stride_in_bytes), stride_in_bytes(stride_in_bytes)
-		{}
-
-		Uint64					    buffer_location = 0;
-		Uint32                      size_in_bytes = 0;
-		Uint32                      stride_in_bytes = 0;
-	};
-
-	struct GfxIndexBufferView
-	{
-		explicit GfxIndexBufferView(GfxBuffer* buffer)
-			: buffer_location(buffer->GetGpuAddress()), size_in_bytes((Uint32)buffer->GetSize()), format(buffer->GetFormat())
-		{}
-
-		GfxIndexBufferView(Uint64 buffer_location, Uint32 count, GfxFormat format = GfxFormat::R32_UINT)
-			: buffer_location(buffer_location), size_in_bytes(count * GetGfxFormatStride(format)), format(format)
-		{}
-
-		Uint64					    buffer_location = 0;
-		Uint32                      size_in_bytes;
-		GfxFormat                   format;
-	};
-
-	inline GfxBufferDesc VertexBufferDesc(Uint64 vertex_count, Uint32 stride, Bool ray_tracing = true)
-	{
-		GfxBufferDesc desc{};
-		desc.bind_flags = ray_tracing ? GfxBindFlag::ShaderResource : GfxBindFlag::None;
-		desc.resource_usage = GfxResourceUsage::Default;
-		desc.size = vertex_count * stride;
-		desc.stride = stride;
-		return desc;
-	}
-	inline GfxBufferDesc IndexBufferDesc(Uint64 index_count, Bool small_indices, Bool ray_tracing = true)
-	{
-		GfxBufferDesc desc{};
-		desc.bind_flags = ray_tracing ? GfxBindFlag::ShaderResource : GfxBindFlag::None;
-		desc.resource_usage = GfxResourceUsage::Default;
-		desc.stride = small_indices ? 2 : 4;
-		desc.size = index_count * desc.stride;
-		desc.format = small_indices ? GfxFormat::R16_UINT : GfxFormat::R32_UINT;
-		return desc;
-	}
-	inline GfxBufferDesc ReadBackBufferDesc(Uint64 size)
-	{
-		GfxBufferDesc desc{};
-		desc.bind_flags = GfxBindFlag::None;
-		desc.resource_usage = GfxResourceUsage::Readback;
-		desc.size = size;
-		desc.misc_flags = GfxBufferMiscFlag::None;
-		return desc;
-	}
-	template<typename T>
-	inline GfxBufferDesc StructuredBufferDesc(Uint64 count, Bool uav = true, Bool dynamic = false)
-	{
-		ADRIA_ASSERT_MSG(uav ^ dynamic, "Buffer cannot be dynamic and be accessed as UAV at the same time!");
-		GfxBufferDesc desc{};
-		desc.resource_usage = (uav || !dynamic) ? GfxResourceUsage::Default : GfxResourceUsage::Upload;
-		desc.bind_flags = GfxBindFlag::ShaderResource;
-		if (uav)
+		ADRIA_FORCEINLINE GfxDevice* GetParent() const { return gfx; }
+		ADRIA_FORCEINLINE GfxBufferDesc const& GetDesc() const { return desc; }
+		ADRIA_FORCEINLINE Uint64 GetSize() const { return desc.size; };
+		ADRIA_FORCEINLINE Uint32 GetStride() const { return desc.stride; }
+		ADRIA_FORCEINLINE Uint32 GetCount() const
 		{
-			desc.bind_flags |= GfxBindFlag::UnorderedAccess;
+			ADRIA_ASSERT(desc.stride != 0);
+			return static_cast<Uint32>(desc.size / desc.stride);
 		}
-		desc.misc_flags = GfxBufferMiscFlag::BufferStructured;
-		desc.stride = sizeof(T);
-		desc.size = desc.stride * count;
-		return desc;
-	}
-	inline GfxBufferDesc CounterBufferDesc()
-	{
-		GfxBufferDesc desc{};
-		desc.size = sizeof(Uint32);
-		desc.bind_flags = GfxBindFlag::UnorderedAccess;
-		return desc;
-	}
+		ADRIA_FORCEINLINE GfxFormat GetFormat() const { return desc.format; }
+
+		ADRIA_FORCEINLINE Bool IsMapped() const { return mapped_data != nullptr; }
+		ADRIA_FORCEINLINE void* GetMappedData() const { return mapped_data; }
+		template<typename T>
+		ADRIA_FORCEINLINE T* GetMappedData() const
+		{
+			return reinterpret_cast<T*>(mapped_data);
+		}
+		void Update(void const* src_data, Uint64 data_size, Uint64 offset = 0)
+		{
+			ADRIA_ASSERT(desc.resource_usage == GfxResourceUsage::Upload);
+			if (mapped_data)
+			{
+				memcpy((Uint8*)mapped_data + offset, src_data, data_size);
+			}
+			else
+			{
+				Map();
+				ADRIA_ASSERT(mapped_data);
+				memcpy((Uint8*)mapped_data + offset, src_data, data_size);
+			}
+		}
+		template<typename T>
+		void Update(T const& src_data)
+		{
+			Update(&src_data, sizeof(T));
+		}
+
+	protected:
+		GfxDevice* gfx;
+		GfxBufferDesc desc;
+		void* mapped_data = nullptr;
+	};
 }

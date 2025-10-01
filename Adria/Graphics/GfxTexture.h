@@ -1,5 +1,5 @@
 #pragma once
-#include "GfxResourceCommon.h"
+#include "GfxResource.h"
 
 namespace adria
 {
@@ -105,7 +105,8 @@ namespace adria
 		GfxTextureSubData* sub_data = nullptr;
 		Uint32 sub_count = Uint32(-1);
 	};
-
+	
+	class GfxDevice;
 	class GfxTexture
 	{
 	public:
@@ -113,43 +114,36 @@ namespace adria
 		GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc);
 		GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc, void* backbuffer); //constructor used by swapchain for creating backbuffer texture
 		ADRIA_NONCOPYABLE_NONMOVABLE(GfxTexture)
-		~GfxTexture();
+		virtual ~GfxTexture() {};
 
-		ID3D12Resource* GetNative() const;
+		virtual void* GetNative() const = 0;
+		virtual void* GetSharedHandle() const = 0;
+		virtual Uint64 GetGpuAddress() const = 0;
+		virtual void* Map() = 0;
+		virtual void Unmap() = 0;
+		virtual void SetName(Char const* name) = 0;
+		virtual Uint32 GetRowPitch(Uint32 mip_level = 0) const = 0;
 
-		GfxDevice* GetParent() const { return gfx; }
-		GfxTextureDesc const& GetDesc() const { return desc; }
-		Uint32 GetWidth() const { return desc.width; }
-		Uint32 GetHeight() const { return desc.height; }
-		Uint32 GetDepth() const { return desc.depth; }
-		Uint32 GetRowPitch(Uint32 mip_level = 0) const;
-		GfxFormat GetFormat() const { return desc.format; }
-		Uint64 GetGpuAddress() const;
-		Bool IsSRGB() const { return (desc.misc_flags & GfxTextureMiscFlag::SRGB) != GfxTextureMiscFlag::None; }
-		void* GetSharedHandle() const { return shared_handle; }
+		ADRIA_FORCEINLINE GfxDevice* GetParent() const { return gfx; }
+		ADRIA_FORCEINLINE GfxTextureDesc const& GetDesc() const { return desc; }
+		ADRIA_FORCEINLINE Uint32 GetWidth() const { return desc.width; }
+		ADRIA_FORCEINLINE Uint32 GetHeight() const { return desc.height; }
+		ADRIA_FORCEINLINE Uint32 GetDepth() const { return desc.depth; }
+		ADRIA_FORCEINLINE GfxFormat GetFormat() const { return desc.format; }
+		ADRIA_FORCEINLINE Bool IsSRGB() const { return (desc.misc_flags & GfxTextureMiscFlag::SRGB) != GfxTextureMiscFlag::None; }
 
-		Bool IsMapped() const;
-		void* GetMappedData() const;
+		Bool IsMapped() const { return mapped_data != nullptr; }
+		void* GetMappedData() const { return mapped_data; }
 		template<typename T>
-		T* GetMappedData() const;
-		void* Map();
-		void Unmap();
+		T* GetMappedData() const
+		{
+			return reinterpret_cast<T*>(mapped_data);
+		}
 
-		void SetName(Char const* name);
-
-	private:
+	protected:
 		GfxDevice* gfx;
-		Ref<ID3D12Resource> resource;
 		GfxTextureDesc desc;
-		ReleasablePtr<D3D12MA::Allocation> allocation = nullptr;
 		void* mapped_data = nullptr;
 		Bool is_backbuffer = false;
-		HANDLE shared_handle = nullptr;
 	};
-
-	template<typename T>
-	T* GfxTexture::GetMappedData() const
-	{
-		return reinterpret_cast<T*>(mapped_data);
-	}
 }

@@ -266,8 +266,8 @@ set(ADRIA_COMMON_SOURCES
 )
 
 set(ADRIA_GRAPHICS_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxBuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxBuffer.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxBufferView.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCapabilities.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCapabilities.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandList.cpp"
@@ -320,7 +320,7 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRenderDoc.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRenderDoc.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRenderPass.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxResourceCommon.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxResource.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRingDescriptorAllocator.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRingDynamicAllocator.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRingDynamicAllocator.h"
@@ -329,7 +329,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxShader.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxShaderCompiler.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxShaderCompiler.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxShaderEnums.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxShaderKey.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxShaderKey.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxShadingRate.h"
@@ -338,11 +337,18 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxStates.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxSwapchain.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxSwapchain.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxTexture.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxTexture.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxTracyProfiler.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxTracyProfiler.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxVertexFormat.h"
+)
+
+set(ADRIA_D3D12_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Conversions.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Buffer.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Buffer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Texture.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Texture.cpp"
 )
 
 set(ADRIA_WIN32_SOURCES
@@ -355,7 +361,7 @@ set(ADRIA_WIN32_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Logging/Windows/DebuggerSink.cpp"	
 )
 
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_WIN32_SOURCES})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_WIN32_SOURCES} ${ADRIA_D3D12_SOURCES})
 
 file(GLOB_RECURSE SHADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Shaders/*.hlsl"
@@ -407,7 +413,7 @@ set(EXTERNAL_SOURCES
 )
 source_group("External" FILES ${EXTERNAL_SOURCES})
 
-add_executable(Adria WIN32 ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_WIN32_SOURCES} ${EXTERNAL_SOURCES} ${SHADER_FILES})
+add_executable(Adria WIN32 ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_WIN32_SOURCES} ${ADRIA_D3D12_SOURCES} ${EXTERNAL_SOURCES} ${SHADER_FILES})
 
 target_precompile_headers(Adria PRIVATE precomp.h)
 
