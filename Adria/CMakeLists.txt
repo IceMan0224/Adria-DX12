@@ -274,7 +274,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandList.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandListPool.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandListPool.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandQueue.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandQueue.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommon.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommon.h"
@@ -283,8 +282,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorHeap.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorAllocator.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorAllocator.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorAllocatorBase.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorAllocatorBase.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDevice.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDevice.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDynamicAllocation.h"
@@ -354,6 +351,8 @@ set(ADRIA_D3D12_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandSignature.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12DescriptorHeap.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12DescriptorHeap.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandQueue.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandQueue.cpp"
 
 )
 

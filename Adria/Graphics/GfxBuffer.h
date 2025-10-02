@@ -33,9 +33,8 @@ namespace adria
 	class GfxBuffer
 	{
 	public:
-		GfxBuffer(GfxDevice* gfx, GfxBufferDesc const& desc, GfxBufferData initial_data = {});
 		ADRIA_NONCOPYABLE_NONMOVABLE(GfxBuffer)
-		virtual ~GfxBuffer() {};
+		virtual ~GfxBuffer() {}
 
 		virtual void* GetNative() const = 0;
 		virtual Uint64 GetGpuAddress() const = 0;
@@ -86,5 +85,8 @@ namespace adria
 		GfxDevice* gfx;
 		GfxBufferDesc desc;
 		void* mapped_data = nullptr;
+
+	protected:
+		GfxBuffer(GfxDevice* gfx, GfxBufferDesc const& desc) : gfx(gfx), desc(desc) {}
 	};
 }

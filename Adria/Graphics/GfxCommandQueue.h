@@ -3,34 +3,23 @@
 
 namespace adria
 {
-	class GfxDevice;
+	class GfxFence;
 	class GfxCommandList;
 	class GfxCommandListPool;
 
 	enum class GfxCommandListType : Uint8;
 
-	class GfxCommandQueue
+	class IGfxCommandQueue
 	{
 	public:
-		GfxCommandQueue() = default;
-		~GfxCommandQueue() = default;
+		virtual ~IGfxCommandQueue() = default;
 
-		Bool Create(GfxDevice* gfx, GfxCommandListType type, Char const* name = "");
-		
-		void ExecuteCommandLists(std::span<GfxCommandList*> cmd_lists);
-		void ExecuteCommandListPool(GfxCommandListPool& cmd_list_pool);
+		virtual void ExecuteCommandLists(std::span<GfxCommandList*> cmd_lists) = 0;
+		virtual void Signal(GfxFence& fence, Uint64 fence_value) = 0;
+		virtual void Wait(GfxFence& fence, Uint64 fence_value) = 0;
 
-		void Signal(GfxFence& fence, Uint64 fence_value);
-		void Wait(GfxFence& fence, Uint64 fence_value);
-
-		Uint64 GetTimestampFrequency() const { return timestamp_frequency; }
-		GfxCommandListType GetType() const { return type; }
-
-		operator ID3D12CommandQueue* () const { return command_queue.Get(); }
-
-	private:
-		Ref<ID3D12CommandQueue> command_queue;
-		Uint64 timestamp_frequency = 0;
-		GfxCommandListType type;
+		virtual Uint64 GetTimestampFrequency() const = 0;
+		virtual GfxCommandListType GetType() const = 0;
+		virtual void* GetHandle() const = 0;
 	};
 }

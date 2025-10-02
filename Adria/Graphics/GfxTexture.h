@@ -110,9 +110,6 @@ namespace adria
 	class GfxTexture
 	{
 	public:
-		GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data);
-		GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc);
-		GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc, void* backbuffer); //constructor used by swapchain for creating backbuffer texture
 		ADRIA_NONCOPYABLE_NONMOVABLE(GfxTexture)
 		virtual ~GfxTexture() {};
 
@@ -145,5 +142,9 @@ namespace adria
 		GfxTextureDesc desc;
 		void* mapped_data = nullptr;
 		Bool is_backbuffer = false;
+
+	protected:
+		GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc) : gfx(gfx), desc(desc) {}
+		GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc, void* backbuffer) : gfx(gfx), desc(desc), is_backbuffer(true) {}
 	};
 }

@@ -20,7 +20,6 @@ namespace adria
 	class GfxQueryHeap
 	{
 	public:
-		GfxQueryHeap(GfxDevice* gfx, GfxQueryHeapDesc const& desc) : gfx(gfx), desc(desc) {}
 		virtual ~GfxQueryHeap() {}
 
 		GfxDevice* GetParent() const { return gfx; }
@@ -28,9 +27,12 @@ namespace adria
 
 		virtual void* GetHandle() const = 0;
 
-	private:
+	protected:
 		GfxDevice* gfx;
 		GfxQueryHeapDesc desc;
+
+	protected:
+		GfxQueryHeap(GfxDevice* gfx, GfxQueryHeapDesc const& desc) : gfx(gfx), desc(desc) {}
 	};
 
 }

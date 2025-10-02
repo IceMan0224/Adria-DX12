@@ -10,7 +10,7 @@
 namespace adria
 {
 
-	D3D12Texture::D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data) : GfxTexture(gfx, desc, data)
+	D3D12Texture::D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data) : GfxTexture(gfx, desc)
 	{
 		HRESULT hr = E_FAIL;
 		D3D12MA::ALLOCATION_DESC allocation_desc{};
@@ -230,7 +230,7 @@ namespace adria
 		}
 	}
 
-	D3D12Texture::D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc) : GfxTexture(gfx, desc, GfxTextureData{})
+	D3D12Texture::D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc) : GfxTexture(gfx, desc)
 	{
 	}
 
