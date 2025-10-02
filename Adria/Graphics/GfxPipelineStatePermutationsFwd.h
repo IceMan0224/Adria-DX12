@@ -2,15 +2,17 @@
 
 namespace adria
 {
-	class GfxGraphicsPipelineState;
-	class GfxComputePipelineState;
-	class GfxMeshShaderPipelineState;
+	class GfxManagedGraphicsPipelineState;
+	class GfxManagedComputePipelineState;
+	class GfxManagedMeshShaderPipelineState;
 
-	template<typename PSO>
+	enum class GfxPipelineStateType : Uint8;
+
+	template<GfxPipelineStateType Type>
 	class GfxPipelineStatePermutations;
 
-	using GfxGraphicsPipelineStatePermutations		= GfxPipelineStatePermutations<GfxGraphicsPipelineState>;
-	using GfxComputePipelineStatePermutations		= GfxPipelineStatePermutations<GfxComputePipelineState>;
-	using GfxMeshShaderPipelineStatePermutations	= GfxPipelineStatePermutations<GfxMeshShaderPipelineState>;
+	using GfxGraphicsPipelineStatePermutations = GfxPipelineStatePermutations<GfxPipelineStateType::Graphics>;
+	using GfxComputePipelineStatePermutations = GfxPipelineStatePermutations<GfxPipelineStateType::Compute>;
+	using GfxMeshShaderPipelineStatePermutations = GfxPipelineStatePermutations<GfxPipelineStateType::MeshShader>;
 }
 

@@ -8,7 +8,7 @@ namespace adria
 		struct GfxDescriptorRange
 		{
 			GfxDescriptor begin;
-			GfxDescriptor end; // Note: end is exclusive
+			GfxDescriptor end;
 		};
 
 	public:

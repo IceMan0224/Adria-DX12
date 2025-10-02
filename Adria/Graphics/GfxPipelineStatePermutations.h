@@ -1,112 +1,35 @@
 #pragma once
 #include "GfxPipelineState.h"
 #include "GfxShader.h"
-#include "Utilities/Hash.h"
 
 namespace adria
 {
-	template<typename PSO>
-	struct PSOTraits;
-
-	struct GfxGraphicsPipelineStateDescHash
-	{
-		ADRIA_NODISCARD Uint64 operator()(GfxGraphicsPipelineStateDesc const& desc) const
-		{
-			HashState state;
-			state.Combine(crc64(reinterpret_cast<Char const*>(&desc), sizeof(GfxGraphicsPipelineStateDesc)));
-			state.Combine(desc.VS.GetHash());
-			state.Combine(desc.PS.GetHash());
-			state.Combine(desc.DS.GetHash());
-			state.Combine(desc.HS.GetHash());
-			state.Combine(desc.GS.GetHash());
-			return state;
-		}
-	};
-	struct GfxComputePipelineStateDescHash
-	{
-		ADRIA_NODISCARD Uint64 operator()(GfxComputePipelineStateDesc const& desc) const
-		{
-			HashState state;
-			state.Combine(crc64(reinterpret_cast<Char const*>(&desc), sizeof(GfxComputePipelineStateDesc)));
-			state.Combine(desc.CS.GetHash());
-			return state;
-		}
-	};
-	struct GfxMeshShaderPipelineStateDescHash
-	{
-		ADRIA_NODISCARD Uint64 operator()(GfxMeshShaderPipelineStateDesc const& desc) const
-		{
-			HashState state;
-			state.Combine(crc64(reinterpret_cast<Char const*>(&desc), sizeof(GfxMeshShaderPipelineStateDesc)));
-			state.Combine(desc.AS.GetHash());
-			state.Combine(desc.MS.GetHash());
-			state.Combine(desc.PS.GetHash());
-			return state;
-		}
-	};
-
-	template<>
-	struct PSOTraits<GfxGraphicsPipelineState>
-	{
-		static constexpr GfxPipelineStateType PipelineStateType = GfxPipelineStateType::Graphics;
-		using PSODescType = GfxGraphicsPipelineStateDesc;
-		using PSODescHasher = GfxGraphicsPipelineStateDescHash;
-	};
-	template<>
-	struct PSOTraits<GfxComputePipelineState>
-	{
-		static constexpr GfxPipelineStateType PipelineStateType = GfxPipelineStateType::Compute;
-		using PSODescType = GfxComputePipelineStateDesc;
-		using PSODescHasher = GfxComputePipelineStateDescHash;
-	};
-	template<>
-	struct PSOTraits<GfxMeshShaderPipelineState>
-	{
-		static constexpr GfxPipelineStateType PipelineStateType = GfxPipelineStateType::MeshShader;
-		using PSODescType = GfxMeshShaderPipelineStateDesc;
-		using PSODescHasher = GfxMeshShaderPipelineStateDescHash;
-	};
-
-	template<typename PSO>
-	struct IsGraphicsPipelineStateImpl
-	{
-		static constexpr Bool value = PSOTraits<PSO>::PipelineStateType == GfxPipelineStateType::Graphics;
-	};
-	template<typename PSO>
-	constexpr Bool IsGraphicsPipelineState = IsGraphicsPipelineStateImpl<PSO>::value;
-
-	template<typename PSO>
-	struct IsComputePipelineStateImpl
-	{
-		static constexpr Bool value = PSOTraits<PSO>::PipelineStateType == GfxPipelineStateType::Compute;
-	};
-	template<typename PSO>
-	constexpr Bool IsComputePipelineState = IsComputePipelineStateImpl<PSO>::value;
-
-	template<typename PSO>
-	struct IsMeshShaderPipelineStateImpl
-	{
-		static constexpr Bool value = PSOTraits<PSO>::PipelineStateType == GfxPipelineStateType::MeshShader;
-	};
-	template<typename PSO>
-	constexpr Bool IsMeshShaderPipelineState = IsMeshShaderPipelineStateImpl<PSO>::value;
-
-	template<typename PSO>
+	template<GfxPipelineStateType Type>
 	class GfxPipelineStatePermutations
 	{
-		using PSODesc = PSOTraits<PSO>::PSODescType;
-		using PSODescHasher = PSOTraits<PSO>::PSODescHasher;
-		//using PSOPermutationMap = std::unordered_map<PSODesc, std::unique_ptr<PSO>, PSODescHasher, PSODescComparator<PSODesc>>;
-		using PSOPermutationMap = std::unordered_map<Uint64, std::unique_ptr<PSO>>;
-		static constexpr GfxPipelineStateType PSOType = PSOTraits<PSO>::PipelineStateType;
+		static constexpr GfxPipelineStateType PSOType = Type;
+		using PSODesc = typename PSOTraits<Type>::PSODescType;
+		using PSODescHasher = typename PSOTraits<Type>::PSODescHasher;
+
+		struct PSOCacheEntry
+		{
+			std::unique_ptr<GfxPipelineState> pso;
+			PSODesc desc;
+		};
+		using PSOPermutationMap = std::unordered_map<Uint64, PSOCacheEntry>;
+		using ShaderDependencyMap = std::unordered_map<GfxShaderKey, std::vector<Uint64>>;
 
 	public:
 		GfxPipelineStatePermutations(GfxDevice* gfx, PSODesc const& desc)
 			: gfx(gfx), base_pso_desc(desc), current_pso_desc(desc)
 		{
+			event_handle = ShaderManager::GetShaderRecompiledEvent().AddMember(&GfxPipelineStatePermutations::OnShaderRecompiled, *this);
 		}
-		~GfxPipelineStatePermutations() = default;
 		ADRIA_NONCOPYABLE(GfxPipelineStatePermutations)
+		~GfxPipelineStatePermutations()
+		{
+			ShaderManager::GetShaderRecompiledEvent().Remove(event_handle);
+		}
 
 		void AddDefine(Char const* name, Char const* value)
 		{
@@ -161,15 +84,15 @@ namespace adria
 			AddDefine<stage>(name, "");
 		}
 
-		void SetCullMode(GfxCullMode cull_mode) requires !IsComputePipelineState<PSO>
+		void SetCullMode(GfxCullMode cull_mode) requires PSOType != GfxPipelineStateType::Compute
 		{
 			current_pso_desc.rasterizer_state.cull_mode = cull_mode;
 		}
-		void SetFillMode(GfxFillMode fill_mode) requires !IsComputePipelineState<PSO>
+		void SetFillMode(GfxFillMode fill_mode) requires PSOType != GfxPipelineStateType::Compute
 		{
 			current_pso_desc.rasterizer_state.fill_mode = fill_mode;
 		}
-		void SetTopologyType(GfxPrimitiveTopologyType topology_type) requires !IsComputePipelineState<PSO>
+		void SetTopologyType(GfxPrimitiveTopologyType topology_type) requires PSOType != GfxPipelineStateType::Compute
 		{
 			current_pso_desc.topology_type = topology_type;
 		}
@@ -180,26 +103,23 @@ namespace adria
 			f(current_pso_desc);
 		}
 
-		PSO const* Get() const
-		{
-			Uint64 const pso_hash = PSODescHasher{}(current_pso_desc);
-			if (!pso_permutations.contains(pso_hash))
-			{
-				pso_permutations[pso_hash] = std::make_unique<PSO>(gfx, current_pso_desc);
-			}
-			PSO const* pso = pso_permutations[pso_hash].get();
-			current_pso_desc = base_pso_desc;
-			return pso;
-		}
+		GfxPipelineState const* Get() const;
 
 	private:
 		GfxDevice* gfx;
 		PSODesc const base_pso_desc;
-		mutable PSOPermutationMap pso_permutations;
 		mutable PSODesc current_pso_desc;
+
+		mutable PSOPermutationMap pso_permutations;
+		mutable ShaderDependencyMap shader_dependencies;
+		DelegateHandle event_handle;
+
+	private:
+		void OnShaderRecompiled(GfxShaderKey const& recompiled_shader);
+		void RegisterDependencies(PSODesc const& desc, Uint64 pso_hash) const;
 	};
 
-	using GfxGraphicsPipelineStatePermutations	 = GfxPipelineStatePermutations<GfxGraphicsPipelineState>;
-	using GfxComputePipelineStatePermutations	 = GfxPipelineStatePermutations<GfxComputePipelineState>;
-	using GfxMeshShaderPipelineStatePermutations = GfxPipelineStatePermutations<GfxMeshShaderPipelineState>;
+	using GfxGraphicsPipelineStatePermutations = GfxPipelineStatePermutations<GfxPipelineStateType::Graphics>;
+	using GfxComputePipelineStatePermutations = GfxPipelineStatePermutations<GfxPipelineStateType::Compute>;
+	using GfxMeshShaderPipelineStatePermutations = GfxPipelineStatePermutations<GfxPipelineStateType::MeshShader>;
 }

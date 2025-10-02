@@ -296,7 +296,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxNsightPerfManager.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPIX.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPIX.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPipelineState.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPipelineState.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPipelineStatePermutations.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPipelineStatePermutationsFwd.h"
@@ -354,6 +353,8 @@ set(ADRIA_D3D12_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandQueue.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandList.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandList.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12PipelineState.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12PipelineState.cpp"
 )
 
 set(ADRIA_WIN32_SOURCES

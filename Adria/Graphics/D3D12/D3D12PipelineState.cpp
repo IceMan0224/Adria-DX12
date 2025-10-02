@@ -1,9 +1,7 @@
+#include "D3D12PipelineState.h"
+#include "D3D12Conversions.h"
 #include "d3dx12_pipeline_state_stream.h"
-#include "GfxPipelineState.h"
-#include "GfxDevice.h"
-#include "GfxStates.h"
-#include "GfxShader.h"
-#include "GfxResource.h"
+#include "Graphics/GfxDevice.h"
 #include "Rendering/ShaderManager.h"
 #include "Utilities/Hash.h"
 
@@ -324,44 +322,27 @@ namespace adria
 		}
 	}
 
-	GfxPipelineState::operator ID3D12PipelineState* () const
-	{
-		return pso.Get();
-	}
-
-	GfxGraphicsPipelineState::GfxGraphicsPipelineState(GfxDevice* gfx, GfxGraphicsPipelineStateDesc const& desc) : GfxPipelineState(gfx, GfxPipelineStateType::Graphics), desc(desc)
-	{
-		Create(desc);
-		event_handle = ShaderManager::GetShaderRecompiledEvent().AddMember(&GfxGraphicsPipelineState::OnShaderRecompiled, *this);
-	}
-	GfxGraphicsPipelineState::~GfxGraphicsPipelineState()
-	{
-		ShaderManager::GetShaderRecompiledEvent().Remove(event_handle);
-	}
-	void GfxGraphicsPipelineState::OnShaderRecompiled(GfxShaderKey const& s)
-	{
-		GfxShaderKey shaders[] = { desc.VS, desc.PS, desc.GS, desc.HS, desc.DS };
-		for (Uint64 i = 0; i < ARRAYSIZE(shaders); ++i)
-		{
-			if (s == shaders[i])
-			{
-				Create(desc);
-				return;
-			}
-		}
-	}
-	void GfxGraphicsPipelineState::Create(GfxGraphicsPipelineStateDesc const& desc)
+	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxGraphicsPipelineStateDesc const& desc)
 	{
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC d3d12_desc{};
 		d3d12_desc.pRootSignature = gfx->GetCommonRootSignature();
-		d3d12_desc.VS = SM_GetGfxShader(desc.VS);
-		d3d12_desc.PS = SM_GetGfxShader(desc.PS);
-		d3d12_desc.GS = SM_GetGfxShader(desc.GS);
-		d3d12_desc.HS = SM_GetGfxShader(desc.HS);
-		d3d12_desc.DS = SM_GetGfxShader(desc.DS);
+
+		GfxShader const& VS = SM_GetGfxShader(desc.VS);
+		GfxShader const& PS = SM_GetGfxShader(desc.PS);
+		GfxShader const& GS = SM_GetGfxShader(desc.GS);
+		GfxShader const& HS = SM_GetGfxShader(desc.HS);
+		GfxShader const& DS = SM_GetGfxShader(desc.DS);
+
+		d3d12_desc.VS = D3D12_SHADER_BYTECODE{VS.GetData(), VS.GetSize() };
+		d3d12_desc.PS = D3D12_SHADER_BYTECODE{PS.GetData(), PS.GetSize() };
+		d3d12_desc.GS = D3D12_SHADER_BYTECODE{GS.GetData(), GS.GetSize() };
+		d3d12_desc.HS = D3D12_SHADER_BYTECODE{HS.GetData(), HS.GetSize() };
+		d3d12_desc.DS = D3D12_SHADER_BYTECODE{DS.GetData(), DS.GetSize() };
+
 		std::vector<D3D12_INPUT_ELEMENT_DESC> input_element_descs;
 		ConvertInputLayout(desc.input_layout, input_element_descs);
 		d3d12_desc.InputLayout = { .pInputElementDescs = input_element_descs.data(), .NumElements = (Uint32)input_element_descs.size() };
+
 		d3d12_desc.BlendState = ConvertBlendDesc(desc.blend_state);
 		d3d12_desc.RasterizerState = ConvertRasterizerDesc(desc.rasterizer_state);
 		d3d12_desc.DepthStencilState = ConvertDepthStencilDesc(desc.depth_state);
@@ -380,53 +361,30 @@ namespace adria
 		GFX_CHECK_HR(hr);
 	}
 
-	GfxComputePipelineState::GfxComputePipelineState(GfxDevice* gfx, GfxComputePipelineStateDesc const& desc) : GfxPipelineState(gfx, GfxPipelineStateType::Compute), desc(desc)
-	{
-		Create(desc);
-		event_handle = ShaderManager::GetShaderRecompiledEvent().AddMember(&GfxComputePipelineState::OnShaderRecompiled, *this);
-	}
-	GfxComputePipelineState::~GfxComputePipelineState()
-	{
-		ShaderManager::GetShaderRecompiledEvent().Remove(event_handle);
-	}
-	void GfxComputePipelineState::OnShaderRecompiled(GfxShaderKey const& s)
-	{
-		if (s == desc.CS)
-		{
-			Create(desc);
-		}
-	}
-	void GfxComputePipelineState::Create(GfxComputePipelineStateDesc const& desc)
+
+	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxComputePipelineStateDesc const& desc)
 	{
 		D3D12_COMPUTE_PIPELINE_STATE_DESC d3d12_desc{};
 		d3d12_desc.pRootSignature = gfx->GetCommonRootSignature();
-		d3d12_desc.CS = SM_GetGfxShader(desc.CS);
+
+		GfxShader const& CS = SM_GetGfxShader(desc.CS);
+		d3d12_desc.CS = D3D12_SHADER_BYTECODE{ CS.GetData(), CS.GetSize() };
 		GFX_CHECK_HR(gfx->GetDevice()->CreateComputePipelineState(&d3d12_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())));
 	}
 
-	GfxMeshShaderPipelineState::GfxMeshShaderPipelineState(GfxDevice* gfx, GfxMeshShaderPipelineStateDesc const& desc) : GfxPipelineState(gfx, GfxPipelineStateType::MeshShader), desc(desc)
-	{
-		Create(desc);
-		event_handle = ShaderManager::GetShaderRecompiledEvent().AddMember(&GfxMeshShaderPipelineState::OnShaderRecompiled, *this);
-	}
-	GfxMeshShaderPipelineState::~GfxMeshShaderPipelineState()
-	{
-		ShaderManager::GetShaderRecompiledEvent().Remove(event_handle);
-	}
-	void GfxMeshShaderPipelineState::OnShaderRecompiled(GfxShaderKey const& s)
-	{
-		if (s == desc.AS || s == desc.MS || s == desc.PS)
-		{
-			Create(desc);
-		}
-	}
-	void GfxMeshShaderPipelineState::Create(GfxMeshShaderPipelineStateDesc const& desc)
+	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxMeshShaderPipelineStateDesc const& desc)
 	{
 		D3DX12_MESH_SHADER_PIPELINE_STATE_DESC d3d12_desc{};
 		d3d12_desc.pRootSignature = gfx->GetCommonRootSignature();
-		d3d12_desc.AS = SM_GetGfxShader(desc.AS);
-		d3d12_desc.MS = SM_GetGfxShader(desc.MS);
-		d3d12_desc.PS = SM_GetGfxShader(desc.PS);
+
+		GfxShader const& AS = SM_GetGfxShader(desc.AS);
+		GfxShader const& MS = SM_GetGfxShader(desc.MS);
+		GfxShader const& PS = SM_GetGfxShader(desc.PS);
+
+		d3d12_desc.AS = D3D12_SHADER_BYTECODE{ AS.GetData(), AS.GetSize() };
+		d3d12_desc.MS = D3D12_SHADER_BYTECODE{ MS.GetData(), MS.GetSize() };
+		d3d12_desc.PS = D3D12_SHADER_BYTECODE{ PS.GetData(), PS.GetSize() };
+
 		d3d12_desc.BlendState = ConvertBlendDesc(desc.blend_state);
 		d3d12_desc.RasterizerState = ConvertRasterizerDesc(desc.rasterizer_state);
 		d3d12_desc.DepthStencilState = ConvertDepthStencilDesc(desc.depth_state);
@@ -450,3 +408,4 @@ namespace adria
 	}
 
 }
+
