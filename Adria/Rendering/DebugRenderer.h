@@ -1,5 +1,5 @@
 #pragma once
-#include "Graphics/GfxPipelineStatePermutationsFwd.h"
+#include "Graphics/GfxPipelineStatePermutations.h"
 #include "Utilities/Singleton.h"
 
 using namespace DirectX;

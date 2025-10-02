@@ -1,6 +1,7 @@
 #pragma once
 #include "Graphics/GfxResource.h"
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxShadingRate.h"
 
 namespace adria
 {
@@ -402,4 +403,22 @@ namespace adria
 		return D3D12_SHADING_RATE_COMBINER_PASSTHROUGH;
 	}
 
+	inline constexpr D3D12_DESCRIPTOR_HEAP_TYPE ToD3D12HeapType(GfxDescriptorHeapType type)
+	{
+		switch (type)
+		{
+		case GfxDescriptorHeapType::CBV_SRV_UAV:
+			return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		case GfxDescriptorHeapType::Sampler:
+			return D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+		case GfxDescriptorHeapType::RTV:
+			return D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		case GfxDescriptorHeapType::DSV:
+			return D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		}
+		return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuHandle(GfxDescriptor descriptor);
+	D3D12_GPU_DESCRIPTOR_HANDLE ToD3D12GpuHandle(GfxDescriptor descriptor);
 }

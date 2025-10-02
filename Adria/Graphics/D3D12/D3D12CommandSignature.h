@@ -1,5 +1,4 @@
 #pragma once
-#include "GfxDefines.h"
 #include "Utilities/Ref.h"
 
 namespace adria

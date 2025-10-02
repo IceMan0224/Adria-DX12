@@ -12,7 +12,7 @@ namespace adria
 
 	Bool D3D12Fence::Create(GfxDevice* gfx, Char const* name)
 	{
-		ID3D12Device* device = gfx->GetDevice();
+		ID3D12Device* device = (ID3D12Device*)gfx->GetNativeDevice();
 		HRESULT hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
 		if (FAILED(hr))
 		{

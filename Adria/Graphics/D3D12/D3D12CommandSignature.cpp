@@ -1,5 +1,5 @@
-#include "GfxCommandSignature.h"
-#include "GfxDevice.h"
+#include "D3D12CommandSignature.h"
+#include "D3D12Device.h"
 
 namespace adria
 {
@@ -36,7 +36,8 @@ namespace adria
 		desc.pArgumentDescs = &argument_desc;
 		desc.ByteStride = GetArgumentStride(cmd_type);
 		argument_desc.Type = GetArgumentType(cmd_type);
-		GFX_CHECK_HR(gfx->GetDevice()->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(cmd_signature.GetAddressOf())));
+		D3D12Device* d3d12gfx = (D3D12Device*)gfx;
+		GFX_CHECK_HR(d3d12gfx->GetD3D12Device()->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(cmd_signature.GetAddressOf())));
 	}
 }
 

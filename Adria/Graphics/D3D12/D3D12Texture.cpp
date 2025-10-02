@@ -1,10 +1,10 @@
 #include "D3D12Texture.h"
+#include "D3D12Device.h"
 #include "D3D12Conversions.h"
-#include "Graphics/GfxTexture.h"
-#include "Graphics/GfxDevice.h"
 #include "Graphics/GfxBuffer.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
+#include "Utilities/StringConversions.h"
 #include "d3dx12.h"
 
 namespace adria
@@ -12,6 +12,8 @@ namespace adria
 
 	D3D12Texture::D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data) : GfxTexture(gfx, desc)
 	{
+		D3D12Device* d3d12gfx = (D3D12Device*)gfx;
+
 		HRESULT hr = E_FAIL;
 		D3D12MA::ALLOCATION_DESC allocation_desc{};
 		allocation_desc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
@@ -120,7 +122,7 @@ namespace adria
 			initial_state = GfxResourceState::CopyDst;
 		}
 
-		ID3D12Device* device = gfx->GetDevice();
+		ID3D12Device* device = d3d12gfx->GetD3D12Device();
 		if (desc.heap_type == GfxResourceUsage::Readback || desc.heap_type == GfxResourceUsage::Upload)
 		{
 			Uint64 required_size = 0;
@@ -152,7 +154,7 @@ namespace adria
 				allocation_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_SHARED | D3D12_HEAP_FLAG_SHARED_CROSS_ADAPTER;
 			}
 		}
-		D3D12MA::Allocator* allocator = gfx->GetAllocator();
+		D3D12MA::Allocator* allocator = d3d12gfx->GetAllocator();
 		D3D12MA::Allocation* alloc = nullptr;
 		if (gfx->GetCapabilities().SupportsEnhancedBarriers())
 		{
@@ -182,7 +184,7 @@ namespace adria
 
 		if (HasFlag(desc.misc_flags, GfxTextureMiscFlag::Shared))
 		{
-			hr = gfx->GetDevice()->CreateSharedHandle(resource.Get(), nullptr, GENERIC_ALL, nullptr, &shared_handle);
+			hr = device->CreateSharedHandle(resource.Get(), nullptr, GENERIC_ALL, nullptr, &shared_handle);
 			GFX_CHECK_HR(hr);
 		}
 
@@ -220,7 +222,7 @@ namespace adria
 				subresource_data[i].RowPitch = init_data.row_pitch;
 				subresource_data[i].SlicePitch = init_data.slice_pitch;
 			}
-			UpdateSubresources(cmd_list->GetNative(), resource.Get(), (ID3D12Resource*)dyn_alloc.buffer->GetNative(), dyn_alloc.offset, 0, subresource_count, subresource_data.data());
+			UpdateSubresources((ID3D12GraphicsCommandList*)cmd_list->GetNative(), resource.Get(), (ID3D12Resource*)dyn_alloc.buffer->GetNative(), dyn_alloc.offset, 0, subresource_count, subresource_data.data());
 
 			if (desc.initial_state != GfxResourceState::CopyDst)
 			{
@@ -271,7 +273,7 @@ namespace adria
 	Uint32 D3D12Texture::GetRowPitch(Uint32 mip_level) const
 	{
 		ADRIA_ASSERT(mip_level < desc.mip_levels);
-		ID3D12Device* d3d12_device = gfx->GetDevice();
+		ID3D12Device* d3d12_device = (ID3D12Device*)gfx->GetNativeDevice();
 		D3D12_RESOURCE_DESC d3d12_desc = resource->GetDesc();
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
 		d3d12_device->GetCopyableFootprints(&d3d12_desc, mip_level, 1, 0, &footprint, nullptr, nullptr, nullptr);

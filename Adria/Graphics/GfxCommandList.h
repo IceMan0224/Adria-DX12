@@ -31,7 +31,7 @@ namespace adria
 		Copy
 	};
 
-	class IGfxCommandList
+	class GfxCommandList
 	{
 	public:
 		enum class Context
@@ -42,7 +42,7 @@ namespace adria
 		};
 
 	public:
-		virtual ~IGfxCommandList() = default;
+		virtual ~GfxCommandList() = default;
 
 		virtual GfxDevice* GetDevice() const = 0;
 		virtual void* GetNative() const = 0;

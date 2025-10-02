@@ -18,8 +18,6 @@ namespace adria
 		GfxDescriptorHeap* parent_heap = nullptr;
 		Uint32 index = static_cast<Uint32>(-1);
 
-		ADRIA_DEFAULT_COPYABLE_MOVABLE(GfxDescriptor)
-
 		Uint32 GetIndex() const { return index; }
 		void Increment(uint32_t multiply = 1)
 		{

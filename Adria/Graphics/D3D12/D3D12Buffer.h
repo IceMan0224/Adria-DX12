@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics/GfxBuffer.h"
+#include "Utilities/Releasable.h"
 
 namespace adria
 {

@@ -3,7 +3,7 @@
 
 namespace adria
 {
-	class D3D12CommandQueue : public IGfxCommandQueue
+	class D3D12CommandQueue : public GfxCommandQueue
 	{
 	public:
 		D3D12CommandQueue(GfxDevice* gfx, GfxCommandListType type, Char const* name = "");

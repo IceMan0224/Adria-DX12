@@ -1,6 +1,6 @@
 #include "D3D12CommandQueue.h"
+#include "D3D12CommandList.h"
 #include "Graphics/GfxDevice.h"
-#include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxCommandListPool.h"
 #include "Utilities/StringConversions.h"
 
@@ -9,7 +9,7 @@ namespace adria
 	D3D12CommandQueue::D3D12CommandQueue(GfxDevice* gfx, GfxCommandListType type, Char const* name)
 		: type(type)
 	{
-		ID3D12Device* device = gfx->GetDevice(); // Assuming GfxDevice exposes the native D3D12 device
+		ID3D12Device* device = (ID3D12Device*)gfx->GetNativeDevice(); 
 
 		auto ToD3D12CmdListType = [](GfxCommandListType type)
 			{
@@ -56,7 +56,7 @@ namespace adria
 		std::vector<ID3D12CommandList*> d3d12_cmd_lists(cmd_lists.size());
 		for (Uint64 i = 0; i < d3d12_cmd_lists.size(); ++i)
 		{
-			d3d12_cmd_lists[i] = cmd_lists[i]->GetNative();
+			d3d12_cmd_lists[i] = (ID3D12CommandList*)cmd_lists[i]->GetNative();
 		}
 		command_queue->ExecuteCommandLists((Uint32)d3d12_cmd_lists.size(), d3d12_cmd_lists.data());
 
@@ -66,13 +66,13 @@ namespace adria
 		}
 	}
 
-	void D3D12CommandQueue::Signal(GfxFence& fence, uint64_t fence_value)
+	void D3D12CommandQueue::Signal(GfxFence& fence, Uint64 fence_value)
 	{
-		command_queue->Signal((ID3D12Fence*)fence->GetHandle(), fence_value);
+		command_queue->Signal((ID3D12Fence*)fence.GetHandle(), fence_value);
 	}
 
-	void D3D12CommandQueue::Wait(GfxFence& fence, uint64_t fence_value)
+	void D3D12CommandQueue::Wait(GfxFence& fence, Uint64 fence_value)
 	{
-		command_queue->Wait((ID3D12Fence*)fence->GetHandle(), fence_value);
+		command_queue->Wait((ID3D12Fence*)fence.GetHandle(), fence_value);
 	}
 }

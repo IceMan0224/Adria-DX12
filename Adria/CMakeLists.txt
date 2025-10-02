@@ -1,5 +1,7 @@
 
 set(ADRIA_COMMON_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/precomp.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/precomp.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Core/CommandLineOptions.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Core/CommandLineOptions.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Core/ConsoleManager.cpp"
@@ -281,7 +283,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorHeap.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorAllocator.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDescriptorAllocator.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDevice.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDevice.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDynamicAllocation.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxFence.h"
@@ -298,7 +299,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPIX.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPipelineState.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPipelineStatePermutations.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPipelineStatePermutationsFwd.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxProfiler.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxProfiler.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxProfilerFwd.h"
@@ -355,6 +355,8 @@ set(ADRIA_D3D12_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandList.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12PipelineState.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12PipelineState.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Device.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Device.cpp"
 )
 
 set(ADRIA_WIN32_SOURCES

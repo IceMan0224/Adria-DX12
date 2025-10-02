@@ -2,6 +2,7 @@
 #include "GfxDevice.h"
 #include "GfxCommandList.h"
 #include "GfxBuffer.h"
+#include "D3D12/D3D12Conversions.h"
 
 namespace adria
 {

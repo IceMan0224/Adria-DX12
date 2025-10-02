@@ -3,7 +3,7 @@
 
 namespace adria
 {
-	class D3D12CommandList : public IGfxCommandList
+	class D3D12CommandList : public GfxCommandList
 	{
 	public:
 		explicit D3D12CommandList(GfxDevice* gfx, GfxCommandListType type = GfxCommandListType::Graphics, Char const* name = "");
@@ -13,7 +13,7 @@ namespace adria
 
 			GfxDevice* GetDevice() const override;
 		void* GetNative() const override;
-		IGfxCommandQueue* GetQueue() const override;
+		GfxCommandQueue* GetQueue() const override;
 
 		void ResetAllocator() override;
 		void Begin() override;

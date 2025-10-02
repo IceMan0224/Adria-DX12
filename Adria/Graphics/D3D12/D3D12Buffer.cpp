@@ -1,15 +1,17 @@
 #include "D3D12Buffer.h"
 #include "D3D12MemAlloc.h"
-#include "Graphics/GfxDevice.h"
+#include "D3D12Device.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
 #include "Utilities/Align.h"
+#include "Utilities/StringConversions.h"
 
 namespace adria
 {
 
 	D3D12Buffer::D3D12Buffer(GfxDevice* gfx, GfxBufferDesc const& desc, GfxBufferData initial_data /*= {}*/) : GfxBuffer(gfx, desc)
 	{
+		D3D12Device* d3d12gfx = (D3D12Device*)gfx;
 		Uint64 buffer_size = desc.size;
 		if (HasFlag(desc.misc_flags, GfxBufferMiscFlag::ConstantBuffer))
 		{
@@ -64,8 +66,8 @@ namespace adria
 			allocation_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_SHARED;
 		}
 
-		ID3D12Device* device = gfx->GetDevice();
-		D3D12MA::Allocator* allocator = gfx->GetAllocator();
+		ID3D12Device* device = d3d12gfx->GetD3D12Device();
+		D3D12MA::Allocator* allocator = d3d12gfx->GetAllocator();
 
 		D3D12MA::Allocation* alloc = nullptr;
 		HRESULT hr = allocator->CreateResource(
@@ -81,7 +83,7 @@ namespace adria
 
 		if (HasFlag(desc.misc_flags, GfxBufferMiscFlag::Shared))
 		{
-			hr = gfx->GetDevice()->CreateSharedHandle(resource.Get(), nullptr, GENERIC_ALL, nullptr, &shared_handle);
+			hr = device->CreateSharedHandle(resource.Get(), nullptr, GENERIC_ALL, nullptr, &shared_handle);
 			GFX_CHECK_HR(hr);
 		}
 

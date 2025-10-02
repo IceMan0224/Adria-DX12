@@ -20,8 +20,7 @@ namespace adria
 		using ShaderDependencyMap = std::unordered_map<GfxShaderKey, std::vector<Uint64>>;
 
 	public:
-		GfxPipelineStatePermutations(GfxDevice* gfx, PSODesc const& desc)
-			: gfx(gfx), base_pso_desc(desc), current_pso_desc(desc)
+		GfxPipelineStatePermutations(GfxDevice* gfx, PSODesc const& desc) : gfx(gfx), base_pso_desc(desc), current_pso_desc(desc)
 		{
 			event_handle = ShaderManager::GetShaderRecompiledEvent().AddMember(&GfxPipelineStatePermutations::OnShaderRecompiled, *this);
 		}
@@ -103,7 +102,37 @@ namespace adria
 			f(current_pso_desc);
 		}
 
-		GfxPipelineState const* Get() const;
+		GfxPipelineState const* Get() const
+		{
+			Uint64 const pso_hash = PSODescHasher{}(current_pso_desc);
+			auto it = pso_permutations.find(pso_hash);
+
+			if (it == pso_permutations.end())
+			{
+				std::unique_ptr<GfxPipelineState> new_pso;
+				if constexpr (PSOType == GfxPipelineStateType::Graphics)
+				{
+					new_pso = gfx->CreateGraphicsPipelineState(current_pso_desc);
+				}
+				else if constexpr (PSOType == GfxPipelineStateType::Compute)
+				{
+					new_pso = gfx->CreateComputePipelineState(current_pso_desc);
+				}
+				else if constexpr (PSOType == GfxPipelineStateType::MeshShader)
+				{
+					new_pso = gfx->CreateMeshShaderPipelineState(current_pso_desc);
+				}
+
+				RegisterDependencies(current_pso_desc, pso_hash);
+
+				PSOCacheEntry cache_entry{ .pso = std::move(new_pso), .desc = current_pso_desc };
+				it = pso_permutations.emplace(pso_hash, std::move(cache_entry)).first;
+			}
+
+			GfxPipelineState const* pso = it->second.pso.get();
+			current_pso_desc = base_pso_desc;
+			return pso;
+		}
 
 	private:
 		GfxDevice* gfx;
@@ -116,7 +145,35 @@ namespace adria
 
 	private:
 		void OnShaderRecompiled(GfxShaderKey const& recompiled_shader);
-		void RegisterDependencies(PSODesc const& desc, Uint64 pso_hash) const;
+		void RegisterDependencies(PSODesc const& desc, Uint64 pso_hash) const
+		{
+			auto RegisterSingleDependency = [&](GfxShaderKey const& key)
+				{
+					if (key.IsValid())
+					{
+						shader_dependencies[key].push_back(pso_hash);
+					}
+				};
+
+			if constexpr (PSOType == GfxPipelineStateType::Graphics)
+			{
+				RegisterSingleDependency(desc.VS);
+				RegisterSingleDependency(desc.PS);
+				RegisterSingleDependency(desc.DS);
+				RegisterSingleDependency(desc.HS);
+				RegisterSingleDependency(desc.GS);
+			}
+			else if constexpr (PSOType == GfxPipelineStateType::Compute)
+			{
+				RegisterSingleDependency(desc.CS);
+			}
+			else if constexpr (PSOType == GfxPipelineStateType::MeshShader)
+			{
+				RegisterSingleDependency(desc.AS);
+				RegisterSingleDependency(desc.MS);
+				RegisterSingleDependency(desc.PS);
+			}
+		}
 	};
 
 	using GfxGraphicsPipelineStatePermutations = GfxPipelineStatePermutations<GfxPipelineStateType::Graphics>;

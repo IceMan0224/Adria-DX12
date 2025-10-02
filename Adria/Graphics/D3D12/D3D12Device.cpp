@@ -1,23 +1,27 @@
-﻿#include "GfxDevice.h"
-#include "GfxSwapchain.h"
-#include "GfxCommandList.h"
-#include "GfxCommandListPool.h"
-#include "GfxTexture.h"
-#include "GfxBuffer.h"
-#include "GfxDescriptorAllocator.h"
-#include "GfxRingDescriptorAllocator.h"
-#include "GfxLinearDynamicAllocator.h"
-#include "GfxCommandSignature.h"
-#include "GfxQueryHeap.h"
-#include "GfxPipelineState.h"
-#include "GfxNsightAftermathGpuCrashTracker.h"
-#include "GfxNsightPerfManager.h"
-#include "GfxRenderDoc.h"
-#include "GfxPIX.h"
+#include "D3D12Device.h"
+#include "D3D12CommandQueue.h"
+#include "D3D12CommandList.h"
+#include "D3D12Texture.h"
+#include "D3D12Buffer.h"
+#include "D3D12DescriptorHeap.h"
+#include "D3D12CommandSignature.h"
+#include "D3D12QueryHeap.h"
+#include "D3D12PipelineState.h"
+#include "D3D12Conversions.h"
+#include "Graphics/GfxSwapchain.h"
+#include "Graphics/GfxCommandListPool.h"
+#include "Graphics/GfxDescriptorAllocator.h"
+#include "Graphics/GfxRingDescriptorAllocator.h"
+#include "Graphics/GfxLinearDynamicAllocator.h"
+#include "Graphics/GfxNsightAftermathGpuCrashTracker.h"
+#include "Graphics/GfxNsightPerfManager.h"
+#include "Graphics/GfxRenderDoc.h"
+#include "Graphics/GfxPIX.h"
 #include "d3dx12.h"
 #include "Core/ConsoleManager.h"
 #include "Core/CommandLineOptions.h"
 #include "Core/Paths.h"
+#include "Utilities/StringConversions.h"
 #include "Platform/Window.h"
 #include "tracy/Tracy.hpp"
 
@@ -61,6 +65,9 @@ namespace adria
 		case GfxVendor::Nvidia: return "Nvidia";
 		case GfxVendor::Intel: return "Intel";
 		case GfxVendor::Microsoft: return "Microsoft";
+		case GfxVendor::Apple:
+		default:
+			ADRIA_UNREACHABLE();
 		}
 		return "Unknown";
 	}
@@ -75,8 +82,8 @@ namespace adria
 			{
 				return;
 			}
-			static_cast<ID3D12Fence*>(dred_fence)->SetEventOnCompletion(UINT64_MAX, dred_wait_handle);
-			ADRIA_ASSERT(RegisterWaitForSingleObject(&dred_wait_handle, dred_wait_handle, DeviceRemovedHandler, gfx->GetDevice(), INFINITE, 0));
+			static_cast<ID3D12Fence*>(dred_fence.GetHandle())->SetEventOnCompletion(UINT64_MAX, dred_wait_handle);
+			ADRIA_ASSERT(RegisterWaitForSingleObject(&dred_wait_handle, dred_wait_handle, DeviceRemovedHandler, (ID3D12Device*)gfx->GetNativeDevice(), INFINITE, 0));
 		}
 		~DRED()
 		{
@@ -85,13 +92,13 @@ namespace adria
 			CloseHandle(dred_wait_handle);
 		}
 
-		GfxFence dred_fence;
+		D3D12Fence dred_fence;
 		HANDLE   dred_wait_handle;
 	};
 
 	static TAutoConsoleVariable<Bool> VSync("rhi.VSync", false, "0: VSync is disabled. 1: VSync is enabled.");
 
-	GfxDevice::GfxDevice(Window* window)
+	D3D12Device::D3D12Device(Window* window)
 	{
 		VSync->Set(CommandLineOptions::GetVSync());
 		hwnd = window->Handle();
@@ -113,7 +120,7 @@ namespace adria
 			adapter->GetDesc3(&desc);
 			std::wstring adapter_wide_description(desc.Description);
 			std::string adapter_description = ToString(adapter_wide_description);
-			ADRIA_LOG(INFO, "\t%s - %f GB", adapter_description.c_str(), (Float)desc.DedicatedVideoMemory / (1 << 30) );
+			ADRIA_LOG(INFO, "\t%s - %f GB", adapter_description.c_str(), (Float)desc.DedicatedVideoMemory / (1 << 30));
 		}
 		dxgi_factory->EnumAdapterByGpuPreference(0, gpu_preference, IID_PPV_ARGS(adapter.GetAddressOf()));
 		DXGI_ADAPTER_DESC3 desc{};
@@ -158,7 +165,7 @@ namespace adria
 		{
 			nsight_aftermath->Initialize();
 		}
-		
+
 		D3D12MA::ALLOCATOR_DESC allocator_desc{};
 		allocator_desc.pDevice = device.Get();
 		allocator_desc.pAdapter = adapter.Get();
@@ -166,25 +173,27 @@ namespace adria
 		GFX_CHECK_HR(D3D12MA::CreateAllocator(&allocator_desc, &_allocator));
 		allocator.reset(_allocator);
 
-		graphics_queue.Create(this, GfxCommandListType::Graphics, "Graphics Queue");
-		compute_queue.Create(this, GfxCommandListType::Compute, "Compute Queue");
-		copy_queue.Create(this, GfxCommandListType::Copy, "Copy Queue");
+		graphics_queue = std::make_unique<D3D12CommandQueue>(this, GfxCommandListType::Graphics, "Graphics Queue");
+		compute_queue = std::make_unique<D3D12CommandQueue>(this, GfxCommandListType::Compute, "Compute Queue");
+		copy_queue = std::make_unique<D3D12CommandQueue>(this, GfxCommandListType::Copy, "Copy Queue");
 
 		for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
 		{
 			graphics_cmd_list_pool[i] = std::make_unique<GfxGraphicsCommandListPool>(this);
-			compute_cmd_list_pool[i]  = std::make_unique<GfxComputeCommandListPool>(this);
-			copy_cmd_list_pool[i]	  = std::make_unique<GfxCopyCommandListPool>(this);
+			compute_cmd_list_pool[i] = std::make_unique<GfxComputeCommandListPool>(this);
+			copy_cmd_list_pool[i] = std::make_unique<GfxCopyCommandListPool>(this);
 		}
 
 		for (Uint32 i = 0; i < (Uint32)GfxDescriptorHeapType::Count; ++i)
 		{
-			GfxDescriptorAllocatorDesc desc{};
+			GfxDescriptorHeapDesc desc{};
 			desc.descriptor_count = 1024;
 			desc.shader_visible = false;
 			desc.type = static_cast<GfxDescriptorHeapType>(i);
-			cpu_descriptor_allocators[i] = std::make_unique<GfxDescriptorAllocator>(this, desc);
+			std::unique_ptr<D3D12DescriptorHeap> descriptor_heap = std::make_unique<D3D12DescriptorHeap>(this, desc);
+			cpu_descriptor_allocators[i] = std::make_unique<GfxDescriptorAllocator>(descriptor_heap);
 		}
+
 		for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
 		{
 			dynamic_allocators.emplace_back(new GfxLinearDynamicAllocator(this, 1 << 20));
@@ -243,14 +252,14 @@ namespace adria
 		GFX_CHECK_HR(DMLCreateDevice(device, CommandLineOptions::GetDebugDML() ? DML_CREATE_DEVICE_FLAG_DEBUG : DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(dml_device.GetAddressOf())));
 		GFX_CHECK_HR(dml_device->CreateCommandRecorder(IID_PPV_ARGS(dml_command_recorder.GetAddressOf())));
 	}
-	GfxDevice::~GfxDevice()
+	D3D12Device::~D3D12Device()
 	{
 		WaitForGPU();
 		ProcessReleaseQueue();
 		frame_fence.Wait(frame_fence_values[swapchain->GetBackbufferIndex()]);
 	}
 
-	void GfxDevice::OnResize(Uint32 w, Uint32 h)
+	void D3D12Device::OnResize(Uint32 w, Uint32 h)
 	{
 		if ((width != w || height != h) && width > 0 && height > 0)
 		{
@@ -264,24 +273,27 @@ namespace adria
 			swapchain->OnResize(w, h);
 		}
 	}
-	Uint32 GfxDevice::GetBackbufferIndex() const
+	Uint32 D3D12Device::GetBackbufferIndex() const
 	{
 		return swapchain->GetBackbufferIndex();
 	}
-	Uint32 GfxDevice::GetFrameIndex() const { return frame_index; }
-	GfxTexture* GfxDevice::GetBackbuffer() const
+
+	Uint32 D3D12Device::GetFrameIndex() const { return frame_index; }
+
+	GfxTexture* D3D12Device::GetBackbuffer() const
 	{
 		return swapchain->GetBackbuffer();
 	}
 
-	void GfxDevice::Update()
+	void D3D12Device::Update()
 	{
 		if (nsight_perf_manager)
 		{
 			nsight_perf_manager->Update();
 		}
 	}
-	void GfxDevice::BeginFrame()
+
+	void D3D12Device::BeginFrame()
 	{
 		ZoneScopedN("GfxDevice::BeginFrame");
 		if (rendering_not_started) [[unlikely]]
@@ -304,7 +316,7 @@ namespace adria
 		copy_cmd_list_pool[backbuffer_index]->BeginCmdLists();
 		dynamic_allocators[backbuffer_index]->Clear();
 	}
-	void GfxDevice::EndFrame()
+	void D3D12Device::EndFrame()
 	{
 		ZoneScopedN("GfxDevice::EndFrame");
 		if (first_frame) [[unlikely]]
@@ -318,11 +330,11 @@ namespace adria
 		copy_cmd_list_pool[backbuffer_index]->EndCmdLists();
 
 		ProcessReleaseQueue();
-		graphics_queue.ExecuteCommandListPool(*graphics_cmd_list_pool[backbuffer_index]);
-		compute_queue.ExecuteCommandListPool(*compute_cmd_list_pool[backbuffer_index]);
-		copy_queue.ExecuteCommandListPool(*copy_cmd_list_pool[backbuffer_index]);
+		ExecuteCommandListPool(graphics_queue.get(), *graphics_cmd_list_pool[backbuffer_index]);
+		ExecuteCommandListPool(compute_queue.get(), *compute_cmd_list_pool[backbuffer_index]);
+		ExecuteCommandListPool(copy_queue.get(), *copy_cmd_list_pool[backbuffer_index]);
 
-		graphics_queue.Signal(frame_fence, frame_fence_value);
+		graphics_queue->Signal(frame_fence, frame_fence_value);
 		frame_fence_values[backbuffer_index] = frame_fence_value;
 
 		if (nsight_perf_manager)
@@ -347,78 +359,74 @@ namespace adria
 		++frame_index;
 	}
 
-	IDXGIFactory4* GfxDevice::GetFactory() const
-	{
-		return dxgi_factory.Get();
-	}
-	ID3D12Device5* GfxDevice::GetDevice() const
-	{
-		return device.Get();
-	}
-
-	IDMLDevice* GfxDevice::GetDMLDevice() const
-	{
-		return dml_device.Get();
-	}
-	IDMLCommandRecorder* GfxDevice::GetDMLCommandRecorder() const
-	{
-		return dml_command_recorder.Get();
-	}
-
-	ID3D12RootSignature* GfxDevice::GetCommonRootSignature() const
-	{
-		return global_root_signature.Get();
-	}
-	D3D12MA::Allocator*  GfxDevice::GetAllocator() const
-	{
-		return allocator.get();
-	}
-
-	void GfxDevice::WaitForGPU()
+	void D3D12Device::WaitForGPU()
 	{
 		ZoneScopedN("GfxDevice::WaitForGPU");
 
-		graphics_queue.Signal(wait_fence, wait_fence_value);
+		graphics_queue->Signal(wait_fence, wait_fence_value);
 		wait_fence.Wait(wait_fence_value);
 		wait_fence_value++;
 
-        compute_queue.Signal(wait_fence, wait_fence_value);
-        wait_fence.Wait(wait_fence_value);
-        wait_fence_value++;
+		compute_queue->Signal(wait_fence, wait_fence_value);
+		wait_fence.Wait(wait_fence_value);
+		wait_fence_value++;
 
-        copy_queue.Signal(wait_fence, wait_fence_value);
-        wait_fence.Wait(wait_fence_value);
-        wait_fence_value++;
+		copy_queue->Signal(wait_fence, wait_fence_value);
+		wait_fence.Wait(wait_fence_value);
+		wait_fence_value++;
 	}
-	GfxCommandQueue& GfxDevice::GetCommandQueue(GfxCommandListType type)
+	GfxCommandQueue* D3D12Device::GetCommandQueue(GfxCommandListType type)
 	{
 		switch (type)
 		{
 		case GfxCommandListType::Graphics:
-			return graphics_queue;
+			return graphics_queue.get();
 		case GfxCommandListType::Compute:
-			return compute_queue;
+			return compute_queue.get();
 		case GfxCommandListType::Copy:
-			return copy_queue;
+			return copy_queue.get();
 		default:
-			return graphics_queue;
+			return graphics_queue.get();
 		}
 		ADRIA_UNREACHABLE();
 	}
-	GfxCommandQueue& GfxDevice::GetGraphicsCommandQueue()
+
+	GfxFence& D3D12Device::GetFence(GfxCommandListType type)
 	{
-		return GetCommandQueue(GfxCommandListType::Graphics);
-	}
-	GfxCommandQueue& GfxDevice::GetComputeCommandQueue()
-	{
-		return GetCommandQueue(GfxCommandListType::Compute);
-	}
-	GfxCommandQueue& GfxDevice::GetCopyCommandQueue()
-	{
-		return GetCommandQueue(GfxCommandListType::Copy);
+		switch (type)
+		{
+		case GfxCommandListType::Graphics: return graphics_fence;
+		case GfxCommandListType::Compute:  return compute_fence;
+		case GfxCommandListType::Copy:	   return copy_fence;
+		default: ADRIA_UNREACHABLE();
+		}
+		return graphics_fence;
 	}
 
-	GfxCommandList* GfxDevice::GetCommandList(GfxCommandListType type) const
+	Uint64 D3D12Device::GetFenceValue(GfxCommandListType type) const
+	{
+		switch (type)
+		{
+		case GfxCommandListType::Graphics: return graphics_fence_value;
+		case GfxCommandListType::Compute:  return compute_fence_value;
+		case GfxCommandListType::Copy:	   return copy_fence_value;
+		default: ADRIA_UNREACHABLE();
+		}
+		return graphics_fence_value;
+	}
+
+	void D3D12Device::SetFenceValue(GfxCommandListType type, Uint64 value)
+	{
+		switch (type)
+		{
+		case GfxCommandListType::Graphics: graphics_fence_value = value;
+		case GfxCommandListType::Compute:  compute_fence_value = value;
+		case GfxCommandListType::Copy:	   copy_fence_value = value;
+		default: ADRIA_UNREACHABLE();
+		}
+	}
+
+	GfxCommandList* D3D12Device::GetCommandList(GfxCommandListType type) const
 	{
 		Uint32 backbuffer_index = swapchain->GetBackbufferIndex();
 		switch (type)
@@ -434,7 +442,7 @@ namespace adria
 		}
 		ADRIA_UNREACHABLE();
 	}
-	GfxCommandList* GfxDevice::GetLatestCommandList(GfxCommandListType type) const
+	GfxCommandList* D3D12Device::GetLatestCommandList(GfxCommandListType type) const
 	{
 		Uint32 backbuffer_index = swapchain->GetBackbufferIndex();
 		switch (type)
@@ -450,7 +458,7 @@ namespace adria
 		}
 		ADRIA_UNREACHABLE();
 	}
-	GfxCommandList* GfxDevice::AllocateCommandList(GfxCommandListType type) const
+	GfxCommandList* D3D12Device::AllocateCommandList(GfxCommandListType type) const
 	{
 		Uint32 backbuffer_index = swapchain->GetBackbufferIndex();
 		switch (type)
@@ -466,7 +474,7 @@ namespace adria
 		}
 		ADRIA_UNREACHABLE();
 	}
-	void GfxDevice::FreeCommandList(GfxCommandList* cmd_list, GfxCommandListType type)
+	void D3D12Device::FreeCommandList(GfxCommandList* cmd_list, GfxCommandListType type)
 	{
 		Uint32 backbuffer_index = swapchain->GetBackbufferIndex();
 		switch (type)
@@ -482,77 +490,29 @@ namespace adria
 		}
 		ADRIA_UNREACHABLE();
 	}
-	GfxCommandList* GfxDevice::GetGraphicsCommandList() const
-	{
-		return GetCommandList(GfxCommandListType::Graphics);
-	}
-	GfxCommandList* GfxDevice::GetLatestGraphicsCommandList() const
-	{
-		return GetLatestCommandList(GfxCommandListType::Graphics);
-	}
-	GfxCommandList* GfxDevice::AllocateGraphicsCommandList() const
-	{
-		return AllocateCommandList(GfxCommandListType::Graphics);
-	}
-	void GfxDevice::FreeGraphicsCommandList(GfxCommandList* cmd_list)
-	{
-		FreeCommandList(cmd_list, GfxCommandListType::Graphics);
-	}
-	GfxCommandList* GfxDevice::GetComputeCommandList() const
-	{
-		return GetCommandList(GfxCommandListType::Compute);
-	}
-	GfxCommandList* GfxDevice::GetLatestComputeCommandList() const
-	{
-		return GetLatestCommandList(GfxCommandListType::Compute);
-	}
-	GfxCommandList* GfxDevice::AllocateComputeCommandList() const
-	{
-		return AllocateCommandList(GfxCommandListType::Compute);
-	}
-	void GfxDevice::FreeComputeCommandList(GfxCommandList* cmd_list)
-	{
-		FreeCommandList(cmd_list, GfxCommandListType::Compute);
-	}
-	GfxCommandList* GfxDevice::GetCopyCommandList() const
-	{
-		return GetCommandList(GfxCommandListType::Copy);
-	}
-	GfxCommandList* GfxDevice::GetLatestCopyCommandList() const
-	{
-		return GetLatestCommandList(GfxCommandListType::Copy);
-	}
-	GfxCommandList* GfxDevice::AllocateCopyCommandList() const
-	{
-		return AllocateCommandList(GfxCommandListType::Copy);
-	}
-	void GfxDevice::FreeCopyCommandList(GfxCommandList* cmd_list)
-	{
-		FreeCommandList(cmd_list, GfxCommandListType::Copy);
-	}
 
-	void GfxDevice::CopyDescriptors(Uint32 count, GfxDescriptor dst, GfxDescriptor src, GfxDescriptorHeapType type /*= GfxDescriptorHeapType::CBV_SRV_UAV*/)
+	void D3D12Device::CopyDescriptors(Uint32 count, GfxDescriptor dst, GfxDescriptor src, GfxDescriptorHeapType type)
 	{
-		device->CopyDescriptorsSimple(count, dst, src, ToD3D12HeapType(type));
+		device->CopyDescriptorsSimple(count, ToD3D12CpuHandle(dst), ToD3D12CpuHandle(src), ToD3D12HeapType(type));
 	}
-	void GfxDevice::CopyDescriptors(GfxDescriptor dst, std::span<GfxDescriptor> src_descriptors, GfxDescriptorHeapType type /*= GfxDescriptorHeapType::CBV_SRV_UAV*/)
+	void D3D12Device::CopyDescriptors(GfxDescriptor dst, std::span<GfxDescriptor> src_descriptors, GfxDescriptorHeapType type)
 	{
 		Uint32 const dst_ranges_count = 1;
 		Uint32 const src_ranges_count = (Uint32)src_descriptors.size();
 
-		D3D12_CPU_DESCRIPTOR_HANDLE dst_handles[] = { dst };
+		D3D12_CPU_DESCRIPTOR_HANDLE dst_handles[] = { ToD3D12CpuHandle(dst) };
 		Uint32 dst_range_sizes[] = { (Uint32)src_descriptors.size() };
 
 		std::vector<Uint32> src_range_sizes(src_descriptors.size(), 1);
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> src_handles(src_descriptors.size());
 		for (Uint64 i = 0; i < src_handles.size(); ++i)
 		{
-			src_handles[i] = src_descriptors[i];
+			src_handles[i] = ToD3D12CpuHandle(src_descriptors[i]);
 		}
 
 		device->CopyDescriptors(dst_ranges_count, dst_handles, dst_range_sizes, src_ranges_count, src_handles.data(), src_range_sizes.data(), ToD3D12HeapType(type));
 	}
-	void GfxDevice::CopyDescriptors(std::span<std::pair<GfxDescriptor, Uint32>> dst_range_starts_and_size, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size, GfxDescriptorHeapType type /*= GfxDescriptorHeapType::CBV_SRV_UAV*/)
+	void D3D12Device::CopyDescriptors(std::span<std::pair<GfxDescriptor, Uint32>> dst_range_starts_and_size, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size, GfxDescriptorHeapType type)
 	{
 		Uint32 const dst_ranges_count = (Uint32)dst_range_starts_and_size.size();
 		Uint32 const src_ranges_count = (Uint32)src_range_starts_and_size.size();
@@ -560,7 +520,7 @@ namespace adria
 		std::vector<Uint32> dst_range_sizes(dst_ranges_count);
 		for (Uint64 i = 0; i < dst_ranges_count; ++i)
 		{
-			dst_handles[i] = dst_range_starts_and_size[i].first;
+			dst_handles[i] = ToD3D12CpuHandle(dst_range_starts_and_size[i].first);
 			dst_range_sizes[i] = dst_range_starts_and_size[i].second;
 		}
 
@@ -568,91 +528,348 @@ namespace adria
 		std::vector<Uint32> src_range_sizes(src_ranges_count);
 		for (Uint64 i = 0; i < src_ranges_count; ++i)
 		{
-			src_handles[i] = src_range_starts_and_size[i].first;
+			src_handles[i] = ToD3D12CpuHandle(src_range_starts_and_size[i].first);
 			src_range_sizes[i] = src_range_starts_and_size[i].second;
 		}
 
 		device->CopyDescriptors(dst_ranges_count, dst_handles.data(), dst_range_sizes.data(), src_ranges_count, src_handles.data(), src_range_sizes.data(), ToD3D12HeapType(type));
 	}
-	GfxDescriptor	GfxDevice::AllocateDescriptorCPU(GfxDescriptorHeapType type)
+	GfxDescriptor	D3D12Device::AllocateDescriptorCPU(GfxDescriptorHeapType type)
 	{
 		return cpu_descriptor_allocators[(Uint64)type]->AllocateDescriptor();
 	}
-	void			GfxDevice::FreeDescriptorCPU(GfxDescriptor descriptor, GfxDescriptorHeapType type)
+	void			D3D12Device::FreeDescriptorCPU(GfxDescriptor descriptor, GfxDescriptorHeapType type)
 	{
 		cpu_descriptor_allocators[(Uint64)type]->FreeDescriptor(descriptor);
 	}
-	GfxDescriptor GfxDevice::AllocateDescriptorsGPU(Uint32 count)
+	GfxDescriptor D3D12Device::AllocateDescriptorsGPU(Uint32 count)
 	{
 		return GetDescriptorAllocator()->Allocate(count);
 	}
-	GfxDescriptor GfxDevice::GetDescriptorGPU(Uint32 i) const
+	GfxDescriptor D3D12Device::GetDescriptorGPU(Uint32 i) const
 	{
-		return GetDescriptorAllocator()->GetHandle(i);
+		return GetDescriptorAllocator()->GetHeap()->GetDescriptor(i);
 	}
-	GfxOnlineDescriptorAllocator*	GfxDevice::GetDescriptorAllocator() const
+
+	GfxOnlineDescriptorAllocator* D3D12Device::GetDescriptorAllocator() const
 	{
 		return gpu_descriptor_allocator.get();
 	}
-	GfxLinearDynamicAllocator*		GfxDevice::GetDynamicAllocator() const
+	GfxLinearDynamicAllocator* D3D12Device::GetDynamicAllocator() const
 	{
 		return rendering_not_started ? dynamic_allocator_on_init.get() : dynamic_allocators[swapchain->GetBackbufferIndex()].get();
 	}
-	void GfxDevice::InitShaderVisibleAllocator(Uint32 reserve)
+	void D3D12Device::InitShaderVisibleAllocator(Uint32 reserve)
 	{
 		gpu_descriptor_allocator = std::make_unique<GfxOnlineDescriptorAllocator>(this, 32767, reserve);
 	}
 
-	std::unique_ptr<GfxTexture> GfxDevice::CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer)
+	std::unique_ptr<GfxTexture> D3D12Device::CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer)
 	{
-		return std::make_unique<GfxTexture>(this, desc, backbuffer);
+		return std::make_unique<D3D12Texture>(this, desc, backbuffer);
 	}
-	std::unique_ptr<GfxTexture> GfxDevice::CreateTexture(GfxTextureDesc const& desc, GfxTextureData const& data /*= {}*/)
+	std::unique_ptr<GfxTexture> D3D12Device::CreateTexture(GfxTextureDesc const& desc, GfxTextureData const& data)
 	{
-		return std::make_unique<GfxTexture>(this, desc, data);
+		return std::make_unique<D3D12Texture>(this, desc, data);
 	}
-	std::unique_ptr<GfxTexture> GfxDevice::CreateTexture(GfxTextureDesc const& desc)
+	std::unique_ptr<GfxTexture> D3D12Device::CreateTexture(GfxTextureDesc const& desc)
 	{
-		return std::make_unique<GfxTexture>(this, desc, GfxTextureData{});
+		return std::make_unique<D3D12Texture>(this, desc);
 	}
-
-	std::unique_ptr<GfxBuffer>  GfxDevice::CreateBuffer(GfxBufferDesc const& desc, GfxBufferData const& initial_data)
+	std::unique_ptr<GfxBuffer>  D3D12Device::CreateBuffer(GfxBufferDesc const& desc, GfxBufferData const& initial_data)
 	{
-		return std::make_unique<GfxBuffer>(this, desc, initial_data);
+		return std::make_unique<D3D12Buffer>(this, desc, initial_data);
 	}
-	std::unique_ptr<GfxBuffer>	GfxDevice::CreateBuffer(GfxBufferDesc const& desc)
+	std::unique_ptr<GfxBuffer>	D3D12Device::CreateBuffer(GfxBufferDesc const& desc)
 	{
-		return std::make_unique<GfxBuffer>(this, desc);
-	}
-
-	std::unique_ptr<GfxGraphicsPipelineState>	GfxDevice::CreateGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc)
-	{
-		return std::make_unique<GfxGraphicsPipelineState>(this, desc);
-	}
-	std::unique_ptr<GfxComputePipelineState>	GfxDevice::CreateComputePipelineState(GfxComputePipelineStateDesc const& desc)
-	{
-		return std::make_unique<GfxComputePipelineState>(this, desc);
-	}
-	std::unique_ptr<GfxMeshShaderPipelineState> GfxDevice::CreateMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc)
-	{
-		return std::make_unique<GfxMeshShaderPipelineState>(this, desc);
+		return std::make_unique<D3D12Buffer>(this, desc);
 	}
 
-	std::unique_ptr<GfxQueryHeap> GfxDevice::CreateQueryHeap(GfxQueryHeapDesc const& desc)
+	std::unique_ptr<GfxPipelineState>	D3D12Device::CreateGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc)
 	{
-		return std::make_unique<GfxQueryHeap>(this, desc);
+		return std::make_unique<D3D12PipelineState>(this, desc);
+	}
+	std::unique_ptr<GfxPipelineState>	D3D12Device::CreateComputePipelineState(GfxComputePipelineStateDesc const& desc)
+	{
+		return std::make_unique<D3D12PipelineState>(this, desc);
+	}
+	std::unique_ptr<GfxPipelineState> D3D12Device::CreateMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc)
+	{
+		return std::make_unique<D3D12PipelineState>(this, desc);
 	}
 
-	std::unique_ptr<GfxRayTracingTLAS> GfxDevice::CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
+	std::unique_ptr<GfxFence> D3D12Device::CreateFence(Char const* name)
+	{
+		std::unique_ptr<GfxFence> fence = std::make_unique<D3D12Fence>();
+		fence->Create(this, name);
+		return fence;
+	}
+
+	std::unique_ptr<GfxQueryHeap> D3D12Device::CreateQueryHeap(GfxQueryHeapDesc const& desc)
+	{
+		return std::make_unique<D3D12QueryHeap>(this, desc);
+	}
+
+	std::unique_ptr<GfxRayTracingTLAS> D3D12Device::CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
 	{
 		return std::make_unique<GfxRayTracingTLAS>(this, instances, flags);
 	}
-	std::unique_ptr<GfxRayTracingBLAS> GfxDevice::CreateRayTracingBLAS(std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags)
+	std::unique_ptr<GfxRayTracingBLAS> D3D12Device::CreateRayTracingBLAS(std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags)
 	{
 		return std::make_unique<GfxRayTracingBLAS>(this, geometries, flags);
 	}
 
-	GfxDescriptor GfxDevice::CreateBufferView(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter)
+	GfxDescriptor D3D12Device::CreateBufferSRV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)
+	{
+		GfxBufferDescriptorDesc _desc = desc ? *desc : GfxBufferDescriptorDesc{};
+		return CreateBufferView(buffer, GfxSubresourceType::SRV, _desc);
+	}
+	GfxDescriptor D3D12Device::CreateBufferUAV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)
+	{
+		GfxBufferDescriptorDesc _desc = desc ? *desc : GfxBufferDescriptorDesc{};
+		return CreateBufferView(buffer, GfxSubresourceType::UAV, _desc);
+	}
+	GfxDescriptor D3D12Device::CreateBufferUAV(GfxBuffer const* buffer, GfxBuffer const* counter, GfxBufferDescriptorDesc const* desc/*= nullptr*/)
+	{
+		GfxBufferDescriptorDesc _desc = desc ? *desc : GfxBufferDescriptorDesc{};
+		return CreateBufferView(buffer, GfxSubresourceType::UAV, _desc, counter);
+	}
+	GfxDescriptor D3D12Device::CreateTextureSRV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
+	{
+		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
+		return CreateTextureView(texture, GfxSubresourceType::SRV, _desc);
+	}
+	GfxDescriptor D3D12Device::CreateTextureUAV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
+	{
+		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
+		return CreateTextureView(texture, GfxSubresourceType::UAV, _desc);
+	}
+	GfxDescriptor D3D12Device::CreateTextureRTV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
+	{
+		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
+		return CreateTextureView(texture, GfxSubresourceType::RTV, _desc);
+	}
+	GfxDescriptor D3D12Device::CreateTextureDSV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
+	{
+		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
+		return CreateTextureView(texture, GfxSubresourceType::DSV, _desc);
+	}
+
+	Uint64 D3D12Device::GetLinearBufferSize(GfxTexture const* texture) const
+	{
+		ADRIA_ASSERT(texture);
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT texture_footprint{};
+		GfxTextureDesc const& desc = texture->GetDesc();
+		D3D12_RESOURCE_DESC d3d12_texture_desc = ((ID3D12Resource*)texture->GetNative())->GetDesc();
+		Uint32 subresource_count = desc.mip_levels * desc.array_size;
+		device->GetCopyableFootprints(&d3d12_texture_desc, 0, subresource_count, 0, &texture_footprint, nullptr, nullptr, nullptr);
+		return texture_footprint.Footprint.RowPitch * texture_footprint.Footprint.Height;
+	}
+	Uint64 D3D12Device::GetLinearBufferSize(GfxBuffer const* buffer) const
+	{
+		ADRIA_ASSERT(buffer);
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT buffer_footprint{};
+		GfxBufferDesc const& desc = buffer->GetDesc();
+		D3D12_RESOURCE_DESC d3d12_texture_desc = ((ID3D12Resource*)buffer->GetNative())->GetDesc();
+		device->GetCopyableFootprints(&d3d12_texture_desc, 0, 1, 0, &buffer_footprint, nullptr, nullptr, nullptr);
+		return buffer_footprint.Footprint.RowPitch * buffer_footprint.Footprint.Height;
+	}
+
+	void D3D12Device::GetTimestampFrequency(Uint64& frequency) const
+	{
+		frequency = graphics_queue->GetTimestampFrequency();
+	}
+
+	GPUMemoryUsage D3D12Device::GetMemoryUsage() const
+	{
+		GPUMemoryUsage gpu_memory_usage{};
+		D3D12MA::Budget budget;
+		allocator->GetBudget(&budget, nullptr);
+		gpu_memory_usage.budget = budget.BudgetBytes;
+		gpu_memory_usage.usage = budget.UsageBytes;
+		return gpu_memory_usage;
+	}
+
+	void D3D12Device::SetRenderingNotStarted()
+	{
+		rendering_not_started = true;
+		dynamic_allocator_on_init.reset(new GfxLinearDynamicAllocator(this, 1 << 30));
+	}
+
+	void D3D12Device::AddToReleaseQueue_Internal(ReleasableObject* _obj)
+	{
+		release_queue.emplace(_obj, release_queue_fence_value);
+	}
+
+	void D3D12Device::ProcessReleaseQueue()
+	{
+		while (!release_queue.empty())
+		{
+			if (!release_fence.IsCompleted(release_queue.front().fence_value))
+			{
+				break;
+			}
+			release_queue.pop();
+		}
+		graphics_queue->Signal(release_fence, release_queue_fence_value);
+		++release_queue_fence_value;
+	}
+	void D3D12Device::SetInfoQueue()
+	{
+		Ref<ID3D12InfoQueue> info_queue;
+		if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(info_queue.GetAddressOf()))))
+		{
+			D3D12_MESSAGE_SEVERITY Severities[] =
+			{
+				D3D12_MESSAGE_SEVERITY_INFO
+			};
+
+			D3D12_MESSAGE_ID DenyIds[] =
+			{
+				D3D12_MESSAGE_ID_INVALID_DESCRIPTOR_HANDLE,
+				D3D12_MESSAGE_ID_COMMAND_ALLOCATOR_SYNC,
+				D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED
+			};
+
+			D3D12_INFO_QUEUE_FILTER NewFilter{};
+			NewFilter.DenyList.NumCategories = 0;
+			NewFilter.DenyList.pCategoryList = NULL;
+			NewFilter.DenyList.NumSeverities = ARRAYSIZE(Severities);
+			NewFilter.DenyList.pSeverityList = Severities;
+			NewFilter.DenyList.NumIDs = ARRAYSIZE(DenyIds);
+			NewFilter.DenyList.pIDList = DenyIds;
+
+			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false));
+			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, false));
+			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true));
+			info_queue->PushStorageFilter(&NewFilter);
+
+			Ref<ID3D12InfoQueue1> info_queue1;
+			info_queue.As(&info_queue1);
+			if (info_queue1)
+			{
+				auto MessageCallback = [](
+					D3D12_MESSAGE_CATEGORY Category,
+					D3D12_MESSAGE_SEVERITY Severity,
+					D3D12_MESSAGE_ID ID,
+					LPCSTR pDescription,
+					void* pContext)
+					{
+						ADRIA_LOG(WARNING, "D3D12 Validation Layer: %s", pDescription);
+					};
+				DWORD callbackCookie = 0;
+				GFX_CHECK_HR(info_queue1->RegisterMessageCallback(MessageCallback, D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &callbackCookie));
+			}
+		}
+	}
+	void D3D12Device::SetupOptions(Uint32& dxgi_factory_flags)
+	{
+		if (CommandLineOptions::GetAftermath())
+		{
+			return;
+		}
+		if (CommandLineOptions::GetDebugDevice())
+		{
+			Ref<ID3D12Debug> debug_controller = nullptr;
+			if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debug_controller.GetAddressOf()))))
+			{
+				debug_controller->EnableDebugLayer();
+				dxgi_factory_flags |= DXGI_CREATE_FACTORY_DEBUG;
+#if defined(_DEBUG)
+				ADRIA_LOG(INFO, "D3D12 Debug Layer Enabled!");
+#else
+				ADRIA_LOG(WARNING, "D3D12 Debug Layer Enabled! (Non-debug build)");
+#endif
+			}
+			else ADRIA_LOG(WARNING, "Debug Layer setup failed!");
+		}
+		if (CommandLineOptions::GetDRED())
+		{
+			Ref<ID3D12DeviceRemovedExtendedDataSettings1> dred_settings;
+			HRESULT hr = D3D12GetDebugInterface(IID_PPV_ARGS(dred_settings.GetAddressOf()));
+			if (SUCCEEDED(hr) && dred_settings != NULL)
+			{
+				dred_settings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+				dred_settings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+				dred_settings->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+#if defined(_DEBUG)
+				ADRIA_LOG(INFO, "D3D12 DRED Enabled!");
+#else
+				ADRIA_LOG(WARNING, "D3D12 DRED Enabled! (Non-Debug build)");
+#endif
+			}
+			else ADRIA_LOG(WARNING, "DRED setup failed!");
+		}
+		if (CommandLineOptions::GetGpuValidation())
+		{
+			Ref<ID3D12Debug1> debug_controller = nullptr;
+			if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debug_controller.GetAddressOf()))))
+			{
+				debug_controller->SetEnableGPUBasedValidation(true);
+#if defined(_DEBUG)
+				ADRIA_LOG(INFO, "D3D12 GPU Based Validation Enabled!");
+#else
+				ADRIA_LOG(WARNING, "D3D12 GPU Based Validation Enabled! (Release)");
+#endif
+			}
+		}
+		if (CommandLineOptions::GetPIX())
+		{
+			GFX_PIX_INIT();
+		}
+		else if (CommandLineOptions::GetRenderDoc())
+		{
+			GFX_RENDERDOC_INIT();
+		}
+	}
+	void D3D12Device::CreateCommonRootSignature()
+	{
+		D3D12_FEATURE_DATA_ROOT_SIGNATURE feature_data{};
+		feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+		if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &feature_data, sizeof(feature_data))))
+		{
+			feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+		}
+
+		CD3DX12_ROOT_PARAMETER1 root_parameters[4] = {}; //14 DWORDS = 8 * 1 DWORD for root constants + 3 * 2 DWORDS for CBVs
+		root_parameters[0].InitAsConstantBufferView(0);
+		root_parameters[1].InitAsConstants(8, 1);
+		root_parameters[2].InitAsConstantBufferView(2);
+		root_parameters[3].InitAsConstantBufferView(3);
+
+		D3D12_ROOT_SIGNATURE_FLAGS flags =
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+			D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
+
+		CD3DX12_STATIC_SAMPLER_DESC static_samplers[10] = {};
+		static_samplers[0].Init(0, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
+		static_samplers[1].Init(1, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+		static_samplers[2].Init(2, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_BORDER, D3D12_TEXTURE_ADDRESS_MODE_BORDER, D3D12_TEXTURE_ADDRESS_MODE_BORDER);
+		static_samplers[2].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+
+		static_samplers[3].Init(3, D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
+		static_samplers[4].Init(4, D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+		static_samplers[5].Init(5, D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_BORDER, D3D12_TEXTURE_ADDRESS_MODE_BORDER, D3D12_TEXTURE_ADDRESS_MODE_BORDER);
+		static_samplers[5].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+
+		static_samplers[6].Init(6, D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0.0f, 16u, D3D12_COMPARISON_FUNC_LESS_EQUAL, D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE);
+		static_samplers[7].Init(7, D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0.0f, 16u, D3D12_COMPARISON_FUNC_LESS_EQUAL, D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE);
+
+		static_samplers[8].Init(8, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_MIRROR, D3D12_TEXTURE_ADDRESS_MODE_MIRROR, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
+		static_samplers[9].Init(9, D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_MIRROR, D3D12_TEXTURE_ADDRESS_MODE_MIRROR, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC desc{};
+		desc.Init_1_1(ARRAYSIZE(root_parameters), root_parameters, ARRAYSIZE(static_samplers), static_samplers, flags);
+
+		Ref<ID3DBlob> signature;
+		Ref<ID3DBlob> error;
+		HRESULT hr = D3DX12SerializeVersionedRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1_1, signature.GetAddressOf(), error.GetAddressOf());
+		GFX_CHECK_HR(hr);
+		hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(global_root_signature.GetAddressOf()));
+		GFX_CHECK_HR(hr);
+	}
+
+	GfxDescriptor D3D12Device::CreateBufferView(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter)
 	{
 		if (uav_counter)
 		{
@@ -701,7 +918,7 @@ namespace adria
 				srv_desc.Buffer.FirstElement = view_desc.offset / stride;
 				srv_desc.Buffer.NumElements = (Uint32)std::min<Uint64>(view_desc.size, desc.size - view_desc.offset) / stride;
 			}
-			device->CreateShaderResourceView(!is_accel_struct ? buffer->GetNative() : nullptr, &srv_desc, heap_descriptor);
+			device->CreateShaderResourceView(!is_accel_struct ? (ID3D12Resource*)buffer->GetNative() : nullptr, &srv_desc, ToD3D12CpuHandle(heap_descriptor));
 		}
 		break;
 		case GfxSubresourceType::UAV:
@@ -740,7 +957,7 @@ namespace adria
 				uav_desc.Buffer.FirstElement = (Uint32)view_desc.offset / stride;
 				uav_desc.Buffer.NumElements = (Uint32)std::min<Uint64>(view_desc.size, desc.size - view_desc.offset) / stride;
 			}
-			device->CreateUnorderedAccessView(buffer->GetNative(), uav_counter ? uav_counter->GetNative() : nullptr, &uav_desc, heap_descriptor);
+			device->CreateUnorderedAccessView((ID3D12Resource*)buffer->GetNative(), uav_counter ? (ID3D12Resource*)uav_counter->GetNative() : nullptr, &uav_desc, ToD3D12CpuHandle(heap_descriptor));
 		}
 		break;
 		case GfxSubresourceType::RTV:
@@ -750,7 +967,7 @@ namespace adria
 		}
 		return heap_descriptor;
 	}
-	GfxDescriptor GfxDevice::CreateTextureView(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc)
+	GfxDescriptor D3D12Device::CreateTextureView(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc)
 	{
 		GfxTextureDesc desc = texture->GetDesc();
 		GfxFormat format = desc.format;
@@ -872,7 +1089,7 @@ namespace adria
 				srv_desc.Format = AdjustFormatSRGB(srv_desc.Format);
 			}
 
-			device->CreateShaderResourceView(texture->GetNative(), &srv_desc, descriptor);
+			device->CreateShaderResourceView((ID3D12Resource*)texture->GetNative(), &srv_desc, ToD3D12CpuHandle(descriptor));
 			return descriptor;
 		}
 		break;
@@ -937,7 +1154,7 @@ namespace adria
 				uav_desc.Texture3D.WSize = -1;
 			}
 
-			device->CreateUnorderedAccessView(texture->GetNative(), nullptr, &uav_desc, descriptor);
+			device->CreateUnorderedAccessView((ID3D12Resource*)texture->GetNative(), nullptr, &uav_desc, ToD3D12CpuHandle(descriptor));
 			return descriptor;
 		}
 		break;
@@ -1017,7 +1234,7 @@ namespace adria
 				rtv_desc.Texture3D.FirstWSlice = 0;
 				rtv_desc.Texture3D.WSize = -1;
 			}
-			device->CreateRenderTargetView(texture->GetNative(), &rtv_desc, descriptor);
+			device->CreateRenderTargetView((ID3D12Resource*)texture->GetNative(), &rtv_desc, ToD3D12CpuHandle(descriptor));
 			return descriptor;
 		}
 		break;
@@ -1093,256 +1310,12 @@ namespace adria
 				}
 			}
 
-			device->CreateDepthStencilView(texture->GetNative(), &dsv_desc, descriptor);
+			device->CreateDepthStencilView((ID3D12Resource*)texture->GetNative(), &dsv_desc, ToD3D12CpuHandle(descriptor));
 			return descriptor;
 		}
 		break;
 		}
 		ADRIA_UNREACHABLE();
-	}
-	GfxDescriptor GfxDevice::CreateBufferSRV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)
-	{
-		GfxBufferDescriptorDesc _desc = desc ? *desc : GfxBufferDescriptorDesc{};
-		return CreateBufferView(buffer, GfxSubresourceType::SRV, _desc);
-	}
-	GfxDescriptor GfxDevice::CreateBufferUAV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)
-	{
-		GfxBufferDescriptorDesc _desc = desc ? *desc : GfxBufferDescriptorDesc{};
-		return CreateBufferView(buffer, GfxSubresourceType::UAV, _desc);
-	}
-	GfxDescriptor GfxDevice::CreateBufferUAV(GfxBuffer const* buffer, GfxBuffer const* counter, GfxBufferDescriptorDesc const* desc/*= nullptr*/)
-	{
-		GfxBufferDescriptorDesc _desc = desc ? *desc : GfxBufferDescriptorDesc{};
-		return CreateBufferView(buffer, GfxSubresourceType::UAV, _desc, counter);
-	}
-	GfxDescriptor GfxDevice::CreateTextureSRV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
-	{
-		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
-		return CreateTextureView(texture, GfxSubresourceType::SRV, _desc);
-	}
-	GfxDescriptor GfxDevice::CreateTextureUAV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
-	{
-		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
-		return CreateTextureView(texture, GfxSubresourceType::UAV, _desc);
-	}
-	GfxDescriptor GfxDevice::CreateTextureRTV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
-	{
-		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
-		return CreateTextureView(texture, GfxSubresourceType::RTV, _desc);
-	}
-	GfxDescriptor GfxDevice::CreateTextureDSV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
-	{
-		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
-		return CreateTextureView(texture, GfxSubresourceType::DSV, _desc);
-	}
-
-	Uint64 GfxDevice::GetLinearBufferSize(GfxTexture const* texture) const
-	{
-		ADRIA_ASSERT(texture);
-		D3D12_PLACED_SUBRESOURCE_FOOTPRINT texture_footprint{};
-		GfxTextureDesc const& desc = texture->GetDesc();
-		D3D12_RESOURCE_DESC d3d12_texture_desc = texture->GetNative()->GetDesc();
-		Uint32 subresource_count = desc.mip_levels * desc.array_size;
-		device->GetCopyableFootprints(&d3d12_texture_desc, 0, subresource_count, 0, &texture_footprint, nullptr, nullptr, nullptr);
-		return texture_footprint.Footprint.RowPitch * texture_footprint.Footprint.Height;
-	}
-	Uint64 GfxDevice::GetLinearBufferSize(GfxBuffer const* buffer) const
-	{
-		ADRIA_ASSERT(buffer);
-		D3D12_PLACED_SUBRESOURCE_FOOTPRINT buffer_footprint{};
-		GfxBufferDesc const& desc = buffer->GetDesc();
-		D3D12_RESOURCE_DESC d3d12_texture_desc = buffer->GetNative()->GetDesc();
-		device->GetCopyableFootprints(&d3d12_texture_desc, 0, 1, 0, &buffer_footprint, nullptr, nullptr, nullptr);
-		return buffer_footprint.Footprint.RowPitch * buffer_footprint.Footprint.Height;
-	}
-
-	void GfxDevice::GetTimestampFrequency(Uint64& frequency) const
-	{
-		frequency = graphics_queue.GetTimestampFrequency();
-	}
-	GPUMemoryUsage GfxDevice::GetMemoryUsage() const
-	{
-		GPUMemoryUsage gpu_memory_usage{};
-		D3D12MA::Budget budget;
-		allocator->GetBudget(&budget, nullptr);
-		gpu_memory_usage.budget = budget.BudgetBytes;
-		gpu_memory_usage.usage = budget.UsageBytes;
-		return gpu_memory_usage;
-	}
-	void GfxDevice::SetRenderingNotStarted()
-	{
-		rendering_not_started = true;
-		dynamic_allocator_on_init.reset(new GfxLinearDynamicAllocator(this, 1 << 30));
-	}
-	GfxNsightPerfManager* GfxDevice::GetNsightPerfManager() const
-	{
-		return nsight_perf_manager.get();
-	}
-
-	void GfxDevice::ProcessReleaseQueue()
-	{
-		while (!release_queue.empty())
-		{
-			if (!release_fence.IsCompleted(release_queue.front().fence_value))
-			{
-				break;
-			}
-			release_queue.pop();
-		}
-		graphics_queue.Signal(release_fence, release_queue_fence_value);
-		++release_queue_fence_value;
-	}
-	void GfxDevice::SetInfoQueue()
-	{
-		Ref<ID3D12InfoQueue> info_queue;
-		if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(info_queue.GetAddressOf()))))
-		{
-			D3D12_MESSAGE_SEVERITY Severities[] =
-			{
-				D3D12_MESSAGE_SEVERITY_INFO
-			};
-
-			D3D12_MESSAGE_ID DenyIds[] =
-			{
-				D3D12_MESSAGE_ID_INVALID_DESCRIPTOR_HANDLE,
-				D3D12_MESSAGE_ID_COMMAND_ALLOCATOR_SYNC,
-				D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED
-			};
-
-			D3D12_INFO_QUEUE_FILTER NewFilter{};
-			NewFilter.DenyList.NumCategories = 0;
-			NewFilter.DenyList.pCategoryList = NULL;
-			NewFilter.DenyList.NumSeverities = ARRAYSIZE(Severities);
-			NewFilter.DenyList.pSeverityList = Severities;
-			NewFilter.DenyList.NumIDs = ARRAYSIZE(DenyIds);
-			NewFilter.DenyList.pIDList = DenyIds;
-
-			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false));
-			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, false));
-			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true));
-			info_queue->PushStorageFilter(&NewFilter);
-
-			Ref<ID3D12InfoQueue1> info_queue1;
-			info_queue.As(&info_queue1);
-			if (info_queue1)
-			{
-				auto MessageCallback = [](
-					D3D12_MESSAGE_CATEGORY Category,
-					D3D12_MESSAGE_SEVERITY Severity,
-					D3D12_MESSAGE_ID ID,
-					LPCSTR pDescription,
-					void* pContext)
-				{
-					ADRIA_LOG(WARNING, "D3D12 Validation Layer: %s", pDescription);
-				};
-				DWORD callbackCookie = 0;
-				GFX_CHECK_HR(info_queue1->RegisterMessageCallback(MessageCallback, D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &callbackCookie));
-			}
-		}
-	}
-	void GfxDevice::SetupOptions(Uint32& dxgi_factory_flags)
-	{
-		if (CommandLineOptions::GetAftermath())
-		{
-			return;
-		}
-		if (CommandLineOptions::GetDebugDevice())
-		{
-			Ref<ID3D12Debug> debug_controller = nullptr;
-			if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debug_controller.GetAddressOf()))))
-			{
-				debug_controller->EnableDebugLayer();
-				dxgi_factory_flags |= DXGI_CREATE_FACTORY_DEBUG;
-#if defined(_DEBUG)
-				ADRIA_LOG(INFO, "D3D12 Debug Layer Enabled!");
-#else
-				ADRIA_LOG(WARNING, "D3D12 Debug Layer Enabled! (Non-debug build)");
-#endif
-			}
-			else ADRIA_LOG(WARNING, "Debug Layer setup failed!");
-		}
-		if (CommandLineOptions::GetDRED())
-		{
-			Ref<ID3D12DeviceRemovedExtendedDataSettings1> dred_settings;
-			HRESULT hr = D3D12GetDebugInterface(IID_PPV_ARGS(dred_settings.GetAddressOf()));
-			if (SUCCEEDED(hr) && dred_settings != NULL)
-			{
-				dred_settings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-				dred_settings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-				dred_settings->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-#if defined(_DEBUG)
-				ADRIA_LOG(INFO, "D3D12 DRED Enabled!");
-#else
-				ADRIA_LOG(WARNING, "D3D12 DRED Enabled! (Non-Debug build)");
-#endif
-			}
-			else ADRIA_LOG(WARNING, "DRED setup failed!");
-		}
-		if (CommandLineOptions::GetGpuValidation())
-		{
-			Ref<ID3D12Debug1> debug_controller = nullptr;
-			if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debug_controller.GetAddressOf()))))
-			{
-				debug_controller->SetEnableGPUBasedValidation(true);
-#if defined(_DEBUG)
-				ADRIA_LOG(INFO, "D3D12 GPU Based Validation Enabled!");
-#else
-				ADRIA_LOG(WARNING, "D3D12 GPU Based Validation Enabled! (Release)");
-#endif
-			}
-		}
-		if (CommandLineOptions::GetPIX())
-		{
-			GFX_PIX_INIT();
-		}
-		else if (CommandLineOptions::GetRenderDoc())
-		{
-			GFX_RENDERDOC_INIT();
-		}
-	}
-	void GfxDevice::CreateCommonRootSignature()
-	{
-		D3D12_FEATURE_DATA_ROOT_SIGNATURE feature_data{};
-		feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
-		if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &feature_data, sizeof(feature_data))))
-			feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
-
-		CD3DX12_ROOT_PARAMETER1 root_parameters[4] = {}; //14 DWORDS = 8 * 1 DWORD for root constants + 3 * 2 DWORDS for CBVs
-		root_parameters[0].InitAsConstantBufferView(0);
-		root_parameters[1].InitAsConstants(8, 1);
-		root_parameters[2].InitAsConstantBufferView(2);
-		root_parameters[3].InitAsConstantBufferView(3);
-
-		D3D12_ROOT_SIGNATURE_FLAGS flags =
-			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-			D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
-
-		CD3DX12_STATIC_SAMPLER_DESC static_samplers[10] = {};
-		static_samplers[0].Init(0, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
-		static_samplers[1].Init(1, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
-		static_samplers[2].Init(2, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_BORDER, D3D12_TEXTURE_ADDRESS_MODE_BORDER, D3D12_TEXTURE_ADDRESS_MODE_BORDER);
-		static_samplers[2].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
-
-		static_samplers[3].Init(3, D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
-		static_samplers[4].Init(4, D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
-		static_samplers[5].Init(5, D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_BORDER, D3D12_TEXTURE_ADDRESS_MODE_BORDER, D3D12_TEXTURE_ADDRESS_MODE_BORDER);
-		static_samplers[5].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
-
-		static_samplers[6].Init(6, D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0.0f, 16u, D3D12_COMPARISON_FUNC_LESS_EQUAL, D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE);
-		static_samplers[7].Init(7, D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0.0f, 16u, D3D12_COMPARISON_FUNC_LESS_EQUAL, D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE);
-
-		static_samplers[8].Init(8, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_MIRROR, D3D12_TEXTURE_ADDRESS_MODE_MIRROR, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
-		static_samplers[9].Init(9, D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_MIRROR, D3D12_TEXTURE_ADDRESS_MODE_MIRROR, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
-
-		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC desc{};
-		desc.Init_1_1(ARRAYSIZE(root_parameters), root_parameters, ARRAYSIZE(static_samplers), static_samplers, flags);
-
-		Ref<ID3DBlob> signature;
-		Ref<ID3DBlob> error;
-		HRESULT hr = D3DX12SerializeVersionedRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1_1, signature.GetAddressOf(), error.GetAddressOf());
-		GFX_CHECK_HR(hr);
-		hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(global_root_signature.GetAddressOf()));
-		GFX_CHECK_HR(hr);
 	}
 
 	constexpr Wchar const* DredBreadcrumbOpName(D3D12_AUTO_BREADCRUMB_OP op)
@@ -1531,5 +1504,4 @@ namespace adria
 		}
 	}
 }
-
 

@@ -24,6 +24,9 @@ namespace adria
 		void BeginCmdLists();
 		void EndCmdLists();
 
+		auto begin() { return cmd_lists.begin(); }
+		auto end() { return   cmd_lists.end(); }
+
 	protected:
 		GfxCommandListPool(GfxDevice* gfx, GfxCommandListType type);
 

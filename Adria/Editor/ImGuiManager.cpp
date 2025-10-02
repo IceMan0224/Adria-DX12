@@ -43,6 +43,12 @@ namespace adria
 		io.Fonts->Build();
 		ImGui_ImplWin32_Init(gfx->GetWindowHandle());
 
+		GfxDescriptorHeapDesc gui_heap_desc{};
+		gui_heap_desc.descriptor_count = 30;
+		gui_heap_desc.shader_visible = true;
+		gui_heap_desc.type = GfxDescriptorHeapType::CBV_SRV_UAV;
+		std::unique_ptr gui_heap = gfx->CreateHeap(gui_heap_desc);
+
 		imgui_allocator = std::make_unique<GUIDescriptorAllocator>(gfx, 30, 1); 
 		GfxDescriptor handle = imgui_allocator->GetHandle(0);
 		ImGui_ImplDX12_Init(gfx->GetDevice(), gfx->GetBackbufferCount(), DXGI_FORMAT_R8G8B8A8_UNORM, imgui_allocator->GetHeap(), handle, handle);

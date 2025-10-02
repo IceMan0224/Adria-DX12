@@ -1,4 +1,5 @@
 #include "D3D12DescriptorHeap.h"
+#include "D3D12Device.h"
 
 namespace adria
 {
@@ -28,14 +29,14 @@ namespace adria
 
 	void D3D12DescriptorHeap::CreateHeap()
 	{
-		// ADRIA_ASSERT(descriptor_count <= UINT32_MAX && "Too many descriptors");
+		ADRIA_ASSERT(descriptor_count <= UINT32_MAX && "Too many descriptors");
 		D3D12_DESCRIPTOR_HEAP_DESC heap_desc{};
 		heap_desc.Flags = shader_visible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		heap_desc.NumDescriptors = descriptor_count;
 		heap_desc.Type = ToD3D12HeapType(type);
 
-		ID3D12Device* device = gfx->GetDevice(); // Assuming GfxDevice has this method
-		// GFX_CHECK_HR(device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(heap.ReleaseAndGetAddressOf())));
+		ID3D12Device* device = (ID3D12Device*)gfx->GetNativeDevice(); 
+		GFX_CHECK_HR(device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(heap.ReleaseAndGetAddressOf())));
 
 		cpu_start_handle = heap->GetCPUDescriptorHandleForHeapStart();
 		if (shader_visible)
@@ -45,27 +46,27 @@ namespace adria
 		descriptor_handle_size = device->GetDescriptorHandleIncrementSize(heap_desc.Type);
 	}
 
-	GfxDescriptor D3D12DescriptorHeap::GetHandle(uint32_t index) const
+	GfxDescriptor D3D12DescriptorHeap::GetDescriptor(Uint32 index) const
 	{
-		// ADRIA_ASSERT(index < descriptor_count);
-		// Note: The const_cast is safe here because the GfxDescriptor doesn't modify the heap.
-		return GfxDescriptor{ const_cast<D3D12DescriptorHeap*>(this), index };
+		ADRIA_ASSERT(index < descriptor_count);
+		return GfxDescriptor{ .parent_heap = const_cast<D3D12DescriptorHeap*>(this), .index = index };
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE D3D12DescriptorHeap::GetCpuHandle(GfxDescriptor const& handle) const
 	{
-		// ADRIA_ASSERT(handle.IsValid() && handle.parent_heap == this);
+		ADRIA_ASSERT(handle.IsValid() && handle.parent_heap == this);
 		D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle = cpu_start_handle;
 		cpu_handle.ptr += static_cast<SIZE_T>(handle.index) * descriptor_handle_size;
 		return cpu_handle;
 	}
 
-
-
 	D3D12_GPU_DESCRIPTOR_HANDLE D3D12DescriptorHeap::GetGpuHandle(GfxDescriptor const& handle) const
 	{
-		// ADRIA_ASSERT(handle.IsValid() && handle.parent_heap == this && shader_visible);
-		if (!shader_visible) return { 0 };
+		ADRIA_ASSERT(handle.IsValid() && handle.parent_heap == this && shader_visible);
+		if (!shader_visible)
+		{
+			return { NULL };
+		}
 		D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle = gpu_start_handle;
 		gpu_handle.ptr += static_cast<SIZE_T>(handle.index) * descriptor_handle_size;
 		return gpu_handle;

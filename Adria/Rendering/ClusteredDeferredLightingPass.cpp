@@ -6,6 +6,7 @@
 #include "Graphics/GfxCommon.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxPipelineState.h"
+#include "Graphics/GfxBufferView.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Math/Packing.h"
 #include "entt/entity/registry.hpp"
@@ -27,12 +28,12 @@ namespace adria
 	};
 
 	ClusteredDeferredLightingPass::ClusteredDeferredLightingPass(entt::registry& reg, GfxDevice* gfx, Uint32 w, Uint32 h) 
-		: reg(reg), gfx(gfx), width(w), height(h),
-		clusters(gfx, StructuredBufferDesc<ClusterAABB>(CLUSTER_COUNT)),
-		light_counter(gfx, StructuredBufferDesc<Uint32>(1)),
-		light_list(gfx, StructuredBufferDesc<Uint32>(CLUSTER_COUNT * CLUSTER_MAX_LIGHTS)),
-		light_grid(gfx, StructuredBufferDesc<LightGrid>(CLUSTER_COUNT))
+		: reg(reg), gfx(gfx), width(w), height(h)
 	{
+		clusters = gfx->CreateBuffer(StructuredBufferDesc<ClusterAABB>(CLUSTER_COUNT));
+		light_counter = gfx->CreateBuffer(StructuredBufferDesc<Uint32>(1));
+		light_list = gfx->CreateBuffer(StructuredBufferDesc<Uint32>(CLUSTER_COUNT * CLUSTER_MAX_LIGHTS));
+		light_grid = gfx->CreateBuffer(StructuredBufferDesc<LightGrid>(CLUSTER_COUNT));
 		CreatePSOs();
 	}
 
@@ -40,10 +41,10 @@ namespace adria
 	{
 		FrameBlackboardData const& frame_data = rendergraph.GetBlackboard().Get<FrameBlackboardData>();
 
-		rendergraph.ImportBuffer(RG_NAME(ClustersBuffer), &clusters);
-		rendergraph.ImportBuffer(RG_NAME(LightCounter), &light_counter);
-		rendergraph.ImportBuffer(RG_NAME(LightGrid), &light_grid);
-		rendergraph.ImportBuffer(RG_NAME(LightList), &light_list);
+		rendergraph.ImportBuffer(RG_NAME(ClustersBuffer), clusters.get());
+		rendergraph.ImportBuffer(RG_NAME(LightCounter), light_counter.get());
+		rendergraph.ImportBuffer(RG_NAME(LightGrid), light_grid.get());
+		rendergraph.ImportBuffer(RG_NAME(LightList), light_list.get());
 
 		struct ClusterBuildingPassData
 		{

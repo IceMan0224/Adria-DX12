@@ -29,7 +29,7 @@ namespace adria
 		std::unique_ptr<GfxRayTracingTLAS> tlas;
 		GfxDescriptor tlas_srv;
 
-		GfxFence build_fence;
+		std::unique_ptr<GfxFence> build_fence;
 		Uint64 build_fence_value = 0;
 
 	private:
