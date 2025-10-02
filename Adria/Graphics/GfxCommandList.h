@@ -20,7 +20,7 @@ namespace adria
 	struct GfxRenderPassDesc;
 	struct GfxShadingRateInfo;
 	class GfxRayTracingShaderTable;
-	template<Bool>
+	template<bool>
 	class GfxRingDescriptorAllocator;
 	using GfxOnlineDescriptorAllocator = GfxRingDescriptorAllocator<GFX_MULTITHREADED>;
 
@@ -31,7 +31,7 @@ namespace adria
 		Copy
 	};
 
-	class GfxCommandList
+	class IGfxCommandList
 	{
 	public:
 		enum class Context
@@ -42,133 +42,105 @@ namespace adria
 		};
 
 	public:
-		explicit GfxCommandList(GfxDevice* gfx, GfxCommandListType type = GfxCommandListType::Graphics, Char const* name = "");
-		~GfxCommandList();
+		virtual ~IGfxCommandList() = default;
 
-		GfxDevice* GetDevice() const { return gfx; }
-		ID3D12GraphicsCommandList6* GetNative() const { return cmd_list.Get(); }
-		GfxCommandQueue& GetQueue() const { return cmd_queue; }
+		virtual GfxDevice* GetDevice() const = 0;
+		virtual void* GetNative() const = 0;
+		virtual GfxCommandQueue* GetQueue() const = 0;
 
-		void ResetAllocator();
-		void Begin();
-		void End();
-		void Wait(GfxFence& fence, Uint64 value);
-		void Signal(GfxFence& fence, Uint64 value);
-		void WaitAll();
-		void Submit();
-		void SignalAll();
-		void ResetState();
-		void SetHeap(GfxOnlineDescriptorAllocator* heap);
-		void ResetHeap();
+		virtual void ResetAllocator() = 0;
+		virtual void Begin() = 0;
+		virtual void End() = 0;
+		virtual void Wait(GfxFence& fence, Uint64 value) = 0;
+		virtual void Signal(GfxFence& fence, Uint64 value) = 0;
+		virtual void WaitAll() = 0;
+		virtual void Submit() = 0;
+		virtual void SignalAll() = 0;
+		virtual void ResetState() = 0;
+		virtual void SetHeap(GfxOnlineDescriptorAllocator* heap) = 0;
+		virtual void ResetHeap() = 0;
 
-		void BeginEvent(Char const* event_name);
-		void BeginEvent(Char const* event_name, Uint32 event_color);
-		void EndEvent();
+		virtual void BeginEvent(Char const* event_name) = 0;
+		virtual void BeginEvent(Char const* event_name, Uint32 event_color) = 0;
+		virtual void EndEvent() = 0;
 
-		void BeginQuery(GfxQueryHeap& query_heap, Uint32 index);
-		void EndQuery(GfxQueryHeap& query_heap, Uint32 index);
-		void ResolveQueryData(GfxQueryHeap const& query_heap, Uint32 start, Uint32 count, GfxBuffer& dst_buffer, Uint64 dst_offset);
+		virtual void BeginQuery(GfxQueryHeap& query_heap, Uint32 index) = 0;
+		virtual void EndQuery(GfxQueryHeap& query_heap, Uint32 index) = 0;
+		virtual void ResolveQueryData(GfxQueryHeap const& query_heap, Uint32 start, Uint32 count, GfxBuffer& dst_buffer, Uint64 dst_offset) = 0;
 
-		void Draw(Uint32 vertex_count, Uint32 instance_count = 1, Uint32 start_vertex_location = 0, Uint32 start_instance_location = 0);
-		void DrawIndexed(Uint32 index_count, Uint32 instance_count = 1, Uint32 index_offset = 0, Uint32 base_vertex_location = 0, Uint32 start_instance_location = 0);
-		void Dispatch(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z = 1);
-		void DispatchMesh(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z = 1);
-		void DrawIndirect(GfxBuffer const& buffer, Uint32 offset);
-		void DrawIndexedIndirect(GfxBuffer const& buffer, Uint32 offset);
-		void DispatchIndirect(GfxBuffer const& buffer, Uint32 offset);
-		void DispatchMeshIndirect(GfxBuffer const& buffer, Uint32 offset);
-		void DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth = 1);
+		virtual void Draw(Uint32 vertex_count, Uint32 instance_count = 1, Uint32 start_vertex_location = 0, Uint32 start_instance_location = 0) = 0;
+		virtual void DrawIndexed(Uint32 index_count, Uint32 instance_count = 1, Uint32 index_offset = 0, Uint32 base_vertex_location = 0, Uint32 start_instance_location = 0) = 0;
+		virtual void Dispatch(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z = 1) = 0;
+		virtual void DispatchMesh(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z = 1) = 0;
+		virtual void DrawIndirect(GfxBuffer const& buffer, Uint32 offset) = 0;
+		virtual void DrawIndexedIndirect(GfxBuffer const& buffer, Uint32 offset) = 0;
+		virtual void DispatchIndirect(GfxBuffer const& buffer, Uint32 offset) = 0;
+		virtual void DispatchMeshIndirect(GfxBuffer const& buffer, Uint32 offset) = 0;
+		virtual void DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth = 1) = 0;
 
-		void TextureBarrier(GfxTexture const& texture, GfxResourceState flags_before, GfxResourceState flags_after, Uint32 subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
-		void BufferBarrier(GfxBuffer const& buffer, GfxResourceState flags_before, GfxResourceState flags_after);
-		void GlobalBarrier(GfxResourceState flags_before, GfxResourceState flags_after);
-		void FlushBarriers();
+		virtual void TextureBarrier(GfxTexture const& texture, GfxResourceState flags_before, GfxResourceState flags_after, Uint32 subresource = static_cast<Uint32>(-1)) = 0;
+		virtual void BufferBarrier(GfxBuffer const& buffer, GfxResourceState flags_before, GfxResourceState flags_after) = 0;
+		virtual void GlobalBarrier(GfxResourceState flags_before, GfxResourceState flags_after) = 0;
+		virtual void FlushBarriers() = 0;
 
-		void CopyBuffer(GfxBuffer& dst, GfxBuffer const& src);
-		void CopyBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxBuffer const& src, Uint64 src_offset, Uint64 size);
-		void CopyTexture(GfxTexture& dst, GfxTexture const& src);
-		void CopyTexture(GfxTexture& dst, Uint32 dst_mip, Uint32 dst_array, GfxTexture const& src, Uint32 src_mip, Uint32 src_array);
-		void CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array);
-		void CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset);
+		virtual void CopyBuffer(GfxBuffer& dst, GfxBuffer const& src) = 0;
+		virtual void CopyBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxBuffer const& src, Uint64 src_offset, Uint64 size) = 0;
+		virtual void CopyTexture(GfxTexture& dst, GfxTexture const& src) = 0;
+		virtual void CopyTexture(GfxTexture& dst, Uint32 dst_mip, Uint32 dst_array, GfxTexture const& src, Uint32 src_mip, Uint32 src_array) = 0;
+		virtual void CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array) = 0;
+		virtual void CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset) = 0;
 
-		void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, Float const* clear_value);
-		void ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, Float const* clear_value);
-		void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, Uint32 const* clear_value);
-		void ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, Uint32 const* clear_value);
-		void WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data);
+		virtual void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Float const* clear_value) = 0;
+		virtual void ClearUAV(GfxTexture const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Float const* clear_value) = 0;
+		virtual void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Uint32 const* clear_value) = 0;
+		virtual void ClearUAV(GfxTexture const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Uint32 const* clear_value) = 0;
+		virtual void WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data) = 0;
 
-		void BeginRenderPass(GfxRenderPassDesc const& render_pass_desc);
-		void EndRenderPass();
+		virtual void BeginRenderPass(GfxRenderPassDesc const& render_pass_desc) = 0;
+		virtual void EndRenderPass() = 0;
 
-		void SetPipelineState(GfxPipelineState const* state);
-		GfxRayTracingShaderTable& SetStateObject(GfxStateObject const* state_object);
+		virtual void SetPipelineState(GfxPipelineState const* state) = 0;
+		virtual GfxRayTracingShaderTable& SetStateObject(GfxStateObject const* state_object) = 0;
 
-		void SetStencilReference(Uint8 stencil);
-		void SetBlendFactor(Float const* blend_factor);
-		void SetPrimitiveTopology(GfxPrimitiveTopology topology);
-		void SetIndexBuffer(GfxIndexBufferView* index_buffer_view);
-		void SetVertexBuffer(GfxVertexBufferView const& vertex_buffer_view, Uint32 start_slot = 0);
-		void SetVertexBuffers(std::span<GfxVertexBufferView const> vertex_buffer_views, Uint32 start_slot = 0);
-		void SetViewport(Uint32 x, Uint32 y, Uint32 width, Uint32 height);
-		void SetScissorRect(Uint32 x, Uint32 y, Uint32 width, Uint32 height);
+		virtual void SetStencilReference(Uint8 stencil) = 0;
+		virtual void SetBlendFactor(Float const* blend_factor) = 0;
+		virtual void SetPrimitiveTopology(GfxPrimitiveTopology topology) = 0;
+		virtual void SetIndexBuffer(GfxIndexBufferView* index_buffer_view) = 0;
+		virtual void SetVertexBuffer(GfxVertexBufferView const& vertex_buffer_view, Uint32 start_slot = 0) = 0;
+		virtual void SetVertexBuffers(std::span<GfxVertexBufferView const> vertex_buffer_views, Uint32 start_slot = 0) = 0;
+		virtual void SetViewport(Uint32 x, Uint32 y, Uint32 width, Uint32 height) = 0;
+		virtual void SetScissorRect(Uint32 x, Uint32 y, Uint32 width, Uint32 height) = 0;
 
-		void SetShadingRate(GfxShadingRate shading_rate);
-		void SetShadingRate(GfxShadingRate shading_rate, std::span<GfxShadingRateCombiner, SHADING_RATE_COMBINER_COUNT> combiners);
-		void SetShadingRateImage(GfxTexture const* texture);
-		void BeginVRS(GfxShadingRateInfo const& info);
-		void EndVRS(GfxShadingRateInfo const& info);
+		virtual void SetShadingRate(GfxShadingRate shading_rate) = 0;
+		virtual void SetShadingRate(GfxShadingRate shading_rate, std::span<GfxShadingRateCombiner, SHADING_RATE_COMBINER_COUNT> combiners) = 0;
+		virtual void SetShadingRateImage(GfxTexture const* texture) = 0;
+		virtual void BeginVRS(GfxShadingRateInfo const& info) = 0;
+		virtual void EndVRS(GfxShadingRateInfo const& info) = 0;
 
-		void SetRootConstant(Uint32 slot, Uint32 data, Uint32 offset = 0);
-		void SetRootConstants(Uint32 slot, void const* data, Uint32 data_size, Uint32 offset = 0);
+		virtual void SetRootConstant(Uint32 slot, Uint32 data, Uint32 offset = 0) = 0;
+		virtual void SetRootConstants(Uint32 slot, void const* data, Uint32 data_size, Uint32 offset = 0) = 0;
 		template<typename T>
 		void SetRootConstants(Uint32 slot, T const& data)
 		{
 			SetRootConstants(slot, &data, sizeof(T));
 		}
-		void SetRootCBV(Uint32 slot, void const* data, Uint64 data_size);
+		virtual void SetRootCBV(Uint32 slot, void const* data, Uint64 data_size) = 0;
 		template<typename T>
 		void SetRootCBV(Uint32 slot, T const& data)
 		{
 			SetRootCBV(slot, &data, sizeof(T));
 		}
-		void SetRootCBV(Uint32 slot, Uint64 gpu_address);
-		void SetRootSRV(Uint32 slot, Uint64 gpu_address);
-		void SetRootUAV(Uint32 slot, Uint64 gpu_address);
-		void SetRootDescriptorTable(Uint32 slot, GfxDescriptor base_descriptor);
+		virtual void SetRootCBV(Uint32 slot, Uint64 gpu_address) = 0;
+		virtual void SetRootSRV(Uint32 slot, Uint64 gpu_address) = 0;
+		virtual void SetRootUAV(Uint32 slot, Uint64 gpu_address) = 0;
+		virtual void SetRootDescriptorTable(Uint32 slot, GfxDescriptor base_descriptor) = 0;
 
-		GfxDynamicAllocation AllocateTransient(Uint32 size, Uint32 align = 0);
+		virtual GfxDynamicAllocation AllocateTransient(Uint32 size, Uint32 align = 0) = 0;
 
-		void ClearRenderTarget(GfxDescriptor rtv, Float const* clear_color);
-		void ClearDepth(GfxDescriptor dsv, Float depth = 1.0f, Uint8 stencil = 0, Bool clear_stencil = false);
-		void SetRenderTargets(std::span<GfxDescriptor const> rtvs, GfxDescriptor const* dsv = nullptr, Bool single_rt = false);
+		virtual void ClearRenderTarget(GfxDescriptor rtv, Float const* clear_color) = 0;
+		virtual void ClearDepth(GfxDescriptor dsv, Float depth = 1.0f, Uint8 stencil = 0, Bool clear_stencil = false) = 0;
+		virtual void SetRenderTargets(std::span<GfxDescriptor const> rtvs, GfxDescriptor const* dsv = nullptr, Bool single_rt = false) = 0;
 
-		void SetContext(Context ctx);
-
-	private:
-		GfxDevice* gfx = nullptr;
-		GfxCommandListType type;
-		GfxCommandQueue& cmd_queue;
-		Ref<ID3D12GraphicsCommandList7> cmd_list = nullptr;
-		Ref<ID3D12CommandAllocator> cmd_allocator = nullptr;
-
-		GfxPipelineState const* current_pso = nullptr;
-		GfxRenderPassDesc const* current_render_pass = nullptr;
-
-		ID3D12StateObject* current_state_object = nullptr;
-		std::unique_ptr<GfxRayTracingShaderTable> current_rt_table;
-
-		GfxPrimitiveTopology current_primitive_topology = GfxPrimitiveTopology::Undefined;
-		Uint8 current_stencil_ref = 0;
-
-		Context current_context = Context::Invalid;
-
-		std::vector<std::pair<GfxFence&, Uint64>> pending_waits;
-		std::vector<std::pair<GfxFence&, Uint64>> pending_signals;
-
-		Bool use_legacy_barriers = false;
-		std::vector<D3D12_TEXTURE_BARRIER>		  texture_barriers;
-		std::vector<D3D12_BUFFER_BARRIER>		  buffer_barriers;
-		std::vector<D3D12_GLOBAL_BARRIER>		  global_barriers;
-		std::vector<D3D12_RESOURCE_BARRIER>		  legacy_barriers;
+		virtual void SetContext(Context ctx) = 0;
 	};
 }

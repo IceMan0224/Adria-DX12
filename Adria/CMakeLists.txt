@@ -270,7 +270,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxBufferView.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCapabilities.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCapabilities.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandList.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandList.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandListPool.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandListPool.h"
@@ -353,7 +352,8 @@ set(ADRIA_D3D12_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12DescriptorHeap.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandQueue.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandQueue.cpp"
-
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandList.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12CommandList.cpp"
 )
 
 set(ADRIA_WIN32_SOURCES

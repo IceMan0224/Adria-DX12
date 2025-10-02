@@ -1,8 +1,5 @@
 #include "GfxScopedEvent.h"
 #include "GfxCommandList.h"
-#include "Graphics/GfxProfiler.h"
-#include "Graphics/GfxNsightPerfManager.h"
-#include "pix3.h"
 
 namespace adria
 {
