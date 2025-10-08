@@ -1,11 +1,13 @@
 #include "D3D12CommandList.h"
 #include "D3D12CommandSignature.h"
-#include "Graphics/GfxCommandQueue.h"
-#include "Graphics/GfxDevice.h"
-#include "Graphics/GfxBuffer.h"
-#include "Graphics/GfxTexture.h"
-#include "Graphics/GfxQueryHeap.h"
-#include "Graphics/GfxPipelineState.h"
+#include "D3D12Conversions.h"
+#include "D3D12Device.h"
+#include "D3D12CommandQueue.h"
+#include "D3D12Buffer.h"
+#include "D3D12Texture.h"
+#include "D3D12QueryHeap.h"
+#include "D3D12PipelineState.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxScopedEvent.h"
 #include "Graphics/GfxRingDescriptorAllocator.h"
@@ -81,15 +83,15 @@ namespace adria
 			if (flags & GfxRenderPassFlagBit_ResumingPass) d3d12_flags |= D3D12_RENDER_PASS_FLAG_RESUMING_PASS;
 			return d3d12_flags;
 		}
-		constexpr D3D12_COMMAND_LIST_TYPE ToD3D12CommandListType(D3D12CommandListType type)
+		constexpr D3D12_COMMAND_LIST_TYPE ToGfxCommandListType(GfxCommandListType type)
 		{
 			switch (type)
 			{
-			case D3D12CommandListType::Graphics:
+			case GfxCommandListType::Graphics:
 				return D3D12_COMMAND_LIST_TYPE_DIRECT;
-			case D3D12CommandListType::Compute:
+			case GfxCommandListType::Compute:
 				return D3D12_COMMAND_LIST_TYPE_COMPUTE;
-			case D3D12CommandListType::Copy:
+			case GfxCommandListType::Copy:
 				return D3D12_COMMAND_LIST_TYPE_COPY;
 			}
 			return D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -122,26 +124,22 @@ namespace adria
 				d3d12_clear_value.DepthStencil.Stencil = value.depth_stencil.stencil;
 			}
 		}
-
-		D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuHandle(GfxDescriptor descriptor)
-		{
-			if (!descriptor.IsValid()) return { NULL };
-			auto* heap = static_cast<D3D12DescriptorHeap*>(descriptor.parent_heap);
-			return heap->GetCpuHandle(descriptor);
-		}
-		D3D12_GPU_DESCRIPTOR_HANDLE ToD3D12GpuHandle(GfxDescriptor descriptor)
-		{
-			if (!descriptor.IsValid()) return { NULL };
-			auto* heap = static_cast<D3D12DescriptorHeap*>(descriptor.parent_heap);
-			return heap->GetGpuHandle(descriptor);
-		}
 	}
 
-	D3D12CommandList::D3D12CommandList(GfxDevice* gfx, D3D12CommandListType type, Char const* name)
-		: gfx(gfx), type(type), cmd_queue(gfx->GetCommandQueue(type)), use_legacy_barriers(!gfx->GetCapabilities().SupportsEnhancedBarriers()), current_rt_table(nullptr)
+	D3D12CommandList::D3D12CommandList(GfxDevice* gfx, GfxCommandListType type, Char const* name)
+		: gfx((D3D12Device*)gfx), type(type), cmd_queue(gfx->GetCommandQueue(type)), use_legacy_barriers(!gfx->GetCapabilities().SupportsEnhancedBarriers()), current_rt_table(nullptr)
 	{
-		D3D12_COMMAND_LIST_TYPE cmd_list_type = ToD3D12CommandListType(type);
-		ID3D12Device* device = gfx->GetDevice();
+
+		draw_indirect_signature = std::make_unique<DrawIndirectSignature>(gfx);
+		draw_indexed_indirect_signature = std::make_unique<DrawIndexedIndirectSignature>(gfx);
+		dispatch_indirect_signature = std::make_unique<DispatchIndirectSignature>(gfx);
+		if (gfx->GetCapabilities().SupportsMeshShaders())
+		{
+			dispatch_mesh_indirect_signature = std::make_unique<DispatchMeshIndirectSignature>(gfx);
+		}
+
+		D3D12_COMMAND_LIST_TYPE cmd_list_type = ToGfxCommandListType(type);
+		ID3D12Device* device = (ID3D12Device*)gfx->GetNativeDevice();
 		HRESULT hr = device->CreateCommandAllocator(cmd_list_type, IID_PPV_ARGS(cmd_allocator.GetAddressOf()));
 		GFX_CHECK_HR(hr);
 		hr = device->CreateCommandList(0, cmd_list_type, cmd_allocator, nullptr, IID_PPV_ARGS(cmd_list.GetAddressOf()));
@@ -151,6 +149,21 @@ namespace adria
 	}
 
 	D3D12CommandList::~D3D12CommandList() {}
+
+	GfxDevice* D3D12CommandList::GetDevice()
+	{
+		return gfx;
+	}
+
+	void* D3D12CommandList::GetNative() const
+	{
+		return cmd_list.Get();
+	}
+
+	GfxCommandQueue* D3D12CommandList::GetQueue() const
+	{
+		return cmd_queue;
+	}
 
 	void D3D12CommandList::ResetAllocator()
 	{
@@ -183,7 +196,7 @@ namespace adria
 	{
 		for (Uint64 i = 0; i < pending_waits.size(); ++i)
 		{
-			cmd_queue.Wait(pending_waits[i].first, pending_waits[i].second);
+			cmd_queue->Wait(pending_waits[i].first, pending_waits[i].second);
 		}
 		pending_waits.clear();
 	}
@@ -200,7 +213,7 @@ namespace adria
 	{
 		for (Uint64 i = 0; i < pending_signals.size(); ++i)
 		{
-			cmd_queue.Signal(pending_signals[i].first, pending_signals[i].second);
+			cmd_queue->Signal(pending_signals[i].first, pending_signals[i].second);
 		}
 		pending_signals.clear();
 	}
@@ -215,17 +228,17 @@ namespace adria
 		current_rt_table.reset();
 		current_context = Context::Invalid;
 
-		if (type == D3D12CommandListType::Graphics || type == D3D12CommandListType::Compute)
+		if (type == GfxCommandListType::Graphics || type == GfxCommandListType::Compute)
 		{
 			GfxOnlineDescriptorAllocator* descriptor_allocator = gfx->GetDescriptorAllocator();
 			if (descriptor_allocator)
 			{
-				ID3D12DescriptorHeap* heaps[] = { descriptor_allocator->GetHeap() };
+				ID3D12DescriptorHeap* heaps[] = { (ID3D12DescriptorHeap*)descriptor_allocator->GetHeap()->GetNative() };
 				cmd_list->SetDescriptorHeaps(1, heaps);
 
 				ID3D12RootSignature* common_rs = gfx->GetCommonRootSignature();
 				cmd_list->SetComputeRootSignature(common_rs);
-				if (type == D3D12CommandListType::Graphics)
+				if (type == GfxCommandListType::Graphics)
 				{
 					cmd_list->SetGraphicsRootSignature(common_rs);
 				}
@@ -235,9 +248,9 @@ namespace adria
 
 	void D3D12CommandList::SetHeap(GfxOnlineDescriptorAllocator* heap)
 	{
-		if (heap && (type == D3D12CommandListType::Graphics || type == D3D12CommandListType::Compute))
+		if (heap && (type == GfxCommandListType::Graphics || type == GfxCommandListType::Compute))
 		{
-			ID3D12DescriptorHeap* heaps[] = { heap->GetHeap() };
+			ID3D12DescriptorHeap* heaps[] = { (ID3D12DescriptorHeap*)heap->GetHeap()->GetNative() };
 			cmd_list->SetDescriptorHeaps(1, heaps);
 		}
 	}
@@ -245,9 +258,9 @@ namespace adria
 	void D3D12CommandList::ResetHeap()
 	{
 		GfxOnlineDescriptorAllocator* default_heap = gfx->GetDescriptorAllocator();
-		if (default_heap && (type == D3D12CommandListType::Graphics || type == D3D12CommandListType::Compute))
+		if (default_heap && (type == GfxCommandListType::Graphics || type == GfxCommandListType::Compute))
 		{
-			ID3D12DescriptorHeap* heaps[] = { default_heap->GetHeap() };
+			ID3D12DescriptorHeap* heaps[] = { (ID3D12DescriptorHeap*)default_heap->GetHeap()->GetNative() };
 			cmd_list->SetDescriptorHeaps(1, heaps);
 		}
 	}
@@ -280,18 +293,18 @@ namespace adria
 	void D3D12CommandList::BeginQuery(GfxQueryHeap& query_heap, Uint32 index)
 	{
 		D3D12_QUERY_TYPE d3d12_query_type = ToD3D12QueryType(query_heap.GetDesc().type);
-		cmd_list->EndQuery(query_heap, d3d12_query_type, index);
+		cmd_list->EndQuery((ID3D12QueryHeap*)query_heap.GetHandle(), d3d12_query_type, index);
 	}
 
 	void D3D12CommandList::EndQuery(GfxQueryHeap& query_heap, Uint32 index)
 	{
 		D3D12_QUERY_TYPE d3d12_query_type = ToD3D12QueryType(query_heap.GetDesc().type);
-		cmd_list->EndQuery(query_heap, d3d12_query_type, index);
+		cmd_list->EndQuery((ID3D12QueryHeap*)query_heap.GetHandle(), d3d12_query_type, index);
 	}
 
 	void D3D12CommandList::ResolveQueryData(GfxQueryHeap const& query_heap, Uint32 start, Uint32 count, GfxBuffer& dst_buffer, Uint64 dst_offset)
 	{
-		cmd_list->ResolveQueryData(query_heap, ToD3D12QueryType(query_heap.GetDesc().type), start, count, dst_buffer.GetNative(), dst_offset);
+		cmd_list->ResolveQueryData((ID3D12QueryHeap*)query_heap.GetHandle(), ToD3D12QueryType(query_heap.GetDesc().type), start, count, (ID3D12Resource*)dst_buffer.GetNative(), dst_offset);
 	}
 
 	void D3D12CommandList::Draw(Uint32 vertex_count, Uint32 instance_count, Uint32 start_vertex_location, Uint32 start_instance_location)
@@ -337,25 +350,25 @@ namespace adria
 	void D3D12CommandList::DrawIndirect(GfxBuffer const& buffer, Uint32 offset)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
-		cmd_list->ExecuteIndirect(gfx->GetDrawIndirectSignature(), 1, buffer.GetNative(), offset, nullptr, 0);
+		cmd_list->ExecuteIndirect(draw_indirect_signature->Get(), 1, (ID3D12Resource*)buffer.GetNative(), offset, nullptr, 0);
 	}
 
 	void D3D12CommandList::DrawIndexedIndirect(GfxBuffer const& buffer, Uint32 offset)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
-		cmd_list->ExecuteIndirect(gfx->GetDrawIndexedIndirectSignature(), 1, buffer.GetNative(), offset, nullptr, 0);
+		cmd_list->ExecuteIndirect(draw_indexed_indirect_signature->Get(), 1, (ID3D12Resource*)buffer.GetNative(), offset, nullptr, 0);
 	}
 
 	void D3D12CommandList::DispatchIndirect(GfxBuffer const& buffer, Uint32 offset)
 	{
 		ADRIA_ASSERT(current_context == Context::Compute);
-		cmd_list->ExecuteIndirect(gfx->GetDispatchIndirectSignature(), 1, buffer.GetNative(), offset, nullptr, 0);
+		cmd_list->ExecuteIndirect(dispatch_indirect_signature->Get(), 1, (ID3D12Resource*)buffer.GetNative(), offset, nullptr, 0);
 	}
 
 	void D3D12CommandList::DispatchMeshIndirect(GfxBuffer const& buffer, Uint32 offset)
 	{
 		ADRIA_ASSERT(current_context == Context::Graphics);
-		cmd_list->ExecuteIndirect(gfx->GetDispatchMeshIndirectSignature(), 1, buffer.GetNative(), offset, nullptr, 0);
+		cmd_list->ExecuteIndirect(dispatch_mesh_indirect_signature->Get(), 1, (ID3D12Resource*)buffer.GetNative(), offset, nullptr, 0);
 	}
 
 	void D3D12CommandList::DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth)
@@ -381,14 +394,14 @@ namespace adria
 			{
 				D3D12_RESOURCE_BARRIER barrier{};
 				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-				barrier.UAV.pResource = texture.GetNative();
+				barrier.UAV.pResource = (ID3D12Resource*)texture.GetNative();
 				legacy_barriers.push_back(barrier);
 			}
 			else
 			{
 				D3D12_RESOURCE_BARRIER barrier{};
 				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-				barrier.Transition.pResource = texture.GetNative();
+				barrier.Transition.pResource = (ID3D12Resource*)texture.GetNative();
 				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 				barrier.Transition.StateBefore = ToD3D12LegacyResourceState(flags_before);
 				barrier.Transition.StateAfter = ToD3D12LegacyResourceState(flags_after);
@@ -404,7 +417,7 @@ namespace adria
 			barrier.AccessAfter = ToD3D12BarrierAccess(flags_after);
 			barrier.LayoutBefore = ToD3D12BarrierLayout(flags_before);
 			barrier.LayoutAfter = ToD3D12BarrierLayout(flags_after);
-			barrier.pResource = texture.GetNative();
+			barrier.pResource = (ID3D12Resource*)texture.GetNative();
 			barrier.Subresources = CD3DX12_BARRIER_SUBRESOURCE_RANGE(subresource);
 
 			if (HasAnyFlag(flags_before, GfxResourceState::Discard))
@@ -423,14 +436,14 @@ namespace adria
 			{
 				D3D12_RESOURCE_BARRIER barrier{};
 				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-				barrier.UAV.pResource = buffer.GetNative();
+				barrier.UAV.pResource = (ID3D12Resource*)buffer.GetNative();
 				legacy_barriers.push_back(barrier);
 			}
 			else
 			{
 				D3D12_RESOURCE_BARRIER barrier{};
 				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-				barrier.Transition.pResource = buffer.GetNative();
+				barrier.Transition.pResource = (ID3D12Resource*)buffer.GetNative();
 				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 				barrier.Transition.StateBefore = ToD3D12LegacyResourceState(flags_before);
 				barrier.Transition.StateAfter = ToD3D12LegacyResourceState(flags_after);
@@ -444,7 +457,7 @@ namespace adria
 			barrier.SyncAfter = ToD3D12BarrierSync(flags_after);
 			barrier.AccessBefore = ToD3D12BarrierAccess(flags_before);
 			barrier.AccessAfter = ToD3D12BarrierAccess(flags_after);
-			barrier.pResource = buffer.GetNative();
+			barrier.pResource = (ID3D12Resource*)buffer.GetNative();
 			barrier.Offset = 0;
 			barrier.Size = UINT64_MAX;
 
@@ -520,23 +533,23 @@ namespace adria
 
 	void D3D12CommandList::CopyBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxBuffer const& src, Uint64 src_offset, Uint64 size)
 	{
-		cmd_list->CopyBufferRegion(dst.GetNative(), dst_offset, src.GetNative(), src_offset, size);
+		cmd_list->CopyBufferRegion((ID3D12Resource*)dst.GetNative(), dst_offset, (ID3D12Resource*)src.GetNative(), src_offset, size);
 	}
 
 	void D3D12CommandList::CopyBuffer(GfxBuffer& dst, GfxBuffer const& src)
 	{
-		cmd_list->CopyResource(dst.GetNative(), src.GetNative());
+		cmd_list->CopyResource((ID3D12Resource*)dst.GetNative(), (ID3D12Resource*)src.GetNative());
 	}
 
 	void D3D12CommandList::CopyTexture(GfxTexture& dst, Uint32 dst_mip, Uint32 dst_array, GfxTexture const& src, Uint32 src_mip, Uint32 src_array)
 	{
 		D3D12_TEXTURE_COPY_LOCATION dst_texture;
-		dst_texture.pResource = dst.GetNative();
+		dst_texture.pResource = (ID3D12Resource*)dst.GetNative();
 		dst_texture.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		dst_texture.SubresourceIndex = dst_mip + dst.GetDesc().mip_levels * dst_array;
 
 		D3D12_TEXTURE_COPY_LOCATION src_texture;
-		src_texture.pResource = src.GetNative();
+		src_texture.pResource = (ID3D12Resource*)src.GetNative();
 		src_texture.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		src_texture.SubresourceIndex = src_mip + src.GetDesc().mip_levels * src_array;
 
@@ -547,7 +560,7 @@ namespace adria
 	{
 		ADRIA_ASSERT(dst.GetWidth() == src.GetWidth());
 		ADRIA_ASSERT(dst.GetHeight() == src.GetHeight());
-		cmd_list->CopyResource(dst.GetNative(), src.GetNative());
+		cmd_list->CopyResource((ID3D12Resource*)dst.GetNative(), (ID3D12Resource*)src.GetNative());
 	}
 
 	void D3D12CommandList::CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array)
@@ -555,7 +568,7 @@ namespace adria
 		GfxTextureDesc const& desc = src.GetDesc();
 
 		D3D12_TEXTURE_COPY_LOCATION dst_texture;
-		dst_texture.pResource = dst.GetNative();
+		dst_texture.pResource = (ID3D12Resource*)dst.GetNative();
 		dst_texture.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 		dst_texture.PlacedFootprint.Offset = dst_offset;
 		dst_texture.PlacedFootprint.Footprint.Width = desc.width;
@@ -565,7 +578,7 @@ namespace adria
 		dst_texture.PlacedFootprint.Footprint.RowPitch = (Uint32)AlignUp(GetRowPitch(desc.format, dst_texture.PlacedFootprint.Footprint.Width), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 
 		D3D12_TEXTURE_COPY_LOCATION src_texture;
-		src_texture.pResource = src.GetNative();
+		src_texture.pResource = (ID3D12Resource*)src.GetNative();
 		src_texture.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		src_texture.SubresourceIndex = src_mip + src.GetDesc().mip_levels * src_array;
 
@@ -583,12 +596,12 @@ namespace adria
 		Uint32 d = std::max(desc.depth >> mip_level, 1u);
 
 		D3D12_TEXTURE_COPY_LOCATION copy_dst{};
-		copy_dst.pResource = dst_texture.GetNative();
+		copy_dst.pResource = (ID3D12Resource*)dst_texture.GetNative();
 		copy_dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		copy_dst.SubresourceIndex = mip_level + desc.mip_levels * array_slice;
 
 		D3D12_TEXTURE_COPY_LOCATION copy_src = {};
-		copy_src.pResource = src_buffer.GetNative();
+		copy_src.pResource = (ID3D12Resource*)src_buffer.GetNative();
 		copy_src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 		copy_src.PlacedFootprint.Offset = offset;
 		copy_src.PlacedFootprint.Footprint.Format = ConvertGfxFormat(desc.format);
@@ -601,22 +614,22 @@ namespace adria
 
 	void D3D12CommandList::ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Float* clear_value)
 	{
-		cmd_list->ClearUnorderedAccessViewFloat(uav, uav_cpu, resource.GetNative(), clear_value, 0, nullptr);
+		cmd_list->ClearUnorderedAccessViewFloat(ToD3D12GpuHandle(uav), ToD3D12CpuHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
 
 	void D3D12CommandList::ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Uint32* clear_value)
 	{
-		cmd_list->ClearUnorderedAccessViewUint(uav, uav_cpu, resource.GetNative(), clear_value, 0, nullptr);
+		cmd_list->ClearUnorderedAccessViewUint(ToD3D12GpuHandle(uav), ToD3D12CpuHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
 
 	void D3D12CommandList::ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Float* clear_value)
 	{
-		cmd_list->ClearUnorderedAccessViewFloat(uav, uav_cpu, resource.GetNative(), clear_value, 0, nullptr);
+		cmd_list->ClearUnorderedAccessViewFloat(ToD3D12GpuHandle(uav), ToD3D12CpuHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
 
 	void D3D12CommandList::ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Uint32* clear_value)
 	{
-		cmd_list->ClearUnorderedAccessViewUint(uav, uav_cpu, resource.GetNative(), clear_value, 0, nullptr);
+		cmd_list->ClearUnorderedAccessViewUint(ToD3D12GpuHandle(uav), ToD3D12CpuHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
 
 	void D3D12CommandList::WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data)
@@ -639,7 +652,7 @@ namespace adria
 			for (GfxColorAttachmentDesc const& attachment : render_pass_desc.rtv_attachments)
 			{
 				D3D12_RENDER_PASS_RENDER_TARGET_DESC rtv_desc{};
-				rtv_desc.cpuDescriptor = attachment.cpu_handle;
+				rtv_desc.cpuDescriptor = ToD3D12CpuHandle(attachment.cpu_handle);
 				rtv_desc.BeginningAccess = { ToD3D12RenderPassBeginningAccess(attachment.beginning_access) };
 				ToD3D12ClearValue(attachment.clear_value, rtv_desc.BeginningAccess.Clear.ClearValue);
 				rtv_desc.EndingAccess = { ToD3D12RenderPassEndingAccess(attachment.ending_access), {} };
@@ -651,7 +664,7 @@ namespace adria
 				GfxDepthAttachmentDesc const& _dsv_desc = render_pass_desc.dsv_attachment.value();
 				dsv = std::make_unique<D3D12_RENDER_PASS_DEPTH_STENCIL_DESC>();
 
-				dsv->cpuDescriptor = _dsv_desc.cpu_handle;
+				dsv->cpuDescriptor = ToD3D12CpuHandle(_dsv_desc.cpu_handle);
 				dsv->DepthBeginningAccess = { ToD3D12RenderPassBeginningAccess(_dsv_desc.depth_beginning_access) };
 				ToD3D12ClearValue(_dsv_desc.clear_value, dsv->DepthBeginningAccess.Clear.ClearValue);
 				dsv->StencilBeginningAccess = { ToD3D12RenderPassBeginningAccess(_dsv_desc.stencil_beginning_access) };
@@ -715,7 +728,7 @@ namespace adria
 			}
 			else
 			{
-				cmd_list->SetPipelineState(*pso);
+				cmd_list->SetPipelineState((ID3D12PipelineState*)pso->GetNative());
 				if (pso->GetType() == GfxPipelineStateType::Graphics || pso->GetType() == GfxPipelineStateType::MeshShader)
 				{
 					ADRIA_ASSERT(current_context == Context::Graphics);
@@ -730,11 +743,13 @@ namespace adria
 
 	GfxRayTracingShaderTable& D3D12CommandList::SetStateObject(GfxStateObject const* state_object)
 	{
-		if (state_object->d3d12_so != current_state_object)
+		ADRIA_ASSERT(state_object);
+		ID3D12StateObject* d3d12_state_object = (ID3D12StateObject*)state_object->GetNative();
+		if (d3d12_state_object != current_state_object)
 		{
-			current_state_object = state_object->d3d12_so;
-			cmd_list->SetPipelineState1(state_object->d3d12_so.Get());
-			current_context = state_object->d3d12_so ? Context::Compute : Context::Invalid;
+			current_state_object = d3d12_state_object;
+			cmd_list->SetPipelineState1(d3d12_state_object);
+			current_context = d3d12_state_object ? Context::Compute : Context::Invalid;
 			current_rt_table = std::make_unique<GfxRayTracingShaderTable>(state_object);
 		}
 		return *current_rt_table;
@@ -839,7 +854,7 @@ namespace adria
 
 	void D3D12CommandList::SetShadingRateImage(GfxTexture const* texture)
 	{
-		cmd_list->RSSetShadingRateImage(texture ? texture->GetNative() : nullptr);
+		cmd_list->RSSetShadingRateImage(texture ? (ID3D12Resource*)texture->GetNative() : nullptr);
 	}
 
 	void D3D12CommandList::BeginVRS(GfxShadingRateInfo const& info)
@@ -973,11 +988,11 @@ namespace adria
 	{
 		if (current_context == Context::Graphics)
 		{
-			cmd_list->SetGraphicsRootDescriptorTable(slot, base_descriptor);
+			cmd_list->SetGraphicsRootDescriptorTable(slot, ToD3D12GpuHandle(base_descriptor));
 		}
 		else
 		{
-			cmd_list->SetComputeRootDescriptorTable(slot, base_descriptor);
+			cmd_list->SetComputeRootDescriptorTable(slot, ToD3D12GpuHandle(base_descriptor));
 		}
 	}
 
@@ -988,7 +1003,7 @@ namespace adria
 
 	void D3D12CommandList::ClearRenderTarget(GfxDescriptor rtv, Float const* clear_color)
 	{
-		cmd_list->ClearRenderTargetView(rtv, clear_color, 0, nullptr);
+		cmd_list->ClearRenderTargetView(ToD3D12CpuHandle(rtv), clear_color, 0, nullptr);
 	}
 
 	void D3D12CommandList::ClearDepth(GfxDescriptor dsv, Float depth, Uint8 stencil, Bool clear_stencil)
@@ -998,7 +1013,7 @@ namespace adria
 		{
 			d3d12_clear_flags |= D3D12_CLEAR_FLAG_STENCIL;
 		}
-		cmd_list->ClearDepthStencilView(dsv, d3d12_clear_flags, depth, stencil, 0, nullptr);
+		cmd_list->ClearDepthStencilView(ToD3D12CpuHandle(dsv), d3d12_clear_flags, depth, stencil, 0, nullptr);
 	}
 
 	void D3D12CommandList::SetRenderTargets(std::span<GfxDescriptor const> rtvs, GfxDescriptor const* dsv, Bool single_rt)
@@ -1006,11 +1021,14 @@ namespace adria
 		D3D12_CPU_DESCRIPTOR_HANDLE* d3d12_dsv = nullptr;
 		if (dsv)
 		{
-			D3D12_CPU_DESCRIPTOR_HANDLE _d3d12_dsv = *dsv;
+			D3D12_CPU_DESCRIPTOR_HANDLE _d3d12_dsv = ToD3D12CpuHandle(*dsv);
 			d3d12_dsv = &_d3d12_dsv;
 		}
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> d3d12_rtvs(rtvs.size());
-		for (Uint64 i = 0; i < d3d12_rtvs.size(); ++i) d3d12_rtvs[i] = rtvs[i];
+		for (Uint64 i = 0; i < d3d12_rtvs.size(); ++i)
+		{
+			d3d12_rtvs[i] = ToD3D12CpuHandle(rtvs[i]);
+		}
 		cmd_list->OMSetRenderTargets((Uint32)d3d12_rtvs.size(), d3d12_rtvs.data(), single_rt, d3d12_dsv);
 	}
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "Graphics/GfxDevice.h"
 #include "Graphics/GfxBuffer.h"
 #include "Graphics/GfxTexture.h"
 
@@ -51,7 +52,7 @@ namespace adria
 					return pool_texture.texture.get();
 				}
 			}
-			auto& texture = texture_pool.emplace_back(std::pair{ PooledTexture{ std::make_unique<GfxTexture>(device, desc), frame_index}, true }).first.texture;
+			auto& texture = texture_pool.emplace_back(std::pair{ PooledTexture{ device->CreateTexture(desc), frame_index}, true}).first.texture;
 			return texture.get();
 		}
 		void ReleaseTexture(GfxTexture* texture)
@@ -78,7 +79,7 @@ namespace adria
 					return pool_buffer.buffer.get();
 				}
 			}
-			auto& buffer = buffer_pool.emplace_back(std::pair{ PooledBuffer{ std::make_unique<GfxBuffer>(device, desc), frame_index}, true }).first.buffer;
+			auto& buffer = buffer_pool.emplace_back(std::pair{ PooledBuffer{ device->CreateBuffer(desc), frame_index}, true }).first.buffer;
 			return buffer.get();
 		}
 		void ReleaseBuffer(GfxBuffer* buffer)

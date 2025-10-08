@@ -5,7 +5,6 @@
 #include "ShaderManager.h"
 #include "PostProcessor.h"
 #include "Graphics/GfxDevice.h"
-#include "Graphics/GfxPipelineStatePermutations.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Core/ConsoleManager.h"
 #include "Editor/GUICommand.h"

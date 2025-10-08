@@ -7,7 +7,7 @@ namespace adria
 {
 	class RenderGraph;
 	class GfxDevice;
-	class GfxComputePipelineState;
+	class GfxPipelineState;
 
 	class ClusteredDeferredLightingPass
 	{

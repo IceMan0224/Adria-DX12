@@ -1,6 +1,6 @@
 #pragma once
 #include "PostEffect.h"
-#include "Graphics/GfxPipelineStatePermutationsFwd.h"
+#include "Graphics/GfxPipelineStatePermutations.h"
 
 namespace adria
 {

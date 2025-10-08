@@ -11,6 +11,7 @@
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxRingDescriptorAllocator.h"
+#include "Graphics/D3D12/D3D12Conversions.h"
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -47,11 +48,12 @@ namespace adria
 		gui_heap_desc.descriptor_count = 30;
 		gui_heap_desc.shader_visible = true;
 		gui_heap_desc.type = GfxDescriptorHeapType::CBV_SRV_UAV;
-		std::unique_ptr gui_heap = gfx->CreateHeap(gui_heap_desc);
+		std::unique_ptr<GfxDescriptorHeap> gui_heap = gfx->CreateDescriptorHeap(gui_heap_desc);
 
-		imgui_allocator = std::make_unique<GUIDescriptorAllocator>(gfx, 30, 1); 
-		GfxDescriptor handle = imgui_allocator->GetHandle(0);
-		ImGui_ImplDX12_Init(gfx->GetDevice(), gfx->GetBackbufferCount(), DXGI_FORMAT_R8G8B8A8_UNORM, imgui_allocator->GetHeap(), handle, handle);
+		imgui_allocator = std::make_unique<GUIDescriptorAllocator>(std::move(gui_heap), 1);
+		GfxDescriptor handle = imgui_allocator->GetHeap()->GetDescriptor(0);
+		ImGui_ImplDX12_Init((ID3D12Device*)gfx->GetNativeDevice(), gfx->GetBackbufferCount(), DXGI_FORMAT_R8G8B8A8_UNORM, 
+							(ID3D12DescriptorHeap*)imgui_allocator->GetHeap()->GetNative(), ToD3D12CpuHandle(handle), ToD3D12GpuHandle(handle));
 	}
 	ImGuiManager::~ImGuiManager()
 	{
@@ -74,9 +76,10 @@ namespace adria
 		ImGui::Render();
 		if (visible)
 		{
-			ID3D12DescriptorHeap* imgui_heap[] = { imgui_allocator->GetHeap() };
-			cmd_list->GetNative()->SetDescriptorHeaps(ARRAYSIZE(imgui_heap), imgui_heap);
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmd_list->GetNative());
+			ID3D12GraphicsCommandList* d3d12_cmd_list = (ID3D12GraphicsCommandList*)cmd_list->GetNative();
+			ID3D12DescriptorHeap* imgui_heap[] = { (ID3D12DescriptorHeap*)imgui_allocator->GetHeap()->GetNative() };
+			d3d12_cmd_list->SetDescriptorHeaps(ARRAYSIZE(imgui_heap), imgui_heap);
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), d3d12_cmd_list);
 		}
 
 		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)

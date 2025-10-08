@@ -1,5 +1,6 @@
 #include "Components.h"
 #include "Graphics/GfxCommandList.h"
+#include "Graphics/GfxBufferView.h"
 
 namespace adria
 {

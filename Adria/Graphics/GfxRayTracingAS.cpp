@@ -1,8 +1,8 @@
 #include "GfxRayTracingAS.h"
-#include "GfxDevice.h"
 #include "GfxCommandList.h"
 #include "GfxBuffer.h"
 #include "D3D12/D3D12Conversions.h"
+#include "D3D12/D3D12Device.h"
 
 namespace adria
 {
@@ -58,6 +58,7 @@ namespace adria
 
 	GfxRayTracingBLAS::GfxRayTracingBLAS(GfxDevice* gfx, std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags)
 	{
+		ID3D12Device5* d3d12_device = static_cast<ID3D12Device5*>(gfx->GetNativeDevice());
 		std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geo_descs; geo_descs.reserve(geometries.size());
 		for (GfxRayTracingGeometry& geometry : geometries)
 		{
@@ -73,7 +74,7 @@ namespace adria
 		inputs.pGeometryDescs = geo_descs.data();
 
 		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bl_prebuild_info{};
-		gfx->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &bl_prebuild_info);
+		d3d12_device->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &bl_prebuild_info);
 		ADRIA_ASSERT(bl_prebuild_info.ResultDataMaxSizeInBytes > 0);
 
 		GfxBufferDesc scratch_buffer_desc{};
@@ -95,8 +96,8 @@ namespace adria
 		blas_desc.DestAccelerationStructureData = result_buffer->GetGpuAddress();
 		blas_desc.ScratchAccelerationStructureData = scratch_buffer->GetGpuAddress();
 
-		GfxCommandList* cmd_list = gfx->GetGraphicsCommandList();
-		cmd_list->GetNative()->BuildRaytracingAccelerationStructure(&blas_desc, 0, nullptr);
+		ID3D12GraphicsCommandList4* cmd_list = (ID3D12GraphicsCommandList4*)gfx->GetGraphicsCommandList()->GetNative();
+		cmd_list->BuildRaytracingAccelerationStructure(&blas_desc, 0, nullptr);
 	}
 
 	GfxRayTracingBLAS::~GfxRayTracingBLAS() = default;
@@ -108,6 +109,8 @@ namespace adria
 
 	GfxRayTracingTLAS::GfxRayTracingTLAS(GfxDevice* gfx, std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
 	{
+		ID3D12Device5* d3d12_device = static_cast<ID3D12Device5*>(gfx->GetNativeDevice());
+
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
 		inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
 		inputs.Flags = ConvertASFlags(flags);
@@ -115,7 +118,7 @@ namespace adria
 		inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
 		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO tl_prebuild_info;
-		gfx->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &tl_prebuild_info);
+		d3d12_device->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &tl_prebuild_info);
 		ADRIA_ASSERT(tl_prebuild_info.ResultDataMaxSizeInBytes > 0);
 
 		GfxBufferDesc scratch_buffer_desc{};
@@ -153,8 +156,8 @@ namespace adria
 		tlas_desc.DestAccelerationStructureData = result_buffer->GetGpuAddress();
 		tlas_desc.ScratchAccelerationStructureData = scratch_buffer->GetGpuAddress();
 
-		GfxCommandList* cmd_list = gfx->GetGraphicsCommandList();
-		cmd_list->GetNative()->BuildRaytracingAccelerationStructure(&tlas_desc, 0, nullptr);
+		ID3D12GraphicsCommandList4* cmd_list = (ID3D12GraphicsCommandList4*)gfx->GetGraphicsCommandList()->GetNative();
+		cmd_list->BuildRaytracingAccelerationStructure(&tlas_desc, 0, nullptr);
 	}
 
 	GfxRayTracingTLAS::~GfxRayTracingTLAS() = default;

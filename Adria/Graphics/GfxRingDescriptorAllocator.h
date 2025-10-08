@@ -30,7 +30,7 @@ namespace adria
 			{
 				return GfxDescriptor{}; 
 			}
-			return heap->GetHandle(static_cast<Uint32>(start_offset));
+			return heap->GetDescriptor(static_cast<Uint32>(start_offset));
 		}
 
 		void FinishCurrentFrame(uint64_t frame)

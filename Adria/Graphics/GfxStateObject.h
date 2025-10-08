@@ -22,6 +22,8 @@ namespace adria
 	public:
 		Bool IsValid() const { return d3d12_so != nullptr; }
 
+		void* GetNative() const { return d3d12_so.Get(); }
+
 	private:
 		Ref<ID3D12StateObject> d3d12_so;
 

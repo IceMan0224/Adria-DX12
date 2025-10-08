@@ -35,6 +35,9 @@ namespace adria
 	class GfxQueryHeap;
 	struct GfxQueryHeapDesc;
 
+	class GfxDescriptorHeap;
+	struct GfxDescriptorHeapDesc;
+
 	struct GfxGraphicsPipelineStateDesc;
 	struct GfxComputePipelineStateDesc;
 	struct GfxMeshShaderPipelineStateDesc;
@@ -127,16 +130,16 @@ namespace adria
 		virtual void CopyDescriptors(GfxDescriptor dst, std::span<GfxDescriptor> src_descriptors, GfxDescriptorHeapType type = GfxDescriptorHeapType::CBV_SRV_UAV) = 0;
 		virtual void CopyDescriptors(std::span<std::pair<GfxDescriptor, Uint32>> dst_range_starts_and_size, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size, GfxDescriptorHeapType type = GfxDescriptorHeapType::CBV_SRV_UAV) = 0;
 
+		virtual std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) = 0;
+		virtual std::unique_ptr<GfxDescriptorHeap> CreateDescriptorHeap(GfxDescriptorHeapDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc, GfxTextureData const& data) = 0;
 		virtual std::unique_ptr<GfxTexture> CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer) = 0;
 		virtual std::unique_ptr<GfxBuffer>  CreateBuffer(GfxBufferDesc const& desc, GfxBufferData const& initial_data) = 0;
 		virtual std::unique_ptr<GfxBuffer>  CreateBuffer(GfxBufferDesc const& desc) = 0;
-
 		virtual std::unique_ptr<GfxPipelineState> CreateGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxPipelineState> CreateComputePipelineState(GfxComputePipelineStateDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxPipelineState> CreateMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc) = 0;
-
 		virtual std::unique_ptr<GfxFence> CreateFence(Char const* name) = 0;
 		virtual std::unique_ptr<GfxQueryHeap> CreateQueryHeap(GfxQueryHeapDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxRayTracingTLAS> CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags) = 0;

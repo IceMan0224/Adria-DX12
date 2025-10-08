@@ -44,7 +44,7 @@ namespace adria
 	public:
 		virtual ~GfxCommandList() = default;
 
-		virtual GfxDevice* GetDevice() const = 0;
+		virtual GfxDevice* GetDevice() = 0;
 		virtual void* GetNative() const = 0;
 		virtual GfxCommandQueue* GetQueue() const = 0;
 

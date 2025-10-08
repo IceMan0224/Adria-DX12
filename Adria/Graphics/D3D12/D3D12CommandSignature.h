@@ -16,7 +16,7 @@ namespace adria
 	{
 	public:
 		IndirectCommandSignature(GfxDevice* device, IndirectCommandType cmd_type);
-		operator ID3D12CommandSignature* () const
+		ID3D12CommandSignature* Get() const
 		{
 			return cmd_signature.Get();
 		}

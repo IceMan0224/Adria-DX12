@@ -4,7 +4,7 @@
 #include "D3D12Fence.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxTexture.h"
-#include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxDescriptorHeap.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Graphics/GfxRayTracingAS.h"
@@ -61,7 +61,9 @@ namespace adria
 		virtual void CopyDescriptors(Uint32 count, GfxDescriptor dst, GfxDescriptor src, GfxDescriptorHeapType type = GfxDescriptorHeapType::CBV_SRV_UAV) override;
 		virtual void CopyDescriptors(GfxDescriptor dst, std::span<GfxDescriptor> src_descriptors, GfxDescriptorHeapType type = GfxDescriptorHeapType::CBV_SRV_UAV) override;
 		virtual void CopyDescriptors(std::span<std::pair<GfxDescriptor, Uint32>> dst_range_starts_and_size, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size, GfxDescriptorHeapType type) override;
-
+		
+		virtual std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) override;
+		virtual std::unique_ptr<GfxDescriptorHeap> CreateDescriptorHeap(GfxDescriptorHeapDesc const& desc) override;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) override;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc, GfxTextureData const& data) override;
 		virtual std::unique_ptr<GfxTexture> CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer) override;
@@ -116,6 +118,7 @@ namespace adria
 			return allocator.get();
 		}
 		GfxNsightPerfManager* GetNsightPerfManager() const { return nsight_perf_manager.get(); }
+		GfxOnlineDescriptorAllocator* GetDescriptorAllocator() const;
 
 	private:
 		void* hwnd;
@@ -172,11 +175,6 @@ namespace adria
 		std::vector<std::unique_ptr<GfxLinearDynamicAllocator>> dynamic_allocators;
 		std::unique_ptr<GfxLinearDynamicAllocator> dynamic_allocator_on_init;
 
-		std::unique_ptr<DrawIndirectSignature> draw_indirect_signature;
-		std::unique_ptr<DrawIndexedIndirectSignature> draw_indexed_indirect_signature;
-		std::unique_ptr<DispatchIndirectSignature> dispatch_indirect_signature;
-		std::unique_ptr<DispatchMeshIndirectSignature> dispatch_mesh_indirect_signature;
-
 		GfxShadingRateInfo shading_rate_info;
 
 		std::unique_ptr<DRED> dred;
@@ -201,12 +199,6 @@ namespace adria
 		void CreateCommonRootSignature();
 		void InitShaderVisibleAllocator(Uint32 reserve);
 
-		GfxCommandList*  GetCommandList(GfxCommandListType type) const;
-		GfxCommandList*  GetLatestCommandList(GfxCommandListType type) const;
-		GfxCommandList*  AllocateCommandList(GfxCommandListType type) const;
-		void			 FreeCommandList(GfxCommandList*, GfxCommandListType type);
-
-		GfxOnlineDescriptorAllocator* GetDescriptorAllocator() const;
 		void SetRenderingNotStarted();
 
 		GfxDescriptor CreateBufferView(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter = nullptr);

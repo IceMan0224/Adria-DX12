@@ -1,12 +1,13 @@
 #include "GfxCommandListPool.h"
 #include "GfxCommandList.h"
+#include "GfxDevice.h"
 
 namespace adria
 {
 
 	GfxCommandListPool::GfxCommandListPool(GfxDevice* gfx, GfxCommandListType type) : gfx(gfx), type(type)
 	{
-		cmd_lists.push_back(std::make_unique<GfxCommandList>(gfx, type));
+		cmd_lists.push_back(gfx->CreateCommandList(type));
 	}
 
 	GfxCommandList* GfxCommandListPool::GetMainCmdList() const
@@ -20,7 +21,7 @@ namespace adria
 
 	GfxCommandList* GfxCommandListPool::AllocateCmdList()
 	{
-		cmd_lists.push_back(std::make_unique<GfxCommandList>(gfx, type));
+		cmd_lists.push_back(gfx->CreateCommandList(type));
 		cmd_lists.back()->ResetAllocator();
 		cmd_lists.back()->Begin();
 		return cmd_lists.back().get();
@@ -48,7 +49,10 @@ namespace adria
 	}
 	void GfxCommandListPool::EndCmdLists()
 	{
-		for (auto& cmd_list : cmd_lists) cmd_list->End();
+		for (auto& cmd_list : cmd_lists)
+		{
+			cmd_list->End();
+		}
 	}
 
 	GfxGraphicsCommandListPool::GfxGraphicsCommandListPool(GfxDevice* gfx) : GfxCommandListPool(gfx, GfxCommandListType::Graphics)

@@ -4,6 +4,7 @@
 #include "GfxCommandList.h"
 #include "GfxTexture.h"
 #include "Platform/Window.h"
+#include "D3D12/D3D12Conversions.h"
 
 namespace adria
 {
@@ -31,16 +32,17 @@ namespace adria
 		fullscreen_desc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 		fullscreen_desc.Windowed = desc.fullscreen_windowed;
 
-		GfxCommandQueue& graphics_queue = gfx->GetGraphicsCommandQueue();
+		GfxCommandQueue* graphics_queue = gfx->GetCommandQueue(GfxCommandListType::Graphics);
 		Ref<IDXGISwapChain1> swapchain1 = nullptr;
 
-		GFX_CHECK_HR(gfx->GetFactory()->CreateSwapChainForHwnd(
-			graphics_queue,
-			static_cast<HWND>(gfx->GetWindowHandle()),
-			&swapchain_desc,
-			&fullscreen_desc,
-			nullptr,
-			swapchain1.GetAddressOf()));
+		ADRIA_ASSERT(false);
+		//GFX_CHECK_HR(gfx->GetFactory()->CreateSwapChainForHwnd(
+		//	graphics_queue,
+		//	static_cast<HWND>(gfx->GetWindowHandle()),
+		//	&swapchain_desc,
+		//	&fullscreen_desc,
+		//	nullptr,
+		//	swapchain1.GetAddressOf()));
 
 		swapchain.Reset();
 		swapchain1.As(&swapchain);

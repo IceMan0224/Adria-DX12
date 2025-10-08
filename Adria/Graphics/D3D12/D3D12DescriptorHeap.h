@@ -11,7 +11,7 @@ namespace adria
 		virtual ~D3D12DescriptorHeap() = default;
 
 		virtual GfxDescriptor GetDescriptor(Uint32 index = 0) const override;
-		ADRIA_FORCEINLINE virtual void*		GetHandle() const override { return heap.Get(); }
+		ADRIA_FORCEINLINE virtual void*		GetNative() const override { return heap.Get(); }
 		ADRIA_FORCEINLINE virtual Uint32	GetCapacity() const override { return descriptor_count; }
 		ADRIA_FORCEINLINE virtual GfxDescriptorHeapType GetType() const override { return type; }
 

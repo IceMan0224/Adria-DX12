@@ -1,5 +1,5 @@
 #include "GfxStateObject.h"
-#include "GfxDevice.h"
+#include "D3D12/D3D12Device.h"
 
 namespace adria
 {
@@ -23,7 +23,8 @@ namespace adria
 		D3D12_STATE_OBJECT_DESC desc{};
 		BuildDescription(d3d12_type, desc);
 		ID3D12StateObject* state_obj = nullptr;
-		HRESULT hr = gfx->GetDevice()->CreateStateObject(&desc, IID_PPV_ARGS(&state_obj));
+		ID3D12Device5* d3d12gfx = (ID3D12Device5*)gfx->GetNativeDevice();
+		HRESULT hr = d3d12gfx->CreateStateObject(&desc, IID_PPV_ARGS(&state_obj));
 		GFX_CHECK_HR(hr);
 		return new GfxStateObject(state_obj);
 	}

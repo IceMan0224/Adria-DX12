@@ -220,13 +220,6 @@ namespace adria
 			frame_fence_values[i] = 0;
 		}
 
-		draw_indirect_signature = std::make_unique<DrawIndirectSignature>(this);
-		draw_indexed_indirect_signature = std::make_unique<DrawIndexedIndirectSignature>(this);
-		dispatch_indirect_signature = std::make_unique<DispatchIndirectSignature>(this);
-		if (device_capabilities.SupportsMeshShaders())
-		{
-			dispatch_mesh_indirect_signature = std::make_unique<DispatchMeshIndirectSignature>(this);
-		}
 		SetInfoQueue();
 		CreateCommonRootSignature();
 
@@ -534,6 +527,7 @@ namespace adria
 
 		device->CopyDescriptors(dst_ranges_count, dst_handles.data(), dst_range_sizes.data(), src_ranges_count, src_handles.data(), src_range_sizes.data(), ToD3D12HeapType(type));
 	}
+
 	GfxDescriptor	D3D12Device::AllocateDescriptorCPU(GfxDescriptorHeapType type)
 	{
 		return cpu_descriptor_allocators[(Uint64)type]->AllocateDescriptor();
@@ -563,6 +557,16 @@ namespace adria
 	{
 		gpu_descriptor_allocator = std::make_unique<GfxOnlineDescriptorAllocator>(this, 32767, reserve);
 	}
+
+	std::unique_ptr<GfxCommandList> D3D12Device::CreateCommandList(GfxCommandListType type)
+	{
+
+	}
+	std::unique_ptr<GfxDescriptorHeap> D3D12Device::CreateDescriptorHeap(GfxDescriptorHeapDesc const& desc)
+	{
+
+	}
+
 
 	std::unique_ptr<GfxTexture> D3D12Device::CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer)
 	{

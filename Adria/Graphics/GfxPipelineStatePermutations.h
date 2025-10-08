@@ -83,15 +83,15 @@ namespace adria
 			AddDefine<stage>(name, "");
 		}
 
-		void SetCullMode(GfxCullMode cull_mode) requires PSOType != GfxPipelineStateType::Compute
+		void SetCullMode(GfxCullMode cull_mode) requires Type != GfxPipelineStateType::Compute
 		{
 			current_pso_desc.rasterizer_state.cull_mode = cull_mode;
 		}
-		void SetFillMode(GfxFillMode fill_mode) requires PSOType != GfxPipelineStateType::Compute
+		void SetFillMode(GfxFillMode fill_mode) requires Type != GfxPipelineStateType::Compute
 		{
 			current_pso_desc.rasterizer_state.fill_mode = fill_mode;
 		}
-		void SetTopologyType(GfxPrimitiveTopologyType topology_type) requires PSOType != GfxPipelineStateType::Compute
+		void SetTopologyType(GfxPrimitiveTopologyType topology_type) requires Type != GfxPipelineStateType::Compute
 		{
 			current_pso_desc.topology_type = topology_type;
 		}
