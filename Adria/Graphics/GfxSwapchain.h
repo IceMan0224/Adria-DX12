@@ -20,28 +20,14 @@ namespace adria
 	class GfxSwapchain
 	{
 	public:
-		GfxSwapchain(GfxDevice* gfx, GfxSwapchainDesc const& desc);
-		~GfxSwapchain();
+		virtual ~GfxSwapchain() {}
 
-		void SetAsRenderTarget(GfxCommandList* cmd_list);
-		void ClearBackbuffer(GfxCommandList* cmd_list);
-		Bool Present(Bool vsync);
-		void OnResize(Uint32 w, Uint32 h);
+		virtual void SetAsRenderTarget(GfxCommandList* cmd_list)= 0;
+		virtual void ClearBackbuffer(GfxCommandList* cmd_list)= 0;
+		virtual Bool Present(Bool vsync) = 0;
+		virtual void OnResize(Uint32 w, Uint32 h) = 0;
 
-		Uint32 GetBackbufferIndex() const { return backbuffer_index; }
-		GfxTexture* GetBackbuffer() const { return back_buffers[backbuffer_index].get(); }
-		
-	private:
-		GfxDevice* gfx = nullptr;
-		Ref<IDXGISwapChain4>				swapchain = nullptr;
-		std::unique_ptr<GfxTexture>			back_buffers[GFX_BACKBUFFER_COUNT] = { nullptr };
-		GfxDescriptor					    backbuffer_rtvs[GFX_BACKBUFFER_COUNT];
-		Uint32		 width;
-		Uint32		 height;
-		Uint32		 backbuffer_index;
-
-	private:
-		void CreateBackbuffers();
-		GfxDescriptor GetBackbufferDescriptor() const;
+		virtual Uint32 GetBackbufferIndex() const = 0;
+		virtual GfxTexture* GetBackbuffer() const = 0;
 	};
 }

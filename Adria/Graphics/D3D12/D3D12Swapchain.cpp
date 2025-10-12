@@ -1,15 +1,16 @@
-#include "GfxSwapchain.h"
-#include "GfxDevice.h"
-#include "GfxCommandQueue.h"
-#include "GfxCommandList.h"
-#include "GfxTexture.h"
+#include "D3D12Swapchain.h"
+#include "D3D12Device.h"
+#include "D3D12Conversions.h"
+#include "Graphics/GfxDevice.h"
+#include "Graphics/GfxCommandQueue.h"
+#include "Graphics/GfxCommandList.h"
+#include "Graphics/GfxTexture.h"
 #include "Platform/Window.h"
-#include "D3D12/D3D12Conversions.h"
 
 namespace adria
 {
 
-	GfxSwapchain::GfxSwapchain(GfxDevice* gfx, GfxSwapchainDesc const& desc)
+    D3D12Swapchain::D3D12Swapchain(GfxDevice* gfx, GfxSwapchainDesc const& desc)
 		: gfx(gfx), width(desc.width), height(desc.height)
 	{
 		DXGI_SWAP_CHAIN_DESC1 swapchain_desc{};
@@ -35,14 +36,15 @@ namespace adria
 		GfxCommandQueue* graphics_queue = gfx->GetCommandQueue(GfxCommandListType::Graphics);
 		Ref<IDXGISwapChain1> swapchain1 = nullptr;
 
-		ADRIA_ASSERT(false);
-		//GFX_CHECK_HR(gfx->GetFactory()->CreateSwapChainForHwnd(
-		//	graphics_queue,
-		//	static_cast<HWND>(gfx->GetWindowHandle()),
-		//	&swapchain_desc,
-		//	&fullscreen_desc,
-		//	nullptr,
-		//	swapchain1.GetAddressOf()));
+        D3D12Device* d3d12gfx = (D3D12Device*)gfx;
+
+		GFX_CHECK_HR(d3d12gfx->GetFactory()->CreateSwapChainForHwnd(
+			(ID3D12CommandQueue*)graphics_queue->GetHandle(),
+			static_cast<HWND>(gfx->GetWindowHandle()),
+			&swapchain_desc,
+			&fullscreen_desc,
+			nullptr,
+			swapchain1.GetAddressOf()));
 
 		swapchain.Reset();
 		swapchain1.As(&swapchain);
@@ -51,29 +53,29 @@ namespace adria
 		CreateBackbuffers();
 	}
 
-	GfxSwapchain::~GfxSwapchain() {}
+	D3D12Swapchain::~D3D12Swapchain() {}
 
-	void GfxSwapchain::SetAsRenderTarget(GfxCommandList* cmd_list)
+	void D3D12Swapchain::SetAsRenderTarget(GfxCommandList* cmd_list)
 	{
 		GfxDescriptor rtvs[] = { GetBackbufferDescriptor() };
 		cmd_list->SetRenderTargets(rtvs);
 	}
 
-	void GfxSwapchain::ClearBackbuffer(GfxCommandList* cmd_list)
+	void D3D12Swapchain::ClearBackbuffer(GfxCommandList* cmd_list)
 	{
 		constexpr Float clear_color[] = { 0,0,0,0 };
 		GfxDescriptor rtv = GetBackbufferDescriptor();
 		cmd_list->ClearRenderTarget(rtv, clear_color);
 	}
 
-	Bool GfxSwapchain::Present(Bool vsync)
+	Bool D3D12Swapchain::Present(Bool vsync)
 	{
 		HRESULT hr = swapchain->Present(vsync, 0);
 		backbuffer_index = swapchain->GetCurrentBackBufferIndex();
 		return SUCCEEDED(hr);
 	}
 
-	void GfxSwapchain::OnResize(Uint32 w, Uint32 h)
+	void D3D12Swapchain::OnResize(Uint32 w, Uint32 h)
 	{
 		width = w;
 		height = h;
@@ -92,7 +94,7 @@ namespace adria
 		CreateBackbuffers();
 	}
 
-	void GfxSwapchain::CreateBackbuffers()
+	void D3D12Swapchain::CreateBackbuffers()
 	{
 		for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
 		{
@@ -113,9 +115,8 @@ namespace adria
 		}
 	}
 
-	GfxDescriptor GfxSwapchain::GetBackbufferDescriptor() const
+	GfxDescriptor D3D12Swapchain::GetBackbufferDescriptor() const
 	{
 		return backbuffer_rtvs[backbuffer_index];
 	}
-
 }

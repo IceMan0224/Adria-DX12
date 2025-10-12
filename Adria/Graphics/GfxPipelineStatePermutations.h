@@ -83,17 +83,26 @@ namespace adria
 			AddDefine<stage>(name, "");
 		}
 
-		void SetCullMode(GfxCullMode cull_mode) requires Type != GfxPipelineStateType::Compute
+		void SetCullMode(GfxCullMode cull_mode) 
 		{
-			current_pso_desc.rasterizer_state.cull_mode = cull_mode;
+			if constexpr (Type != GfxPipelineStateType::Compute)
+			{
+				current_pso_desc.rasterizer_state.cull_mode = cull_mode;
+			}
 		}
-		void SetFillMode(GfxFillMode fill_mode) requires Type != GfxPipelineStateType::Compute
+		void SetFillMode(GfxFillMode fill_mode) 
 		{
-			current_pso_desc.rasterizer_state.fill_mode = fill_mode;
+			if constexpr (Type != GfxPipelineStateType::Compute)
+			{
+				current_pso_desc.rasterizer_state.fill_mode = fill_mode;
+			}
 		}
-		void SetTopologyType(GfxPrimitiveTopologyType topology_type) requires Type != GfxPipelineStateType::Compute
+		void SetTopologyType(GfxPrimitiveTopologyType topology_type) 
 		{
-			current_pso_desc.topology_type = topology_type;
+			if constexpr (Type != GfxPipelineStateType::Compute)
+			{
+				current_pso_desc.topology_type = topology_type;
+			}
 		}
 
 		template<typename F> requires std::is_invocable_v<F, PSODesc&>

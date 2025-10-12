@@ -4,3 +4,5 @@
 - SSGI
 - ReSTIR
 - Editor and Scene Graph improvements
+- Improve profiler UI
+- Terrain & Grass
