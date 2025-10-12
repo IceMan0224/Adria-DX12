@@ -76,7 +76,7 @@ namespace adria
 	Bool D3D12Capabilities::Initialize(GfxDevice* gfx)
 	{
 		CD3DX12FeatureSupport feature_support;
-		feature_support.Init((ID3D12Device*)gfx->GetNativeDevice());
+		feature_support.Init((ID3D12Device*)gfx->GetNative());
 
 		ray_tracing_support = ConvertRayTracingTier(feature_support.RaytracingTier());
 		vrs_support = ConvertVRSTier(feature_support.VariableShadingRateTier());

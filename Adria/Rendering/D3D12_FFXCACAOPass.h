@@ -9,11 +9,11 @@ namespace adria
 	class GfxDevice;
 	class RenderGraph;
 
-	class FFXCACAOPass
+	class D3D12_FFXCACAOPass
 	{
 	public:
-		FFXCACAOPass(GfxDevice* gfx, Uint32 w, Uint32 h);
-		~FFXCACAOPass();
+		D3D12_FFXCACAOPass(GfxDevice* gfx, Uint32 w, Uint32 h);
+		~D3D12_FFXCACAOPass();
 
 		void AddPass(RenderGraph& rendergraph);
 		void GUI();

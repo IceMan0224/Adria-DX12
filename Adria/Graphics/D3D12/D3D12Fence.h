@@ -3,7 +3,7 @@
 
 namespace adria
 {
-	class D3D12Fence : public GfxFence
+	class D3D12Fence final : public GfxFence
 	{
 	public:
 		virtual ~D3D12Fence();

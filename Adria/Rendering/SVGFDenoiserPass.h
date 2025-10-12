@@ -1,13 +1,13 @@
 #pragma once
 #include "RenderGraph/RenderGraphResourceName.h"
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 
 namespace adria
 {
 	class RenderGraph;
 	class GfxDevice;
 	class GfxTexture;
-	class GfxComputePipelineState;
 
 	class SVGFDenoiserPass
 	{

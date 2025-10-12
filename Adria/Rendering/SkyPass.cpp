@@ -4,6 +4,7 @@
 #include "TextureManager.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Graphics/GfxReflection.h"
 #include "RenderGraph/RenderGraph.h"
@@ -73,12 +74,12 @@ namespace adria
 				{
 				case SkyType::MinimalAtmosphere:
 				{
-					cmd_list->SetPipelineState(minimal_atmosphere_pso.get());
+					cmd_list->SetPipelineState(minimal_atmosphere_pso->Get());
 					break;
 				}
 				case SkyType::HosekWilkie:
 				{
-					cmd_list->SetPipelineState(hosek_wilkie_pso.get());
+					cmd_list->SetPipelineState(hosek_wilkie_pso->Get());
 					SkyParameters parameters = CalculateSkyParameters(turbidity, ground_albedo, dir);
 					struct HosekWilkieConstants
 					{
@@ -133,7 +134,7 @@ namespace adria
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
 
-				cmd_list->SetPipelineState(sky_pso.get());
+				cmd_list->SetPipelineState(sky_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->SetVertexBuffer(GfxVertexBufferView(cube_vb.get()));
@@ -205,10 +206,10 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_MinimalAtmosphereSky;
-		minimal_atmosphere_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		minimal_atmosphere_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_HosekWilkieSky;
-		hosek_wilkie_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		hosek_wilkie_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
 		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_Sky), gfx_pso_desc.input_layout);
@@ -222,7 +223,7 @@ namespace adria
 		gfx_pso_desc.num_render_targets = 1;
 		gfx_pso_desc.rtv_formats[0] = GfxFormat::R16G16B16A16_FLOAT;
 		gfx_pso_desc.dsv_format = GfxFormat::D32_FLOAT;
-		sky_pso = gfx->CreateGraphicsPipelineState(gfx_pso_desc);
+		sky_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
 	}
 
 	void SkyPass::CreateCubeBuffers()

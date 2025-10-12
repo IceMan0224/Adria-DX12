@@ -1,4 +1,4 @@
-#include "FFXVRSPass.h"
+#include "D3D12_FFXVRSPass.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
@@ -30,7 +30,7 @@ namespace adria
 		GfxShadingRate_4X4,
 	};
 
-	FFXVRSPass::FFXVRSPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), shading_rate_image_tile_size(0),
+	D3D12_FFXVRSPass::D3D12_FFXVRSPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), shading_rate_image_tile_size(0),
 		ffx_interface(nullptr), vrs_context{}, vrs_context_description{}
 	{
 		is_supported = gfx->GetCapabilities().CheckVRSSupport(VRSSupport::Tier2);
@@ -52,7 +52,7 @@ namespace adria
 		CreateContext();
 	}
 
-	FFXVRSPass::~FFXVRSPass()
+	D3D12_FFXVRSPass::~D3D12_FFXVRSPass()
 	{
 		DestroyContext();
 		if (ffx_interface != nullptr)
@@ -61,7 +61,7 @@ namespace adria
 		}
 	}
 
-	void FFXVRSPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void D3D12_FFXVRSPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		if (!IsSupported())
 		{
@@ -78,7 +78,7 @@ namespace adria
 			info.shading_rate = GfxShadingRate_1X1;
 			info.shading_rate_combiner = GfxShadingRateCombiner::Passthrough;
 			info.shading_rate_image = nullptr;
-			gfx->SetVRSInfo(info);
+			gfx->SetShadingRateInfo(info);
 			return;
 		}
 
@@ -89,7 +89,7 @@ namespace adria
 			info.shading_rate = shading_rate;
 			info.shading_rate_combiner = shading_rate_combiner;
 			info.shading_rate_image = nullptr;
-			gfx->SetVRSInfo(info);
+			gfx->SetShadingRateInfo(info);
 			return;
 		}
 
@@ -115,7 +115,7 @@ namespace adria
 				GfxTexture& motion_vectors_texture = ctx.GetTexture(*data.motion_vectors);
 
 				FfxVrsDispatchDescription vrs_dispatch_desc{};
-				vrs_dispatch_desc.commandList = ffxGetCommandListDX12(cmd_list->GetNative());
+				vrs_dispatch_desc.commandList = ffxGetCommandListDX12((ID3D12GraphicsCommandList*)(cmd_list->GetNative()));
 				vrs_dispatch_desc.output = GetFfxResource(*vrs_image, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 				vrs_dispatch_desc.historyColor = GetFfxResource(color_history_texture);
 				vrs_dispatch_desc.motionVectors = GetFfxResource(motion_vectors_texture);
@@ -135,7 +135,7 @@ namespace adria
 				info.shading_rate = shading_rate;
 				info.shading_rate_combiner = shading_rate_combiner;
 				info.shading_rate_image = vrs_image.get();
-				gfx->SetVRSInfo(info);
+				gfx->SetShadingRateInfo(info);
 
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
 
@@ -155,7 +155,7 @@ namespace adria
 					GfxDescriptor dst = gfx->AllocateDescriptorsGPU();
 					gfx->CopyDescriptors(1, dst, vrs_image_srv);
 
-					cmd_list->SetPipelineState(vrs_overlay_pso.get());
+					cmd_list->SetPipelineState(vrs_overlay_pso->Get());
 					cmd_list->TextureBarrier(*vrs_image, GfxResourceState::ComputeUAV, GfxResourceState::PixelSRV);
 					cmd_list->SetRootConstant(1, dst.GetIndex(), 0);
 					cmd_list->SetRootConstant(1, shading_rate_image_tile_size, 1);
@@ -166,7 +166,7 @@ namespace adria
 		}
 	}
 
-	void FFXVRSPass::GUI()
+	void D3D12_FFXVRSPass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -194,18 +194,18 @@ namespace adria
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_None);
 	}
 
-	void FFXVRSPass::OnResize(Uint32 w, Uint32 h)
+	void D3D12_FFXVRSPass::OnResize(Uint32 w, Uint32 h)
 	{
 		width = w, height = h;
 		CreateVRSImage();
 	}
 
-	Bool FFXVRSPass::IsEnabled(PostProcessor const*) const
+	Bool D3D12_FFXVRSPass::IsEnabled(PostProcessor const*) const
 	{
 		return true;
 	}
 
-	void FFXVRSPass::CreateVRSImage()
+	void D3D12_FFXVRSPass::CreateVRSImage()
 	{
 		if (!IsSupported())
 		{
@@ -224,7 +224,7 @@ namespace adria
 		vrs_image_srv = gfx->CreateTextureSRV(vrs_image.get());
 	}
 
-	void FFXVRSPass::CreateOverlayPSO()
+	void D3D12_FFXVRSPass::CreateOverlayPSO()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
@@ -241,10 +241,10 @@ namespace adria
 		gfx_pso_desc.blend_state.render_target[0].blend_op_alpha = GfxBlendOp::Add;
 		gfx_pso_desc.blend_state.render_target[0].src_blend_alpha = GfxBlend::One;
 		gfx_pso_desc.blend_state.render_target[0].dest_blend_alpha = GfxBlend::InvSrcAlpha;
-		vrs_overlay_pso = gfx->CreateGraphicsPipelineState(gfx_pso_desc);
+		vrs_overlay_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
 	}
 
-	void FFXVRSPass::DestroyContext()
+	void D3D12_FFXVRSPass::DestroyContext()
 	{
 		if (context_created)
 		{
@@ -255,7 +255,7 @@ namespace adria
 		}
 	}
 
-	void FFXVRSPass::CreateContext()
+	void D3D12_FFXVRSPass::CreateContext()
 	{
 		if (!context_created)
 		{

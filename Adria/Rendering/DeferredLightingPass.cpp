@@ -98,7 +98,7 @@ namespace adria
 					.normal_metallic_idx = i, .diffuse_idx = i + 1, .emissive_idx = i + 2, .custom_idx = i + 3, .depth_idx = i + 4, .ao_idx = i + 5, .output_idx = i + 6
 				};
 
-				cmd_list->SetPipelineState(deferred_lighting_pso.get());
+				cmd_list->SetPipelineState(deferred_lighting_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -111,7 +111,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_DeferredLighting;
-		deferred_lighting_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		deferred_lighting_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 }

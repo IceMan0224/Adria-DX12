@@ -28,9 +28,9 @@ namespace adria
 		std::unique_ptr<GfxBuffer> histogram_copy;
 		Bool invalid_history = true;
 
-		std::unique_ptr<GfxManagedComputePipelineState> build_histogram_pso;
-		std::unique_ptr<GfxManagedComputePipelineState> histogram_reduction_pso;
-		std::unique_ptr<GfxManagedComputePipelineState> exposure_pso;
+		std::unique_ptr<GfxComputePipelineState> build_histogram_pso;
+		std::unique_ptr<GfxComputePipelineState> histogram_reduction_pso;
+		std::unique_ptr<GfxComputePipelineState> exposure_pso;
 		Bool show_histogram		= false;
 
 	private:

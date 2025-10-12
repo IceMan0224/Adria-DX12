@@ -184,8 +184,4 @@ namespace adria
 			}
 		}
 	};
-
-	using GfxGraphicsPipelineStatePermutations = GfxPipelineStatePermutations<GfxPipelineStateType::Graphics>;
-	using GfxComputePipelineStatePermutations = GfxPipelineStatePermutations<GfxPipelineStateType::Compute>;
-	using GfxMeshShaderPipelineStatePermutations = GfxPipelineStatePermutations<GfxPipelineStateType::MeshShader>;
 }

@@ -65,7 +65,7 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				cmd_list->SetPipelineState(clouds_combine_pso.get());
+				cmd_list->SetPipelineState(clouds_combine_pso->Get());
 				GfxDescriptor dst = gfx->AllocateDescriptorsGPU();
 				gfx->CopyDescriptors(1, dst, ctx.GetReadOnlyTexture(data.clouds_src));
 
@@ -175,13 +175,13 @@ namespace adria
 		clouds_psos = std::make_unique<GfxComputePipelineStatePermutations>(gfx, clouds_pso_desc);
 
 		clouds_pso_desc.CS = CS_CloudType;
-		clouds_type_pso = gfx->CreateComputePipelineState(clouds_pso_desc);
+		clouds_type_pso = gfx->CreateManagedComputePipelineState(clouds_pso_desc);
 
 		clouds_pso_desc.CS = CS_CloudShape;
-		clouds_shape_pso = gfx->CreateComputePipelineState(clouds_pso_desc);
+		clouds_shape_pso = gfx->CreateManagedComputePipelineState(clouds_pso_desc);
 
 		clouds_pso_desc.CS = CS_CloudDetail;
-		clouds_detail_pso = gfx->CreateComputePipelineState(clouds_pso_desc);
+		clouds_detail_pso = gfx->CreateManagedComputePipelineState(clouds_pso_desc);
 
 
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
@@ -197,7 +197,7 @@ namespace adria
 		gfx_pso_desc.blend_state.render_target[0].dest_blend = GfxBlend::InvSrcAlpha;
 		gfx_pso_desc.blend_state.render_target[0].blend_op = GfxBlendOp::Add;
 		gfx_pso_desc.rasterizer_state.cull_mode = GfxCullMode::None;
-		clouds_combine_pso = gfx->CreateGraphicsPipelineState(gfx_pso_desc);
+		clouds_combine_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
 	}
 
 	void VolumetricCloudsPass::CreateCloudTextures(GfxDevice* gfx)
@@ -289,7 +289,7 @@ namespace adria
 							.frequency = (Uint32)params.shape_noise_frequency,
 							.output_idx = j
 						};
-						cmd_list->SetPipelineState(clouds_shape_pso.get());
+						cmd_list->SetPipelineState(clouds_shape_pso->Get());
 						cmd_list->SetRootConstants(1, constants);
 						Uint32 const dispatch = DivideAndRoundUp(resolution, 8);
 						cmd_list->Dispatch(dispatch, dispatch, dispatch);
@@ -326,7 +326,7 @@ namespace adria
 							.frequency = (Uint32)params.detail_noise_frequency,
 							.output_idx = j
 						};
-						cmd_list->SetPipelineState(clouds_detail_pso.get());
+						cmd_list->SetPipelineState(clouds_detail_pso->Get());
 						cmd_list->SetRootConstants(1, constants);
 						Uint32 const dispatch = DivideAndRoundUp(resolution, 8);
 						cmd_list->Dispatch(dispatch, dispatch, dispatch);
@@ -360,7 +360,7 @@ namespace adria
 						.resolution_inv = 1.0f / resolution,
 						.output_idx = j
 					};
-					cmd_list->SetPipelineState(clouds_type_pso.get());
+					cmd_list->SetPipelineState(clouds_type_pso->Get());
 					cmd_list->SetRootConstants(1, constants);
 					Uint32 const dispatch = DivideAndRoundUp(resolution, 8);
 					cmd_list->Dispatch(dispatch, dispatch, dispatch);

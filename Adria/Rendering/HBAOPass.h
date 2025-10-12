@@ -9,7 +9,6 @@ namespace adria
 	class RenderGraph;
 	class GfxDevice;
 	class GfxTexture;
-	class GfxComputePipelineState;
 
 	class HBAOPass
 	{

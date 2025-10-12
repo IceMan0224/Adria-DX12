@@ -79,7 +79,7 @@ namespace adria
 				};
 
 				Bool const use_pcf = RayMarchedVolumetricFogUsePCF.Get();
-				cmd_list->SetPipelineState(use_pcf ? volumetric_lighting_pso_use_pcf.get() : volumetric_lighting_pso.get());
+				cmd_list->SetPipelineState(use_pcf ? volumetric_lighting_pso_use_pcf->Get() : volumetric_lighting_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp((width >> resolution), 16), DivideAndRoundUp((height >> resolution), 16), 1);
@@ -111,11 +111,11 @@ namespace adria
 
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = shader_key;
-		volumetric_lighting_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		volumetric_lighting_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		shader_key.AddDefine("USE_PCF", "1");
 		compute_pso_desc.CS = shader_key;
-		volumetric_lighting_pso_use_pcf = gfx->CreateComputePipelineState(compute_pso_desc);
+		volumetric_lighting_pso_use_pcf = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 }

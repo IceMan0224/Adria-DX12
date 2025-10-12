@@ -1,5 +1,5 @@
 #define NV_WINDOWS
-#include "DLSS3Pass.h"
+#include "D3D12_DLSS3Pass.h"
 #include "nvsdk_ngx_helpers.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"
@@ -20,26 +20,26 @@ namespace adria
 		}
 	}
 
-	DLSS3Pass::DLSS3Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
+	D3D12_DLSS3Pass::D3D12_DLSS3Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
 		: gfx(gfx), display_width(), display_height(), render_width(), render_height()
 	{
 		sprintf(name_version, "DLSS 3.5");
 		is_supported = InitializeNVSDK_NGX();
 	}
 
-	DLSS3Pass::~DLSS3Pass()
+	D3D12_DLSS3Pass::~D3D12_DLSS3Pass()
 	{
 		if (is_supported)
 		{
 			gfx->WaitForGPU();
 			NVSDK_NGX_Result result = NVSDK_NGX_D3D12_DestroyParameters(ngx_parameters);
 			ADRIA_ASSERT(NVSDK_NGX_SUCCEED(result));
-			result = NVSDK_NGX_D3D12_Shutdown1(gfx->GetDevice());
+			result = NVSDK_NGX_D3D12_Shutdown1((ID3D12Device*)gfx->GetNative());
 			ADRIA_ASSERT(NVSDK_NGX_SUCCEED(result));
 		}
 	}
 
-	void DLSS3Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void D3D12_DLSS3Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		if (!IsSupported())
 		{
@@ -88,12 +88,11 @@ namespace adria
 				GfxTexture& output_texture = ctx.GetTexture(*data.output);
 
 				NVSDK_NGX_D3D12_DLSS_Eval_Params dlss_eval_params{};
-				dlss_eval_params.Feature.pInColor = input_texture.GetNative();
-				dlss_eval_params.Feature.pInOutput = output_texture.GetNative();
+				dlss_eval_params.Feature.pInColor = (ID3D12Resource*)input_texture.GetNative();
+				dlss_eval_params.Feature.pInOutput = (ID3D12Resource*)output_texture.GetNative();
 				dlss_eval_params.Feature.InSharpness = sharpness;
-
-				dlss_eval_params.pInDepth = depth_texture.GetNative();
-				dlss_eval_params.pInMotionVectors = velocity_texture.GetNative();
+				dlss_eval_params.pInDepth = (ID3D12Resource*)depth_texture.GetNative();
+				dlss_eval_params.pInMotionVectors = (ID3D12Resource*)velocity_texture.GetNative();
 				dlss_eval_params.InMVScaleX = (Float)render_width;
 				dlss_eval_params.InMVScaleY = (Float)render_height;
 
@@ -105,7 +104,7 @@ namespace adria
 				dlss_eval_params.InReset = false;
 				dlss_eval_params.InRenderSubrectDimensions = { render_width, render_height };
 
-				NVSDK_NGX_Result result = NGX_D3D12_EVALUATE_DLSS_EXT(cmd_list->GetNative(), dlss_feature, ngx_parameters, &dlss_eval_params);
+				NVSDK_NGX_Result result = NGX_D3D12_EVALUATE_DLSS_EXT((ID3D12GraphicsCommandList*)cmd_list->GetNative(), dlss_feature, ngx_parameters, &dlss_eval_params);
 				ADRIA_ASSERT(NVSDK_NGX_SUCCEED(result));
 
 				cmd_list->ResetState();
@@ -114,12 +113,12 @@ namespace adria
 		postprocessor->SetFinalResource(RG_NAME(DLSS3Output));
 	}
 
-	Bool DLSS3Pass::IsEnabled(PostProcessor const*) const
+	Bool D3D12_DLSS3Pass::IsEnabled(PostProcessor const*) const
 	{
 		return true;
 	}
 
-	void DLSS3Pass::GUI()
+	void D3D12_DLSS3Pass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -136,14 +135,14 @@ namespace adria
 
 	}
 
-	Bool DLSS3Pass::InitializeNVSDK_NGX()
+	Bool D3D12_DLSS3Pass::InitializeNVSDK_NGX()
 	{
 		if (gfx->GetVendor() != GfxVendor::Nvidia)
 		{
 			return false;
 		}
 
-		ID3D12Device* device = gfx->GetDevice();
+		ID3D12Device* device = (ID3D12Device*)gfx->GetNative();
 
 		static const Wchar* dll_paths[] = 
 		{ 
@@ -201,7 +200,7 @@ namespace adria
 		return true;
 	}
 
-	void DLSS3Pass::RecreateRenderResolution()
+	void D3D12_DLSS3Pass::RecreateRenderResolution()
 	{
 		Uint optimal_width;
 		Uint optimal_height;
@@ -218,7 +217,7 @@ namespace adria
 		BroadcastRenderResolutionChanged(render_width, render_height);
 	}
 
-	void DLSS3Pass::CreateDLSS(GfxCommandList* cmd_list)
+	void D3D12_DLSS3Pass::CreateDLSS(GfxCommandList* cmd_list)
 	{
 		if (!IsSupported())
 		{
@@ -239,13 +238,13 @@ namespace adria
 			NVSDK_NGX_DLSS_Feature_Flags_DepthInverted;
 		dlss_create_params.InEnableOutputSubrects = false;
 
-		NVSDK_NGX_Result result = NGX_D3D12_CREATE_DLSS_EXT(cmd_list->GetNative(), 0, 0, &dlss_feature, ngx_parameters, &dlss_create_params);
+		NVSDK_NGX_Result result = NGX_D3D12_CREATE_DLSS_EXT((ID3D12GraphicsCommandList*)cmd_list->GetNative(), 0, 0, &dlss_feature, ngx_parameters, &dlss_create_params);
 		ADRIA_ASSERT(NVSDK_NGX_SUCCEED(result));
 		cmd_list->GlobalBarrier(GfxResourceState::ComputeUAV, GfxResourceState::ComputeUAV);
 		needs_create = false;
 	}
 
-	void DLSS3Pass::ReleaseDLSS()
+	void D3D12_DLSS3Pass::ReleaseDLSS()
 	{
 		if (dlss_feature)
 		{

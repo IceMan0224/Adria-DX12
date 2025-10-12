@@ -72,7 +72,7 @@ namespace adria
 			GFSDK_Aftermath_FeatureFlags_GenerateShaderDebugInfo |
 			GFSDK_Aftermath_FeatureFlags_EnableShaderErrorReporting;
 
-		GFSDK_Aftermath_Result result = GFSDK_Aftermath_DX12_Initialize(GFSDK_Aftermath_Version_API, aftermath_flags, (ID3D12Device*)gfx->GetNativeDevice());
+		GFSDK_Aftermath_Result result = GFSDK_Aftermath_DX12_Initialize(GFSDK_Aftermath_Version_API, aftermath_flags, (ID3D12Device*)gfx->GetNative());
 		if (result != GFSDK_Aftermath_Result_Success)
 		{
 			ADRIA_LOG(WARNING, "GFSDK_Aftermath_DX12_Initialize call failed!");

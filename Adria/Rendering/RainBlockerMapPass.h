@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceId.h"
 #include "entt/entity/fwd.hpp"
 
@@ -7,7 +8,6 @@ namespace adria
 {
 	class GfxTexture;
 	class GfxDevice;
-	class GfxGraphicsPipelineState;
 	class RenderGraph;
 	
 	class RainBlockerMapPass

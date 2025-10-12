@@ -4,6 +4,7 @@
 #include "BlackboardData.h"
 #include "ShaderManager.h"
 #include "Graphics/GfxDevice.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Graphics/GfxReflection.h"
@@ -78,7 +79,7 @@ namespace adria
 				for (entt::entity batch_entity : batch_view)
 				{
 					Batch& batch = batch_view.get<Batch>(batch_entity);
-					cmd_list->SetPipelineState(rain_blocker_pso.get());
+					cmd_list->SetPipelineState(rain_blocker_pso->Get());
 
 					struct GBufferConstants
 					{
@@ -123,7 +124,7 @@ namespace adria
 		gfx_pso_desc.depth_state.depth_write_mask = GfxDepthWriteMask::All;
 		gfx_pso_desc.depth_state.depth_func = GfxComparisonFunc::LessEqual;
 		gfx_pso_desc.dsv_format = GfxFormat::D32_FLOAT;
-		rain_blocker_pso = gfx->CreateGraphicsPipelineState(gfx_pso_desc);
+		rain_blocker_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
 	}
 
 }

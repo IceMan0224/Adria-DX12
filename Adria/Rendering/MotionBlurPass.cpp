@@ -67,7 +67,7 @@ namespace adria
 					.scene_idx = i, .velocity_idx = i + 1, .output_idx = i + 2
 				};
 
-				cmd_list->SetPipelineState(motion_blur_pso.get());
+				cmd_list->SetPipelineState(motion_blur_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -102,7 +102,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_MotionBlur;
-		motion_blur_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		motion_blur_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 }

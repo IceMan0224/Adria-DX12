@@ -11,7 +11,7 @@ namespace adria
 
 	D3D12Buffer::D3D12Buffer(GfxDevice* gfx, GfxBufferDesc const& desc, GfxBufferData initial_data /*= {}*/) : GfxBuffer(gfx, desc)
 	{
-		D3D12Device* d3d12gfx = (D3D12Device*)gfx;
+		D3D12Device* d3d12_gfx = static_cast<D3D12Device*>(gfx);
 		Uint64 buffer_size = desc.size;
 		if (HasFlag(desc.misc_flags, GfxBufferMiscFlag::ConstantBuffer))
 		{
@@ -66,8 +66,8 @@ namespace adria
 			allocation_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_SHARED;
 		}
 
-		ID3D12Device* device = d3d12gfx->GetD3D12Device();
-		D3D12MA::Allocator* allocator = d3d12gfx->GetAllocator();
+		ID3D12Device* device = d3d12_gfx->GetD3D12Device();
+		D3D12MA::Allocator* allocator = d3d12_gfx->GetD3D12Allocator();
 
 		D3D12MA::Allocation* alloc = nullptr;
 		HRESULT hr = allocator->CreateResource(

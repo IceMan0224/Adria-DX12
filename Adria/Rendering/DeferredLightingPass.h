@@ -1,4 +1,5 @@
 #pragma once
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceId.h"
 #include "RenderGraph/RenderGraphResourceName.h"
 #include "entt/entity/entity.hpp"
@@ -6,7 +7,6 @@
 namespace adria
 {
 	class GfxDevice;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class DeferredLightingPass

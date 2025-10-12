@@ -3,10 +3,12 @@
 
 namespace adria
 {
-    class D3D12Swapchain : public GfxSwapchain
+	class D3D12Device;
+    class D3D12Swapchain final : public GfxSwapchain
     {
+		friend class D3D12Device;
+
     public:
-        D3D12Swapchain(GfxDevice *gfx, GfxSwapchainDesc const &desc);
         ~D3D12Swapchain();
 
         virtual void SetAsRenderTarget(GfxCommandList* cmd_list) override;
@@ -14,8 +16,8 @@ namespace adria
 		virtual Bool Present(Bool vsync) override;
 		virtual void OnResize(Uint32 w, Uint32 h) override;
 
-		virtual Uint32 GetBackbufferIndex() const override;
-		virtual GfxTexture* GetBackbuffer() const override;
+		virtual Uint32 GetBackbufferIndex() const override { return backbuffer_index; }
+		virtual GfxTexture* GetBackbuffer() const override { return back_buffers[backbuffer_index].get(); }
 
     private:
         GfxDevice* gfx = nullptr;
@@ -27,6 +29,7 @@ namespace adria
 		Uint32		 backbuffer_index;
 
     private:
+		D3D12Swapchain(GfxDevice* gfx, GfxSwapchainDesc const& desc);
 		void CreateBackbuffers();
 		GfxDescriptor GetBackbufferDescriptor() const;
     };

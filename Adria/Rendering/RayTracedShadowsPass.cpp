@@ -1,10 +1,12 @@
 #include "RayTracedShadowsPass.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
+#include "Graphics/D3D12/D3D12Device.h"
 #include "Graphics/GfxShader.h"
 #include "Graphics/GfxShaderKey.h"
 #include "Graphics/GfxStateObject.h"
 #include "RenderGraph/RenderGraph.h"
+
 namespace adria
 {
 	RayTracedShadowsPass::RayTracedShadowsPass(GfxDevice* gfx, Uint32 width, Uint32 height)
@@ -75,6 +77,8 @@ namespace adria
 
 	void RayTracedShadowsPass::CreateStateObject()
 	{
+		D3D12Device* d3d12_gfx = static_cast<D3D12Device*>(gfx);
+
 		GfxShader const& rt_shadows_blob = SM_GetGfxShader(LIB_Shadows);
 		GfxStateObjectBuilder rt_shadows_state_object_builder(6);
 		{
@@ -98,7 +102,7 @@ namespace adria
 			rt_shadows_state_object_builder.AddSubObject(rt_shadows_shader_config);
 
 			D3D12_GLOBAL_ROOT_SIGNATURE global_root_sig{};
-			global_root_sig.pGlobalRootSignature = gfx->GetCommonRootSignature();
+			global_root_sig.pGlobalRootSignature = d3d12_gfx->GetCommonRootSignature();
 			rt_shadows_state_object_builder.AddSubObject(global_root_sig);
 
 			D3D12_RAYTRACING_PIPELINE_CONFIG pipeline_config{};
@@ -116,7 +120,10 @@ namespace adria
 
 	void RayTracedShadowsPass::OnLibraryRecompiled(GfxShaderKey const& key)
 	{
-		if (key.GetShaderID() == LIB_Shadows) CreateStateObject();
+		if (key.GetShaderID() == LIB_Shadows)
+		{
+			CreateStateObject();
+		}
 	}
 }
 

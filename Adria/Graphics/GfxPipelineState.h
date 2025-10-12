@@ -1,4 +1,5 @@
 #pragma once
+#include "GfxPipelineStateFwd.h"
 #include "GfxStates.h"
 #include "GfxShaderKey.h"
 #include "GfxInputLayout.h"
@@ -14,13 +15,6 @@ namespace adria
 	{
 		Invalid,
 		Common
-	};
-
-	enum class GfxPipelineStateType : Uint8
-	{
-		Graphics,
-		Compute,
-		MeshShader
 	};
 
 	class GfxPipelineState
@@ -203,7 +197,7 @@ namespace adria
 		}
 	};
 
-	using GfxManagedGraphicsPipelineState = GfxManagedPipelineState<GfxPipelineStateType::Graphics>;
-	using GfxManagedComputePipelineState = GfxManagedPipelineState<GfxPipelineStateType::Compute>;
-	using GfxManagedMeshShaderPipelineState = GfxManagedPipelineState<GfxPipelineStateType::MeshShader>;
+	using GfxGraphicsPipelineState		= GfxManagedPipelineState<GfxPipelineStateType::Graphics>;
+	using GfxComputePipelineState		= GfxManagedPipelineState<GfxPipelineStateType::Compute>;
+	using GfxMeshShaderPipelineState	= GfxManagedPipelineState<GfxPipelineStateType::MeshShader>;
 }

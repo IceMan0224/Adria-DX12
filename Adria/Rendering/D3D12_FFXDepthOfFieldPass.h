@@ -7,12 +7,12 @@ namespace adria
 	class GfxDevice;
 	class RenderGraph;
 
-	class FFXDepthOfFieldPass : public PostEffect
+	class D3D12_FFXDepthOfFieldPass : public PostEffect
 	{
 		
 	public:
-		FFXDepthOfFieldPass(GfxDevice* gfx, Uint32 w, Uint32 h);
-		~FFXDepthOfFieldPass();
+		D3D12_FFXDepthOfFieldPass(GfxDevice* gfx, Uint32 w, Uint32 h);
+		~D3D12_FFXDepthOfFieldPass();
 
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual void OnResize(Uint32, Uint32) override;

@@ -1,5 +1,5 @@
 #pragma once
-#include "Graphics/GfxPipelineStatePermutations.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceId.h"
 #include "entt/entity/fwd.hpp"
 

@@ -1,5 +1,6 @@
 #include "GpuDebugFeature.h"
 #include "Graphics/GfxBuffer.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
 #include "RenderGraph/RenderGraph.h"
@@ -14,14 +15,17 @@ namespace adria
 		gpu_buffer_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
 		gpu_buffer_desc.misc_flags = GfxBufferMiscFlag::BufferRaw;
 		gpu_buffer_desc.size = gpu_buffer_desc.stride * 1024 * 1024;
-		gpu_buffer = std::make_unique<GfxBuffer>(gfx, gpu_buffer_desc);
+		gpu_buffer = gfx->CreateBuffer(gpu_buffer_desc); 
 
 		srv_descriptor = gfx->CreateBufferSRV(gpu_buffer.get());
 		uav_descriptor = gfx->CreateBufferUAV(gpu_buffer.get());
 
 		gfx->GetGraphicsCommandList()->BufferBarrier(*gpu_buffer, GfxResourceState::Common, GfxResourceState::ComputeUAV);
 
-		for (auto& readback_buffer : cpu_readback_buffers) readback_buffer = gfx->CreateBuffer(ReadBackBufferDesc(gpu_buffer_desc.size));
+		for (auto& readback_buffer : cpu_readback_buffers)
+		{
+			readback_buffer = gfx->CreateBuffer(ReadBackBufferDesc(gpu_buffer_desc.size));
+		}
 	}
 	Int32 GpuDebugFeature::GetBufferIndex()
 	{

@@ -121,10 +121,10 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_Blur_Horizontal;
-		blur_horizontal_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		blur_horizontal_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_Blur_Vertical;
-		blur_vertical_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		blur_vertical_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 }

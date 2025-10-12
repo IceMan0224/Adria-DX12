@@ -83,7 +83,7 @@ namespace adria
 				return;
 			}
 			static_cast<ID3D12Fence*>(dred_fence.GetHandle())->SetEventOnCompletion(UINT64_MAX, dred_wait_handle);
-			ADRIA_ASSERT(RegisterWaitForSingleObject(&dred_wait_handle, dred_wait_handle, DeviceRemovedHandler, (ID3D12Device*)gfx->GetNativeDevice(), INFINITE, 0));
+			ADRIA_ASSERT(RegisterWaitForSingleObject(&dred_wait_handle, dred_wait_handle, DeviceRemovedHandler, (ID3D12Device*)gfx->GetNative(), INFINITE, 0));
 		}
 		~DRED()
 		{

@@ -120,11 +120,11 @@ namespace adria
 		gfx_pso_desc.topology_type = GfxPrimitiveTopologyType::Point;
 		gfx_pso_desc.num_render_targets = 1;
 		gfx_pso_desc.rtv_formats[0] = GfxFormat::R16G16B16A16_FLOAT;
-		lens_flare_pso = gfx->CreateGraphicsPipelineState(gfx_pso_desc);
+		lens_flare_pso = gfx->CreateManagedComputePipelineState(gfx_pso_desc);
 
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_LensFlare2;
-		procedural_lens_flare_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		procedural_lens_flare_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 	void LensFlarePass::AddTextureBasedLensFlare(RenderGraph& rg, PostProcessor* postprocessor, Light const& light)
@@ -198,7 +198,7 @@ namespace adria
 					.light_ss_y = light_ss.y,
 					.light_ss_z = light_ss.z
 				};
-				cmd_list->SetPipelineState(lens_flare_pso.get());
+				cmd_list->SetPipelineState(lens_flare_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->SetRootCBV(2, constants2);
@@ -271,7 +271,7 @@ namespace adria
 					.output_idx = i + 1
 				};
 
-				cmd_list->SetPipelineState(procedural_lens_flare_pso.get());
+				cmd_list->SetPipelineState(procedural_lens_flare_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);

@@ -52,7 +52,7 @@ namespace adria
 
 		imgui_allocator = std::make_unique<GUIDescriptorAllocator>(std::move(gui_heap), 1);
 		GfxDescriptor handle = imgui_allocator->GetHeap()->GetDescriptor(0);
-		ImGui_ImplDX12_Init((ID3D12Device*)gfx->GetNativeDevice(), gfx->GetBackbufferCount(), DXGI_FORMAT_R8G8B8A8_UNORM, 
+		ImGui_ImplDX12_Init((ID3D12Device*)gfx->GetNative(), gfx->GetBackbufferCount(), DXGI_FORMAT_R8G8B8A8_UNORM, 
 							(ID3D12DescriptorHeap*)imgui_allocator->GetHeap()->GetNative(), ToD3D12CpuHandle(handle), ToD3D12GpuHandle(handle));
 	}
 	ImGuiManager::~ImGuiManager()

@@ -1,10 +1,10 @@
 #include "RayTracedAmbientOcclusionPass.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
-#include "Graphics/GfxShader.h"
 #include "Graphics/GfxShaderKey.h"
 #include "Graphics/GfxStateObject.h"
 #include "Graphics/GfxPipelineState.h"
+#include "Graphics/D3D12/D3D12Device.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 
@@ -12,9 +12,9 @@ namespace adria
 {
 	
 	RayTracedAmbientOcclusionPass::RayTracedAmbientOcclusionPass(GfxDevice* gfx, Uint32 width, Uint32 height)
-		: gfx(gfx), width(width), height(height), blur_pass(gfx)
+		: d3d12_gfx((D3D12Device*)gfx), width(width), height(height), blur_pass(gfx)
 	{
-		is_supported = gfx->GetCapabilities().SupportsRayTracing();
+		is_supported = d3d12_gfx->GetCapabilities().SupportsRayTracing();
 		if (IsSupported())
 		{
 			CreatePSO();
@@ -161,7 +161,7 @@ namespace adria
 					.filter_dist_kernel4 = distance_kernel[4], .filter_dist_kernel5 = distance_kernel[5],
 				};
 
-				cmd_list->SetPipelineState(rtao_filter_pso.get());
+				cmd_list->SetPipelineState(rtao_filter_pso->Get());
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, indices);
@@ -202,7 +202,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_RTAOFilter;
-		rtao_filter_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		rtao_filter_pso = d3d12_gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 	void RayTracedAmbientOcclusionPass::CreateStateObject()
@@ -223,7 +223,7 @@ namespace adria
 			rtao_state_object_builder.AddSubObject(rtao_shader_config);
 
 			D3D12_GLOBAL_ROOT_SIGNATURE global_root_sig{};
-			global_root_sig.pGlobalRootSignature = gfx->GetCommonRootSignature();
+			global_root_sig.pGlobalRootSignature = d3d12_gfx->GetCommonRootSignature();
 			rtao_state_object_builder.AddSubObject(global_root_sig);
 
 			D3D12_RAYTRACING_PIPELINE_CONFIG pipeline_config{};
@@ -236,7 +236,7 @@ namespace adria
 			anyhit_group.HitGroupExport = L"RTAOAnyHitGroup";
 			rtao_state_object_builder.AddSubObject(anyhit_group);
 		}
-		ray_traced_ambient_occlusion_so.reset(rtao_state_object_builder.CreateStateObject(gfx));
+		ray_traced_ambient_occlusion_so.reset(rtao_state_object_builder.CreateStateObject(d3d12_gfx));
 	}
 
 	void RayTracedAmbientOcclusionPass::OnLibraryRecompiled(GfxShaderKey const& key)

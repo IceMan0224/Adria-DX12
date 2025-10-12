@@ -3,7 +3,7 @@
 
 namespace adria
 {
-	class D3D12Capabilities : public GfxCapabilities
+	class D3D12Capabilities final : public GfxCapabilities
 	{
 	public:
 		virtual Bool Initialize(GfxDevice* gfx) override;

@@ -119,7 +119,7 @@ namespace adria
 		if (scratch_buffer)
 		{
 			memset(scratch_buffer, 0, scratch_buffer_size);
-			FfxErrorCode error_code = ffxGetInterfaceDX12(ffx_interface, gfx->GetDevice(), scratch_buffer, scratch_buffer_size, context_count);
+			FfxErrorCode error_code = ffxGetInterfaceDX12(ffx_interface, gfx->GetNative(), scratch_buffer, scratch_buffer_size, context_count);
 			ADRIA_ASSERT(error_code == FFX_OK);
 			return ffx_interface;
 		}
@@ -144,11 +144,11 @@ namespace adria
 	}
 	FfxResource GetFfxResource(GfxBuffer const& buffer, FfxResourceStates state, FfxResourceUsage additional_usage)
 	{
-		return ffxGetResourceDX12(buffer.GetNative(), GetFfxResourceDescription(buffer, additional_usage), L"", state);
+		return ffxGetResourceDX12((ID3D12Resource*)buffer.GetNative(), GetFfxResourceDescription(buffer, additional_usage), L"", state);
 	}
 	FfxResource GetFfxResource(GfxTexture const& texture, FfxResourceStates state, FfxResourceUsage additional_usage)
 	{
-		return ffxGetResourceDX12(texture.GetNative(), GetFfxResourceDescription(texture, additional_usage), L"", state);
+		return ffxGetResourceDX12((ID3D12Resource*)texture.GetNative(), GetFfxResourceDescription(texture, additional_usage), L"", state);
 	}
 
 }

@@ -139,7 +139,7 @@ namespace adria
 		}
 
 		D3D12_COMMAND_LIST_TYPE cmd_list_type = ToGfxCommandListType(type);
-		ID3D12Device* device = (ID3D12Device*)gfx->GetNativeDevice();
+		ID3D12Device* device = (ID3D12Device*)gfx->GetNative();
 		HRESULT hr = device->CreateCommandAllocator(cmd_list_type, IID_PPV_ARGS(cmd_allocator.GetAddressOf()));
 		GFX_CHECK_HR(hr);
 		hr = device->CreateCommandList(0, cmd_list_type, cmd_allocator, nullptr, IID_PPV_ARGS(cmd_list.GetAddressOf()));

@@ -27,7 +27,7 @@ namespace adria
 		OIDNBuffer oidn_color_buffer = nullptr;
 		OIDNBuffer oidn_albedo_buffer = nullptr;
 		OIDNBuffer oidn_normal_buffer = nullptr;
-		GfxFence oidn_fence;
+		std::unique_ptr<GfxFence> oidn_fence;
 		Uint64 oidn_fence_value = 0;
 
 		std::unique_ptr<GfxBuffer> color_buffer;

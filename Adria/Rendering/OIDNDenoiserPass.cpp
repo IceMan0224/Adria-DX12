@@ -55,7 +55,7 @@ namespace adria
 		oidn_filter = oidnNewFilter(oidn_device, "RT");
 		OIDNCheck(oidn_device);
 
-		oidn_fence.Create(gfx, "OIDN Fence");
+		oidn_fence = gfx->CreateFence("OIDN Fence");
 		supported = true;
 		denoised = false;
 	}
@@ -177,9 +177,9 @@ namespace adria
 			cmd_list->CopyTextureToBuffer(*albedo_buffer, 0, albedo_texture, 0, 0);
 			cmd_list->CopyTextureToBuffer(*normal_buffer, 0, normal_texture, 0, 0);
 			cmd_list->End();
-			cmd_list->Signal(oidn_fence, ++oidn_fence_value);
+			cmd_list->Signal(*oidn_fence, ++oidn_fence_value);
 			cmd_list->Submit();
-			oidn_fence.Wait(oidn_fence_value);
+			oidn_fence->Wait(oidn_fence_value);
 			oidnExecuteFilter(oidn_filter);
 			OIDNCheck(oidn_device);
 			cmd_list->Begin();

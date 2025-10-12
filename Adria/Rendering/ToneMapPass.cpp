@@ -122,7 +122,7 @@ namespace adria
 					constants.bloom_params_packed = PackTwoFloatsToUint32(bloom_data->bloom_intensity, bloom_data->bloom_blend_factor);
 				}
 
-				cmd_list->SetPipelineState(tonemap_pso.get());
+				cmd_list->SetPipelineState(tonemap_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -147,7 +147,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_Tonemap;
-		tonemap_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		tonemap_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 	void ToneMapPass::GUI()

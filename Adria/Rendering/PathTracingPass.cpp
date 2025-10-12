@@ -10,6 +10,8 @@
 #include "Graphics/GfxPipelineState.h"
 #include "Graphics/GfxCommon.h"
 #include "Graphics/GfxReflection.h"
+#include "Graphics/GfxBufferView.h"
+#include "Graphics/D3D12/D3D12Device.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 #include "Core/ConsoleManager.h"
@@ -154,6 +156,7 @@ namespace adria
 
 	GfxStateObject* PathTracingPass::CreateStateObjectCommon(GfxShaderKey const& shader_key)
 	{
+		D3D12Device* d3d12_gfx = (D3D12Device*)gfx;
 		GfxShader const& pt_blob = SM_GetGfxShader(shader_key);
 		GfxStateObjectBuilder pt_state_object_builder(5);
 		{
@@ -170,7 +173,7 @@ namespace adria
 			pt_state_object_builder.AddSubObject(pt_shader_config);
 
 			D3D12_GLOBAL_ROOT_SIGNATURE global_root_sig{};
-			global_root_sig.pGlobalRootSignature = gfx->GetCommonRootSignature();
+			global_root_sig.pGlobalRootSignature = d3d12_gfx->GetCommonRootSignature();
 			pt_state_object_builder.AddSubObject(global_root_sig);
 
 			D3D12_RAYTRACING_PIPELINE_CONFIG pipeline_config{};
@@ -253,7 +256,7 @@ namespace adria
 						continue;
 					}
 
-					GfxPipelineState const* pso = pt_gbuffer_pso.get();
+					GfxPipelineState const* pso = pt_gbuffer_pso->Get();
 					cmd_list->SetPipelineState(pso);
 
 					struct GBufferConstants

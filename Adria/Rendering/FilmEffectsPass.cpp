@@ -82,7 +82,7 @@ namespace adria
 					.input_idx = i + 0,
 					.output_idx = i + 1
 				};
-				cmd_list->SetPipelineState(film_effects_pso.get());
+				cmd_list->SetPipelineState(film_effects_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootCBV(2, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -143,7 +143,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_FilmEffects;
-		film_effects_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		film_effects_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 	Uint32 FilmEffectsPass::GetFilmGrainSeed(Float dt, Float seed_update_rate)

@@ -1,4 +1,4 @@
-#include "FFXDepthOfFieldPass.h"
+#include "D3D12_FFXDepthOfFieldPass.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"
@@ -12,7 +12,7 @@ namespace adria
 {
 	static TAutoConsoleVariable<Bool> FFXDepthOfField("r.FFXDepthOfField", true, "0 - Disabled, 1 - Enabled");
 
-	FFXDepthOfFieldPass::FFXDepthOfFieldPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), ffx_interface(nullptr)
+	D3D12_FFXDepthOfFieldPass::D3D12_FFXDepthOfFieldPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), ffx_interface(nullptr)
 	{
 		if (!gfx->GetCapabilities().SupportsShaderModel(SM_6_6)) return;
 
@@ -22,13 +22,13 @@ namespace adria
 		CreateContext();
 	}
 
-	FFXDepthOfFieldPass::~FFXDepthOfFieldPass()
+	D3D12_FFXDepthOfFieldPass::~D3D12_FFXDepthOfFieldPass()
 	{
 		DestroyContext();
 		DestroyFfxInterface(ffx_interface);
 	}
 
-	void FFXDepthOfFieldPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void D3D12_FFXDepthOfFieldPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		struct FFXDoFPassData
 		{
@@ -62,7 +62,7 @@ namespace adria
 				Float focal_length = sensor_size / (2.0f * std::tanf(fovx * 0.5f));
 
 				FfxDofDispatchDescription ffx_dof_dispatch_desc{};
-				ffx_dof_dispatch_desc.commandList = ffxGetCommandListDX12(cmd_list->GetNative());
+				ffx_dof_dispatch_desc.commandList = ffxGetCommandListDX12((ID3D12CommandList*)cmd_list->GetNative());
 				ffx_dof_dispatch_desc.color = GetFfxResource(input_texture);
 				ffx_dof_dispatch_desc.depth = GetFfxResource(depth_texture);
 				ffx_dof_dispatch_desc.output = GetFfxResource(output_texture, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -80,19 +80,19 @@ namespace adria
 		postprocessor->SetFinalResource(RG_NAME(FFXDoFOutput));
 	}
 
-	void FFXDepthOfFieldPass::OnResize(Uint32 w, Uint32 h)
+	void D3D12_FFXDepthOfFieldPass::OnResize(Uint32 w, Uint32 h)
 	{
 		width = w, height = h;
 		DestroyContext();
 		CreateContext();
 	}
 
-	Bool FFXDepthOfFieldPass::IsEnabled(PostProcessor const*) const
+	Bool D3D12_FFXDepthOfFieldPass::IsEnabled(PostProcessor const*) const
 	{
 		return FFXDepthOfField.Get();
 	}
 
-	void FFXDepthOfFieldPass::GUI()
+	void D3D12_FFXDepthOfFieldPass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -122,22 +122,25 @@ namespace adria
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_DepthOfField);
 	}
 
-	void FFXDepthOfFieldPass::CreateContext()
+	void D3D12_FFXDepthOfFieldPass::CreateContext()
 	{
 		dof_context_desc.flags = FFX_DOF_REVERSE_DEPTH;
-		if (!enable_ring_merge) dof_context_desc.flags |= FFX_DOF_DISABLE_RING_MERGE;
+		if (!enable_ring_merge)
+		{
+			dof_context_desc.flags |= FFX_DOF_DISABLE_RING_MERGE;
+		}
 		
 		dof_context_desc.resolution.width = width;
 		dof_context_desc.resolution.height = height;
 		dof_context_desc.quality = static_cast<Uint32>(quality);
 		dof_context_desc.cocLimitFactor = coc_limit;
-		dof_context_desc.backendInterface.device = gfx->GetDevice();
+		dof_context_desc.backendInterface.device = gfx->GetNative();
 
 		FfxErrorCode error_code = ffxDofContextCreate(&dof_context, &dof_context_desc);
 		ADRIA_ASSERT(error_code == FFX_OK);
 	}
 
-	void FFXDepthOfFieldPass::DestroyContext()
+	void D3D12_FFXDepthOfFieldPass::DestroyContext()
 	{
 		gfx->WaitForGPU();
 		ffxDofContextDestroy(&dof_context);

@@ -176,7 +176,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_Ssao;
-		ssao_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		ssao_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 }

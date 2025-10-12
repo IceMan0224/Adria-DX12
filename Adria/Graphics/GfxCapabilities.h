@@ -86,7 +86,7 @@ namespace adria
 		Bool SupportsAdditionalShadingRates() const { return additional_shading_rates_supported; }
 		Uint32 GetShadingRateImageTileSize() const { return shading_rate_image_tile_size; }
 
-	private:
+	protected:
 		RayTracingSupport ray_tracing_support = RayTracingSupport::TierNotSupported;
 		VRSSupport vrs_support = VRSSupport::TierNotSupported;
 		MeshShaderSupport mesh_shader_support = MeshShaderSupport::TierNotSupported;

@@ -227,10 +227,10 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_BuildHistogram;
-		build_histogram_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		build_histogram_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);  
 
 		compute_pso_desc.CS = CS_HistogramReduction;
-		histogram_reduction_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		histogram_reduction_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 }

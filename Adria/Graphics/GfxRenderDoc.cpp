@@ -167,7 +167,9 @@ namespace adria::GfxRenderDoc
 	void EndFrame()
 	{
 		if (!IsConnected())
+		{
 			return;
+		}
 
 		if (g_RenderDocApi->GetNumCaptures && g_RenderDocApi->GetNumCaptures() > g_RenderDocNumCaptures)
 		{

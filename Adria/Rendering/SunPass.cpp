@@ -56,7 +56,7 @@ namespace adria
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
 
-				cmd_list->SetPipelineState(sun_pso.get());
+				cmd_list->SetPipelineState(sun_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				auto [transform, mesh, material] = reg.get<Transform, SubMesh, Material>(sun);
 
@@ -93,7 +93,7 @@ namespace adria
 		gfx_pso_desc.num_render_targets = 1;
 		gfx_pso_desc.rtv_formats[0] = GfxFormat::R16G16B16A16_FLOAT;
 		gfx_pso_desc.dsv_format = GfxFormat::D32_FLOAT;
-		sun_pso = gfx->CreateGraphicsPipelineState(gfx_pso_desc);
+		sun_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
 	}
 
 }

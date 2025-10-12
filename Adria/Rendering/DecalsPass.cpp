@@ -4,6 +4,7 @@
 #include "BlackboardData.h"
 #include "ShaderManager.h"
 #include "TextureManager.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxReflection.h"
 #include "Graphics/GfxPipelineStatePermutations.h"
 #include "RenderGraph/RenderGraph.h"

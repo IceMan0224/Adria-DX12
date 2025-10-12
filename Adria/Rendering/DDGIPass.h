@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "entt/entity/fwd.hpp"
 
 namespace adria
@@ -9,8 +10,6 @@ namespace adria
 	class GfxDevice;
 	class GfxShaderKey;
 	class GfxStateObject;
-	class GfxGraphicsPipelineState;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class DDGIPass

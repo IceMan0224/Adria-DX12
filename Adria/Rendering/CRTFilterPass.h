@@ -21,7 +21,7 @@ namespace adria
 	private:
 		GfxDevice* gfx;
 		Uint32 width, height;
-		std::unique_ptr<GfxManagedComputePipelineState> crt_pso;
+		std::unique_ptr<GfxComputePipelineState> crt_pso;
 
 	private:
 		void CreatePSO();

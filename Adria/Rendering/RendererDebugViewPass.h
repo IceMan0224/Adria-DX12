@@ -1,5 +1,5 @@
 #pragma once
-#include "Graphics/GfxPipelineStatePermutationsFwd.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "Utilities/Delegate.h"
 
 namespace adria

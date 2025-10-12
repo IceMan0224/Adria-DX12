@@ -5,6 +5,7 @@
 #include "BlackboardData.h"
 #include "ShaderStructs.h"
 #include "Graphics/GfxBuffer.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"

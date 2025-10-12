@@ -111,16 +111,16 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_DepthOfField_ComputeCoC;
-		compute_coc_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		compute_coc_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_ComputeSeparatedCoC;
-		compute_separated_coc_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		compute_separated_coc_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_DownsampleCoC;
-		downsample_coc_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		downsample_coc_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_ComputePrefilteredTexture;
-		compute_prefiltered_texture_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		compute_prefiltered_texture_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_BokehFirstPass;
 		bokeh_first_pass_psos = std::make_unique<GfxComputePipelineStatePermutations>(gfx, compute_pso_desc);
@@ -129,10 +129,10 @@ namespace adria
 		bokeh_second_pass_psos = std::make_unique<GfxComputePipelineStatePermutations>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_ComputePostfilteredTexture;
-		compute_posfiltered_texture_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		compute_posfiltered_texture_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_Combine;
-		combine_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		combine_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 	void DepthOfFieldPass::CreateSmallBokehKernel()

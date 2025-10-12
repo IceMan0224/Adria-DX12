@@ -1,14 +1,15 @@
 #pragma once
 #include "BlurPass.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "Graphics/GfxRayTracingShaderTable.h"
 #include "RenderGraph/RenderGraphResourceName.h"
 
 namespace adria
 {
 	class GfxDevice;
+	class D3D12Device;
 	class GfxStateObject;
 	class GfxShaderKey;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class RayTracedAmbientOcclusionPass
@@ -31,7 +32,7 @@ namespace adria
 		Bool IsSupported() const;
 
 	private:
-		GfxDevice* gfx;
+		D3D12Device* d3d12_gfx;
 		std::unique_ptr<GfxStateObject> ray_traced_ambient_occlusion_so;
 		std::unique_ptr<GfxComputePipelineState> rtao_filter_pso;
 		Uint32 width, height;

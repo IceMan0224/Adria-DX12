@@ -4,6 +4,7 @@
 #include "TextureManager.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Graphics/GfxDevice.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Editor/GUICommand.h"
 #include "Core/Paths.h"
@@ -122,11 +123,11 @@ namespace adria
 		gfx_pso_desc.blend_state.render_target[0].src_blend_alpha = GfxBlend::One;
 		gfx_pso_desc.blend_state.render_target[0].dest_blend_alpha = GfxBlend::One;
 		gfx_pso_desc.rasterizer_state.cull_mode = GfxCullMode::None;
-		rain_pso = gfx->CreateGraphicsPipelineState(gfx_pso_desc);
+		rain_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
 
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_RainSimulation;
-		rain_simulation_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		rain_simulation_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 	void RainPass::AddSimulationPass(RenderGraph& rg)
@@ -165,7 +166,7 @@ namespace adria
 					.range_radius = range_radius
 				};
 
-				cmd_list->SetPipelineState(rain_simulation_pso.get());
+				cmd_list->SetPipelineState(rain_simulation_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(MAX_RAIN_DATA_BUFFER_SIZE, 256), 1, 1);
@@ -214,7 +215,7 @@ namespace adria
 					.rain_streak_scale = streak_scale
 				};
 
-				cmd_list->SetPipelineState(rain_pso.get());
+				cmd_list->SetPipelineState(rain_pso->Get());
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);

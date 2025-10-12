@@ -89,13 +89,13 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_SVGF_Reprojection;
-		reprojection_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		reprojection_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_SVGF_FilterMoments;
-		filter_moments_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		filter_moments_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_SVGF_Atrous;
-		atrous_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		atrous_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 	void SVGFDenoiserPass::CreateHistoryTextures()
@@ -221,7 +221,7 @@ namespace adria
 				};
 				reset_history = false;
 
-				cmd_list->SetPipelineState(reprojection_pso.get());
+				cmd_list->SetPipelineState(reprojection_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootCBV(2, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -292,7 +292,7 @@ namespace adria
 					.output_direct_idx = i + 5, .output_indirect_idx = i + 6
 				};
 
-				cmd_list->SetPipelineState(filter_moments_pso.get());
+				cmd_list->SetPipelineState(filter_moments_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootCBV(2, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -453,7 +453,7 @@ namespace adria
 						.feedback_indirect_out_idx = is_final_iteration ? (base_index + 8) : 0
 					};
 
-					cmd_list->SetPipelineState(atrous_pso.get());
+					cmd_list->SetPipelineState(atrous_pso->Get());
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 					cmd_list->SetRootCBV(2, constants);
 					cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);

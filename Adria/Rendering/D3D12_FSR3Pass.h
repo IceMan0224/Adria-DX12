@@ -10,11 +10,11 @@ namespace adria
 	class GfxDevice;
 	class RenderGraph;
 
-	class FSR3Pass : public UpscalerPass
+	class D3D12_FSR3Pass : public UpscalerPass
 	{
 	public:
-		FSR3Pass(GfxDevice* gfx, Uint32 w, Uint32 h);
-		~FSR3Pass();
+		D3D12_FSR3Pass(GfxDevice* gfx, Uint32 w, Uint32 h);
+		~D3D12_FSR3Pass();
 
 		virtual void OnResize(Uint32 w, Uint32 h) override
 		{

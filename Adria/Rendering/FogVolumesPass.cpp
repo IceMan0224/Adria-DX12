@@ -4,6 +4,7 @@
 #include "Components.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxBuffer.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Core/Paths.h"
@@ -154,7 +155,7 @@ namespace adria
 					.blue_noise_idx = (Uint32)blue_noise_handles[gfx->GetFrameIndex() % BLUE_NOISE_TEXTURE_COUNT]
 				};
 				
-				cmd_list->SetPipelineState(light_injection_pso.get());
+				cmd_list->SetPipelineState(light_injection_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(light_injection_target_history->GetWidth(), 8), 
@@ -213,7 +214,7 @@ namespace adria
 					.integrated_scattering_idx = i + 1
 				};
 
-				cmd_list->SetPipelineState(scattering_integration_pso.get());
+				cmd_list->SetPipelineState(scattering_integration_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(light_injection_target_history->GetWidth(), 8),
@@ -243,7 +244,7 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				cmd_list->SetPipelineState(combine_fog_pso.get());
+				cmd_list->SetPipelineState(combine_fog_pso->Get());
 
 				GfxDescriptor src_descriptors[] = { ctx.GetReadOnlyTexture(data.fog), ctx.GetReadOnlyTexture(data.depth) };
 				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
@@ -274,14 +275,14 @@ namespace adria
 		gfx_pso_desc.blend_state.render_target[0].dest_blend_alpha = GfxBlend::One;
 		gfx_pso_desc.blend_state.render_target[0].blend_op_alpha = GfxBlendOp::Add;
 		gfx_pso_desc.rasterizer_state.cull_mode = GfxCullMode::None;
-		combine_fog_pso = gfx->CreateGraphicsPipelineState(gfx_pso_desc);
+		combine_fog_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
 
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_VolumetricFog_LightInjection;
-		light_injection_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		light_injection_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_VolumetricFog_ScatteringIntegration;
-		scattering_integration_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		scattering_integration_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 	void FogVolumesPass::CreateLightInjectionHistoryTexture()

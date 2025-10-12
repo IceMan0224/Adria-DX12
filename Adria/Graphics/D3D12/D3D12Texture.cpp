@@ -154,7 +154,7 @@ namespace adria
 				allocation_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_SHARED | D3D12_HEAP_FLAG_SHARED_CROSS_ADAPTER;
 			}
 		}
-		D3D12MA::Allocator* allocator = d3d12gfx->GetAllocator();
+		D3D12MA::Allocator* allocator = d3d12gfx->GetD3D12Allocator();
 		D3D12MA::Allocation* alloc = nullptr;
 		if (gfx->GetCapabilities().SupportsEnhancedBarriers())
 		{
@@ -273,7 +273,7 @@ namespace adria
 	Uint32 D3D12Texture::GetRowPitch(Uint32 mip_level) const
 	{
 		ADRIA_ASSERT(mip_level < desc.mip_levels);
-		ID3D12Device* d3d12_device = (ID3D12Device*)gfx->GetNativeDevice();
+		ID3D12Device* d3d12_device = (ID3D12Device*)gfx->GetNative();
 		D3D12_RESOURCE_DESC d3d12_desc = resource->GetDesc();
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
 		d3d12_device->GetCopyableFootprints(&d3d12_desc, mip_level, 1, 0, &footprint, nullptr, nullptr, nullptr);

@@ -1,4 +1,4 @@
-#include "FSR2Pass.h"
+#include "D3D12_FSR2Pass.h"
 #include "FidelityFX/gpu/fsr2/ffx_fsr2_resources.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
@@ -30,7 +30,7 @@ namespace adria
 			}
 		}
 	}
-	FSR2Pass::FSR2Pass(GfxDevice* _gfx, Uint32 w, Uint32 h) : gfx(_gfx), display_width(w), display_height(h), render_width(), render_height()
+	D3D12_FSR2Pass::D3D12_FSR2Pass(GfxDevice* _gfx, Uint32 w, Uint32 h) : gfx(_gfx), display_width(w), display_height(h), render_width(), render_height()
 	{
 		sprintf(name_version, "FSR %d.%d.%d", FFX_FSR2_VERSION_MAJOR, FFX_FSR2_VERSION_MINOR, FFX_FSR2_VERSION_PATCH);
 		ffx_interface = CreateFfxInterface(gfx, FFX_FSR2_CONTEXT_COUNT);
@@ -39,13 +39,13 @@ namespace adria
 		CreateContext();
 	}
 
-	FSR2Pass::~FSR2Pass()
+	D3D12_FSR2Pass::~D3D12_FSR2Pass()
 	{
 		DestroyContext();
 		DestroyFfxInterface(ffx_interface);
 	}
 
-	void FSR2Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void D3D12_FSR2Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		if (recreate_context)
 		{
@@ -89,7 +89,7 @@ namespace adria
 				GfxTexture& output_texture = ctx.GetTexture(*data.output);
 
 				FfxFsr2DispatchDescription dispatch_desc{};
-				dispatch_desc.commandList = ffxGetCommandListDX12(cmd_list->GetNative());
+				dispatch_desc.commandList = ffxGetCommandListDX12((ID3D12CommandList*)cmd_list->GetNative());
 				dispatch_desc.color = GetFfxResource(input_texture);
 				dispatch_desc.depth = GetFfxResource(depth_texture);
 				dispatch_desc.motionVectors = GetFfxResource(velocity_texture);
@@ -121,12 +121,12 @@ namespace adria
 		postprocessor->SetFinalResource(RG_NAME(FSR2Output));
 	}
 
-	Bool FSR2Pass::IsEnabled(PostProcessor const*) const
+	Bool D3D12_FSR2Pass::IsEnabled(PostProcessor const*) const
 	{
 		return true;
 	}
 
-	void FSR2Pass::GUI()
+	void D3D12_FSR2Pass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -152,7 +152,7 @@ namespace adria
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_Upscaler);
 	}
 
-	void FSR2Pass::CreateContext()
+	void D3D12_FSR2Pass::CreateContext()
 	{
 		ADRIA_ASSERT(recreate_context);
 
@@ -168,13 +168,13 @@ namespace adria
 		recreate_context = false;
 	}
 
-	void FSR2Pass::DestroyContext()
+	void D3D12_FSR2Pass::DestroyContext()
 	{
 		gfx->WaitForGPU();
 		ffxFsr2ContextDestroy(&fsr2_context);
 	}
 
-	void FSR2Pass::RecreateRenderResolution()
+	void D3D12_FSR2Pass::RecreateRenderResolution()
 	{
 		Float upscale_ratio = (fsr2_quality_mode == 0 ? custom_upscale_ratio : ffxFsr2GetUpscaleRatioFromQualityMode(fsr2_quality_mode));
 		render_width = (Uint32)((Float)display_width / upscale_ratio);

@@ -3,6 +3,7 @@
 #include "ShaderManager.h" 
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxBuffer.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"
 
@@ -73,7 +74,7 @@ namespace adria
 					.depth_idx = i, .normal_idx = i + 1, .buffer_idx = i + 2
 				};
 				
-				cmd_list->SetPipelineState(picking_pso.get());
+				cmd_list->SetPipelineState(picking_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -110,7 +111,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_Picking;
-		picking_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		picking_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 	void PickingPass::CreatePickingBuffers()

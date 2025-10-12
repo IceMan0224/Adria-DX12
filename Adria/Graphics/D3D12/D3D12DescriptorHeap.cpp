@@ -20,7 +20,7 @@ namespace adria
 	}
 
 	D3D12DescriptorHeap::D3D12DescriptorHeap(GfxDevice* gfx, GfxDescriptorHeapDesc const& desc)
-		: gfx(gfx), descriptor_count(desc.descriptor_count), type(desc.type), shader_visible(desc.shader_visible)
+		: d3d12_gfx(static_cast<D3D12Device*>(gfx)), descriptor_count(desc.descriptor_count), type(desc.type), shader_visible(desc.shader_visible)
 	{
 		cpu_start_handle = { 0 };
 		gpu_start_handle = { 0 };
@@ -35,7 +35,7 @@ namespace adria
 		heap_desc.NumDescriptors = descriptor_count;
 		heap_desc.Type = ToD3D12HeapType(type);
 
-		ID3D12Device* device = (ID3D12Device*)gfx->GetNativeDevice(); 
+		ID3D12Device* device = d3d12_gfx->GetD3D12Device();
 		GFX_CHECK_HR(device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(heap.ReleaseAndGetAddressOf())));
 
 		cpu_start_handle = heap->GetCPUDescriptorHandleForHeapStart();

@@ -3,11 +3,14 @@
 
 namespace adria
 {
-	class D3D12CommandQueue : public GfxCommandQueue
+	class D3D12Device;
+
+	class D3D12CommandQueue final : public GfxCommandQueue
 	{
+		friend class D3D12Device;
+
 	public:
-		D3D12CommandQueue(GfxDevice* gfx, GfxCommandListType type, Char const* name = "");
-		virtual ~D3D12CommandQueue() = default;
+		virtual ~D3D12CommandQueue() override = default;
 
 		virtual void ExecuteCommandLists(std::span<GfxCommandList*> cmd_lists) override;
 		virtual void Signal(GfxFence& fence, Uint64 fence_value) override;
@@ -20,5 +23,8 @@ namespace adria
 		Ref<ID3D12CommandQueue> command_queue;
 		Uint64 timestamp_frequency = 0;
 		GfxCommandListType type;
+
+	private:
+		D3D12CommandQueue(GfxDevice* gfx, GfxCommandListType type, Char const* name = "");
 	};
 }

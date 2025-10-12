@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "entt/entity/fwd.hpp"
 
 
@@ -8,7 +9,6 @@ namespace adria
 	class GfxBuffer;
 	class GfxTexture;
 	class GfxDevice;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class ReSTIR_DI

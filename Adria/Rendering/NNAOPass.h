@@ -2,6 +2,7 @@
 #include "BlurPass.h"
 #include "TextureHandle.h"
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceId.h"
 
 
@@ -9,7 +10,6 @@ namespace adria
 {
 	class GfxDevice;
 	class GfxTexture;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class NNAOPass

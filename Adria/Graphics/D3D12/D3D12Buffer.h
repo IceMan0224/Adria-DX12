@@ -4,11 +4,14 @@
 
 namespace adria
 {
-	class D3D12Buffer : public GfxBuffer
+	class D3D12Device;
+
+	class D3D12Buffer final : public GfxBuffer
 	{
+		friend class D3D12Device;
+
 	public:
-		D3D12Buffer(GfxDevice* gfx, GfxBufferDesc const& desc, GfxBufferData initial_data = {});
-		~D3D12Buffer();
+		virtual ~D3D12Buffer() override;
 
 		virtual void* GetNative() const override;
 		virtual Uint64 GetGpuAddress() const override;
@@ -21,5 +24,8 @@ namespace adria
 		Ref<ID3D12Resource> resource;
 		ReleasablePtr<D3D12MA::Allocation> allocation = nullptr;
 		HANDLE shared_handle = nullptr;
+
+	private:
+		D3D12Buffer(GfxDevice* gfx, GfxBufferDesc const& desc, GfxBufferData initial_data = {});
 	};
 }

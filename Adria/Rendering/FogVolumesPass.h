@@ -1,6 +1,7 @@
 #pragma once
 #include "TextureHandle.h"
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "entt/entity/fwd.hpp"
 
 
@@ -10,8 +11,6 @@ namespace adria
 	class GfxDevice;
 	class GfxTexture;
 	class GfxBuffer;
-	class GfxComputePipelineState;
-	class GfxGraphicsPipelineState;
 
 	class FogVolumesPass
 	{

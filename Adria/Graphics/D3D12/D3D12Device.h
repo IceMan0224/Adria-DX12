@@ -16,7 +16,7 @@ namespace adria
 	class D3D12CommandQueue;
 	struct DRED;
 
-	class D3D12Device : public GfxDevice
+	class D3D12Device final : public GfxDevice
 	{
 	public:
 		explicit D3D12Device(Window* window);
@@ -33,9 +33,10 @@ namespace adria
 		virtual void Update() override;
 		virtual void BeginFrame() override;
 		virtual void EndFrame() override;
+		virtual Bool IsFirstFrame() override { return first_frame; }
 
-		virtual void* GetNativeDevice() const override { return device.Get(); }
-		virtual void* GetNativeAllocator() const override { return allocator.get(); }
+
+		virtual void* GetNative() const override { return device.Get(); }
 		virtual void* GetWindowHandle() const override { return hwnd; }
 
 		virtual GfxCapabilities const& GetCapabilities() const override { return device_capabilities; }
@@ -95,6 +96,7 @@ namespace adria
 		virtual GPUMemoryUsage GetMemoryUsage() const override;
 
 		virtual GfxShadingRateInfo const& GetShadingRateInfo() const override { return shading_rate_info; }
+		virtual void SetShadingRateInfo(GfxShadingRateInfo const& info) override { shading_rate_info = info; }
 
 		IDXGIFactory4* GetFactory() const
 		{
@@ -116,7 +118,7 @@ namespace adria
 		{
 			return global_root_signature.Get();
 		}
-		D3D12MA::Allocator* GetAllocator() const
+		D3D12MA::Allocator* GetD3D12Allocator() const
 		{
 			return allocator.get();
 		}
@@ -191,7 +193,6 @@ namespace adria
 
 		Ref<IDMLDevice>              dml_device;
 		Ref<IDMLCommandRecorder>     dml_command_recorder;
-
 
 	private:
 		virtual void AddToReleaseQueue_Internal(ReleasableObject* _obj) override;

@@ -2,14 +2,13 @@
 #include "TextureHandle.h"
 #include "RainBlockerMapPass.h"
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "Utilities/Delegate.h"
 
 namespace adria
 {
 	class GfxDevice;
 	class GfxBuffer;
-	class GfxGraphicsPipelineState;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	DECLARE_EVENT(RainEvent, RainPass, Bool)

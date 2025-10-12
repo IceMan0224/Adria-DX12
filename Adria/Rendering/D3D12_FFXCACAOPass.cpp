@@ -1,4 +1,4 @@
-#include "FFXCACAOPass.h"
+#include "D3D12_FFXCACAOPass.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "Graphics/GfxDevice.h"
@@ -264,7 +264,7 @@ namespace adria
 	}
 
 	
-	FFXCACAOPass::FFXCACAOPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), ffx_interface(nullptr)
+	D3D12_FFXCACAOPass::D3D12_FFXCACAOPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), ffx_interface(nullptr)
 	{
 		if (!gfx->GetCapabilities().SupportsShaderModel(SM_6_6)) return;
 		sprintf(name_version, "FFX CACAO %d.%d.%d", FFX_CACAO_VERSION_MAJOR, FFX_CACAO_VERSION_MINOR, FFX_CACAO_VERSION_PATCH);
@@ -278,13 +278,13 @@ namespace adria
 		use_downsampled_ssao = FfxCacaoPresets[preset_id].use_downsampled_ssao;
 	}
 
-	FFXCACAOPass::~FFXCACAOPass()
+	D3D12_FFXCACAOPass::~D3D12_FFXCACAOPass()
 	{
 		DestroyContext();
 		DestroyFfxInterface(ffx_interface);
 	}
 
-	void FFXCACAOPass::AddPass(RenderGraph& rg)
+	void D3D12_FFXCACAOPass::AddPass(RenderGraph& rg)
 	{
 		RG_SCOPE(rg, "CACAO");
 
@@ -325,7 +325,7 @@ namespace adria
 
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 				FfxCacaoDispatchDescription cacao_dispatch_desc{};
-				cacao_dispatch_desc.commandList = ffxGetCommandListDX12(cmd_list->GetNative());
+				cacao_dispatch_desc.commandList = ffxGetCommandListDX12((ID3D12GraphicsCommandList*)cmd_list->GetNative());
 
 				FfxFloat32x4x4 proj, world_to_view;
 				Matrix camera_proj(frame_data.camera_proj); 
@@ -350,7 +350,7 @@ namespace adria
 		use_downsampled_ssao = FfxCacaoPresets[preset_id].use_downsampled_ssao;
 	}
 
-	void FFXCACAOPass::GUI()
+	void D3D12_FFXCACAOPass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -370,19 +370,19 @@ namespace adria
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_AO);
 	}
 
-	void FFXCACAOPass::OnResize(Uint32 w, Uint32 h)
+	void D3D12_FFXCACAOPass::OnResize(Uint32 w, Uint32 h)
 	{
 		width = w, height = h;
 		DestroyContext();
 		CreateContext();
 	}
 
-	void FFXCACAOPass::CreateContext()
+	void D3D12_FFXCACAOPass::CreateContext()
 	{
 		cacao_context_desc.width = width;
 		cacao_context_desc.height = height;
 		cacao_context_desc.useDownsampledSsao = false;
-		cacao_context_desc.backendInterface.device = gfx->GetDevice();
+		cacao_context_desc.backendInterface.device = gfx->GetNative();
 		FfxErrorCode error_code = ffxCacaoContextCreate(&cacao_context, &cacao_context_desc);
 		ADRIA_ASSERT(error_code == FFX_OK);
 		cacao_context_desc.useDownsampledSsao = true;
@@ -390,7 +390,7 @@ namespace adria
 		ADRIA_ASSERT(error_code == FFX_OK);
 	}
 
-	void FFXCACAOPass::DestroyContext()
+	void D3D12_FFXCACAOPass::DestroyContext()
 	{
 		gfx->WaitForGPU();
 		ffxCacaoContextDestroy(&cacao_context);

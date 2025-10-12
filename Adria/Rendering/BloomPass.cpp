@@ -82,7 +82,7 @@ namespace adria
 		downsample_psos = std::make_unique<GfxComputePipelineStatePermutations>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_BloomUpsample;
-		upsample_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		upsample_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 	RGResourceName BloomPass::DownsamplePass(RenderGraph& rg, RGResourceName input, Uint32 pass_idx)

@@ -9,7 +9,7 @@ namespace adria
 	D3D12CommandQueue::D3D12CommandQueue(GfxDevice* gfx, GfxCommandListType type, Char const* name)
 		: type(type)
 	{
-		ID3D12Device* device = (ID3D12Device*)gfx->GetNativeDevice(); 
+		ID3D12Device* device = (ID3D12Device*)gfx->GetNative(); 
 
 		auto ToD3D12CmdListType = [](GfxCommandListType type)
 			{

@@ -1,6 +1,6 @@
 #pragma once
 #include "RenderGraph/RenderGraphResourceName.h"
-#include "Graphics/GfxPipelineStatePermutationsFwd.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 
 namespace adria
 {

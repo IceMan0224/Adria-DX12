@@ -1,6 +1,7 @@
 #pragma once
 #include "SkyModel.h"
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceId.h"
 #include "entt/entity/fwd.hpp"
 
@@ -11,8 +12,6 @@ namespace adria
 	class GfxDevice;
 	class GfxBuffer;
 	class GfxTexture;
-	class GfxGraphicsPipelineState;
-	class GfxComputePipelineState;
 
 	enum class SkyType : Uint8
 	{

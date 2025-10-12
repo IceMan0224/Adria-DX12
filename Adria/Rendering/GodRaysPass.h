@@ -2,11 +2,11 @@
 #include "PostEffect.h"
 #include "SunPass.h"
 #include "HelperPasses.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 
 namespace adria
 {
 	class GfxDevice;
-	class GfxComputePipelineState;
 	class RenderGraph;
 	struct Light;
 

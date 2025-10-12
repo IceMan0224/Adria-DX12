@@ -1,4 +1,4 @@
-#include "FSR3Pass.h"
+#include "D3D12_FSR3Pass.h"
 #include "FidelityFX/gpu/fsr3/ffx_fsr3_resources.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
@@ -31,7 +31,7 @@ namespace adria
 		}
 	}
 
-	FSR3Pass::FSR3Pass(GfxDevice* _gfx, Uint32 w, Uint32 h) : gfx(_gfx), display_width(w), display_height(h), render_width(), render_height(), ffx_interface(nullptr)
+	D3D12_FSR3Pass::D3D12_FSR3Pass(GfxDevice* _gfx, Uint32 w, Uint32 h) : gfx(_gfx), display_width(w), display_height(h), render_width(), render_height(), ffx_interface(nullptr)
 	{
 		if (!gfx->GetCapabilities().SupportsShaderModel(SM_6_6))
 		{
@@ -46,13 +46,13 @@ namespace adria
 		CreateContext();
 	}
 
-	FSR3Pass::~FSR3Pass()
+	D3D12_FSR3Pass::~D3D12_FSR3Pass()
 	{
 		DestroyContext();
 		DestroyFfxInterface(ffx_interface);
 	}
 
-	void FSR3Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void D3D12_FSR3Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		if (recreate_context)
 		{
@@ -95,7 +95,7 @@ namespace adria
 				GfxTexture& output_texture = ctx.GetTexture(*data.output);
 
 				FfxFsr3DispatchUpscaleDescription dispatch_desc{};
-				dispatch_desc.commandList = ffxGetCommandListDX12(cmd_list->GetNative());
+				dispatch_desc.commandList = ffxGetCommandListDX12((ID3D12CommandList*)cmd_list->GetNative());
 				dispatch_desc.color = GetFfxResource(input_texture);
 				dispatch_desc.depth = GetFfxResource(depth_texture);
 				dispatch_desc.motionVectors = GetFfxResource(velocity_texture);
@@ -127,12 +127,12 @@ namespace adria
 		postprocessor->SetFinalResource(RG_NAME(FSR3Output));
 	}
 
-	Bool FSR3Pass::IsEnabled(PostProcessor const*) const
+	Bool D3D12_FSR3Pass::IsEnabled(PostProcessor const*) const
 	{
 		return true; 
 	}
 
-	void FSR3Pass::GUI()
+	void D3D12_FSR3Pass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -162,7 +162,7 @@ namespace adria
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_Upscaler);
 	}
 
-	void FSR3Pass::CreateContext()
+	void D3D12_FSR3Pass::CreateContext()
 	{
 		ADRIA_ASSERT(recreate_context);
 
@@ -179,13 +179,13 @@ namespace adria
 		recreate_context = false;
 	}
 
-	void FSR3Pass::DestroyContext()
+	void D3D12_FSR3Pass::DestroyContext()
 	{
 		gfx->WaitForGPU();
 		ffxFsr3ContextDestroy(&fsr3_context);
 	}
 
-	void FSR3Pass::RecreateRenderResolution()
+	void D3D12_FSR3Pass::RecreateRenderResolution()
 	{
 		Float upscale_ratio = (fsr3_quality_mode == 0 ? custom_upscale_ratio : ffxFsr3GetUpscaleRatioFromQualityMode(fsr3_quality_mode));
 		render_width = (Uint32)((Float)display_width / upscale_ratio);

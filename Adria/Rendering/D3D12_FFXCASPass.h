@@ -7,11 +7,11 @@ namespace adria
 	class GfxDevice;
 	class RenderGraph;
 
-	class FFXCASPass : public PostEffect
+	class D3D12_FFXCASPass : public PostEffect
 	{
 	public:
-		FFXCASPass(GfxDevice* gfx, Uint32 w, Uint32 h);
-		~FFXCASPass();
+		D3D12_FFXCASPass(GfxDevice* gfx, Uint32 w, Uint32 h);
+		~D3D12_FFXCASPass();
 
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual void OnResize(Uint32, Uint32) override;

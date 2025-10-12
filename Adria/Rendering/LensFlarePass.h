@@ -1,14 +1,12 @@
 #pragma once
 #include "TextureHandle.h"
 #include "PostEffect.h"
-
+#include "Graphics/GfxPipelineStateFwd.h"
 
 namespace adria
 {
 	class RenderGraph;
 	class GfxDevice;
-	class GfxGraphicsPipelineState;
-	class GfxComputePipelineState;
 	struct Light;
 
 	class LensFlarePass : public PostEffect

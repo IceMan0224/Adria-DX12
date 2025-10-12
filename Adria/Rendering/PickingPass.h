@@ -1,5 +1,5 @@
 #pragma once
-
+#include "Graphics/GfxPipelineStateFwd.h"
 
 namespace adria
 {
@@ -11,19 +11,14 @@ namespace adria
 
 	class GfxDevice;
 	class GfxBuffer;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class PickingPass
 	{
 	public:
-		
 		PickingPass(GfxDevice* gfx, Uint32 width, Uint32 height);
-
 		void OnResize(Uint32 w, Uint32 h);
-
 		void AddPass(RenderGraph& rg);
-
 		PickingData GetPickingData() const;
 
 	private:

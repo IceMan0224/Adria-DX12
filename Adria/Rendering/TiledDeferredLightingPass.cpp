@@ -109,7 +109,7 @@ namespace adria
 				cmd_list->ClearUAV(tiled_target, gfx->GetDescriptorGPU(i + 5), context.GetReadWriteTexture(data.output), black);
 				cmd_list->ClearUAV(tiled_debug_target, gfx->GetDescriptorGPU(i + 6), context.GetReadWriteTexture(data.debug_output), black);
 
-				cmd_list->SetPipelineState(tiled_deferred_lighting_pso.get());
+				cmd_list->SetPipelineState(tiled_deferred_lighting_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -141,7 +141,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_TiledDeferredLighting;
-		tiled_deferred_lighting_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		tiled_deferred_lighting_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 }

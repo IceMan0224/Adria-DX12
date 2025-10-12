@@ -1,6 +1,6 @@
 #pragma once
 #include "TextureHandle.h"
-#include "Graphics/GfxPipelineStatePermutationsFwd.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceId.h"
 #include "entt/entity/fwd.hpp"
 
@@ -10,8 +10,6 @@ namespace adria
 	class TextureManager;
 	class GfxDevice;
 	class GfxTexture;
-	class GfxGraphicsPipelineState;
-	class GfxComputePipelineState;
 
 	class OceanRenderer
 	{

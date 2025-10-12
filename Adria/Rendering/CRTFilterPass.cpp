@@ -141,7 +141,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_CrtFilter;
-		crt_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		crt_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 }

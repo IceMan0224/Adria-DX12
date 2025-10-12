@@ -1,55 +1,47 @@
 #pragma once
-#include "nvsdk_ngx_defs.h"
+#include "FidelityFX/host/ffx_fsr2.h"
 #include "UpscalerPass.h"
 #include "Utilities/Delegate.h"
-
-
-struct NVSDK_NGX_Parameter;
-struct NVSDK_NGX_Handle;
 
 namespace adria
 {
 	class GfxDevice;
-	class GfxCommandList;
 	class RenderGraph;
 
-	class DLSS3Pass : public UpscalerPass
+	class D3D12_FSR2Pass : public UpscalerPass
 	{
 	public:
-		DLSS3Pass(GfxDevice* gfx, Uint32 w, Uint32 h);
-		~DLSS3Pass();
+		D3D12_FSR2Pass(GfxDevice* gfx, Uint32 w, Uint32 h);
+		~D3D12_FSR2Pass();
 
 		virtual void OnResize(Uint32 w, Uint32 h) override
 		{
 			display_width = w, display_height = h;
 			RecreateRenderResolution();
-			needs_create = true;
+			recreate_context = true;
 		}
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual Bool IsEnabled(PostProcessor const*) const override;
 		virtual void GUI() override;
 
-		virtual Bool IsSupported() const override { return is_supported; }
-
 	private:
-		Bool is_supported = false;
 		Char name_version[16] = {};
 		GfxDevice* gfx = nullptr;
 		Uint32 display_width, display_height;
 		Uint32 render_width, render_height;
 
-		NVSDK_NGX_Parameter* ngx_parameters = nullptr;
-		NVSDK_NGX_Handle* dlss_feature = nullptr;
-		Bool needs_create = true;
+		FfxInterface* ffx_interface;
+		FfxFsr2ContextDescription fsr2_context_desc{};
+		FfxFsr2Context fsr2_context{};
+		Bool recreate_context = true;
 
-		NVSDK_NGX_PerfQuality_Value perf_quality = NVSDK_NGX_PerfQuality_Value_Balanced;
+		FfxFsr2QualityMode fsr2_quality_mode = FFX_FSR2_QUALITY_MODE_QUALITY;
+		Float custom_upscale_ratio = 1.0f;
 		Float sharpness = 0.5f;
 
 	private:
-		Bool InitializeNVSDK_NGX();
+		void CreateContext();
+		void DestroyContext();
 		void RecreateRenderResolution();
-
-		void CreateDLSS(GfxCommandList* cmd_list);
-		void ReleaseDLSS();
 	};
 }

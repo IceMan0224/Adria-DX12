@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics/GfxRayTracingShaderTable.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceName.h"
 #include "entt/entity/fwd.hpp"
 
@@ -11,8 +12,6 @@ namespace adria
 	class GfxShaderKey;
 	class GfxStateObject;
 	class SVGFDenoiserPass;
-	class GfxComputePipelineState;
-	class GfxGraphicsPipelineState;
 
 	class PathTracingPass
 	{

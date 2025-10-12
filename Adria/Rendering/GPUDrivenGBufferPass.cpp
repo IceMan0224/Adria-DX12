@@ -192,16 +192,16 @@ namespace adria
 		build_meshlet_cull_args_psos = std::make_unique<GfxComputePipelineStatePermutations>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_BuildInstanceCullArgs;
-		build_instance_cull_args_pso = std::make_unique<GfxManagedComputePipelineState>(gfx,compute_pso_desc);
+		build_instance_cull_args_pso = std::make_unique<GfxComputePipelineState>(gfx,compute_pso_desc);
 
 		compute_pso_desc.CS = CS_ClearCounters;
-		clear_counters_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		clear_counters_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_InitializeHZB;
-		initialize_hzb_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		initialize_hzb_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_HZBMips;
-		hzb_mips_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
+		hzb_mips_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 	void GPUDrivenGBufferPass::InitializeHZB()

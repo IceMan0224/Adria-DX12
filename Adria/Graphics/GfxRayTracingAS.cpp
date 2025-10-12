@@ -58,7 +58,7 @@ namespace adria
 
 	GfxRayTracingBLAS::GfxRayTracingBLAS(GfxDevice* gfx, std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags)
 	{
-		ID3D12Device5* d3d12_device = static_cast<ID3D12Device5*>(gfx->GetNativeDevice());
+		ID3D12Device5* d3d12_device = static_cast<ID3D12Device5*>(gfx->GetNative());
 		std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geo_descs; geo_descs.reserve(geometries.size());
 		for (GfxRayTracingGeometry& geometry : geometries)
 		{
@@ -109,7 +109,7 @@ namespace adria
 
 	GfxRayTracingTLAS::GfxRayTracingTLAS(GfxDevice* gfx, std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
 	{
-		ID3D12Device5* d3d12_device = static_cast<ID3D12Device5*>(gfx->GetNativeDevice());
+		ID3D12Device5* d3d12_device = static_cast<ID3D12Device5*>(gfx->GetNative());
 
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
 		inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;

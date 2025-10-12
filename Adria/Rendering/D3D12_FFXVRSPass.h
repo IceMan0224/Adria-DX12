@@ -3,6 +3,7 @@
 #include "FidelityFX/host/ffx_vrs.h"
 #include "Graphics/GfxShadingRate.h"
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceName.h"
 
 struct FfxInterface;
@@ -12,14 +13,13 @@ namespace adria
 	class GfxDevice;
 	class RenderGraph;
 	class GfxTexture;
-	class GfxGraphicsPipelineState;
 	class PostProcessor;
 
-	class FFXVRSPass : public PostEffect
+	class D3D12_FFXVRSPass : public PostEffect
 	{
 	public:
-		FFXVRSPass(GfxDevice* gfx, Uint32 w, Uint32 h);
-		~FFXVRSPass();
+		D3D12_FFXVRSPass(GfxDevice* gfx, Uint32 w, Uint32 h);
+		~D3D12_FFXVRSPass();
 
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual void GUI() override;

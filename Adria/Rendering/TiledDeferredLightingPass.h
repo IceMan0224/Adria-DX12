@@ -1,12 +1,12 @@
 #pragma once
 #include "HelperPasses.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceId.h"
 #include "entt/entity/fwd.hpp"
 
 namespace adria
 {
 	class GfxDevice;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class TiledDeferredLightingPass

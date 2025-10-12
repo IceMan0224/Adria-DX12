@@ -1,7 +1,6 @@
 #include "HelperPasses.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h" 
-
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxPipelineStatePermutations.h"

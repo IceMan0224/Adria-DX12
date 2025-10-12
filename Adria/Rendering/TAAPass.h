@@ -1,11 +1,11 @@
 #pragma once
 #include "PostEffect.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 
 namespace adria
 {
 	class GfxDevice;
 	class GfxTexture;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class TAAPass : public PostEffect

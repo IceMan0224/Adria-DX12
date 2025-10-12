@@ -91,7 +91,7 @@ namespace adria
 					.depth_idx = i, .scene_idx = i + 1, .output_idx = i + 2
 				};
 
-				cmd_list->SetPipelineState(fog_pso.get());
+				cmd_list->SetPipelineState(fog_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootCBV(2, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -137,7 +137,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_ExponentialHeightFog;
-		fog_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		fog_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 }

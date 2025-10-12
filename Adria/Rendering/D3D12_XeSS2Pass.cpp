@@ -1,4 +1,4 @@
-#include "XeSS2Pass.h"
+#include "D3D12_XeSS2Pass.h"
 #include "XeSS/xess_d3d12.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"
@@ -32,12 +32,16 @@ namespace adria
 		}
 	}
 
-	XeSS2Pass::XeSS2Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
+	D3D12_XeSS2Pass::D3D12_XeSS2Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
 		: gfx(gfx), display_width(), display_height(), render_width(), render_height()
 	{
-		if (!gfx->GetCapabilities().SupportsRayTracing()) return;
+		if (!gfx->GetCapabilities().SupportsRayTracing()) 
+		{
+			ADRIA_LOG(ERROR, "XeSS2 is not supported on this GPU!");
+			return;
+		}
 
-		xess_result_t result = xessD3D12CreateContext(gfx->GetDevice(), &context);
+		xess_result_t result = xessD3D12CreateContext((ID3D12Device*)gfx->GetNative(), &context);
 		ADRIA_ASSERT(result == XESS_RESULT_SUCCESS);
 		
 		xessSetLoggingCallback(context, XESS_LOGGING_LEVEL_DEBUG, XeSS2Log);
@@ -49,13 +53,13 @@ namespace adria
 		OnResize(w, h);
 	}
 
-	XeSS2Pass::~XeSS2Pass()
+	D3D12_XeSS2Pass::~D3D12_XeSS2Pass()
 	{
 		gfx->WaitForGPU();
 		xessDestroyContext(context);
 	}
 
-	void XeSS2Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void D3D12_XeSS2Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		if (needs_init)
 		{
@@ -101,10 +105,10 @@ namespace adria
 				GfxTexture& output_texture = ctx.GetTexture(*data.output);
 
 				xess_d3d12_execute_params_t execute_params{};
-				execute_params.pColorTexture = input_texture.GetNative();
-				execute_params.pVelocityTexture = velocity_texture.GetNative();
-				execute_params.pDepthTexture = depth_texture.GetNative();
-				execute_params.pOutputTexture = output_texture.GetNative();
+				execute_params.pColorTexture = (ID3D12Resource*)input_texture.GetNative();
+				execute_params.pVelocityTexture = (ID3D12Resource*)velocity_texture.GetNative();
+				execute_params.pDepthTexture = (ID3D12Resource*)depth_texture.GetNative();
+				execute_params.pOutputTexture = (ID3D12Resource*)output_texture.GetNative();
 				execute_params.pExposureScaleTexture = nullptr;
 				execute_params.jitterOffsetX = frame_data.camera_jitter_x;
 				execute_params.jitterOffsetY = frame_data.camera_jitter_y;
@@ -117,7 +121,7 @@ namespace adria
 				xessSetVelocityScale(context, (Float)render_width, (Float)render_height);
 
 				GfxCommandList* cmd_list = ctx.GetCommandList();
-				xess_result_t result = xessD3D12Execute(context, cmd_list->GetNative(), &execute_params);
+				xess_result_t result = xessD3D12Execute(context, (ID3D12GraphicsCommandList*)cmd_list->GetNative(), &execute_params);
 				ADRIA_ASSERT(result == XESS_RESULT_SUCCESS);
 
 				cmd_list->ResetState();
@@ -126,12 +130,12 @@ namespace adria
 		postprocessor->SetFinalResource(RG_NAME(XeSS2Output));
 	}
 
-	Bool XeSS2Pass::IsEnabled(PostProcessor const*) const
+	Bool D3D12_XeSS2Pass::IsEnabled(PostProcessor const*) const
 	{
 		return true; 
 	}
 
-	void XeSS2Pass::GUI()
+	void D3D12_XeSS2Pass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -149,7 +153,7 @@ namespace adria
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_Upscaler);
 	}
 
-	void XeSS2Pass::XeSSInit()
+	void D3D12_XeSS2Pass::XeSSInit()
 	{
 		ADRIA_ASSERT(needs_init);
 
@@ -166,7 +170,7 @@ namespace adria
 		needs_init = false;
 	}
 
-	void XeSS2Pass::RecreateRenderResolution()
+	void D3D12_XeSS2Pass::RecreateRenderResolution()
 	{
 		xess_2d_t output_resolution = { display_width, display_height };
 		xess_2d_t input_resolution;

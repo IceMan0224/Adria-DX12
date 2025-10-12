@@ -22,7 +22,7 @@ namespace adria
 		GfxDevice* gfx;
 		Uint32 width, height;
 		std::unique_ptr<GfxComputePipelineStatePermutations> downsample_psos;
-		std::unique_ptr<GfxManagedComputePipelineState> upsample_pso;
+		std::unique_ptr<GfxComputePipelineState> upsample_pso;
 
 	private:
 		void CreatePSOs();

@@ -1,11 +1,11 @@
 #pragma once
 #include "HelperPasses.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceId.h"
 
 namespace adria
 {
 	class GfxDevice;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class RayMarchedVolumetricFogPass

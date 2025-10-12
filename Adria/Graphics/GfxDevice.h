@@ -2,6 +2,7 @@
 #include "GfxCapabilities.h"
 #include "GfxCommandList.h"
 #include "GfxDescriptor.h"
+#include "GfxPipelineStateFwd.h"
 #include "GfxDefines.h"
 #include "GfxShadingRate.h"
 #include "GfxRayTracingAS.h"
@@ -94,9 +95,9 @@ namespace adria
 		virtual void Update() = 0;
 		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;
+		virtual Bool IsFirstFrame() = 0;
 
-		virtual void* GetNativeDevice() const = 0;
-		virtual void* GetNativeAllocator() const = 0;
+		virtual void* GetNative() const = 0;
 		virtual void* GetWindowHandle() const = 0;
 
 		virtual GfxCapabilities const& GetCapabilities() const = 0;
@@ -157,6 +158,7 @@ namespace adria
 		virtual Uint64 GetLinearBufferSize(GfxBuffer const* buffer) const = 0;
 
 		virtual GfxShadingRateInfo const& GetShadingRateInfo() const = 0;
+		virtual void SetShadingRateInfo(GfxShadingRateInfo const& info) = 0;
 
 		virtual void GetTimestampFrequency(Uint64& frequency) const = 0;
 		virtual GPUMemoryUsage GetMemoryUsage() const = 0;
@@ -209,6 +211,7 @@ namespace adria
 		{
 			FreeCommandList(cmd_list, GfxCommandListType::Copy);
 		}
+		
 		GfxFence& GetGraphicsFence() { return GetFence(GfxCommandListType::Graphics); }
 		GfxFence& GetComputeFence()  { return GetFence(GfxCommandListType::Compute); }
 		GfxFence& GetCopyFence()     { return GetFence(GfxCommandListType::Copy); }
@@ -218,6 +221,10 @@ namespace adria
 		void SetGraphicsFenceValue(Uint64 value) { SetFenceValue(GfxCommandListType::Graphics, value); }
 		void SetComputeFenceValue(Uint64 value) { SetFenceValue(GfxCommandListType::Graphics, value); }
 		void SetCopyFenceValue(Uint64 value) { SetFenceValue(GfxCommandListType::Graphics, value); }
+
+		std::unique_ptr<GfxGraphicsPipelineState> CreateManagedGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc);
+		std::unique_ptr<GfxComputePipelineState> CreateManagedComputePipelineState(GfxComputePipelineStateDesc const& desc);
+		std::unique_ptr<GfxMeshShaderPipelineState> CreateManagedMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc);
 
 	private:
 		virtual void AddToReleaseQueue_Internal(ReleasableObject* _obj) = 0;
