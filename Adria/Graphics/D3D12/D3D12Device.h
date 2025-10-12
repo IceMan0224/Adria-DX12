@@ -2,6 +2,7 @@
 #define D3D12MA_D3D12_HEADERS_ALREADY_INCLUDED
 #include "D3D12MemAlloc.h"
 #include "D3D12Fence.h"
+#include "D3D12Capabilities.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxDescriptorHeap.h"
@@ -129,7 +130,7 @@ namespace adria
 
 		Ref<IDXGIFactory6> dxgi_factory = nullptr;
 		Ref<ID3D12Device5> device = nullptr;
-		GfxCapabilities device_capabilities{};
+		D3D12Capabilities device_capabilities{};
 		GfxVendor vendor = GfxVendor::Unknown;
 
 		std::unique_ptr<GfxOnlineDescriptorAllocator> gpu_descriptor_allocator;

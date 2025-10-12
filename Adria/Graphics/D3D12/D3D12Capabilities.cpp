@@ -1,6 +1,6 @@
+#include "D3D12Capabilities.h"
+#include "D3D12Device.h"
 #include "d3dx12_check_feature_support.h"
-#include "GfxCapabilities.h"
-#include "GfxDevice.h"
 
 namespace adria
 {
@@ -73,16 +73,16 @@ namespace adria
 		}
 	}
 
-	Bool GfxCapabilities::Initialize(GfxDevice* gfx)
+	Bool D3D12Capabilities::Initialize(GfxDevice* gfx)
 	{
 		CD3DX12FeatureSupport feature_support;
 		feature_support.Init((ID3D12Device*)gfx->GetNativeDevice());
 
 		ray_tracing_support = ConvertRayTracingTier(feature_support.RaytracingTier());
-		vrs_support			= ConvertVRSTier(feature_support.VariableShadingRateTier());
+		vrs_support = ConvertVRSTier(feature_support.VariableShadingRateTier());
 		mesh_shader_support = ConvertMeshShaderTier(feature_support.MeshShaderTier());
 		work_graph_support = ConvertWorkGraphTier(feature_support.WorkGraphsTier());
-		shader_model		= ConvertShaderModel(feature_support.HighestShaderModel());
+		shader_model = ConvertShaderModel(feature_support.HighestShaderModel());
 		enhanced_barriers_supported = feature_support.EnhancedBarriersSupported();
 		typed_uav_additional_formats_supported = feature_support.TypedUAVLoadAdditionalFormats();
 		shading_rate_image_tile_size = feature_support.ShadingRateImageTileSize();

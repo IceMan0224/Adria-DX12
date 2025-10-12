@@ -32,7 +32,9 @@ namespace adria
 	class GfxCapabilities
 	{
 	public:
-		Bool Initialize(GfxDevice* gfx);
+
+		virtual ~GfxCapabilities() = default;
+		virtual Bool Initialize(GfxDevice* gfx) = 0;
 
 		Bool SupportsRayTracing() const
 		{
@@ -85,7 +87,6 @@ namespace adria
 		Uint32 GetShadingRateImageTileSize() const { return shading_rate_image_tile_size; }
 
 	private:
-		
 		RayTracingSupport ray_tracing_support = RayTracingSupport::TierNotSupported;
 		VRSSupport vrs_support = VRSSupport::TierNotSupported;
 		MeshShaderSupport mesh_shader_support = MeshShaderSupport::TierNotSupported;
