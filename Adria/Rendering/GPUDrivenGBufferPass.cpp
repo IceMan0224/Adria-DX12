@@ -192,16 +192,16 @@ namespace adria
 		build_meshlet_cull_args_psos = std::make_unique<GfxComputePipelineStatePermutations>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_BuildInstanceCullArgs;
-		build_instance_cull_args_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		build_instance_cull_args_pso = std::make_unique<GfxManagedComputePipelineState>(gfx,compute_pso_desc);
 
 		compute_pso_desc.CS = CS_ClearCounters;
-		clear_counters_pso = std::make_unique<GfxComputePipelineState>(gfx, compute_pso_desc);
+		clear_counters_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_InitializeHZB;
-		initialize_hzb_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		initialize_hzb_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_HZBMips;
-		hzb_mips_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		hzb_mips_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 	void GPUDrivenGBufferPass::InitializeHZB()
@@ -269,7 +269,7 @@ namespace adria
 					.visible_meshlets_counter_idx = i + 1,
 					.occluded_instances_counter_idx = i + 2
 				};
-				cmd_list->SetPipelineState(clear_counters_pso.get());
+				cmd_list->SetPipelineState(clear_counters_pso->Get());
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(1, 1, 1);
 				cmd_list->GlobalBarrier(GfxResourceState::ComputeUAV, GfxResourceState::ComputeUAV);
@@ -572,7 +572,7 @@ namespace adria
 				{
 					.visible_meshlets_idx = i,
 				};
-				GfxShadingRateInfo const& vrs = gfx->GetVRSInfo();
+				GfxShadingRateInfo const& vrs = gfx->GetShadingRateInfo();
 				cmd_list->BeginVRS(vrs);
 
 				draw_psos->AddDefine("VIEW_MIPMAPS", debug_mipmaps ? "1" : "0");
@@ -638,7 +638,7 @@ namespace adria
 					.occluded_instances_counter_idx = i + 0,
 					.instance_cull_args_idx = i + 1
 				};
-				cmd_list->SetPipelineState(build_instance_cull_args_pso.get());
+				cmd_list->SetPipelineState(build_instance_cull_args_pso->Get());
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(1, 1, 1);
 
@@ -887,7 +887,7 @@ namespace adria
 					.visible_meshlets_idx = i,
 				};
 
-				GfxShadingRateInfo const& vrs = gfx->GetVRSInfo();
+				GfxShadingRateInfo const& vrs = gfx->GetShadingRateInfo();
 				cmd_list->BeginVRS(vrs);
 
 				draw_psos->AddDefine("VIEW_MIPMAPS", debug_mipmaps ? "1" : "0");
@@ -955,7 +955,7 @@ namespace adria
 					.inv_hzb_width = 1.0f / hzb_width,
 					.inv_hzb_height = 1.0f / hzb_height
 				};
-				cmd_list->SetPipelineState(initialize_hzb_pso.get());
+				cmd_list->SetPipelineState(initialize_hzb_pso->Get());
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(hzb_width, 16), DivideAndRoundUp(hzb_height, 16), 1);
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
@@ -1042,7 +1042,7 @@ namespace adria
 				} indices{ .spdGlobalAtomicIdx = i };
 				for (Uint32 j = 0; j < hzb_mip_count; ++j) indices.dstIdx[j].x = i + 1 + j;
 
-				cmd_list->SetPipelineState(hzb_mips_pso.get());
+				cmd_list->SetPipelineState(hzb_mips_pso->Get());
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->SetRootCBV(2, indices);
 				cmd_list->Dispatch(dispatchThreadGroupCountXY[0], dispatchThreadGroupCountXY[1], 1);

@@ -60,7 +60,7 @@ namespace adria
 				cmd_list->ClearUAV(histogram_buffer, buffer_gpu, ctx.GetReadWriteBuffer(data.histogram_buffer), clear_value);
 				cmd_list->BufferBarrier(histogram_buffer, GfxResourceState::ComputeUAV, GfxResourceState::ComputeUAV);
 				cmd_list->FlushBarriers();
-				cmd_list->SetPipelineState(build_histogram_pso.get());
+				cmd_list->SetPipelineState(build_histogram_pso->Get());
 
 				struct BuildHistogramConstants
 				{
@@ -120,7 +120,7 @@ namespace adria
 					invalid_history = false;
 				}
 
-				cmd_list->SetPipelineState(histogram_reduction_pso.get());
+				cmd_list->SetPipelineState(histogram_reduction_pso->Get());
 				Uint32 descriptor_index = gfx->AllocateDescriptorsGPU(3).GetIndex();
 
 				GfxDescriptor buffer_srv = gfx->GetDescriptorGPU(descriptor_index);
@@ -227,10 +227,10 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_BuildHistogram;
-		build_histogram_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		build_histogram_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_HistogramReduction;
-		histogram_reduction_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		histogram_reduction_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 }

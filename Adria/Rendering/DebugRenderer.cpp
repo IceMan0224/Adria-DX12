@@ -1,6 +1,7 @@
 #include "DebugRenderer.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxDynamicAllocation.h"
 #include "Graphics/GfxReflection.h"
 #include "Graphics/GfxPipelineStatePermutations.h"

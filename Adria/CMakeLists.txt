@@ -327,7 +327,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxStateObject.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxStateObject.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxStates.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxSwapchain.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxSwapchain.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxTexture.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxTracyProfiler.cpp"
@@ -357,6 +356,8 @@ set(ADRIA_D3D12_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12PipelineState.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Device.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Device.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Swapchain.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Swapchain.cpp"
 )
 
 set(ADRIA_WIN32_SOURCES

@@ -1,4 +1,5 @@
 #include "D3D12Device.h"
+#include "D3D12Swapchain.h"
 #include "D3D12CommandQueue.h"
 #include "D3D12CommandList.h"
 #include "D3D12Texture.h"
@@ -8,7 +9,6 @@
 #include "D3D12QueryHeap.h"
 #include "D3D12PipelineState.h"
 #include "D3D12Conversions.h"
-#include "Graphics/GfxSwapchain.h"
 #include "Graphics/GfxCommandListPool.h"
 #include "Graphics/GfxDescriptorAllocator.h"
 #include "Graphics/GfxRingDescriptorAllocator.h"
@@ -205,7 +205,7 @@ namespace adria
 		swapchain_desc.height = height;
 		swapchain_desc.fullscreen_windowed = true;
 		swapchain_desc.backbuffer_format = GfxFormat::R8G8B8A8_UNORM;
-		swapchain = std::make_unique<GfxSwapchain>(this, swapchain_desc);
+		swapchain = std::make_unique<D3D12Swapchain>(this, swapchain_desc);
 
 		frame_fence.Create(this, "Frame Fence");
 		wait_fence.Create(this, "Wait Fence");

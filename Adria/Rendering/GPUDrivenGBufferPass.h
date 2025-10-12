@@ -1,7 +1,7 @@
 #pragma once
 #include "RenderGraph/RenderGraphResourceId.h"
 #include "Graphics/GfxDefines.h"
-#include "Graphics/GfxPipelineStatePermutationsFwd.h"
+#include "Graphics/GfxPipelineStatePermutations.h"
 
 
 namespace adria
@@ -81,10 +81,10 @@ namespace adria
 		std::unique_ptr<GfxComputePipelineStatePermutations>	cull_instances_psos;
 		std::unique_ptr<GfxComputePipelineStatePermutations>    build_meshlet_cull_args_psos;
 		std::unique_ptr<GfxComputePipelineStatePermutations>    build_meshlet_draw_args_psos;
-		std::unique_ptr<GfxComputePipelineState> clear_counters_pso;
-		std::unique_ptr<GfxComputePipelineState> build_instance_cull_args_pso;
-		std::unique_ptr<GfxComputePipelineState> initialize_hzb_pso;
-		std::unique_ptr<GfxComputePipelineState> hzb_mips_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> clear_counters_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> build_instance_cull_args_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> initialize_hzb_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> hzb_mips_pso;
 
 	private:
 		void CreatePSOs();

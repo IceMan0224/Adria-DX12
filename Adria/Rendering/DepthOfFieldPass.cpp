@@ -111,16 +111,16 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_DepthOfField_ComputeCoC;
-		compute_coc_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		compute_coc_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_ComputeSeparatedCoC;
-		compute_separated_coc_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		compute_separated_coc_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_DownsampleCoC;
-		downsample_coc_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		downsample_coc_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_ComputePrefilteredTexture;
-		compute_prefiltered_texture_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		compute_prefiltered_texture_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_BokehFirstPass;
 		bokeh_first_pass_psos = std::make_unique<GfxComputePipelineStatePermutations>(gfx, compute_pso_desc);
@@ -129,10 +129,10 @@ namespace adria
 		bokeh_second_pass_psos = std::make_unique<GfxComputePipelineStatePermutations>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_ComputePostfilteredTexture;
-		compute_posfiltered_texture_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		compute_posfiltered_texture_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DepthOfField_Combine;
-		combine_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		combine_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 	void DepthOfFieldPass::CreateSmallBokehKernel()
@@ -213,7 +213,7 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				cmd_list->SetPipelineState(compute_coc_pso.get());
+				cmd_list->SetPipelineState(compute_coc_pso->Get());
 
 				GfxDescriptor src_descriptors[] =
 				{
@@ -274,7 +274,7 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				cmd_list->SetPipelineState(compute_separated_coc_pso.get());
+				cmd_list->SetPipelineState(compute_separated_coc_pso->Get());
 
 				GfxDescriptor src_descriptors[] =
 				{
@@ -336,7 +336,7 @@ namespace adria
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 
-					cmd_list->SetPipelineState(downsample_coc_pso.get());
+					cmd_list->SetPipelineState(downsample_coc_pso->Get());
 
 					GfxDescriptor src_descriptors[] =
 					{
@@ -399,7 +399,7 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				cmd_list->SetPipelineState(compute_prefiltered_texture_pso.get());
+				cmd_list->SetPipelineState(compute_prefiltered_texture_pso->Get());
 
 				GfxDescriptor src_descriptors[] =
 				{
@@ -630,7 +630,7 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				cmd_list->SetPipelineState(compute_posfiltered_texture_pso.get());
+				cmd_list->SetPipelineState(compute_posfiltered_texture_pso->Get());
 
 				GfxDescriptor src_descriptors[] =
 				{
@@ -698,7 +698,7 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				cmd_list->SetPipelineState(combine_pso.get());
+				cmd_list->SetPipelineState(combine_pso->Get());
 
 				GfxDescriptor src_descriptors[] =
 				{

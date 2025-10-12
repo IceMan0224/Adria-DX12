@@ -69,7 +69,7 @@ namespace adria
 					.input_idx = i, .output_idx = i + 1
 				};
 
-				cmd_list->SetPipelineState(blur_horizontal_pso.get());
+				cmd_list->SetPipelineState(blur_horizontal_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(src_desc.width, 1024), src_desc.height, 1);
@@ -108,7 +108,7 @@ namespace adria
 					.input_idx = i, .output_idx = i + 1
 				};
 
-				cmd_list->SetPipelineState(blur_vertical_pso.get());
+				cmd_list->SetPipelineState(blur_vertical_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(src_desc.width, DivideAndRoundUp(src_desc.height, 1024), 1);
@@ -121,10 +121,10 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_Blur_Horizontal;
-		blur_horizontal_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		blur_horizontal_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_Blur_Vertical;
-		blur_vertical_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		blur_vertical_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 }

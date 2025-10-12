@@ -1,7 +1,7 @@
 #pragma once
 #include "PostEffect.h"
 #include "BlurPass.h"
-#include "Graphics/GfxPipelineStatePermutationsFwd.h"
+#include "Graphics/GfxPipelineStatePermutations.h"
 
 namespace adria
 {
@@ -27,14 +27,14 @@ namespace adria
 		Uint32 width, height;
 		BlurPass blur_pass;
 
-		std::unique_ptr<GfxComputePipelineState> compute_coc_pso;
-		std::unique_ptr<GfxComputePipelineState> compute_separated_coc_pso;
-		std::unique_ptr<GfxComputePipelineState> downsample_coc_pso;
-		std::unique_ptr<GfxComputePipelineState> compute_prefiltered_texture_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> compute_coc_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> compute_separated_coc_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> downsample_coc_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> compute_prefiltered_texture_pso;
 		std::unique_ptr<GfxComputePipelineStatePermutations> bokeh_first_pass_psos;
 		std::unique_ptr<GfxComputePipelineStatePermutations> bokeh_second_pass_psos;
-		std::unique_ptr<GfxComputePipelineState> compute_posfiltered_texture_pso;
-		std::unique_ptr<GfxComputePipelineState> combine_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> compute_posfiltered_texture_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> combine_pso;
 
 		std::unique_ptr<GfxTexture> bokeh_large_kernel;
 		std::unique_ptr<GfxTexture> bokeh_small_kernel;

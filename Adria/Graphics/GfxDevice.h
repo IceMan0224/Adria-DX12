@@ -156,6 +156,8 @@ namespace adria
 		virtual Uint64 GetLinearBufferSize(GfxTexture const* texture) const = 0;
 		virtual Uint64 GetLinearBufferSize(GfxBuffer const* buffer) const = 0;
 
+		virtual GfxShadingRateInfo const& GetShadingRateInfo() const = 0;
+
 		virtual void GetTimestampFrequency(Uint64& frequency) const = 0;
 		virtual GPUMemoryUsage GetMemoryUsage() const = 0;
 

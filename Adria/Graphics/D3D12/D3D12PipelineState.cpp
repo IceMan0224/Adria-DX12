@@ -1,4 +1,5 @@
 #include "D3D12PipelineState.h"
+#include "D3D12Device.h"
 #include "D3D12Conversions.h"
 #include "d3dx12_pipeline_state_stream.h"
 #include "Graphics/GfxDevice.h"
@@ -324,8 +325,10 @@ namespace adria
 
 	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxGraphicsPipelineStateDesc const& desc)
 	{
+		D3D12Device* d3d12gfx = static_cast<D3D12Device*>(gfx);
+
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC d3d12_desc{};
-		d3d12_desc.pRootSignature = gfx->GetCommonRootSignature();
+		d3d12_desc.pRootSignature = d3d12gfx->GetCommonRootSignature();
 
 		GfxShader const& VS = SM_GetGfxShader(desc.VS);
 		GfxShader const& PS = SM_GetGfxShader(desc.PS);
@@ -357,25 +360,29 @@ namespace adria
 		d3d12_desc.SampleMask = desc.sample_mask;
 		d3d12_desc.DepthStencilState.DepthEnable = d3d12_desc.DSVFormat != DXGI_FORMAT_UNKNOWN;
 
-		HRESULT hr = gfx->GetDevice()->CreateGraphicsPipelineState(&d3d12_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf()));
+		HRESULT hr = d3d12gfx->GetD3D12Device()->CreateGraphicsPipelineState(&d3d12_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf()));
 		GFX_CHECK_HR(hr);
 	}
 
 
 	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxComputePipelineStateDesc const& desc)
 	{
+		D3D12Device* d3d12gfx = static_cast<D3D12Device*>(gfx);
+
 		D3D12_COMPUTE_PIPELINE_STATE_DESC d3d12_desc{};
-		d3d12_desc.pRootSignature = gfx->GetCommonRootSignature();
+		d3d12_desc.pRootSignature = d3d12gfx->GetCommonRootSignature();
 
 		GfxShader const& CS = SM_GetGfxShader(desc.CS);
 		d3d12_desc.CS = D3D12_SHADER_BYTECODE{ CS.GetData(), CS.GetSize() };
-		GFX_CHECK_HR(gfx->GetDevice()->CreateComputePipelineState(&d3d12_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())));
+		GFX_CHECK_HR(d3d12gfx->GetD3D12Device()->CreateComputePipelineState(&d3d12_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())));
 	}
 
 	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxMeshShaderPipelineStateDesc const& desc)
 	{
+		D3D12Device* d3d12gfx = static_cast<D3D12Device*>(gfx);
+
 		D3DX12_MESH_SHADER_PIPELINE_STATE_DESC d3d12_desc{};
-		d3d12_desc.pRootSignature = gfx->GetCommonRootSignature();
+		d3d12_desc.pRootSignature = d3d12gfx->GetCommonRootSignature();
 
 		GfxShader const& AS = SM_GetGfxShader(desc.AS);
 		GfxShader const& MS = SM_GetGfxShader(desc.MS);
@@ -404,7 +411,7 @@ namespace adria
 		stream_desc.pPipelineStateSubobjectStream = &pso_stream;
 		stream_desc.SizeInBytes = sizeof(pso_stream);
 
-		GFX_CHECK_HR(gfx->GetDevice()->CreatePipelineState(&stream_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())));
+		GFX_CHECK_HR(d3d12gfx->GetD3D12Device()->CreatePipelineState(&stream_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())));
 	}
 
 }

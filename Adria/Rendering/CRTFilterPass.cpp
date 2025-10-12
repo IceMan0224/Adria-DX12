@@ -80,7 +80,7 @@ namespace adria
 					.warp_x = CRTWarpX.Get(), .warp_y = CRTWarpY.Get()
 				};
 
-				cmd_list->SetPipelineState(crt_pso.get());
+				cmd_list->SetPipelineState(crt_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -141,7 +141,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_CrtFilter;
-		crt_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		crt_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 }

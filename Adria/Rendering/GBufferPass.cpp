@@ -77,7 +77,8 @@ namespace adria
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				GfxDevice* gfx = cmd_list->GetDevice();
-				GfxShadingRateInfo const& vrs = gfx->GetVRSInfo();
+
+				GfxShadingRateInfo const& vrs = gfx->GetShadingRateInfo();
 				cmd_list->BeginVRS(vrs);
 
 				if (skip_alpha_blended)

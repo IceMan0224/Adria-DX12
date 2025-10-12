@@ -1,10 +1,10 @@
 #pragma once
 #include "RenderGraph/RenderGraphResourceName.h"
+#include "Graphics/GfxPipelineState.h"
 
 namespace adria
 {
 	class GfxDevice;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class BlurPass
@@ -18,8 +18,8 @@ namespace adria
 
 	private:
 		GfxDevice* gfx;
-		std::unique_ptr<GfxComputePipelineState> blur_horizontal_pso;
-		std::unique_ptr<GfxComputePipelineState> blur_vertical_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> blur_horizontal_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> blur_vertical_pso;
 		Bool async_compute = false;
 
 	private:

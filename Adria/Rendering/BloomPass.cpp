@@ -82,7 +82,7 @@ namespace adria
 		downsample_psos = std::make_unique<GfxComputePipelineStatePermutations>(gfx, compute_pso_desc);
 
 		compute_pso_desc.CS = CS_BloomUpsample;
-		upsample_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		upsample_pso = std::make_unique<GfxManagedComputePipelineState>(gfx, compute_pso_desc);
 	}
 
 	RGResourceName BloomPass::DownsamplePass(RenderGraph& rg, RGResourceName input, Uint32 pass_idx)
@@ -215,7 +215,7 @@ namespace adria
 					.radius = BloomRadius.Get()
 				};
 
-				cmd_list->SetPipelineState(upsample_pso.get());
+				cmd_list->SetPipelineState(upsample_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(target_dim_x, 8), DivideAndRoundUp(target_dim_y, 8), 1);

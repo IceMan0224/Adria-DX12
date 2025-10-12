@@ -9,7 +9,7 @@
 namespace adria
 {
 	
-	DirectMLPassBase::DirectMLPassBase(GfxDevice* gfx) : gfx(gfx), dml_device(gfx->GetDMLDevice()), dml_command_recorder(gfx->GetDMLCommandRecorder())
+	DirectMLPassBase::DirectMLPassBase(GfxDevice* gfx) : d3d12gfx((D3D12Device*)gfx), dml_device(d3d12gfx->GetDMLDevice()), dml_command_recorder(d3d12gfx->GetDMLCommandRecorder())
 	{
 		tensor_layout = gfx->GetVendor() == GfxVendor::Nvidia ? TensorLayout::NHWC : TensorLayout::Default;
 		CreatePSOs();
@@ -19,10 +19,10 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc pso_desc{};
 		pso_desc.CS = CS_TensorToTexture;
-		tensor_to_texture_pso = gfx->CreateComputePipelineState(pso_desc);
+		tensor_to_texture_pso = std::make_unique<GfxManagedComputePipelineState>(d3d12gfx, pso_desc);
 
 		pso_desc.CS = CS_TextureToTensor;
-		texture_to_tensor_pso = gfx->CreateComputePipelineState(pso_desc);
+		texture_to_tensor_pso = std::make_unique<GfxManagedComputePipelineState>(d3d12gfx, pso_desc);
 	}
 
 	void DirectMLPassBase::GetTensorStrides(std::span<Uint32 const> sizes, std::span<Uint32> strides)
@@ -57,7 +57,7 @@ namespace adria
 		filter_tensor_desc.size = filter_buffer_size;
 		filter_tensor_desc.resource_usage = GfxResourceUsage::Default;
 		GfxBufferData gfx_filter_data(compressed_filter_weights.data());
-		return gfx->CreateBuffer(filter_tensor_desc, gfx_filter_data);
+		return d3d12gfx->CreateBuffer(filter_tensor_desc, gfx_filter_data);
 	}
 
 	std::unique_ptr<GfxBuffer> DirectMLPassBase::CreateBiasTensor(std::vector<Float> const& shift_weights, std::span<const Uint32> filter_sizes)
@@ -74,7 +74,7 @@ namespace adria
 		bias_tensor_desc.size = bias_buffer_size;
 		bias_tensor_desc.resource_usage = GfxResourceUsage::Default;
 		GfxBufferData gfx_bias_data(compressed_bias_weights.data());
-		return gfx->CreateBuffer(bias_tensor_desc, gfx_bias_data);
+		return d3d12gfx->CreateBuffer(bias_tensor_desc, gfx_bias_data);
 	}
 
 	std::vector<Uint16> DirectMLPassBase::CompressFilterWeights(std::vector<Float> const& filter_weights, std::vector<Float> const& scale_weights, std::span<const Uint32> sizes)

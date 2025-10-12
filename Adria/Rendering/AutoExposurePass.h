@@ -1,6 +1,7 @@
 #pragma once
 #include "PostEffect.h"
 #include "Graphics/GfxDescriptor.h"
+#include "Graphics/GfxPipelineState.h"
 
 namespace adria
 {
@@ -8,7 +9,6 @@ namespace adria
 	class GfxTexture;
 	class GfxBuffer;
 	class GfxDevice;
-	class GfxComputePipelineState;
 
 	class AutoExposurePass : public PostEffect
 	{
@@ -28,9 +28,9 @@ namespace adria
 		std::unique_ptr<GfxBuffer> histogram_copy;
 		Bool invalid_history = true;
 
-		std::unique_ptr<GfxComputePipelineState> build_histogram_pso;
-		std::unique_ptr<GfxComputePipelineState> histogram_reduction_pso;
-		std::unique_ptr<GfxComputePipelineState> exposure_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> build_histogram_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> histogram_reduction_pso;
+		std::unique_ptr<GfxManagedComputePipelineState> exposure_pso;
 		Bool show_histogram		= false;
 
 	private:

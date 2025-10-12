@@ -93,6 +93,8 @@ namespace adria
 		virtual void GetTimestampFrequency(Uint64& frequency) const override;
 		virtual GPUMemoryUsage GetMemoryUsage() const override;
 
+		virtual GfxShadingRateInfo const& GetShadingRateInfo() const override { return shading_rate_info; }
+
 		IDXGIFactory4* GetFactory() const
 		{
 			return dxgi_factory.Get();
