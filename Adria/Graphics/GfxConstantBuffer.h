@@ -22,7 +22,7 @@ namespace adria
 			desc.misc_flags = GfxBufferMiscFlag::ConstantBuffer;
 			desc.size = cbuffer_size * cbuffer_count;
 			
-			cbuffer = std::make_unique<GfxBuffer>(gfx, desc);
+			cbuffer = gfx->CreateBuffer(desc);
 			ADRIA_ASSERT(cbuffer->IsMapped());
 			mapped_data = cbuffer->GetMappedData<Uint8>();
 		}

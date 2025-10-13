@@ -17,7 +17,7 @@ namespace adria
 			PSODesc desc;
 		};
 		using PSOPermutationMap = std::unordered_map<Uint64, PSOCacheEntry>;
-		using ShaderDependencyMap = std::unordered_map<GfxShaderKey, std::vector<Uint64>>;
+		using ShaderDependencyMap = std::unordered_map<GfxShaderKey, std::vector<Uint64>, GfxShaderKeyHash>;
 
 	public:
 		GfxPipelineStatePermutations(GfxDevice* gfx, PSODesc const& desc) : gfx(gfx), base_pso_desc(desc), current_pso_desc(desc)

@@ -10,6 +10,7 @@
 #include "Editor/GUICommand.h"
 #include "Editor/Editor.h"
 #include "Graphics/GfxBuffer.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxCommon.h"
 #include "Graphics/GfxPipelineState.h"
@@ -52,7 +53,7 @@ namespace adria
 		CreateDisplaySizeDependentResources();
 		CreateRenderSizeDependentResources();
 		RegisterEventListeners();
-		screenshot_fence.Create(gfx, "Screenshot Fence");
+		screenshot_fence = gfx->CreateFence("Screenshot Fence");
 		frame_cbuffer.SetName("FrameCBuffer");
 	}
 
@@ -752,12 +753,12 @@ namespace adria
 				GfxTexture const& src_texture = ctx.GetCopySrcTexture(data.src);
 				GfxBuffer& dst_buffer = ctx.GetCopyDstBuffer(data.dst);
 				cmd_list->CopyTextureToBuffer(dst_buffer, 0, src_texture, 0, 0);
-				cmd_list->Signal(screenshot_fence, screenshot_fence_value);
+				cmd_list->Signal(*screenshot_fence, screenshot_fence_value);
 			}, RGPassType::Copy, RGPassFlags::ForceNoCull);
 
 		g_ThreadPool.Submit([this](std::string_view name) 
 			{
-			screenshot_fence.Wait(screenshot_fence_value);
+			screenshot_fence->Wait(screenshot_fence_value);
 			WriteImageToFile(FileType::PNG, name.data(), display_width, display_height, screenshot_buffer->GetMappedData(), display_width * 4);
 			screenshot_buffer.reset();
 			ADRIA_LOG(INFO, "Screenshot %s.png saved to screenshots folder!", screenshot_name.c_str());

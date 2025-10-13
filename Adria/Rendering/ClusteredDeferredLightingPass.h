@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics/GfxBuffer.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceId.h"
 #include "entt/entity/entity.hpp"
 
@@ -36,9 +37,9 @@ namespace adria
 		std::unique_ptr<GfxBuffer> light_list;
 		std::unique_ptr<GfxBuffer> light_grid;
 
-		std::unique_ptr<GfxPipelineState> clustered_lighting_pso;
-		std::unique_ptr<GfxPipelineState> clustered_building_pso;
-		std::unique_ptr<GfxPipelineState> clustered_culling_pso;
+		std::unique_ptr<GfxComputePipelineState> clustered_lighting_pso;
+		std::unique_ptr<GfxComputePipelineState> clustered_building_pso;
+		std::unique_ptr<GfxComputePipelineState> clustered_culling_pso;
 
 	private:
 		void CreatePSOs();

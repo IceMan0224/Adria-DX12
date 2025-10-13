@@ -4,13 +4,12 @@
 
 namespace adria
 {
-	class D3D12Device;
-
 	class D3D12Texture final : public GfxTexture
 	{
-		friend class D3D12Device;
-
 	public:
+		D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data);
+		D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc);
+		D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc, void* backbuffer);
 		~D3D12Texture();
 
 		virtual void* GetNative() const override;
@@ -25,10 +24,5 @@ namespace adria
 		Ref<ID3D12Resource> resource;
 		ReleasablePtr<D3D12MA::Allocation> allocation = nullptr;
 		HANDLE shared_handle = nullptr;
-
-	private:
-		D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data);
-		D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc);
-		D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc, void* backbuffer);
 	};
 }

@@ -5,12 +5,10 @@
 namespace adria
 {
 	class D3D12Device;
-
 	class D3D12CommandList final : public GfxCommandList
 	{
-		friend class D3D12Device;
-
 	public:
+		explicit D3D12CommandList(GfxDevice* gfx, GfxCommandListType type = GfxCommandListType::Graphics, Char const* name = "");
 		virtual ~D3D12CommandList() override;
 		ADRIA_NONCOPYABLE(D3D12CommandList)
 		ADRIA_DEFAULT_MOVABLE(D3D12CommandList)
@@ -135,8 +133,5 @@ namespace adria
 		std::unique_ptr<DrawIndexedIndirectSignature> draw_indexed_indirect_signature;
 		std::unique_ptr<DispatchIndirectSignature> dispatch_indirect_signature;
 		std::unique_ptr<DispatchMeshIndirectSignature> dispatch_mesh_indirect_signature;
-
-	private:
-		explicit D3D12CommandList(GfxDevice* gfx, GfxCommandListType type = GfxCommandListType::Graphics, Char const* name = "");
 	};
 }

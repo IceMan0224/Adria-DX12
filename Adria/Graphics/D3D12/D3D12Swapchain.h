@@ -3,12 +3,10 @@
 
 namespace adria
 {
-	class D3D12Device;
     class D3D12Swapchain final : public GfxSwapchain
     {
-		friend class D3D12Device;
-
     public:
+		D3D12Swapchain(GfxDevice* gfx, GfxSwapchainDesc const& desc);
         ~D3D12Swapchain();
 
         virtual void SetAsRenderTarget(GfxCommandList* cmd_list) override;
@@ -29,7 +27,6 @@ namespace adria
 		Uint32		 backbuffer_index;
 
     private:
-		D3D12Swapchain(GfxDevice* gfx, GfxSwapchainDesc const& desc);
 		void CreateBackbuffers();
 		GfxDescriptor GetBackbufferDescriptor() const;
     };

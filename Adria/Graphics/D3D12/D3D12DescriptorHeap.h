@@ -8,9 +8,8 @@ namespace adria
 
 	class D3D12DescriptorHeap final : public GfxDescriptorHeap
 	{
-		friend class D3D12Device;
-
 	public:
+		D3D12DescriptorHeap(GfxDevice* gfx, GfxDescriptorHeapDesc const& desc);
 		virtual ~D3D12DescriptorHeap() = default;
 
 		virtual GfxDescriptor GetDescriptor(Uint32 index = 0) const override;
@@ -33,7 +32,6 @@ namespace adria
 		Bool shader_visible;
 
 	private:
-		D3D12DescriptorHeap(GfxDevice* gfx, GfxDescriptorHeapDesc const& desc);
 
 		void CreateHeap();
 	};

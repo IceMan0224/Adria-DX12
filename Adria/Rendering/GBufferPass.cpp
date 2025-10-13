@@ -4,6 +4,7 @@
 #include "BlackboardData.h"
 #include "ShaderManager.h"
 #include "RendererDebugViewPass.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxReflection.h"
 #include "Graphics/GfxTracyProfiler.h"
 #include "Graphics/GfxPipelineStatePermutations.h"

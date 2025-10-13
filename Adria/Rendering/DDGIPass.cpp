@@ -9,7 +9,9 @@
 #include "Graphics/GfxStateObject.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Graphics/GfxReflection.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxRayTracingShaderTable.h"
+#include "Graphics/D3D12/D3D12Device.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Math/Constants.h"
 #include "Editor/GUICommand.h"
@@ -248,7 +250,7 @@ namespace adria
 					.irradiance_idx = i
 				};
 
-				cmd_list->SetPipelineState(update_irradiance_pso.get());
+				cmd_list->SetPipelineState(update_irradiance_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);
 				cmd_list->Dispatch(num_probes_flat, 1, 1);
@@ -302,7 +304,7 @@ namespace adria
 					.distance_idx = i
 				};
 
-				cmd_list->SetPipelineState(update_distance_pso.get());
+				cmd_list->SetPipelineState(update_distance_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);
 				cmd_list->Dispatch(num_probes_flat, 1, 1);
@@ -338,7 +340,7 @@ namespace adria
 					.visualize_mode = (Uint32)ddgi_visualize_mode
 				};
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
-				cmd_list->SetPipelineState(visualize_probes_pso.get());
+				cmd_list->SetPipelineState(visualize_probes_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);
 				cmd_list->Draw(2880, ddgi_volume.num_probes.x * ddgi_volume.num_probes.y * ddgi_volume.num_probes.z);
@@ -438,20 +440,21 @@ namespace adria
 		gfx_pso_desc.rtv_formats[0] = GfxFormat::R16G16B16A16_FLOAT;
 		gfx_pso_desc.dsv_format = GfxFormat::D32_FLOAT;
 		gfx_pso_desc.topology_type = GfxPrimitiveTopologyType::Triangle;
-		visualize_probes_pso = gfx->CreateGraphicsPipelineState(gfx_pso_desc);
+		visualize_probes_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
 
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_DDGIUpdateIrradiance;
-		update_irradiance_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		update_irradiance_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_DDGIUpdateDistance;
-		update_distance_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		update_distance_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 	void DDGIPass::CreateStateObject()
 	{
-		GfxShader const& ddgi_blob = SM_GetGfxShader(LIB_DDGIRayTracing);
+		D3D12Device* d3d12_device = static_cast<D3D12Device*>(gfx);
 
+		GfxShader const& ddgi_blob = SM_GetGfxShader(LIB_DDGIRayTracing);
 		GfxStateObjectBuilder ddgi_state_object_builder(5);
 		{
 			D3D12_DXIL_LIBRARY_DESC	dxil_lib_desc{};
@@ -467,7 +470,7 @@ namespace adria
 			ddgi_state_object_builder.AddSubObject(ddgi_shader_config);
 
 			D3D12_GLOBAL_ROOT_SIGNATURE global_root_sig{};
-			global_root_sig.pGlobalRootSignature = gfx->GetCommonRootSignature();
+			global_root_sig.pGlobalRootSignature = d3d12_device->GetCommonRootSignature();
 			ddgi_state_object_builder.AddSubObject(global_root_sig);
 
 			D3D12_RAYTRACING_PIPELINE_CONFIG pipeline_config{};
@@ -485,7 +488,10 @@ namespace adria
 
 	void DDGIPass::OnLibraryRecompiled(GfxShaderKey const& key)
 	{
-		if (key.GetShaderID() == LIB_DDGIRayTracing) CreateStateObject();
+		if (key.GetShaderID() == LIB_DDGIRayTracing)
+		{
+			CreateStateObject();
+		}
 	}
 
 }

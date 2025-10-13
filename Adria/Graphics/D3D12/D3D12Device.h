@@ -35,6 +35,8 @@ namespace adria
 		virtual void EndFrame() override;
 		virtual Bool IsFirstFrame() override { return first_frame; }
 
+		virtual void SetRenderingNotStarted() override;
+		virtual void InitGlobalResourceBindings(Uint32 max_resources) override;
 
 		virtual void* GetNative() const override { return device.Get(); }
 		virtual void* GetWindowHandle() const override { return hwnd; }
@@ -71,6 +73,9 @@ namespace adria
 		virtual std::unique_ptr<GfxTexture> CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer) override;
 		virtual std::unique_ptr<GfxBuffer>  CreateBuffer(GfxBufferDesc const& desc, GfxBufferData const& initial_data) override;
 		virtual std::unique_ptr<GfxBuffer>  CreateBuffer(GfxBufferDesc const& desc) override;
+
+		virtual std::shared_ptr<GfxBuffer>  CreateBufferShared(GfxBufferDesc const& desc, GfxBufferData const& initial_data) override;
+		virtual std::shared_ptr<GfxBuffer>  CreateBufferShared(GfxBufferDesc const& desc) override;
 
 		virtual std::unique_ptr<GfxPipelineState> CreateGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc) override;
 		virtual std::unique_ptr<GfxPipelineState> CreateComputePipelineState(GfxComputePipelineStateDesc const& desc) override;
@@ -201,9 +206,6 @@ namespace adria
 		void SetupOptions(Uint32& dxgi_factory_flags);
 		void SetInfoQueue();
 		void CreateCommonRootSignature();
-		void InitShaderVisibleAllocator(Uint32 reserve);
-
-		void SetRenderingNotStarted();
 
 		GfxDescriptor CreateBufferView(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter = nullptr);
 		GfxDescriptor CreateTextureView(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc);

@@ -553,20 +553,24 @@ namespace adria
 	{
 		return rendering_not_started ? dynamic_allocator_on_init.get() : dynamic_allocators[swapchain->GetBackbufferIndex()].get();
 	}
-	void D3D12Device::InitShaderVisibleAllocator(Uint32 reserve)
+	void D3D12Device::InitGlobalResourceBindings(Uint32 reserve)
 	{
-		gpu_descriptor_allocator = std::make_unique<GfxOnlineDescriptorAllocator>(this, 32767, reserve);
+		GfxDescriptorHeapDesc heap_desc{};
+		heap_desc.descriptor_count = 32767;
+		heap_desc.shader_visible = true;
+		heap_desc.type = GfxDescriptorHeapType::CBV_SRV_UAV;
+		std::unique_ptr<GfxDescriptorHeap> descriptor_heap = CreateDescriptorHeap(heap_desc);
+		gpu_descriptor_allocator = std::make_unique<GfxOnlineDescriptorAllocator>(std::move(descriptor_heap), reserve);
 	}
 
 	std::unique_ptr<GfxCommandList> D3D12Device::CreateCommandList(GfxCommandListType type)
 	{
-
+		return std::make_unique<D3D12CommandList>(this, type);
 	}
 	std::unique_ptr<GfxDescriptorHeap> D3D12Device::CreateDescriptorHeap(GfxDescriptorHeapDesc const& desc)
 	{
-
+		return std::make_unique<D3D12DescriptorHeap>(this, desc);
 	}
-
 
 	std::unique_ptr<GfxTexture> D3D12Device::CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer)
 	{
@@ -587,6 +591,15 @@ namespace adria
 	std::unique_ptr<GfxBuffer>	D3D12Device::CreateBuffer(GfxBufferDesc const& desc)
 	{
 		return std::make_unique<D3D12Buffer>(this, desc);
+	}
+
+	std::shared_ptr<GfxBuffer>  D3D12Device::CreateBufferShared(GfxBufferDesc const& desc, GfxBufferData const& initial_data)
+	{
+		return std::make_shared<D3D12Buffer>(this, desc, initial_data);
+	}
+	std::shared_ptr<GfxBuffer>	D3D12Device::CreateBufferShared(GfxBufferDesc const& desc)
+	{
+		return std::make_shared<D3D12Buffer>(this, desc);
 	}
 
 	std::unique_ptr<GfxPipelineState>	D3D12Device::CreateGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc)

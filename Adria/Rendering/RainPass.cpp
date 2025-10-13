@@ -102,7 +102,7 @@ namespace adria
 			rain_data_buffer_init[i].velocity = Vector3(0.0f, -10.0f + rng(), 0.0f);
 			rain_data_buffer_init[i].state = 0.0f;
 		}
-		rain_data_buffer = std::make_unique<GfxBuffer>(gfx, rain_data_buffer_desc, rain_data_buffer_init.data());
+		rain_data_buffer = gfx->CreateBuffer(rain_data_buffer_desc, rain_data_buffer_init.data());
 	}
 
 	void RainPass::CreatePSOs()

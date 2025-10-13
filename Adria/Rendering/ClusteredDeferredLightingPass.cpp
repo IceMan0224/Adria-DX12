@@ -66,7 +66,7 @@ namespace adria
 					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU();
 					gfx->CopyDescriptors(1, dst_descriptor, ctx.GetReadWriteBuffer(data.clusters));
 
-					cmd_list->SetPipelineState(clustered_building_pso.get());
+					cmd_list->SetPipelineState(clustered_building_pso->Get());
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 					cmd_list->SetRootConstant(1, dst_descriptor.GetIndex(), 0);
 					cmd_list->Dispatch(CLUSTER_SIZE_X, CLUSTER_SIZE_Y, CLUSTER_SIZE_Z);
@@ -114,7 +114,7 @@ namespace adria
 					.light_index_list_idx = i + 2, .light_grid_idx = i + 3
 				};
 
-				cmd_list->SetPipelineState(clustered_culling_pso.get());
+				cmd_list->SetPipelineState(clustered_culling_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(CLUSTER_SIZE_X / 16, CLUSTER_SIZE_Y / 16, CLUSTER_SIZE_Z / 1);
@@ -203,7 +203,7 @@ namespace adria
 				};
 				ADRIA_ASSERT(i + 8 < UINT32_MAX);
 
-				cmd_list->SetPipelineState(clustered_lighting_pso.get());
+				cmd_list->SetPipelineState(clustered_lighting_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -214,13 +214,13 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_ClusteredDeferredLighting;
-		clustered_lighting_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		clustered_lighting_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_ClusterBuilding;
-		clustered_building_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		clustered_building_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_ClusterCulling;
-		clustered_culling_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		clustered_culling_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 	}
 

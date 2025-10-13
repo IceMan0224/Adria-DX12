@@ -4,6 +4,7 @@
 #include "Core/CommandLineOptions.h"
 #include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxDevice.h"
+#include "Graphics/GfxShaderKey.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Utilities/Timer.h"
 #include "Utilities/FileWatcher.h"

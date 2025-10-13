@@ -86,8 +86,8 @@ namespace adria
 				.format = GfxFormat::R16_UINT };
 
             SubMesh submesh{};
-            submesh.vertex_buffer = std::make_shared<GfxBuffer>(gfx, vb_desc, vertices.data());
-			submesh.index_buffer = std::make_shared<GfxBuffer>(gfx, ib_desc, indices.data());
+			submesh.vertex_buffer = gfx->CreateBufferShared(vb_desc, vertices.data()); 
+			submesh.index_buffer = gfx->CreateBufferShared(ib_desc, indices.data());
             submesh.indices_count = static_cast<Uint32>(indices.size());
 
             reg.emplace<SubMesh>(light, submesh);
@@ -228,8 +228,8 @@ namespace adria
 
 			SubMesh submesh{};
 			submesh.indices_count = (Uint32)indices.size();
-			submesh.vertex_buffer = std::make_shared<GfxBuffer>(gfx, vb_desc, vertices.data());
-			submesh.index_buffer = std::make_shared<GfxBuffer>(gfx, ib_desc, indices.data());
+			submesh.vertex_buffer = gfx->CreateBufferShared(vb_desc, vertices.data());
+			submesh.index_buffer = gfx->CreateBufferShared(ib_desc, indices.data());
 			submesh.bounding_box = AABBFromRange(vertices.begin(), vertices.end());
 			reg.emplace<SubMesh>(grid, submesh);
 			reg.emplace<Transform>(grid);
@@ -297,8 +297,8 @@ namespace adria
 				.format = GfxFormat::R32_UINT
 			};
 
-			std::shared_ptr<GfxBuffer> vb = std::make_shared<GfxBuffer>(gfx, vb_desc, vertices.data());
-			std::shared_ptr<GfxBuffer> ib = std::make_shared<GfxBuffer>(gfx, ib_desc, indices.data());
+			std::shared_ptr<GfxBuffer> vb = gfx->CreateBufferShared(vb_desc, vertices.data());
+			std::shared_ptr<GfxBuffer> ib = gfx->CreateBufferShared(ib_desc, indices.data());
 
 			for (entt::entity chunk : chunks)
 			{

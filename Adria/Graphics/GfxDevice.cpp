@@ -1,6 +1,10 @@
 #include "GfxDevice.h"
 #include "GfxPipelineState.h"
 
+#if defined(ADRIA_PLATFORM_WINDOWS)
+#include "D3D12/D3D12Device.h"
+#endif
+
 namespace adria
 {
 	std::unique_ptr<GfxGraphicsPipelineState> GfxDevice::CreateManagedGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc)
@@ -17,5 +21,23 @@ namespace adria
 	{
 		return std::make_unique<GfxMeshShaderPipelineState>(this, desc);
 	}
+
+	std::unique_ptr<GfxDevice> CreateGfxDevice(GfxBackend backend, Window* window)
+	{
+#if defined(ADRIA_PLATFORM_WINDOWS)
+		if (backend == GfxBackend::D3D12)
+		{
+			return std::make_unique<D3D12Device>(window);
+		}
+#elif defined(ADRIA_PLATFORM_MACOS)
+		if (backend == GfxBackend::Metal)
+		{
+			
+		}
+#endif
+		ADRIA_ASSERT_MSG(false, "Requested Graphics Backend is not supported!");
+		return nullptr;
+	}
+
 }
 

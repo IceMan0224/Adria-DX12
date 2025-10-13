@@ -5,6 +5,7 @@
 #include "Graphics/GfxShader.h"
 #include "Graphics/GfxShaderKey.h"
 #include "Graphics/GfxStateObject.h"
+#include "Graphics/D3D12/D3D12Device.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 #include "Core/ConsoleManager.h"
@@ -130,6 +131,8 @@ namespace adria
 
 	void RayTracedReflectionsPass::CreateStateObject()
 	{
+		D3D12Device* d3d12_device = static_cast<D3D12Device*>(gfx);
+
 		GfxShader const& rtr_blob = SM_GetGfxShader(LIB_Reflections);
 		GfxStateObjectBuilder rtr_state_object_builder(6);
 		{
@@ -146,7 +149,7 @@ namespace adria
 			rtr_state_object_builder.AddSubObject(rtr_shader_config);
 
 			D3D12_GLOBAL_ROOT_SIGNATURE global_root_sig{};
-			global_root_sig.pGlobalRootSignature = gfx->GetCommonRootSignature();
+			global_root_sig.pGlobalRootSignature = d3d12_device->GetCommonRootSignature();
 			rtr_state_object_builder.AddSubObject(global_root_sig);
 
 			// Add a state subobject for the ray tracing pipeline config

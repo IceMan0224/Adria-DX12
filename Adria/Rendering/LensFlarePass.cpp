@@ -120,7 +120,7 @@ namespace adria
 		gfx_pso_desc.topology_type = GfxPrimitiveTopologyType::Point;
 		gfx_pso_desc.num_render_targets = 1;
 		gfx_pso_desc.rtv_formats[0] = GfxFormat::R16G16B16A16_FLOAT;
-		lens_flare_pso = gfx->CreateManagedComputePipelineState(gfx_pso_desc);
+		lens_flare_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
 
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_LensFlare2;

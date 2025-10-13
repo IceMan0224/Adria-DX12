@@ -82,7 +82,7 @@ namespace adria
 						.fft_resolution = FFT_RESOLUTION, .ocean_size = FFT_RESOLUTION, .output_idx = dst_descriptor.GetIndex()
 					};
 
-					cmd_list->SetPipelineState(initial_spectrum_pso.get());
+					cmd_list->SetPipelineState(initial_spectrum_pso->Get());
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 					cmd_list->SetRootConstants(1, constants);
 					cmd_list->Dispatch(FFT_RESOLUTION / 16, FFT_RESOLUTION / 16, 1);
@@ -122,7 +122,7 @@ namespace adria
 					.phases_idx = i, .output_idx = i + 1
 				};
 
-				cmd_list->SetPipelineState(phase_pso.get());
+				cmd_list->SetPipelineState(phase_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(FFT_RESOLUTION / 16, FFT_RESOLUTION / 16, 1);
@@ -167,7 +167,7 @@ namespace adria
 				};
 
 
-				cmd_list->SetPipelineState(spectrum_pso.get());
+				cmd_list->SetPipelineState(spectrum_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(FFT_RESOLUTION / 16, FFT_RESOLUTION / 16, 1);
@@ -203,7 +203,7 @@ namespace adria
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 
-					cmd_list->SetPipelineState(fft_horizontal_pso.get());
+					cmd_list->SetPipelineState(fft_horizontal_pso->Get());
 
 					Uint32 i = gfx->AllocateDescriptorsGPU(2).GetIndex();
 					gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), ctx.GetReadOnlyTexture(data.spectrum_srv));
@@ -243,7 +243,7 @@ namespace adria
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 
-					cmd_list->SetPipelineState(fft_vertical_pso.get());
+					cmd_list->SetPipelineState(fft_vertical_pso->Get());
 
 					Uint32 i = gfx->AllocateDescriptorsGPU(2).GetIndex();
 					gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), ctx.GetReadOnlyTexture(data.spectrum_srv));
@@ -302,7 +302,7 @@ namespace adria
 					.displacement_idx = i, .output_idx = i + 1
 				};
 
-				cmd_list->SetPipelineState(ocean_normals_pso.get());
+				cmd_list->SetPipelineState(ocean_normals_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(FFT_RESOLUTION / 16, FFT_RESOLUTION / 16, 1);
@@ -472,22 +472,22 @@ namespace adria
 
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_FFT_Horizontal;
-		fft_horizontal_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		fft_horizontal_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_FFT_Vertical;
-		fft_vertical_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		fft_vertical_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_InitialSpectrum;
-		initial_spectrum_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		initial_spectrum_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_Spectrum;
-		spectrum_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		spectrum_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_Phase;
-		phase_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		phase_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_OceanNormals;
-		ocean_normals_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		ocean_normals_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 }

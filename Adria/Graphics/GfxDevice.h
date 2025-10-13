@@ -92,6 +92,9 @@ namespace adria
 		virtual Uint32 GetFrameIndex() const = 0;
 		virtual constexpr Uint32 GetBackbufferCount() const = 0;
 
+		virtual void SetRenderingNotStarted() = 0;
+		virtual void InitGlobalResourceBindings(Uint32 max_resources) = 0;
+
 		virtual void Update() = 0;
 		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;
@@ -138,6 +141,10 @@ namespace adria
 		virtual std::unique_ptr<GfxTexture> CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer) = 0;
 		virtual std::unique_ptr<GfxBuffer>  CreateBuffer(GfxBufferDesc const& desc, GfxBufferData const& initial_data) = 0;
 		virtual std::unique_ptr<GfxBuffer>  CreateBuffer(GfxBufferDesc const& desc) = 0;
+
+		virtual std::shared_ptr<GfxBuffer>  CreateBufferShared(GfxBufferDesc const& desc, GfxBufferData const& initial_data) = 0;
+		virtual std::shared_ptr<GfxBuffer>  CreateBufferShared(GfxBufferDesc const& desc) = 0;
+
 		virtual std::unique_ptr<GfxPipelineState> CreateGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxPipelineState> CreateComputePipelineState(GfxComputePipelineStateDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxPipelineState> CreateMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc) = 0;
@@ -230,4 +237,5 @@ namespace adria
 		virtual void AddToReleaseQueue_Internal(ReleasableObject* _obj) = 0;
 	};
 
+	std::unique_ptr<GfxDevice> CreateGfxDevice(GfxBackend backend, Window* window);
 }

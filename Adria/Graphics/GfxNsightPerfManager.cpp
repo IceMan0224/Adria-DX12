@@ -2,6 +2,7 @@
 #if defined(GFX_ENABLE_NV_PERF)
 #include "GfxDevice.h"
 #include "GfxCommandList.h"
+#include "GfxCommandQueue.h"
 #include "Core/Paths.h"
 #include "Core/CommandLineOptions.h"
 #include "nvperf_host_impl.h"
@@ -20,9 +21,10 @@ namespace adria
 		explicit GfxNsightPerfReporter(GfxDevice* gfx, Bool active) : gfx(gfx), active(active),
 			generate_report_command("nsight.perf.report", "Generate Nsight Perf HTML report", ConsoleCommandDelegate::CreateMember(&GfxNsightPerfReporter::GenerateReport, *this))
 		{
+			ID3D12Device* d3d12_device = (ID3D12Device*)gfx->GetNative();
 			if (active)
 			{
-				if (!report_generator.InitializeReportGenerator(gfx->GetDevice()))
+				if (!report_generator.InitializeReportGenerator(d3d12_device))
 				{
 					ADRIA_WARNING("NsightPerf Report Generator Initalization failed, check the VS Output View for NVPERF logs");
 					return;
@@ -33,8 +35,8 @@ namespace adria
 				report_generator.outputOptions.directoryName = paths::NsightPerfReportDir;
 				std::filesystem::create_directory(paths::NsightPerfReportDir);
 
-				clock_info = nv::perf::D3D12GetDeviceClockState(gfx->GetDevice());
-				nv::perf::D3D12SetDeviceClockState(gfx->GetDevice(), NVPW_DEVICE_CLOCK_SETTING_DEFAULT);
+				clock_info = nv::perf::D3D12GetDeviceClockState(d3d12_device);
+				nv::perf::D3D12SetDeviceClockState(d3d12_device, NVPW_DEVICE_CLOCK_SETTING_DEFAULT);
 			}
 		}
 		~GfxNsightPerfReporter()
@@ -60,7 +62,7 @@ namespace adria
 		{
 			if (active)
 			{
-				report_generator.OnFrameStart(gfx->GetGraphicsCommandQueue());
+				report_generator.OnFrameStart((ID3D12CommandQueue*)gfx->GetCommandQueue(GfxCommandListType::Graphics)->GetHandle());
 			}
 		}
 		void EndFrame()
@@ -88,7 +90,7 @@ namespace adria
 			{
 				return;
 			}
-			report_generator.rangeCommands.PushRange(cmd_list->GetNative(), name);
+			report_generator.rangeCommands.PushRange((ID3D12GraphicsCommandList*)cmd_list->GetNative(), name);
 		}
 		void PopRange(GfxCommandList* cmd_list)
 		{
@@ -96,7 +98,7 @@ namespace adria
 			{
 				return;
 			}
-			report_generator.rangeCommands.PopRange(cmd_list->GetNative());
+			report_generator.rangeCommands.PopRange((ID3D12GraphicsCommandList*)cmd_list->GetNative());
 		}
 
 	private:
@@ -120,7 +122,7 @@ namespace adria
 		{
 			if (active)
 			{
-				if (!periodic_sampler.Initialize(gfx->GetDevice()))
+				if (!periodic_sampler.Initialize((ID3D12Device*)gfx->GetNative()))
 				{
 					ADRIA_WARNING("NsightPerf Periodic Sampler Initalization failed, check the VS Output View for NVPERF logs");
 					return;
@@ -128,7 +130,8 @@ namespace adria
 				const nv::perf::DeviceIdentifiers device_identifiers = periodic_sampler.GetGpuDeviceIdentifiers();
 				static constexpr Uint32 SamplingIntervalInNanoSeconds = 1000 * 1000 * 1000 / SamplingFrequency;
 				static constexpr Uint32 MaxDecodeLatencyInNanoSeconds = 1000 * 1000 * 1000;
-				if (!periodic_sampler.BeginSession(gfx->GetGraphicsCommandQueue(), SamplingIntervalInNanoSeconds, MaxDecodeLatencyInNanoSeconds, GFX_BACKBUFFER_COUNT))
+				ID3D12CommandQueue* d3d12_cmd_queue = (ID3D12CommandQueue*)gfx->GetCommandQueue(GfxCommandListType::Graphics)->GetHandle();
+				if (!periodic_sampler.BeginSession(d3d12_cmd_queue, SamplingIntervalInNanoSeconds, MaxDecodeLatencyInNanoSeconds, GFX_BACKBUFFER_COUNT))
 				{
 					ADRIA_WARNING("NsightPerf Periodic Sampler BeginSession failed, check the VS Output View for NVPERF logs");
 					return;

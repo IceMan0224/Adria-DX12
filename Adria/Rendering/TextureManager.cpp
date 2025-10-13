@@ -131,9 +131,15 @@ namespace adria
 
 	GfxTexture* TextureManager::GetTexture(TextureHandle handle) const
 	{
-		if (handle == INVALID_TEXTURE_HANDLE) return nullptr;
-		else if (auto it = texture_map.find(handle); it != texture_map.end()) return it->second.get();
-		else return nullptr;
+		if (handle == INVALID_TEXTURE_HANDLE)
+		{
+			return nullptr;
+		}
+		else if (auto it = texture_map.find(handle); it != texture_map.end())
+		{
+			return it->second.get();
+		}
+		return nullptr;
 	}
 
 	void TextureManager::EnableMipMaps(Bool mips)
@@ -143,7 +149,7 @@ namespace adria
 
 	void TextureManager::OnSceneInitialized()
 	{
-		gfx->InitShaderVisibleAllocator(1024);
+		gfx->InitGlobalResourceBindings(1024);
 		gfx->CopyDescriptors(1, gfx->GetDescriptorGPU((Uint32)DEFAULT_BLACK_TEXTURE_HANDLE), gfxcommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV));
 		gfx->CopyDescriptors(1, gfx->GetDescriptorGPU((Uint32)DEFAULT_WHITE_TEXTURE_HANDLE), gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV));
 		gfx->CopyDescriptors(1, gfx->GetDescriptorGPU((Uint32)DEFAULT_NORMAL_TEXTURE_HANDLE), gfxcommon::GetCommonView(GfxCommonViewType::DefaultNormal2D_SRV));

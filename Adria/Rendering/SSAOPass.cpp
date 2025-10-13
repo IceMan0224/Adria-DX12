@@ -103,7 +103,7 @@ namespace adria
 					.depth_idx = i, .normal_idx = i + 1, .noise_idx = i + 2, .output_idx = i + 3
 				};
 
-				cmd_list->SetPipelineState(ssao_pso.get());
+				cmd_list->SetPipelineState(ssao_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->SetRootCBV(2, ssao_kernel);
