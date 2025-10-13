@@ -1,10 +1,10 @@
 #pragma once
 #include "PostEffect.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 
 namespace adria
 {
 	class GfxDevice;
-	class GfxComputePipelineState;
 	class RenderGraph;
 
 	class SSRPass : public PostEffect

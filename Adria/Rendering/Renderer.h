@@ -159,7 +159,7 @@ namespace adria
 		//screenshot
 		Bool						take_screenshot = false;
 		std::string					screenshot_name = "";
-		GfxFence					screenshot_fence;
+		std::unique_ptr<GfxFence>	screenshot_fence;
 		Uint64						screenshot_fence_value = 1;
 		std::unique_ptr<GfxBuffer>  screenshot_buffer;
 

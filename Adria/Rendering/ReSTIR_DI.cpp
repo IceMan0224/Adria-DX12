@@ -2,6 +2,7 @@
 #include "BlackboardData.h"
 #include "ShaderManager.h"
 #include "RenderGraph/RenderGraph.h"
+#include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxPipelineState.h"
@@ -28,13 +29,13 @@ namespace adria
 		
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_ReSTIR_DI_InitialSampling;
-		initial_sampling_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		initial_sampling_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_ReSTIR_DI_TemporalResampling;
-		temporal_resampling_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		temporal_resampling_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		compute_pso_desc.CS = CS_ReSTIR_DI_SpatialResampling;
-		spatial_resampling_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		spatial_resampling_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
 		return;
 
@@ -121,7 +122,7 @@ namespace adria
 				};
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);
-				cmd_list->SetPipelineState(initial_sampling_pso.get());
+				cmd_list->SetPipelineState(initial_sampling_pso->Get());
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::Compute);
 	}

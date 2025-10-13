@@ -80,7 +80,7 @@ namespace adria
 					.F2_idx = (Uint32)F_texture_handles[2], .F3_idx = (Uint32)F_texture_handles[3],
 				};
 
-				cmd_list->SetPipelineState(nnao_pso.get());
+				cmd_list->SetPipelineState(nnao_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
@@ -124,7 +124,7 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_Nnao;
-		nnao_pso = gfx->CreateComputePipelineState(compute_pso_desc);
+		nnao_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 }
