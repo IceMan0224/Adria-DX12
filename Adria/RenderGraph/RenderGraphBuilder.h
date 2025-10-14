@@ -154,6 +154,7 @@ namespace adria
 		RGBufferDesc  GetBufferDesc(RGResourceName);
 		void AddBufferBindFlags(RGResourceName name, GfxBindFlag flags);
 		void AddTextureBindFlags(RGResourceName name, GfxBindFlag flags);
+
 	private:
 		RenderGraph& rg;
 		RenderGraphPassBase& rg_pass;

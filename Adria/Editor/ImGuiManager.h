@@ -4,39 +4,24 @@
 namespace adria
 {
 	class GfxDevice;
-	template<Bool>
-	class GfxRingDescriptorAllocator;
 	class GfxCommandList;
-
-	using GUIDescriptorAllocator = GfxRingDescriptorAllocator<false>;
-
 	struct WindowEventInfo;
 
-	class ImGuiManager
+	class ImGuiManager 
 	{
 	public:
-		explicit ImGuiManager(GfxDevice* gfx);
-		~ImGuiManager();
+		virtual ~ImGuiManager() = default;
 
-		void Begin() const;
-		void End(GfxCommandList* cmd_list) const;
+		virtual void Begin() const = 0;
+		virtual void End(GfxCommandList* cmd_list) const = 0;
 
-		void ShowImage(GfxDescriptor image_descriptor, ImVec2 image_size = ImVec2(48.0f, 48.0f));
+		virtual void ToggleVisibility() = 0;
+		virtual Bool IsVisible() const = 0;
 
-		void OnWindowEvent(WindowEventInfo const&) const;
+		virtual void OnWindowEvent(WindowEventInfo const&) const = 0;
 
-		void ToggleVisibility();
-		Bool IsVisible() const;
-
-	private:
-		GfxDevice* gfx;
-		std::string ini_file;
-		std::unique_ptr<GUIDescriptorAllocator> imgui_allocator;
-		Bool visible = true;
-		mutable Uint64 frame_count = 0;
-
-	private:
-		GfxDescriptor AllocateDescriptorsGPU(Uint32 count = 1) const;
+		virtual void ShowImage(GfxDescriptor image_descriptor, ImVec2 image_size = ImVec2(48.0f, 48.0f)) = 0;
 	};
 
+	std::unique_ptr<ImGuiManager> CreateImguiManager(GfxDevice* gfx);
 }

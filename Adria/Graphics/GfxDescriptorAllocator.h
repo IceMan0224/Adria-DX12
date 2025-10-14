@@ -20,6 +20,10 @@ namespace adria
 		void FreeDescriptor(GfxDescriptor handle);
 
 		GfxDescriptorHeap* GetHeap() const { return heap.get(); }
+		GfxDescriptor GetDescriptor(Uint32 index = 0) const
+		{
+			return heap->GetDescriptor(index);
+		}
 
 	private:
 		std::unique_ptr<GfxDescriptorHeap> heap;

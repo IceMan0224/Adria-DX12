@@ -63,7 +63,7 @@ namespace adria
 		editor_sink = ADRIA_SINK(EditorSink);
 		engine = std::make_unique<Engine>(init.window, init.scene_file);
 		gfx = engine->gfx.get();
-		gui = std::make_unique<ImGuiManager>(gfx);
+		gui = CreateImguiManager(gfx);	
 		engine->RegisterEditorEventCallbacks(editor_events);
 
 		console = std::make_unique<EditorConsole>();
@@ -81,8 +81,8 @@ namespace adria
 	}
 	void Editor::OnWindowEvent(WindowEventInfo const& msg_data)
 	{
-		engine->OnWindowEvent(msg_data);
-		gui->OnWindowEvent(msg_data);
+		if(engine) engine->OnWindowEvent(msg_data);
+		if(gui) gui->OnWindowEvent(msg_data);
 	}
 
 	void Editor::Run()

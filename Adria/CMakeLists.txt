@@ -28,8 +28,8 @@ set(ADRIA_COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Editor/EditorSink.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Editor/GUICommand.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Editor/GUICommand.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Editor/ImGuiManager.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Editor/ImGuiManager.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Editor/ImGuiManager.cpp"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/Logging/Log.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Logging/Log.cpp"
@@ -358,6 +358,9 @@ set(ADRIA_D3D12_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Swapchain.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Capabilities.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Capabilities.cpp"
+
+    "${CMAKE_CURRENT_SOURCE_DIR}/Editor/D3D12/D3D12ImGuiManager.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Editor/D3D12/D3D12ImGuiManager.cpp"
 )
 
 set(ADRIA_WIN32_SOURCES
