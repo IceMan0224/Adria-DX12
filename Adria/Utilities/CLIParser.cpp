@@ -13,6 +13,13 @@ namespace adria
 		}
 	}
 
+
+	CLIParseResult CLIParser::Parse(Int argc, Char** argv)
+	{
+		std::vector<std::string> cmd_line(argv, argv + argc);
+		return ParseImpl(cmd_line);
+	}
+
 	CLIParseResult CLIParser::Parse(std::wstring const& cmd_line)
 	{
 		Int argc;
@@ -28,9 +35,13 @@ namespace adria
 		{
 			cmd_line.push_back(ToString(wide_arg));
 		}
+		return ParseImpl(cmd_line);
+	}
 
+	CLIParseResult CLIParser::ParseImpl(std::vector<std::string> const& cmd_line)
+	{
 		std::unordered_map<std::string, CLIArg> cli_arg_map;
-		for (Int i = 0; i < argc; ++i)
+		for (Int i = 0; i < cmd_line.size(); ++i)
 		{
 			std::string const& arg = cmd_line[i];
 			if (prefix_arg_index_map.find(arg) != prefix_arg_index_map.end())
@@ -40,7 +51,7 @@ namespace adria
 				cli_arg.SetIsPresent();
 				if (cli_arg.has_value)
 				{
-					while (i + 1 < argc && !prefix_arg_index_map.contains(cmd_line[i + 1]))
+					while (i + 1 < cmd_line.size() && !prefix_arg_index_map.contains(cmd_line[i + 1]))
 					{
 						cli_arg.AddValue(cmd_line[++i]);
 					}

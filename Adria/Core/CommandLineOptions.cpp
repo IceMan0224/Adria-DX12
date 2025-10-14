@@ -48,6 +48,29 @@ namespace adria::CommandLineOptions
 			cli_parser.AddArg(false, "-perfhud");
 			cli_parser.AddArg(false, "-waitdebugger");
 		}
+
+		void SetOptionValues(CLIParseResult const& parse_result)
+		{
+			log_file = parse_result["-log"].AsStringOr("adria.log");
+			log_level = parse_result["-loglvl"].AsIntOr(0);
+			window_title = parse_result["-title"].AsStringOr("Adria");
+			window_width = parse_result["-w"].AsIntOr(1280);
+			window_height = parse_result["-h"].AsIntOr(1024);
+			maximize_window = parse_result["-max"];
+			scene_file = parse_result["-scene"].AsStringOr("sponza.json");
+			vsync = parse_result["-vsync"];
+			debug_device = parse_result["-debugdevice"];
+			debug_dml = parse_result["-debugdml"];
+			shader_debug = parse_result["-shaderdebug"];
+			dred = parse_result["-dred"];
+			gpu_validation = parse_result["-gpuvalidation"];
+			pix = parse_result["-pix"];
+			renderdoc = parse_result["-renderdoc"];
+			aftermath = parse_result["-aftermath"];
+			perf_report = parse_result["-perfreport"];
+			perf_hud = parse_result["-perfhud"];
+			wait_debugger = parse_result["-waitdebugger"];
+		}
 	}
 
 	void Initialize(std::wstring const& cmd_line)
@@ -55,26 +78,15 @@ namespace adria::CommandLineOptions
 		CLIParser cli_parser{};
 		RegisterOptions(cli_parser);
 		CLIParseResult parse_result = cli_parser.Parse(cmd_line);
-		
-		log_file = parse_result["-log"].AsStringOr("adria.log");
-		log_level = parse_result["-loglvl"].AsIntOr(0);
-		window_title = parse_result["-title"].AsStringOr("Adria");
-		window_width = parse_result["-w"].AsIntOr(1280);
-		window_height = parse_result["-h"].AsIntOr(1024);
-		maximize_window = parse_result["-max"];
-		scene_file = parse_result["-scene"].AsStringOr("sponza.json");
-		vsync = parse_result["-vsync"];
-		debug_device = parse_result["-debugdevice"];
-		debug_dml = parse_result["-debugdml"];
-		shader_debug = parse_result["-shaderdebug"];
-		dred = parse_result["-dred"];
-		gpu_validation = parse_result["-gpuvalidation"];
-		pix = parse_result["-pix"];
-		renderdoc = parse_result["-renderdoc"];
-		aftermath = parse_result["-aftermath"];
-		perf_report = parse_result["-perfreport"];
-		perf_hud = parse_result["-perfhud"];
-		wait_debugger = parse_result["-waitdebugger"];
+		SetOptionValues(parse_result);
+	}
+
+	void Initialize(Int argc, Char** argv)
+	{
+		CLIParser cli_parser{};
+		RegisterOptions(cli_parser);
+		CLIParseResult parse_result = cli_parser.Parse(argc, argv);
+		SetOptionValues(parse_result);
 	}
 
 	std::string const& GetLogFile()

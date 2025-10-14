@@ -72,21 +72,9 @@
 
 
 #if defined(_WIN32) || defined(_WIN64)
-    #define ADRIA_PLATFORM_WINDOWS 1
+    #define ADRIA_PLATFORM_WINDOWS
 #elif defined(__linux__)
-    #define ADRIA_PLATFORM_LINUX 1
+    #define ADRIA_PLATFORM_LINUX
 #elif defined(__APPLE__)
-    #define ADRIA_PLATFORM_MACOS 1
-#endif
-
-#ifndef ADRIA_PLATFORM_WINDOWS
-    #define ADRIA_PLATFORM_WINDOWS 0
-#endif
-
-#ifndef ADRIA_PLATFORM_LINUX
-    #define ADRIA_PLATFORM_LINUX 0
-#endif
-
-#ifndef ADRIA_PLATFORM_MACOS
-    #define ADRIA_PLATFORM_MACOS 0
+    #define ADRIA_PLATFORM_MACOS
 #endif

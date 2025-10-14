@@ -5,6 +5,7 @@ namespace adria
 	namespace CommandLineOptions
 	{
 		void Initialize(std::wstring const& cmd_line);
+		void Initialize(Int argc, Char** argv);
 
 		std::string const& GetLogFile();
 		Int GetLogLevel();

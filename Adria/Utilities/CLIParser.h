@@ -77,7 +77,7 @@ namespace adria
 
 	private:
 		std::vector<std::string> prefixes;
-		Bool has_value;
+		Bool has_value = false;
 		std::vector<std::string> values;
 		Bool is_present = false;
 
@@ -124,11 +124,16 @@ namespace adria
 			}
 			return arg_index;
 		}
+		
+		ADRIA_NODISCARD CLIParseResult Parse(Int argc, Char** argv);
 		ADRIA_NODISCARD CLIParseResult Parse(Int argc, Wchar** argv);
 		ADRIA_NODISCARD CLIParseResult Parse(std::wstring const& cmd_line);
 
 	private:
 		std::vector<CLIArg> args;
 		std::unordered_map<std::string, Uint32> prefix_arg_index_map;
+
+	private:
+		CLIParseResult ParseImpl(std::vector<std::string> const& cmd_line);
 	};
 }
