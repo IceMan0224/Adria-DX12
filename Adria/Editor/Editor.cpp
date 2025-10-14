@@ -14,6 +14,7 @@
 #include "Rendering/DebugRenderer.h"
 #include "Rendering/HelperPasses.h"
 #include "Graphics/GfxDevice.h"
+#include "Graphics/D3D12/D3D12Device.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxRingDescriptorAllocator.h"
@@ -619,9 +620,7 @@ namespace adria
 					if (material->albedo_texture != INVALID_TEXTURE_HANDLE)
 					{
 						GfxDescriptor tex_handle = g_TextureManager.GetSRV(material->albedo_texture);
-						GfxDescriptor dst_descriptor = gui->AllocateDescriptorsGPU();
-						gfx->CopyDescriptors(1, dst_descriptor, tex_handle);
-						ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr, ImVec2(48.0f, 48.0f));
+						gui->ShowImage(tex_handle);
 					}
 
 					ImGui::PushID(0);
@@ -646,9 +645,7 @@ namespace adria
 					if (material->metallic_roughness_texture != INVALID_TEXTURE_HANDLE)
 					{
 						GfxDescriptor tex_handle = g_TextureManager.GetSRV(material->metallic_roughness_texture);
-						GfxDescriptor dst_descriptor = gui->AllocateDescriptorsGPU();
-						gfx->CopyDescriptors(1, dst_descriptor, tex_handle);
-						ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr, ImVec2(48.0f, 48.0f));
+						gui->ShowImage(tex_handle);
 					}
 
 
@@ -674,9 +671,7 @@ namespace adria
 					if (material->emissive_texture != INVALID_TEXTURE_HANDLE)
 					{
 						GfxDescriptor tex_handle = g_TextureManager.GetSRV(material->emissive_texture);
-						GfxDescriptor dst_descriptor = gui->AllocateDescriptorsGPU();
-						gfx->CopyDescriptors(1, dst_descriptor, tex_handle);
-						ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr, ImVec2(48.0f, 48.0f));
+						gui->ShowImage(tex_handle);
 					}
 
 					ImGui::PushID(2);
@@ -726,9 +721,7 @@ namespace adria
 				{
 					ImGui::Text("Decal Albedo Texture");
 					GfxDescriptor tex_handle = g_TextureManager.GetSRV(decal->albedo_decal_texture);
-					GfxDescriptor dst_descriptor = gui->AllocateDescriptorsGPU();
-					gfx->CopyDescriptors(1, dst_descriptor, tex_handle);
-					ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr, ImVec2(48.0f, 48.0f));
+					gui->ShowImage(tex_handle);
 
 					ImGui::PushID(4);
 					if (ImGui::Button("Remove"))
@@ -750,9 +743,7 @@ namespace adria
 
 					ImGui::Text("Decal Normal Texture");
 					tex_handle = g_TextureManager.GetSRV(decal->normal_decal_texture);
-					dst_descriptor = gui->AllocateDescriptorsGPU();
-					gfx->CopyDescriptors(1, dst_descriptor, tex_handle);
-					ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr, ImVec2(48.0f, 48.0f));
+					gui->ShowImage(tex_handle);
 
 					ImGui::PushID(5);
 					if (ImGui::Button("Remove")) decal->normal_decal_texture = INVALID_TEXTURE_HANDLE;
@@ -875,10 +866,7 @@ namespace adria
 			v_max.x += ImGui::GetWindowPos().x;
 			v_max.y += ImGui::GetWindowPos().y;
 			ImVec2 size(v_max.x - v_min.x, v_max.y - v_min.y);
-
-			GfxDescriptor dst_descriptor = gui->AllocateDescriptorsGPU();
-			gfx->CopyDescriptors(1, dst_descriptor, src);
-			ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(dst_descriptor).ptr, size);
+			gui->ShowImage(src, size);
 
 			scene_focused = ImGui::IsWindowFocused();
 
@@ -1194,7 +1182,8 @@ namespace adria
 #endif
 			}
 #if defined(GFX_ENABLE_NV_PERF)
-			if (GfxNsightPerfManager* nsight_perf_manager = gfx->GetNsightPerfManager())
+			D3D12Device* d3d12gfx = static_cast<D3D12Device*>(gfx);
+			if (GfxNsightPerfManager* nsight_perf_manager = d3d12gfx->GetNsightPerfManager())
 			{
 				static Bool display_nsight_perf = false;
 				ImGui::Checkbox("Display subunit activity (Nsight Perf)", &display_nsight_perf);
@@ -1231,7 +1220,10 @@ namespace adria
 	}
 	void Editor::ShaderHotReload()
 	{
-		if (!visibility_flags[Flag_HotReload]) return;
+		if (!visibility_flags[Flag_HotReload])
+		{
+			return;
+		}
 		if (ImGui::Begin(ICON_FA_FIRE" Shader Hot Reload", &visibility_flags[Flag_HotReload]))
 		{
 			if (ImGui::Button("Compile Changed Shaders")) reload_shaders = true;
@@ -1374,28 +1366,24 @@ namespace adria
 					ImGui::PushID(i);
 					auto& debug_texture = debug_textures[i];
 					ImGui::Text(debug_texture.name);
-					GfxDescriptor debug_srv_gpu = gui->AllocateDescriptorsGPU();
-					if (debug_srv_map.contains(debug_texture.gfx_texture))
-					{
-						GfxDescriptor debug_srv_cpu = debug_srv_map[debug_texture.gfx_texture];
-						gfx->CopyDescriptors(1, debug_srv_gpu, debug_srv_cpu);
-					}
-					else
+
+					if (!debug_srv_map.contains(debug_texture.gfx_texture))
 					{
 						GfxDescriptor debug_srv_cpu = gfx->CreateTextureSRV(debug_texture.gfx_texture);
 						debug_srv_map[debug_texture.gfx_texture] = debug_srv_cpu;
-						gfx->CopyDescriptors(1, debug_srv_gpu, debug_srv_cpu);
 					}
-					Uint32 width = debug_texture.gfx_texture->GetDesc().width;
-					Uint32 height = debug_texture.gfx_texture->GetDesc().height;
-					Float window_width = ImGui::GetWindowWidth();
-					ImGui::Image((ImTextureID)static_cast<D3D12_GPU_DESCRIPTOR_HANDLE>(debug_srv_gpu).ptr, ImVec2(window_width * 0.9f, window_width * 0.9f * (Float)height / width));
+					GfxDescriptor debug_srv_cpu = debug_srv_map[debug_texture.gfx_texture];
+					Uint32 const width = debug_texture.gfx_texture->GetDesc().width;
+					Uint32 const height = debug_texture.gfx_texture->GetDesc().height;
+					Float const window_width = ImGui::GetWindowWidth();
+					gui->ShowImage(debug_srv_cpu, ImVec2(window_width * 0.9f, window_width * 0.9f * (Float)height / width));
 					ImGui::PopID();
 				}
 				ImGui::TreePop();
 			}
 
-			if (GfxNsightPerfManager* nsight_perf_manager = gfx->GetNsightPerfManager())
+			D3D12Device* d3d12gfx = static_cast<D3D12Device*>(gfx);
+			if (GfxNsightPerfManager* nsight_perf_manager = d3d12gfx->GetNsightPerfManager())
 			{
 				if (ImGui::TreeNode("Nsight Perf Report"))
 				{

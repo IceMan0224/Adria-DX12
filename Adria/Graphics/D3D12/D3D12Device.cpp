@@ -190,8 +190,8 @@ namespace adria
 			desc.descriptor_count = 1024;
 			desc.shader_visible = false;
 			desc.type = static_cast<GfxDescriptorHeapType>(i);
-			std::unique_ptr<D3D12DescriptorHeap> descriptor_heap = std::make_unique<D3D12DescriptorHeap>(this, desc);
-			cpu_descriptor_allocators[i] = std::make_unique<GfxDescriptorAllocator>(descriptor_heap);
+			std::unique_ptr<GfxDescriptorHeap> descriptor_heap = CreateDescriptorHeap(desc); 
+			cpu_descriptor_allocators[i] = std::make_unique<GfxDescriptorAllocator>(std::move(descriptor_heap));
 		}
 
 		for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)

@@ -153,7 +153,18 @@ namespace adria
 		DelegateHandle event_handle;
 
 	private:
-		void OnShaderRecompiled(GfxShaderKey const& recompiled_shader);
+		void OnShaderRecompiled(GfxShaderKey const& recompiled_shader)
+		{
+			auto it = shader_dependencies.find(recompiled_shader);
+			if (it != shader_dependencies.end())
+			{
+				for (Uint64 pso_hash : it->second)
+				{
+					pso_permutations.erase(pso_hash);
+				}
+				shader_dependencies.erase(it);
+			}
+		}
 		void RegisterDependencies(PSODesc const& desc, Uint64 pso_hash) const
 		{
 			auto RegisterSingleDependency = [&](GfxShaderKey const& key)

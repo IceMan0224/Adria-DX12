@@ -21,12 +21,12 @@ namespace adria
 		void Begin() const;
 		void End(GfxCommandList* cmd_list) const;
 
+		void ShowImage(GfxDescriptor image_descriptor, ImVec2 image_size = ImVec2(48.0f, 48.0f));
+
 		void OnWindowEvent(WindowEventInfo const&) const;
 
 		void ToggleVisibility();
 		Bool IsVisible() const;
-
-		GfxDescriptor AllocateDescriptorsGPU(Uint32 count = 1) const;
 
 	private:
 		GfxDevice* gfx;
@@ -34,6 +34,9 @@ namespace adria
 		std::unique_ptr<GUIDescriptorAllocator> imgui_allocator;
 		Bool visible = true;
 		mutable Uint64 frame_count = 0;
+
+	private:
+		GfxDescriptor AllocateDescriptorsGPU(Uint32 count = 1) const;
 	};
 
 }

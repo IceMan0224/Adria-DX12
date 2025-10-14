@@ -6,7 +6,7 @@ namespace adria
 		: heap(std::move(heap))
 	{
 		GfxDescriptor head_descriptor = this->heap->GetDescriptor(0);
-		GfxDescriptor tail_descriptor = this->heap->GetDescriptor(this->heap->GetCapacity());
+		GfxDescriptor tail_descriptor = this->heap->GetDescriptor(this->heap->GetCapacity() - 1);
 		free_descriptor_ranges.emplace_back(head_descriptor, tail_descriptor);
 	}
 

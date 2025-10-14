@@ -24,7 +24,7 @@ namespace adria
 		virtual void* GetHandle() const = 0;
 	};
 
-	void ExecuteCommandListPool(GfxCommandQueue* queue, GfxCommandListPool& cmd_list_pool)
+	inline void ExecuteCommandListPool(GfxCommandQueue* queue, GfxCommandListPool& cmd_list_pool)
 	{
 		std::vector<GfxCommandList*> cmd_lists;
 		for (auto& cmd_list : cmd_list_pool) { cmd_lists.push_back(cmd_list.get()); }

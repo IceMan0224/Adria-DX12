@@ -90,6 +90,14 @@ namespace adria
 		imgui_allocator->FinishCurrentFrame(frame_count);
 		++frame_count;
 	}
+
+	void ImGuiManager::ShowImage(GfxDescriptor image_descriptor, ImVec2 image_size)
+	{
+		GfxDescriptor dst_descriptor = AllocateDescriptorsGPU();
+		gfx->CopyDescriptors(1, dst_descriptor, image_descriptor);
+		ImGui::Image((ImTextureID)ToD3D12GpuHandle(dst_descriptor).ptr, image_size);
+	}
+
 	void ImGuiManager::OnWindowEvent(WindowEventInfo const& msg_data) const
 	{
 		ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(msg_data.handle),

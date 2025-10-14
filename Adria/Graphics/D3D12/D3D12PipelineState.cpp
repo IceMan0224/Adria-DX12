@@ -323,7 +323,7 @@ namespace adria
 		}
 	}
 
-	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxGraphicsPipelineStateDesc const& desc)
+	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxGraphicsPipelineStateDesc const& desc) : type(GfxPipelineStateType::Graphics)
 	{
 		D3D12Device* d3d12gfx = static_cast<D3D12Device*>(gfx);
 
@@ -365,7 +365,7 @@ namespace adria
 	}
 
 
-	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxComputePipelineStateDesc const& desc)
+	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxComputePipelineStateDesc const& desc) : type(GfxPipelineStateType::Compute)
 	{
 		D3D12Device* d3d12gfx = static_cast<D3D12Device*>(gfx);
 
@@ -377,7 +377,7 @@ namespace adria
 		GFX_CHECK_HR(d3d12gfx->GetD3D12Device()->CreateComputePipelineState(&d3d12_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())));
 	}
 
-	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxMeshShaderPipelineStateDesc const& desc)
+	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxMeshShaderPipelineStateDesc const& desc) : type(GfxPipelineStateType::MeshShader)
 	{
 		D3D12Device* d3d12gfx = static_cast<D3D12Device*>(gfx);
 

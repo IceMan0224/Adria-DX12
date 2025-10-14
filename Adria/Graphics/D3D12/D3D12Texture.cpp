@@ -232,7 +232,7 @@ namespace adria
 		}
 	}
 
-	D3D12Texture::D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc) : GfxTexture(gfx, desc)
+	D3D12Texture::D3D12Texture(GfxDevice* gfx, GfxTextureDesc const& desc) : D3D12Texture(gfx, desc, GfxTextureData{})
 	{
 	}
 
