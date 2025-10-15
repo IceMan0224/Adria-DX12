@@ -14,6 +14,7 @@ namespace adria
 {
 	class GfxPipelineState;
 	class D3D12CommandQueue;
+	class D3D12NsightAftermathGpuCrashTracker;
 	struct DRED;
 
 	class D3D12Device final : public GfxDevice
@@ -193,7 +194,7 @@ namespace adria
 
 		Bool pix_dll_loaded = false;
 
-		std::unique_ptr<GfxNsightAftermathGpuCrashTracker> nsight_aftermath;
+		std::unique_ptr<D3D12NsightAftermathGpuCrashTracker> nsight_aftermath;
 		std::unique_ptr<GfxNsightPerfManager> nsight_perf_manager;
 
 		Ref<IDMLDevice>              dml_device;

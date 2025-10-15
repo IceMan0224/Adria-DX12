@@ -8,12 +8,12 @@
 #include "D3D12CommandSignature.h"
 #include "D3D12QueryHeap.h"
 #include "D3D12PipelineState.h"
+#include "D3D12NsightAftermathGpuCrashTracker.h"
 #include "D3D12Conversions.h"
 #include "Graphics/GfxCommandListPool.h"
 #include "Graphics/GfxDescriptorAllocator.h"
 #include "Graphics/GfxRingDescriptorAllocator.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
-#include "Graphics/GfxNsightAftermathGpuCrashTracker.h"
 #include "Graphics/GfxNsightPerfManager.h"
 #include "Graphics/GfxRenderDoc.h"
 #include "Graphics/GfxPIX.h"
@@ -146,7 +146,7 @@ namespace adria
 
 		if (CommandLineOptions::GetAftermath())
 		{
-			nsight_aftermath = std::make_unique<GfxNsightAftermathGpuCrashTracker>(this);
+			nsight_aftermath = std::make_unique<D3D12NsightAftermathGpuCrashTracker>(this);
 		}
 
 		GFX_CHECK_HR(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(device.GetAddressOf())));

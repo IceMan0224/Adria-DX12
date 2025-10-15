@@ -1,7 +1,7 @@
-#include "GfxNsightAftermathGpuCrashTracker.h"
+#include "D3D12NsightAftermathGpuCrashTracker.h"
 #include "GFSDK_Aftermath.h"
-#include "GfxShader.h"
-#include "GfxDevice.h"
+#include "D3D12Device.h"
+#include "Graphics/GfxShader.h"
 #include "Rendering/ShaderManager.h"
 #include "Core/Paths.h"
 #include "Utilities/Timer.h"
@@ -22,7 +22,7 @@ namespace adria
 		return ToHexString(identifier.id[0]) + "-" + ToHexString(identifier.id[1]);
 	}
 
-	GfxNsightAftermathGpuCrashTracker::GfxNsightAftermathGpuCrashTracker(GfxDevice* gfx) : gfx(gfx)
+	D3D12NsightAftermathGpuCrashTracker::D3D12NsightAftermathGpuCrashTracker(GfxDevice* gfx) : gfx(gfx)
 	{
 		if (gfx->GetVendor() != GfxVendor::Nvidia)
 		{
@@ -33,18 +33,18 @@ namespace adria
 		GFSDK_Aftermath_Result result = GFSDK_Aftermath_EnableGpuCrashDumps(
 			GFSDK_Aftermath_Version_API,
 			GFSDK_Aftermath_GpuCrashDumpWatchedApiFlags_DX,
-			GFSDK_Aftermath_GpuCrashDumpFeatureFlags_DeferDebugInfoCallbacks,	
-			GpuCrashDumpCallback,												
-			ShaderDebugInfoCallback,											
-			CrashDumpDescriptionCallback,										
-			ResolveMarkerCallback,												
-			this);																
+			GFSDK_Aftermath_GpuCrashDumpFeatureFlags_DeferDebugInfoCallbacks,
+			GpuCrashDumpCallback,
+			ShaderDebugInfoCallback,
+			CrashDumpDescriptionCallback,
+			ResolveMarkerCallback,
+			this);
 
 		std::filesystem::create_directory(paths::AftermathDir);
-		ShaderManager::GetShaderRecompiledEvent().AddMember(&GfxNsightAftermathGpuCrashTracker::OnShaderOrLibraryCompiled, *this);
+		ShaderManager::GetShaderRecompiledEvent().AddMember(&D3D12NsightAftermathGpuCrashTracker::OnShaderOrLibraryCompiled, *this);
 	}
 
-	GfxNsightAftermathGpuCrashTracker::~GfxNsightAftermathGpuCrashTracker()
+	D3D12NsightAftermathGpuCrashTracker::~D3D12NsightAftermathGpuCrashTracker()
 	{
 		if (initialized)
 		{
@@ -52,16 +52,11 @@ namespace adria
 		}
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::Initialize()
+	void D3D12NsightAftermathGpuCrashTracker::Initialize()
 	{
 		if (gfx->GetVendor() != GfxVendor::Nvidia)
 		{
 			ADRIA_LOG(WARNING, "Cannot use Nvidia Aftermath because the GPU vendor is not Nvidia!");
-			return;
-		}
-		if (gfx->GetBackend() != GfxBackend::D3D12)
-		{
-			ADRIA_LOG(WARNING, "Nvidia Aftermath is supported only for D3D12 backend!");
 			return;
 		}
 
@@ -82,7 +77,7 @@ namespace adria
 		initialized = true;
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::HandleGpuCrash()
+	void D3D12NsightAftermathGpuCrashTracker::HandleGpuCrash()
 	{
 		if (!initialized)
 		{
@@ -107,13 +102,13 @@ namespace adria
 		}
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::OnCrashDump(const void* gpu_crash_dump_data, const Uint32 gpu_crash_dump_size)
+	void D3D12NsightAftermathGpuCrashTracker::OnCrashDump(const void* gpu_crash_dump_data, const Uint32 gpu_crash_dump_size)
 	{
 		std::lock_guard lock(aftermath_mutex);
 		WriteGpuCrashDumpToFile(gpu_crash_dump_data, gpu_crash_dump_size);
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::OnShaderDebugInfo(const void* shader_debug_info, const Uint32 shader_debug_info_size)
+	void D3D12NsightAftermathGpuCrashTracker::OnShaderDebugInfo(const void* shader_debug_info, const Uint32 shader_debug_info_size)
 	{
 		std::lock_guard lock(aftermath_mutex);
 
@@ -130,14 +125,14 @@ namespace adria
 		WriteShaderDebugInformationToFile(identifier, shader_debug_info, shader_debug_info_size);
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::OnDescription(PFN_GFSDK_Aftermath_AddGpuCrashDumpDescription add_description)
+	void D3D12NsightAftermathGpuCrashTracker::OnDescription(PFN_GFSDK_Aftermath_AddGpuCrashDumpDescription add_description)
 	{
 		add_description(GFSDK_Aftermath_GpuCrashDumpDescriptionKey_ApplicationName, "Adria-DX12");
 		add_description(GFSDK_Aftermath_GpuCrashDumpDescriptionKey_ApplicationVersion, "v1.0");
 		add_description(GFSDK_Aftermath_GpuCrashDumpDescriptionKey_UserDefined, "Nvidia Nsight Aftermath crash dump");
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::OnShaderDebugInfoLookup(GFSDK_Aftermath_ShaderDebugInfoIdentifier const& identifier, PFN_GFSDK_Aftermath_SetData set_shader_debug_info) const
+	void D3D12NsightAftermathGpuCrashTracker::OnShaderDebugInfoLookup(GFSDK_Aftermath_ShaderDebugInfoIdentifier const& identifier, PFN_GFSDK_Aftermath_SetData set_shader_debug_info) const
 	{
 		if (!shader_debug_info_map.contains(identifier))
 		{
@@ -147,15 +142,15 @@ namespace adria
 		set_shader_debug_info(debug_info.data(), (Uint32)debug_info.size());
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::OnShaderLookup(GFSDK_Aftermath_ShaderBinaryHash const& shader_hash, PFN_GFSDK_Aftermath_SetData set_shader_binary) const
+	void D3D12NsightAftermathGpuCrashTracker::OnShaderLookup(GFSDK_Aftermath_ShaderBinaryHash const& shader_hash, PFN_GFSDK_Aftermath_SetData set_shader_binary) const
 	{
 		GfxShader const& shader = SM_GetGfxShader(shader_hash_map[shader_hash.hash]);
 		set_shader_binary(shader.GetData(), (Uint32)shader.GetSize());
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::OnShaderSourceDebugInfoLookup(GFSDK_Aftermath_ShaderDebugName const& shader_debug_name, PFN_GFSDK_Aftermath_SetData set_shader_binary) const
+	void D3D12NsightAftermathGpuCrashTracker::OnShaderSourceDebugInfoLookup(GFSDK_Aftermath_ShaderDebugName const& shader_debug_name, PFN_GFSDK_Aftermath_SetData set_shader_binary) const
 	{
-		std::ifstream file(paths::ShaderPDBDir + shader_debug_name.name, std::ios::binary); 
+		std::ifstream file(paths::ShaderPDBDir + shader_debug_name.name, std::ios::binary);
 		std::vector<Uint8> debug_info;
 		if (file)
 		{
@@ -167,7 +162,7 @@ namespace adria
 		}
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::WriteGpuCrashDumpToFile(void const* gpu_crash_dump_data, Uint32 gpu_crash_dump_size)
+	void D3D12NsightAftermathGpuCrashTracker::WriteGpuCrashDumpToFile(void const* gpu_crash_dump_data, Uint32 gpu_crash_dump_size)
 	{
 		GFSDK_Aftermath_GpuCrashDump_Decoder decoder{};
 		GFSDK_Aftermath_Result result = GFSDK_Aftermath_GpuCrashDump_CreateDecoder(
@@ -187,7 +182,7 @@ namespace adria
 		{
 			return;
 		}
-		
+
 		Uint32 application_name_length = 0;
 		GFSDK_Aftermath_GpuCrashDump_GetDescriptionSize(
 			decoder, GFSDK_Aftermath_GpuCrashDumpDescriptionKey_ApplicationName,
@@ -239,7 +234,7 @@ namespace adria
 		GFSDK_Aftermath_GpuCrashDump_DestroyDecoder(decoder);
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::WriteShaderDebugInformationToFile(GFSDK_Aftermath_ShaderDebugInfoIdentifier identifier, void const* shader_debug_info, Uint32 shader_debug_info_size)
+	void D3D12NsightAftermathGpuCrashTracker::WriteShaderDebugInformationToFile(GFSDK_Aftermath_ShaderDebugInfoIdentifier identifier, void const* shader_debug_info, Uint32 shader_debug_info_size)
 	{
 		std::string file_path = paths::AftermathDir + "shader-" + ToString(identifier) + ".nvdbg";
 		std::ofstream f(file_path, std::ios::out | std::ios::binary);
@@ -249,7 +244,7 @@ namespace adria
 		}
 	}
 
-	void GfxNsightAftermathGpuCrashTracker::OnShaderOrLibraryCompiled(GfxShaderKey const& shader_key)
+	void D3D12NsightAftermathGpuCrashTracker::OnShaderOrLibraryCompiled(GfxShaderKey const& shader_key)
 	{
 		GfxShader const& shader = SM_GetGfxShader(shader_key);
 		D3D12_SHADER_BYTECODE shader_bytecode{ shader.GetData(), shader.GetSize() };
@@ -259,3 +254,4 @@ namespace adria
 		shader_hash_map[shader_hash.hash] = shader_key;
 	}
 }
+

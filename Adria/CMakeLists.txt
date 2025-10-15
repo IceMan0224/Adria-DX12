@@ -287,8 +287,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxLinearDynamicAllocator.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxLinearDynamicAllocator.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxDefines.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxNsightAftermathGpuCrashTracker.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxNsightAftermathGpuCrashTracker.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxNsightPerfManager.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxNsightPerfManager.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPIX.cpp"
@@ -358,6 +356,8 @@ set(ADRIA_D3D12_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Swapchain.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Capabilities.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Capabilities.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12NsightAftermathGpuCrashTracker.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12NsightAftermathGpuCrashTracker.cpp"
 
     "${CMAKE_CURRENT_SOURCE_DIR}/Editor/D3D12/D3D12ImGuiManager.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Editor/D3D12/D3D12ImGuiManager.cpp"
