@@ -46,6 +46,8 @@ namespace adria
 		virtual GfxVendor GetVendor() const override { return vendor; }
 		virtual GfxBackend GetBackend() const override { return GfxBackend::D3D12; }
 
+		virtual GfxNsightPerfManager* GetNsightPerfManager() const override { return nsight_perf_manager.get(); }
+
 		virtual void WaitForGPU() override;
 		virtual GfxCommandQueue* GetCommandQueue(GfxCommandListType type) override;
 		virtual GfxFence& GetFence(GfxCommandListType type) override;
@@ -128,7 +130,6 @@ namespace adria
 		{
 			return allocator.get();
 		}
-		GfxNsightPerfManager* GetNsightPerfManager() const { return nsight_perf_manager.get(); }
 		GfxOnlineDescriptorAllocator* GetDescriptorAllocator() const;
 
 	private:

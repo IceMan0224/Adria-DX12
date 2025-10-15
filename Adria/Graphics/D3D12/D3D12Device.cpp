@@ -9,12 +9,12 @@
 #include "D3D12QueryHeap.h"
 #include "D3D12PipelineState.h"
 #include "D3D12NsightAftermathGpuCrashTracker.h"
+#include "D3D12NsightPerfManager.h"
 #include "D3D12Conversions.h"
 #include "Graphics/GfxCommandListPool.h"
 #include "Graphics/GfxDescriptorAllocator.h"
 #include "Graphics/GfxRingDescriptorAllocator.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
-#include "Graphics/GfxNsightPerfManager.h"
 #include "Graphics/GfxRenderDoc.h"
 #include "Graphics/GfxPIX.h"
 #include "d3dx12.h"
@@ -239,7 +239,7 @@ namespace adria
 			{
 				perf_mode = GfxNsightPerfMode::HUD;
 			}
-			nsight_perf_manager = std::make_unique<GfxNsightPerfManager>(this, perf_mode);
+			nsight_perf_manager = std::make_unique<D3D12NsightPerfManager>(this, perf_mode);
 		}
 
 		GFX_CHECK_HR(DMLCreateDevice(device, CommandLineOptions::GetDebugDML() ? DML_CREATE_DEVICE_FLAG_DEBUG : DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(dml_device.GetAddressOf())));

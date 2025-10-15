@@ -1182,8 +1182,7 @@ namespace adria
 #endif
 			}
 #if defined(GFX_ENABLE_NV_PERF)
-			D3D12Device* d3d12gfx = static_cast<D3D12Device*>(gfx);
-			if (GfxNsightPerfManager* nsight_perf_manager = d3d12gfx->GetNsightPerfManager())
+			if (GfxNsightPerfManager* nsight_perf_manager = gfx->GetNsightPerfManager())
 			{
 				static Bool display_nsight_perf = false;
 				ImGui::Checkbox("Display subunit activity (Nsight Perf)", &display_nsight_perf);
@@ -1382,8 +1381,7 @@ namespace adria
 				ImGui::TreePop();
 			}
 
-			D3D12Device* d3d12gfx = static_cast<D3D12Device*>(gfx);
-			if (GfxNsightPerfManager* nsight_perf_manager = d3d12gfx->GetNsightPerfManager())
+			if (GfxNsightPerfManager* nsight_perf_manager = gfx->GetNsightPerfManager())
 			{
 				if (ImGui::TreeNode("Nsight Perf Report"))
 				{

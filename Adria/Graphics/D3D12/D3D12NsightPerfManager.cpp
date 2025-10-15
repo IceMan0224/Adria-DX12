@@ -1,11 +1,17 @@
-#include "GfxNsightPerfManager.h"
+#include "D3D12NsightPerfManager.h"
 #if defined(GFX_ENABLE_NV_PERF)
-#include "GfxDevice.h"
-#include "GfxCommandList.h"
-#include "GfxCommandQueue.h"
+#include "D3D12Device.h"
+#include "D3D12CommandList.h"
+#include "D3D12CommandQueue.h"
 #include "Core/Paths.h"
 #include "Core/CommandLineOptions.h"
+#include "Core/ConsoleManager.h"
 #include "nvperf_host_impl.h"
+#include "NvPerfUtility/include/NvPerfPeriodicSamplerD3D12.h"
+#include "NvPerfUtility/include/NvPerfMetricConfigurationsHAL.h"
+#include "NvPerfUtility/include/NvPerfHudDataModel.h"
+#include "NvPerfUtility/include/NvPerfHudImPlotRenderer.h"
+#include "NvPerfUtility/include/NvPerfReportGeneratorD3D12.h"
 #define RYML_SINGLE_HDR_DEFINE_NOW
 #include "NvPerfUtility/imports/rapidyaml-0.4.0/ryml_all.hpp"
 #endif
@@ -15,11 +21,11 @@ namespace adria
 	ADRIA_LOG_CHANNEL(NSight);
 
 #if defined(GFX_ENABLE_NV_PERF)
-	class GfxNsightPerfReporter
+	class D3D12NsightPerfReporter
 	{
 	public:
-		explicit GfxNsightPerfReporter(GfxDevice* gfx, Bool active) : gfx(gfx), active(active),
-			generate_report_command("nsight.perf.report", "Generate Nsight Perf HTML report", ConsoleCommandDelegate::CreateMember(&GfxNsightPerfReporter::GenerateReport, *this))
+		explicit D3D12NsightPerfReporter(GfxDevice* gfx, Bool active) : gfx(gfx), active(active),
+			generate_report_command("nsight.perf.report", "Generate Nsight Perf HTML report", ConsoleCommandDelegate::CreateMember(&D3D12NsightPerfReporter::GenerateReport, *this))
 		{
 			ID3D12Device* d3d12_device = (ID3D12Device*)gfx->GetNative();
 			if (active)
@@ -39,7 +45,7 @@ namespace adria
 				nv::perf::D3D12SetDeviceClockState(d3d12_device, NVPW_DEVICE_CLOCK_SETTING_DEFAULT);
 			}
 		}
-		~GfxNsightPerfReporter()
+		~D3D12NsightPerfReporter()
 		{
 			if (active)
 			{
@@ -62,7 +68,8 @@ namespace adria
 		{
 			if (active)
 			{
-				report_generator.OnFrameStart((ID3D12CommandQueue*)gfx->GetCommandQueue(GfxCommandListType::Graphics)->GetHandle());
+				GfxCommandQueue* cmd_queue = gfx->GetCommandQueue(GfxCommandListType::Graphics);
+				report_generator.OnFrameStart((ID3D12CommandQueue*)cmd_queue->GetHandle());
 			}
 		}
 		void EndFrame()
@@ -110,7 +117,7 @@ namespace adria
 		AutoConsoleCommand generate_report_command;
 	};
 
-	class GfxNsightPerfHUD
+	class D3D12NsightPerfHUD
 	{
 #if defined(_DEBUG) || defined(_PROFILE)
 		static constexpr Uint32 SamplingFrequency = 30;
@@ -118,7 +125,7 @@ namespace adria
 		static constexpr Uint32 SamplingFrequency = 60;
 #endif
 	public:
-		GfxNsightPerfHUD(GfxDevice* gfx, Bool active) : active(active)
+		D3D12NsightPerfHUD(GfxDevice* gfx, Bool active) : active(active)
 		{
 			if (active)
 			{
@@ -153,7 +160,7 @@ namespace adria
 				hud_renderer.Initialize(hud_data_model);
 			}
 		}
-		~GfxNsightPerfHUD()
+		~D3D12NsightPerfHUD()
 		{
 			if (active)
 			{
@@ -204,53 +211,54 @@ namespace adria
 		nv::perf::hud::HudImPlotRenderer hud_renderer;
 	};
 
-	GfxNsightPerfManager::GfxNsightPerfManager(GfxDevice* gfx, GfxNsightPerfMode perf_mode)
+	D3D12NsightPerfManager::D3D12NsightPerfManager(GfxDevice* gfx, GfxNsightPerfMode perf_mode)
 	{
-		perf_reporter = std::make_unique<GfxNsightPerfReporter>(gfx, perf_mode == GfxNsightPerfMode::HTMLReport);
-		perf_hud = std::make_unique<GfxNsightPerfHUD>(gfx, perf_mode == GfxNsightPerfMode::HUD);
+		perf_reporter = std::make_unique<D3D12NsightPerfReporter>(gfx, perf_mode == GfxNsightPerfMode::HTMLReport);
+		perf_hud = std::make_unique<D3D12NsightPerfHUD>(gfx, perf_mode == GfxNsightPerfMode::HUD);
 	}
-	GfxNsightPerfManager::~GfxNsightPerfManager() = default;
+	D3D12NsightPerfManager::~D3D12NsightPerfManager() = default;
 
-	void GfxNsightPerfManager::Update()
+	void D3D12NsightPerfManager::Update()
 	{
 		perf_hud->Update();
 		perf_reporter->Update();
 	}
-	void GfxNsightPerfManager::BeginFrame()
+	void D3D12NsightPerfManager::BeginFrame()
 	{
 		perf_hud->BeginFrame();
 		perf_reporter->BeginFrame();
 	}
-	void GfxNsightPerfManager::Render()
+	void D3D12NsightPerfManager::Render()
 	{
 		perf_hud->Render();
 	}
-	void GfxNsightPerfManager::EndFrame()
+	void D3D12NsightPerfManager::EndFrame()
 	{
 		perf_hud->EndFrame();
 		perf_reporter->EndFrame();
 	}
-	void GfxNsightPerfManager::PushRange(GfxCommandList* cmd_list, Char const* name)
+	void D3D12NsightPerfManager::PushRange(GfxCommandList* cmd_list, Char const* name)
 	{
 		perf_reporter->PushRange(cmd_list, name);
 	}
-	void GfxNsightPerfManager::PopRange(GfxCommandList* cmd_list)
+	void D3D12NsightPerfManager::PopRange(GfxCommandList* cmd_list)
 	{
 		perf_reporter->PopRange(cmd_list);
 	}
-	void GfxNsightPerfManager::GenerateReport()
+	void D3D12NsightPerfManager::GenerateReport()
 	{
 		perf_reporter->GenerateReport();
 	}
 #else
-	GfxNsightPerfManager::GfxNsightPerfManager(GfxDevice* gfx, GfxNsightPerfMode perf_mode) {}
-	GfxNsightPerfManager::~GfxNsightPerfManager() {}
-	void GfxNsightPerfManager::Update() {}
-	void GfxNsightPerfManager::BeginFrame() {}
-	void GfxNsightPerfManager::Render() {}
-	void GfxNsightPerfManager::EndFrame() {}
-	void GfxNsightPerfManager::PushRange(GfxCommandList*, Char const*) {}
-	void GfxNsightPerfManager::PopRange(GfxCommandList* cmd_list) {}
-	void GfxNsightPerfManager::GenerateReport() {}
+	D3D12NsightPerfManager::D3D12NsightPerfManager(GfxDevice* gfx, GfxNsightPerfMode perf_mode) {}
+	D3D12NsightPerfManager::~D3D12NsightPerfManager() {}
+	void D3D12NsightPerfManager::Update() {}
+	void D3D12NsightPerfManager::BeginFrame() {}
+	void D3D12NsightPerfManager::Render() {}
+	void D3D12NsightPerfManager::EndFrame() {}
+	void D3D12NsightPerfManager::PushRange(GfxCommandList*, Char const*) {}
+	void D3D12NsightPerfManager::PopRange(GfxCommandList* cmd_list) {}
+	void D3D12NsightPerfManager::GenerateReport() {}
 #endif
 }
+

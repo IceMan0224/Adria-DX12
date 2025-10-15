@@ -107,6 +107,8 @@ namespace adria
 		virtual GfxVendor GetVendor() const = 0;
 		virtual GfxBackend GetBackend() const = 0;
 
+		virtual GfxNsightPerfManager* GetNsightPerfManager() const = 0;
+
 		virtual void WaitForGPU() = 0;
 		virtual GfxCommandQueue* GetCommandQueue(GfxCommandListType type) = 0;
 		virtual GfxFence& GetFence(GfxCommandListType type) = 0;
