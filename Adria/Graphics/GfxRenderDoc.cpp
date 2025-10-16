@@ -213,7 +213,7 @@ namespace adria::GfxRenderDoc
 
 	void EmitWarning()
 	{
-		ADRIA_LOG(WARNING, "[RenderDoc] RenderDoc is not available in Release builds");
+		ADRIA_LOG(WARNING, "[RenderDoc] RenderDoc is not available in Release builds and/or non-Windows platforms");
 	}
 
 #endif

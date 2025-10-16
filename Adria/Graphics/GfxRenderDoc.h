@@ -1,6 +1,6 @@
 #pragma once
 
-#if !defined(_RELEASE)
+#if defined(ADRIA_PLATFORM_WINDOWS) && !defined(_RELEASE)
 #define GFX_RENDERDOC_AVAILABLE
 #endif
 

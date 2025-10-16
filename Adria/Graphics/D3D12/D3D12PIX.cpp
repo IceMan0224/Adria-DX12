@@ -1,4 +1,4 @@
-#include "GfxPIX.h"
+#include "D3D12PIX.h"
 
 #if defined(GFX_PIX_AVAILABLE)
 #include "Core/Paths.h"
@@ -7,7 +7,7 @@
 #include "pix3.h"
 #endif
 
-namespace adria::GfxPIX
+namespace adria::D3D12PIX
 {
 #if defined(GFX_PIX_AVAILABLE)
 
@@ -76,7 +76,7 @@ namespace adria::GfxPIX
 
 	void EmitWarning()
 	{
-		ADRIA_LOG(WARNING, "[PIX] PIX is not available in Release builds");
+		ADRIA_LOG(WARNING, "[PIX] PIX is not available in Release builds and/or non-Windows platforms");
 	}
 
 #endif

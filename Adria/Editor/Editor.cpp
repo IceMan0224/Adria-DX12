@@ -21,12 +21,15 @@
 #include "Graphics/GfxProfiler.h"
 #include "Graphics/GfxNsightPerfManager.h"
 #include "Graphics/GfxRenderDoc.h"
-#include "Graphics/GfxPIX.h"
+#if defined(ADRIA_PLATFORM_WINDOWS)
+#include "Graphics/D3D12/D3D12PIX.h"
+#endif
 #include "RenderGraph/RenderGraph.h"
 #include "Utilities/PathHelpers.h"
 #include "Utilities/StringConversions.h"
 #include "Utilities/Random.h"
 #include "Math/BoundingVolumeUtil.h"
+
 
 using namespace DirectX;
 namespace fs = std::filesystem;
@@ -1319,6 +1322,7 @@ namespace adria
 				ImGui::TreePop();
 			}
 
+#if defined(ADRIA_PLATFORM_WINDOWS)
 			if (ImGui::TreeNode("PIX"))
 			{
 				static Char capture_name[32] = { 'a', 'd', 'r', 'i', 'a' };
@@ -1334,6 +1338,7 @@ namespace adria
 				}
 				ImGui::TreePop();
 			}
+#endif
 
 			if (ImGui::TreeNode("RenderDoc"))
 			{
