@@ -8,6 +8,7 @@
 #include "D3D12CommandSignature.h"
 #include "D3D12QueryHeap.h"
 #include "D3D12PipelineState.h"
+#include "D3D12RayTracingAS.h"
 #include "D3D12NsightAftermathGpuCrashTracker.h"
 #include "D3D12NsightPerfManager.h"
 #include "D3D12Conversions.h"
@@ -629,11 +630,11 @@ namespace adria
 
 	std::unique_ptr<GfxRayTracingTLAS> D3D12Device::CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
 	{
-		return std::make_unique<GfxRayTracingTLAS>(this, instances, flags);
+		return std::make_unique<D3D12RayTracingTLAS>(this, instances, flags);
 	}
 	std::unique_ptr<GfxRayTracingBLAS> D3D12Device::CreateRayTracingBLAS(std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags)
 	{
-		return std::make_unique<GfxRayTracingBLAS>(this, geometries, flags);
+		return std::make_unique<D3D12RayTracingBLAS>(this, geometries, flags);
 	}
 
 	GfxDescriptor D3D12Device::CreateBufferSRV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)

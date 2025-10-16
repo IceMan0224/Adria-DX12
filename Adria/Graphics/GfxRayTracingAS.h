@@ -28,64 +28,50 @@ namespace adria
 		GfxRayTracingInstanceFlag_ForceOpaque = BIT(3),
 		GfxRayTracingInstanceFlag_ForceNoOpaque = BIT(4)
 	};
-
 	using GfxRayTracingInstanceFlags = Uint32;
 
 	struct GfxRayTracingGeometry
 	{
-		GfxBuffer* vertex_buffer;
-		Uint32 vertex_buffer_offset;
-		Uint32 vertex_count;
-		Uint32 vertex_stride;
-		GfxFormat vertex_format;
+		GfxBuffer* vertex_buffer = nullptr;
+		Uint32 vertex_buffer_offset = 0;
+		Uint32 vertex_count = 0;
+		Uint32 vertex_stride = 0;
+		GfxFormat vertex_format = GfxFormat::UNKNOWN;
 
-		GfxBuffer* index_buffer;
-		Uint32 index_buffer_offset;
-		Uint32 index_count;
-		GfxFormat index_format;
+		GfxBuffer* index_buffer = nullptr;
+		Uint32 index_buffer_offset = 0;
+		Uint32 index_count = 0;
+		GfxFormat index_format = GfxFormat::UNKNOWN;
 
-		Bool opaque;
+		Bool opaque = true;
 	};
 
 	class GfxRayTracingBLAS
 	{
 	public:
-		GfxRayTracingBLAS(GfxDevice* gfx, std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags);
-		~GfxRayTracingBLAS();
+		virtual ~GfxRayTracingBLAS() = default;
+		virtual Uint64 GetGpuAddress() const = 0;
+		virtual GfxBuffer const& GetBuffer() const = 0;
 
-		Uint64 GetGpuAddress() const;
-		GfxBuffer const& GetBuffer() const { return *result_buffer; }
-		GfxBuffer const& operator*() const { return *result_buffer; }
-
-	private:
-		std::unique_ptr<GfxBuffer> result_buffer;
-		std::unique_ptr<GfxBuffer> scratch_buffer;
+		GfxBuffer const& operator*() const { return GetBuffer(); }
 	};
-
 
 	struct GfxRayTracingInstance
 	{
-		GfxRayTracingBLAS* blas;
-		Float transform[4][4];
-		Uint32 instance_id;
-		Uint8 instance_mask;
-		GfxRayTracingInstanceFlags flags;
+		GfxRayTracingBLAS* blas = nullptr;
+		Float transform[4][4] = {};
+		Uint32 instance_id = 0;
+		Uint8 instance_mask = 0xFF;
+		GfxRayTracingInstanceFlags flags = GfxRayTracingInstanceFlag_None;
 	};
 
 	class GfxRayTracingTLAS
 	{
 	public:
-		GfxRayTracingTLAS(GfxDevice* gfx, std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags);
-		~GfxRayTracingTLAS();
+		virtual ~GfxRayTracingTLAS() = default;
+		virtual Uint64 GetGpuAddress() const = 0;
+		virtual GfxBuffer const& GetBuffer() const = 0;
 
-		Uint64 GetGpuAddress() const;
-		GfxBuffer const& GetBuffer() const { return *result_buffer; }
-		GfxBuffer const& operator*() const { return *result_buffer; }
-
-	private:
-		std::unique_ptr<GfxBuffer> result_buffer;
-		std::unique_ptr<GfxBuffer> scratch_buffer;
-		std::unique_ptr<GfxBuffer> instance_buffer;
-		void* instance_buffer_cpu_address = nullptr;
+		GfxBuffer const& operator*() const { return GetBuffer(); }
 	};
 }

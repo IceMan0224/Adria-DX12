@@ -1,8 +1,9 @@
-#include "GfxRayTracingAS.h"
-#include "GfxCommandList.h"
-#include "GfxBuffer.h"
-#include "D3D12/D3D12Conversions.h"
-#include "D3D12/D3D12Device.h"
+#include "D3D12RayTracingAS.h"
+#include "D3D12Device.h"
+#include "D3D12Conversions.h"
+#include "Graphics/GfxRayTracingAS.h"
+#include "Graphics/GfxCommandList.h"
+#include "Graphics/GfxBuffer.h"
 
 namespace adria
 {
@@ -13,9 +14,9 @@ namespace adria
 			D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS d3d12_flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
 			if (flags & GfxRayTracingASFlag_PreferFastTrace)
 				d3d12_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-			if(flags & GfxRayTracingASFlag_PreferFastBuild)
+			if (flags & GfxRayTracingASFlag_PreferFastBuild)
 				d3d12_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
-			if(flags & GfxRayTracingASFlag_PerformUpdate)
+			if (flags & GfxRayTracingASFlag_PerformUpdate)
 				d3d12_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
 			if (flags & GfxRayTracingASFlag_AllowCompaction)
 				d3d12_flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
@@ -56,7 +57,8 @@ namespace adria
 		}
 	}
 
-	GfxRayTracingBLAS::GfxRayTracingBLAS(GfxDevice* gfx, std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags)
+
+	D3D12RayTracingBLAS::D3D12RayTracingBLAS(GfxDevice* gfx, std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags)
 	{
 		ID3D12Device5* d3d12_device = static_cast<ID3D12Device5*>(gfx->GetNative());
 		std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geo_descs; geo_descs.reserve(geometries.size());
@@ -100,14 +102,14 @@ namespace adria
 		cmd_list->BuildRaytracingAccelerationStructure(&blas_desc, 0, nullptr);
 	}
 
-	GfxRayTracingBLAS::~GfxRayTracingBLAS() = default;
+	D3D12RayTracingBLAS::~D3D12RayTracingBLAS() = default;
 
-	Uint64 GfxRayTracingBLAS::GetGpuAddress() const
+	Uint64 D3D12RayTracingBLAS::GetGpuAddress() const
 	{
 		return result_buffer->GetGpuAddress();
 	}
 
-	GfxRayTracingTLAS::GfxRayTracingTLAS(GfxDevice* gfx, std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
+	D3D12RayTracingTLAS::D3D12RayTracingTLAS(GfxDevice* gfx, std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
 	{
 		ID3D12Device5* d3d12_device = static_cast<ID3D12Device5*>(gfx->GetNative());
 
@@ -160,9 +162,9 @@ namespace adria
 		cmd_list->BuildRaytracingAccelerationStructure(&tlas_desc, 0, nullptr);
 	}
 
-	GfxRayTracingTLAS::~GfxRayTracingTLAS() = default;
+	D3D12RayTracingTLAS::~D3D12RayTracingTLAS() = default;
 
-	Uint64 GfxRayTracingTLAS::GetGpuAddress() const
+	Uint64 D3D12RayTracingTLAS::GetGpuAddress() const
 	{
 		return result_buffer->GetGpuAddress();
 	}

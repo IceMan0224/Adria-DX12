@@ -12,6 +12,11 @@ namespace adria
 	void GfxTracyProfiler::Initialize(GfxDevice* gfx)
 	{
 #if GFX_PROFILING_USE_TRACY
+		if(gfx->GetBackend() != GfxBackend::D3D12)
+		{
+			ADRIA_ASSERT_MSG(false, "Tracy D3D12 profiler can only be used with D3D12 backend!");
+			return;
+		}
 		_tracy_ctx = TracyD3D12Context(gfx->GetDevice(), gfx->GetGraphicsCommandQueue());
 #endif
 	}
