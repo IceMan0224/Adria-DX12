@@ -57,6 +57,9 @@ namespace adria
 	class GfxNsightPerfManager;
 	using GfxOnlineDescriptorAllocator = GfxRingDescriptorAllocator<GFX_MULTITHREADED>;
 
+	class GfxRayTracingPipeline;
+	struct GfxRayTracingPipelineDesc;
+
 	struct GPUMemoryUsage
 	{
 		Uint64 usage;
@@ -154,6 +157,7 @@ namespace adria
 		virtual std::unique_ptr<GfxQueryHeap> CreateQueryHeap(GfxQueryHeapDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxRayTracingTLAS> CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags) = 0;
 		virtual std::unique_ptr<GfxRayTracingBLAS> CreateRayTracingBLAS(std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags) = 0;
+		virtual std::unique_ptr<GfxRayTracingPipeline> CreateRayTracingPipeline(GfxRayTracingPipelineDesc const& desc) = 0;
 
 		virtual GfxDescriptor CreateBufferSRV(GfxBuffer const*, GfxBufferDescriptorDesc const* = nullptr) = 0;
 		virtual GfxDescriptor CreateBufferUAV(GfxBuffer const*, GfxBufferDescriptorDesc const* = nullptr) = 0;

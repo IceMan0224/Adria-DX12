@@ -11,12 +11,6 @@ namespace adria
 {
 	class GfxDevice;
 
-	enum class GfxRootSignatureID : Uint8
-	{
-		Invalid,
-		Common
-	};
-
 	class GfxPipelineState
 	{
 	public:

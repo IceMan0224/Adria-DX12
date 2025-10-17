@@ -1,8 +1,13 @@
 #pragma once
 
-
 namespace adria
 {
+	enum class GfxRootSignatureID : Uint8
+	{
+		Invalid,
+		Common
+	};
+
 	enum class GfxPipelineStateType : Uint8
 	{
 		Graphics,

@@ -9,6 +9,8 @@
 #include "D3D12QueryHeap.h"
 #include "D3D12PipelineState.h"
 #include "D3D12RayTracingAS.h"
+#include "D3D12RayTracingPipeline.h"
+#include "D3D12StateObject.h"
 #include "D3D12NsightAftermathGpuCrashTracker.h"
 #include "D3D12NsightPerfManager.h"
 #include "D3D12Conversions.h"
@@ -635,6 +637,195 @@ namespace adria
 	std::unique_ptr<GfxRayTracingBLAS> D3D12Device::CreateRayTracingBLAS(std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags)
 	{
 		return std::make_unique<D3D12RayTracingBLAS>(this, geometries, flags);
+	}
+
+	std::unique_ptr<GfxRayTracingPipeline> D3D12Device::CreateRayTracingPipeline(GfxRayTracingPipelineDesc const& desc)
+	{
+		ADRIA_ASSERT(!desc.libraries.empty());
+		ADRIA_ASSERT(desc.max_payload_size > 0);
+		ADRIA_ASSERT(desc.max_recursion_depth > 0);
+
+		Uint64 estimated_subobjects = 0;
+		estimated_subobjects += 1;
+		estimated_subobjects += 1;
+		estimated_subobjects += 1;
+		estimated_subobjects += desc.libraries.size();
+		estimated_subobjects += desc.hit_groups.size();
+		estimated_subobjects += desc.local_root_signatures.size() * 2; 
+
+		D3D12StateObjectBuilder builder(estimated_subobjects);
+
+		D3D12_RAYTRACING_PIPELINE_CONFIG pipeline_config = {};
+		pipeline_config.MaxTraceRecursionDepth = desc.max_recursion_depth;
+		builder.AddSubObject(pipeline_config);
+
+		D3D12_RAYTRACING_SHADER_CONFIG shader_config = {};
+		shader_config.MaxPayloadSizeInBytes = desc.max_payload_size;
+		shader_config.MaxAttributeSizeInBytes = desc.max_attribute_size;
+		builder.AddSubObject(shader_config);
+
+		D3D12_GLOBAL_ROOT_SIGNATURE d3d12_global_root_signature = {};
+		d3d12_global_root_signature.pGlobalRootSignature = global_root_signature.Get();
+		builder.AddSubObject(d3d12_global_root_signature);
+
+		std::vector<std::vector<std::wstring>> all_export_names_wide;
+		std::vector<std::vector<D3D12_EXPORT_DESC>> all_export_descs;
+		all_export_names_wide.reserve(desc.libraries.size());
+		all_export_descs.reserve(desc.libraries.size());
+
+		for (Uint64 lib_idx = 0; lib_idx < desc.libraries.size(); ++lib_idx)
+		{
+			GfxRayTracingShaderLibrary const& lib = desc.libraries[lib_idx];
+			ADRIA_ASSERT(lib.shader != nullptr);
+			ADRIA_ASSERT(lib.shader->GetData() != nullptr);
+			ADRIA_ASSERT(lib.shader->GetSize() > 0);
+
+			D3D12_DXIL_LIBRARY_DESC library_desc = {};
+			library_desc.DXILLibrary.pShaderBytecode = lib.shader->GetData();
+			library_desc.DXILLibrary.BytecodeLength = lib.shader->GetSize();
+
+			if (!lib.exports.empty())
+			{
+				all_export_names_wide.emplace_back();
+				all_export_descs.emplace_back();
+				std::vector<std::wstring>& export_names_wide = all_export_names_wide.back();
+				std::vector<D3D12_EXPORT_DESC>& export_descs = all_export_descs.back();
+
+				export_names_wide.reserve(lib.exports.size());
+				export_descs.reserve(lib.exports.size());
+				for (Uint64 export_idx = 0; export_idx < lib.exports.size(); ++export_idx)
+				{
+					std::string const& export_name = lib.exports[export_idx];
+					ADRIA_ASSERT(!export_name.empty());
+					export_names_wide.push_back(ToWideString(export_name));
+
+					D3D12_EXPORT_DESC export_desc{};
+					export_desc.Name = export_names_wide.back().c_str();
+					export_desc.ExportToRename = nullptr;
+					export_desc.Flags = D3D12_EXPORT_FLAG_NONE;
+					export_descs.push_back(export_desc);
+				}
+
+				library_desc.NumExports = static_cast<UINT>(export_descs.size());
+				library_desc.pExports = export_descs.data();
+			}
+			else
+			{
+				library_desc.NumExports = 0;
+				library_desc.pExports = nullptr;
+			}
+			builder.AddSubObject(library_desc);
+		}
+
+		std::vector<std::wstring> hit_group_names_wide;
+		std::vector<std::wstring> closest_hit_names_wide;
+		std::vector<std::wstring> any_hit_names_wide;
+		std::vector<std::wstring> intersection_names_wide;
+		hit_group_names_wide.reserve(desc.hit_groups.size());
+		closest_hit_names_wide.reserve(desc.hit_groups.size());
+		any_hit_names_wide.reserve(desc.hit_groups.size());
+		intersection_names_wide.reserve(desc.hit_groups.size());
+		for (Uint64 hg_idx = 0; hg_idx < desc.hit_groups.size(); ++hg_idx)
+		{
+			GfxRayTracingHitGroup const& hit_group = desc.hit_groups[hg_idx];
+			ADRIA_ASSERT(!hit_group.name.empty());
+
+			D3D12_HIT_GROUP_DESC hit_group_desc{};
+			hit_group_names_wide.push_back(ToWideString(hit_group.name));
+			hit_group_desc.HitGroupExport = hit_group_names_wide.back().c_str();
+			if (hit_group.intersection_shader.empty())
+			{
+				hit_group_desc.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
+			}
+			else
+			{
+				hit_group_desc.Type = D3D12_HIT_GROUP_TYPE_PROCEDURAL_PRIMITIVE;
+			}
+
+			if (!hit_group.closest_hit_shader.empty())
+			{
+				closest_hit_names_wide.push_back(ToWideString(hit_group.closest_hit_shader));
+				hit_group_desc.ClosestHitShaderImport = closest_hit_names_wide.back().c_str();
+			}
+			else
+			{
+				hit_group_desc.ClosestHitShaderImport = nullptr;
+			}
+
+			if (!hit_group.any_hit_shader.empty())
+			{
+				any_hit_names_wide.push_back(ToWideString(hit_group.any_hit_shader));
+				hit_group_desc.AnyHitShaderImport = any_hit_names_wide.back().c_str();
+			}
+			else
+			{
+				hit_group_desc.AnyHitShaderImport = nullptr;
+			}
+
+			if (!hit_group.intersection_shader.empty())
+			{
+				intersection_names_wide.push_back(ToWideString(hit_group.intersection_shader));
+				hit_group_desc.IntersectionShaderImport = intersection_names_wide.back().c_str();
+			}
+			else
+			{
+				hit_group_desc.IntersectionShaderImport = nullptr;
+			}
+
+			builder.AddSubObject(hit_group_desc);
+		}
+
+		std::vector<std::vector<std::wstring>> local_rs_shader_names_wide;
+		std::vector<std::vector<LPCWSTR>> local_rs_shader_name_ptrs;
+		local_rs_shader_names_wide.reserve(desc.local_root_signatures.size());
+		local_rs_shader_name_ptrs.reserve(desc.local_root_signatures.size());
+		for (Uint64 local_rs_idx = 0; local_rs_idx < desc.local_root_signatures.size(); ++local_rs_idx)
+		{
+			GfxRayTracingLocalRootSignatureAssociation const& association = desc.local_root_signatures[local_rs_idx];
+			ADRIA_ASSERT(!association.shader_names.empty());
+
+			D3D12_LOCAL_ROOT_SIGNATURE local_root_signature{};
+			local_root_signature.pLocalRootSignature = nullptr; // association.root_signature->GetNative();
+			builder.AddSubObject(local_root_signature);
+
+			Uint64 local_rs_subobject_index = builder.GetNumSubobjects() - 1;
+			D3D12_STATE_SUBOBJECT const* local_rs_subobject = builder.GetSubobject(static_cast<Uint32>(local_rs_subobject_index));
+			ADRIA_ASSERT(local_rs_subobject != nullptr);
+
+			local_rs_shader_names_wide.emplace_back();
+			local_rs_shader_name_ptrs.emplace_back();
+			std::vector<std::wstring>& shader_names_wide = local_rs_shader_names_wide.back();
+			std::vector<LPCWSTR>& shader_name_ptrs = local_rs_shader_name_ptrs.back();
+			shader_names_wide.reserve(association.shader_names.size());
+			shader_name_ptrs.reserve(association.shader_names.size());
+			for (Uint64 name_idx = 0; name_idx < association.shader_names.size(); ++name_idx)
+			{
+				std::string const& shader_name = association.shader_names[name_idx];
+				ADRIA_ASSERT(!shader_name.empty());
+				shader_names_wide.push_back(ToWideString(shader_name));
+				shader_name_ptrs.push_back(shader_names_wide.back().c_str());
+			}
+
+			D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION subobject_association = {};
+			subobject_association.pSubobjectToAssociate = local_rs_subobject;
+			subobject_association.NumExports = static_cast<UINT>(shader_name_ptrs.size());
+			subobject_association.pExports = shader_name_ptrs.data();
+			builder.AddSubObject(subobject_association);
+		}
+
+		GfxStateObject* state_object = builder.CreateStateObject(this, GfxStateObjectType::RayTracingPipeline);
+		ADRIA_ASSERT(state_object != nullptr);
+		ADRIA_ASSERT(state_object->IsValid());
+
+		// 8. Create and return the ray tracing pipeline wrapper
+		ID3D12StateObject* d3d12_state_object = static_cast<ID3D12StateObject*>(state_object->GetNative());
+		ADRIA_ASSERT(d3d12_state_object != nullptr);
+		d3d12_state_object->AddRef(); // AddRef because GfxStateObject will release it
+
+		delete state_object; // Delete the temporary wrapper
+
+		GfxRayTracingPipeline_D3D12* pipeline = new GfxRayTracingPipeline_D3D12(d3d12_state_object);
+		return pipeline;
 	}
 
 	GfxDescriptor D3D12Device::CreateBufferSRV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)
