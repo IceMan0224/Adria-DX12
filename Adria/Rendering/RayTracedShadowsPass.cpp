@@ -57,7 +57,7 @@ namespace adria
 				
 				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ray_traced_shadows_pso.get());
 				ADRIA_ASSERT(bindings != nullptr);
-				bindings->SetRayGenShader("RTS_RayGen_Hard");
+				bindings->SetRayGenShader("RTS_RayGen");
 				GfxShaderGroupHandle miss_handle = bindings->AddMissShader("RTS_Miss");
 				ADRIA_ASSERT(miss_handle.IsValid());
 				GfxShaderGroupHandle hit_handle = bindings->AddHitGroup("ShadowAnyHitGroup");
@@ -83,30 +83,35 @@ namespace adria
 
 	void RayTracedShadowsPass::CreateStateObject()
 	{
-		GfxShader const& rt_shadows_blob = SM_GetGfxShader(LIB_Shadows);
+		GfxShader const* rt_shader = &SM_GetGfxShader(LIB_Shadows);
 
-		GfxRayTracingPipelineDesc pipeline_desc{};
-		pipeline_desc.max_payload_size = sizeof(Float);
-		pipeline_desc.max_attribute_size = 8; 
-		pipeline_desc.max_recursion_depth = 1;
-		pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
+		GfxRayTracingPipelineDesc rt_pipeline_desc{};
+		rt_pipeline_desc.max_payload_size = sizeof(Bool32); 
+		rt_pipeline_desc.max_attribute_size = 8;
+		rt_pipeline_desc.max_recursion_depth = 1;
+		rt_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-		GfxRayTracingShaderLibrary library(&rt_shadows_blob,
-			{
-				"RTS_RayGen_Hard",
-				"RTS_Miss",
-				"ShadowAnyHit"
-			});
-		pipeline_desc.libraries.push_back(library);
+		GfxRayTracingShaderLibrary library(rt_shader);
+		rt_pipeline_desc.libraries.push_back(library);
 
+		// Option 2: Explicitly list the correct exports
+		/*
+		GfxRayTracingShaderLibrary library(rt_shader,
+		{
+			"RTS_RayGen",    // Changed from "RTS_RayGen_Hard"
+			"RTS_Miss",
+			"RTS_AnyHit"     // Changed from "ShadowAnyHit"
+		});
+		rt_pipeline_desc.libraries.push_back(library);
+		*/
 		GfxRayTracingHitGroup shadow_hit_group = GfxRayTracingHitGroup::Triangle(
 			"ShadowAnyHitGroup",
 			"",
-			"ShadowAnyHit"
+			"RTS_AnyHit"
 		);
-		pipeline_desc.hit_groups.push_back(shadow_hit_group);
+		rt_pipeline_desc.hit_groups.push_back(shadow_hit_group);
 
-		ray_traced_shadows_pso = gfx->CreateRayTracingPipeline(pipeline_desc);
+		ray_traced_shadows_pso = gfx->CreateRayTracingPipeline(rt_pipeline_desc);
 		ADRIA_ASSERT(ray_traced_shadows_pso != nullptr);
 		ADRIA_ASSERT(ray_traced_shadows_pso->IsValid());
 	}
