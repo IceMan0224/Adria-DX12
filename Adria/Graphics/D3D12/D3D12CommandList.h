@@ -5,6 +5,8 @@
 namespace adria
 {
 	class D3D12Device;
+	class D3D12RayTracingShaderBindings;
+
 	class D3D12CommandList final : public GfxCommandList
 	{
 	public:
@@ -69,8 +71,7 @@ namespace adria
 		virtual void EndRenderPass() override;
 
 		virtual void SetPipelineState(GfxPipelineState const* state) override;
-		virtual GfxRayTracingShaderTable& SetStateObject(GfxStateObject const* state_object) override;
-
+		virtual GfxRayTracingShaderBindings* BeginRayTracingShaderBindings(GfxRayTracingPipeline const* pipeline) override;
 		virtual void SetStencilReference(Uint8 stencil) override;
 		virtual void SetBlendFactor(Float const* blend_factor) override;
 		virtual void SetPrimitiveTopology(GfxPrimitiveTopology topology) override;
@@ -113,7 +114,7 @@ namespace adria
 		GfxRenderPassDesc const* current_render_pass = nullptr;
 
 		ID3D12StateObject* current_state_object = nullptr;
-		std::unique_ptr<GfxRayTracingShaderTable> current_rt_table;
+		std::unique_ptr<D3D12RayTracingShaderBindings> current_rt_bindings;
 
 		GfxPrimitiveTopology current_primitive_topology = GfxPrimitiveTopology::Undefined;
 		Uint8 current_stencil_ref = 0;

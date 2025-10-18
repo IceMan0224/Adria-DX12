@@ -4,14 +4,15 @@
 #include "Components.h"
 #include "SVGFDenoiserPass.h"
 #include "OIDNDenoiserPass.h"
+#include "Graphics/GfxDevice.h"
 #include "Graphics/GfxShader.h"
 #include "Graphics/GfxShaderKey.h"
-#include "Graphics/GfxStateObject.h"
+#include "Graphics/GfxRayTracingPipeline.h"
+#include "Graphics/GfxRayTracingShaderBindings.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Graphics/GfxCommon.h"
 #include "Graphics/GfxReflection.h"
 #include "Graphics/GfxBufferView.h"
-#include "Graphics/D3D12/D3D12Device.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 #include "Core/ConsoleManager.h"
@@ -147,40 +148,30 @@ namespace adria
 	{
 		GfxShaderKey pt_shader_key(LIB_PathTracing);
 		GfxShader const& pt_blob = SM_GetGfxShader(pt_shader_key);
-		path_tracing_so.reset(CreateStateObjectCommon(pt_shader_key));
+		path_tracing_pso = CreateRayTracingPipelineCommon(pt_shader_key);
 
 		pt_shader_key.AddDefine("SVGF_ENABLED", "1");
 		GfxShader const& pt_blob_write_gbuffer = SM_GetGfxShader(pt_shader_key);
-		path_tracing_svgf_enabled_so.reset(CreateStateObjectCommon(pt_shader_key));
+		path_tracing_svgf_enabled_pso = CreateRayTracingPipelineCommon(pt_shader_key);
 	}
 
-	GfxStateObject* PathTracingPass::CreateStateObjectCommon(GfxShaderKey const& shader_key)
+	std::unique_ptr<GfxRayTracingPipeline> PathTracingPass::CreateRayTracingPipelineCommon(GfxShaderKey const& shader_key)
 	{
-		D3D12Device* d3d12_gfx = (D3D12Device*)gfx;
-		GfxShader const& pt_blob = SM_GetGfxShader(shader_key);
-		GfxStateObjectBuilder pt_state_object_builder(5);
-		{
-			D3D12_DXIL_LIBRARY_DESC	dxil_lib_desc{};
-			dxil_lib_desc.DXILLibrary.BytecodeLength = pt_blob.GetSize();
-			dxil_lib_desc.DXILLibrary.pShaderBytecode = pt_blob.GetData();
-			dxil_lib_desc.NumExports = 0;
-			dxil_lib_desc.pExports = nullptr;
-			pt_state_object_builder.AddSubObject(dxil_lib_desc);
+		GfxShader const& pt_shader = SM_GetGfxShader(shader_key);
 
-			D3D12_RAYTRACING_SHADER_CONFIG pt_shader_config{};
-			pt_shader_config.MaxPayloadSizeInBytes = sizeof(Float);
-			pt_shader_config.MaxAttributeSizeInBytes = D3D12_RAYTRACING_MAX_ATTRIBUTE_SIZE_IN_BYTES;
-			pt_state_object_builder.AddSubObject(pt_shader_config);
+		GfxRayTracingPipelineDesc pt_pipeline_desc = {};
+		pt_pipeline_desc.max_payload_size = sizeof(Float);  
+		pt_pipeline_desc.max_attribute_size = 8;
+		pt_pipeline_desc.max_recursion_depth = 3;
+		pt_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-			D3D12_GLOBAL_ROOT_SIGNATURE global_root_sig{};
-			global_root_sig.pGlobalRootSignature = d3d12_gfx->GetCommonRootSignature();
-			pt_state_object_builder.AddSubObject(global_root_sig);
+		GfxRayTracingShaderLibrary pt_library(&pt_shader);
+		pt_pipeline_desc.libraries.push_back(pt_library);
 
-			D3D12_RAYTRACING_PIPELINE_CONFIG pipeline_config{};
-			pipeline_config.MaxTraceRecursionDepth = 3;
-			pt_state_object_builder.AddSubObject(pipeline_config);
-		}
-		return pt_state_object_builder.CreateStateObject(gfx);
+		std::unique_ptr<GfxRayTracingPipeline> pipeline = gfx->CreateRayTracingPipeline(pt_pipeline_desc);
+		ADRIA_ASSERT(pipeline != nullptr);
+		ADRIA_ASSERT(pipeline->IsValid());
+		return pipeline;
 	}
 
 	void PathTracingPass::OnLibraryRecompiled(GfxShaderKey const& key)
@@ -358,8 +349,10 @@ namespace adria
 
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 					cmd_list->SetRootConstants(1, constants);
-					auto& table = cmd_list->SetStateObject(path_tracing_svgf_enabled_so.get());
-					table.SetRayGenShader("PT_RayGen");
+
+					GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(path_tracing_svgf_enabled_pso.get());
+					bindings->SetRayGenShader("PT_RayGen");
+					bindings->Commit();
 					cmd_list->DispatchRays(width, height);
 				}
 				else
@@ -387,8 +380,9 @@ namespace adria
 
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 					cmd_list->SetRootConstants(1, constants);
-					auto& table = cmd_list->SetStateObject(path_tracing_so.get());
-					table.SetRayGenShader("PT_RayGen");
+					GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(path_tracing_pso.get());
+					bindings->SetRayGenShader("PT_RayGen");
+					bindings->Commit();
 					cmd_list->DispatchRays(width, height);
 				}
 

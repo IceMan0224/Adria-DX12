@@ -1,20 +1,20 @@
 #include "RayTracedAmbientOcclusionPass.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
+#include "Graphics/GfxDevice.h"
 #include "Graphics/GfxShaderKey.h"
-#include "Graphics/GfxStateObject.h"
+#include "Graphics/GfxRayTracingPipeline.h"
+#include "Graphics/GfxRayTracingShaderBindings.h"
 #include "Graphics/GfxPipelineState.h"
-#include "Graphics/D3D12/D3D12Device.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 
 namespace adria
 {
-	
 	RayTracedAmbientOcclusionPass::RayTracedAmbientOcclusionPass(GfxDevice* gfx, Uint32 width, Uint32 height)
-		: d3d12_gfx((D3D12Device*)gfx), width(width), height(height), blur_pass(gfx)
+		: gfx(gfx), width(width), height(height), blur_pass(gfx)
 	{
-		is_supported = d3d12_gfx->GetCapabilities().SupportsRayTracing();
+		is_supported = gfx->GetCapabilities().SupportsRayTracing();
 		if (IsSupported())
 		{
 			CreatePSO();
@@ -27,7 +27,11 @@ namespace adria
 
 	void RayTracedAmbientOcclusionPass::AddPass(RenderGraph& rg)
 	{
-		if (!IsSupported()) return;
+		if (!IsSupported())
+		{
+			return;
+		}
+
 		RG_SCOPE(rg, "RTAO");
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
@@ -79,10 +83,11 @@ namespace adria
 					.ao_radius = params.radius, .ao_power = pow(2.f, params.power_log)
 				};
 
-				auto& table = cmd_list->SetStateObject(ray_traced_ambient_occlusion_so.get());
-				table.SetRayGenShader("RTAO_RayGen");
-				table.AddMissShader("RTAO_Miss", 0);
-				table.AddHitGroup("RTAOAnyHitGroup", 0);
+				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ray_traced_ambient_occlusion_pso.get());
+				bindings->SetRayGenShader("RTAO_RayGen");
+				bindings->AddMissShader("RTAO_Miss");
+				bindings->AddHitGroup("RTAOAnyHitGroup");
+				bindings->Commit();
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
@@ -202,46 +207,40 @@ namespace adria
 	{
 		GfxComputePipelineStateDesc compute_pso_desc{};
 		compute_pso_desc.CS = CS_RTAOFilter;
-		rtao_filter_pso = d3d12_gfx->CreateManagedComputePipelineState(compute_pso_desc);
+		rtao_filter_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 	}
 
 	void RayTracedAmbientOcclusionPass::CreateStateObject()
 	{
-		GfxShader const& rtao_blob = SM_GetGfxShader(LIB_AmbientOcclusion);
-		GfxStateObjectBuilder rtao_state_object_builder(5);
-		{
-			D3D12_DXIL_LIBRARY_DESC	dxil_lib_desc{};
-			dxil_lib_desc.DXILLibrary.BytecodeLength = rtao_blob.GetSize();
-			dxil_lib_desc.DXILLibrary.pShaderBytecode = rtao_blob.GetData();
-			dxil_lib_desc.NumExports = 0;
-			dxil_lib_desc.pExports = nullptr;
-			rtao_state_object_builder.AddSubObject(dxil_lib_desc);
+		GfxShader const& rtao_shader = SM_GetGfxShader(LIB_AmbientOcclusion);
 
-			D3D12_RAYTRACING_SHADER_CONFIG rtao_shader_config{};
-			rtao_shader_config.MaxPayloadSizeInBytes = 4;
-			rtao_shader_config.MaxAttributeSizeInBytes = D3D12_RAYTRACING_MAX_ATTRIBUTE_SIZE_IN_BYTES;
-			rtao_state_object_builder.AddSubObject(rtao_shader_config);
+		GfxRayTracingPipelineDesc rtao_pipeline_desc{};
+		rtao_pipeline_desc.max_payload_size = 4;  
+		rtao_pipeline_desc.max_attribute_size = 8; 
+		rtao_pipeline_desc.max_recursion_depth = 1;
+		rtao_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-			D3D12_GLOBAL_ROOT_SIGNATURE global_root_sig{};
-			global_root_sig.pGlobalRootSignature = d3d12_gfx->GetCommonRootSignature();
-			rtao_state_object_builder.AddSubObject(global_root_sig);
+		GfxRayTracingShaderLibrary rtao_library(&rtao_shader);
+		rtao_pipeline_desc.libraries.push_back(rtao_library);
 
-			D3D12_RAYTRACING_PIPELINE_CONFIG pipeline_config{};
-			pipeline_config.MaxTraceRecursionDepth = 1;
-			rtao_state_object_builder.AddSubObject(pipeline_config);
+		GfxRayTracingHitGroup rtao_hit_group = GfxRayTracingHitGroup::Triangle(
+			"RTAOAnyHitGroup",
+			"",
+			"RTAO_AnyHit"
+		);
+		rtao_pipeline_desc.hit_groups.push_back(rtao_hit_group);
 
-			D3D12_HIT_GROUP_DESC anyhit_group{};
-			anyhit_group.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
-			anyhit_group.AnyHitShaderImport = L"RTAO_AnyHit";
-			anyhit_group.HitGroupExport = L"RTAOAnyHitGroup";
-			rtao_state_object_builder.AddSubObject(anyhit_group);
-		}
-		ray_traced_ambient_occlusion_so.reset(rtao_state_object_builder.CreateStateObject(d3d12_gfx));
+		ray_traced_ambient_occlusion_pso = gfx->CreateRayTracingPipeline(rtao_pipeline_desc);
+		ADRIA_ASSERT(ray_traced_ambient_occlusion_pso != nullptr);
+		ADRIA_ASSERT(ray_traced_ambient_occlusion_pso->IsValid());
 	}
 
 	void RayTracedAmbientOcclusionPass::OnLibraryRecompiled(GfxShaderKey const& key)
 	{
-		if (key.GetShaderID() == LIB_AmbientOcclusion) CreateStateObject();
+		if (key.GetShaderID() == LIB_AmbientOcclusion)
+		{
+			CreateStateObject();
+		}
 	}
 
 }

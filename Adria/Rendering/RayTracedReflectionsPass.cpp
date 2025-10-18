@@ -2,10 +2,11 @@
 #include "BlackboardData.h"
 #include "ShaderManager.h"
 #include "PostProcessor.h"
+#include "Graphics/GfxDevice.h"
 #include "Graphics/GfxShader.h"
 #include "Graphics/GfxShaderKey.h"
-#include "Graphics/GfxStateObject.h"
-#include "Graphics/D3D12/D3D12Device.h"
+#include "Graphics/GfxRayTracingPipeline.h"
+#include "Graphics/GfxRayTracingShaderBindings.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 #include "Core/ConsoleManager.h"
@@ -81,10 +82,11 @@ namespace adria
 					.roughness_scale = reflection_roughness_scale,
 					.depth_idx = i + 0, .normal_idx = i + 1, .albedo_idx = i + 2, .output_idx = i + 3
 				};
-				auto& table = cmd_list->SetStateObject(ray_traced_reflections_so.get());
-				table.SetRayGenShader("RTR_RayGen");
-				table.AddMissShader("RTR_Miss", 0);
-				table.AddHitGroup("RTRClosestHitGroupPrimaryRay", 0);
+				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ray_traced_reflections_pso.get());
+				bindings->SetRayGenShader("RTR_RayGen");
+				bindings->AddMissShader("RTR_Miss");
+				bindings->AddHitGroup("RTRClosestHitGroupPrimaryRay");
+				bindings->Commit();
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
@@ -131,48 +133,44 @@ namespace adria
 
 	void RayTracedReflectionsPass::CreateStateObject()
 	{
-		D3D12Device* d3d12_device = static_cast<D3D12Device*>(gfx);
+		GfxShader const& rtr_shader = SM_GetGfxShader(LIB_Reflections);
 
-		GfxShader const& rtr_blob = SM_GetGfxShader(LIB_Reflections);
-		GfxStateObjectBuilder rtr_state_object_builder(6);
-		{
-			D3D12_DXIL_LIBRARY_DESC	dxil_lib_desc{};
-			dxil_lib_desc.DXILLibrary.BytecodeLength = rtr_blob.GetSize();
-			dxil_lib_desc.DXILLibrary.pShaderBytecode = rtr_blob.GetData();
-			dxil_lib_desc.NumExports = 0;
-			dxil_lib_desc.pExports = nullptr;
-			rtr_state_object_builder.AddSubObject(dxil_lib_desc);
+		GfxRayTracingPipelineDesc rtr_pipeline_desc{};
+		rtr_pipeline_desc.max_payload_size = sizeof(Float) * 4; 
+		rtr_pipeline_desc.max_attribute_size = 8;
+		rtr_pipeline_desc.max_recursion_depth = 2;
+		rtr_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-			D3D12_RAYTRACING_SHADER_CONFIG rtr_shader_config{};
-			rtr_shader_config.MaxPayloadSizeInBytes = sizeof(Float) * 4;
-			rtr_shader_config.MaxAttributeSizeInBytes = D3D12_RAYTRACING_MAX_ATTRIBUTE_SIZE_IN_BYTES;
-			rtr_state_object_builder.AddSubObject(rtr_shader_config);
+		GfxRayTracingShaderLibrary rtr_library(&rtr_shader);
+		rtr_pipeline_desc.libraries.push_back(rtr_library);
 
-			D3D12_GLOBAL_ROOT_SIGNATURE global_root_sig{};
-			global_root_sig.pGlobalRootSignature = d3d12_device->GetCommonRootSignature();
-			rtr_state_object_builder.AddSubObject(global_root_sig);
+		GfxRayTracingHitGroup rtr_primary_hit_group = GfxRayTracingHitGroup::Triangle(
+			"RTRClosestHitGroupPrimaryRay",    
+			"RTR_ClosestHitPrimaryRay",        
+			""                                 
+		);
+		rtr_pipeline_desc.hit_groups.push_back(rtr_primary_hit_group);
 
-			// Add a state subobject for the ray tracing pipeline config
-			D3D12_RAYTRACING_PIPELINE_CONFIG pipeline_config{};
-			pipeline_config.MaxTraceRecursionDepth = 2;
-			rtr_state_object_builder.AddSubObject(pipeline_config);
+		/*
+		GfxRayTracingHitGroup rtr_reflection_hit_group = GfxRayTracingHitGroup::Triangle(
+			"RTRClosestHitGroupReflectionRay",
+			"RTR_ClosestHitReflectionRay",
+			""
+		);
+		rtr_pipeline_desc.hit_groups.push_back(rtr_reflection_hit_group);
+		*/
 
-			D3D12_HIT_GROUP_DESC closesthit_group{};
-			closesthit_group.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
-			closesthit_group.ClosestHitShaderImport = L"RTR_ClosestHitPrimaryRay";
-			closesthit_group.HitGroupExport = L"RTRClosestHitGroupPrimaryRay";
-			rtr_state_object_builder.AddSubObject(closesthit_group);
-
-			//closesthit_group.ClosestHitShaderImport = L"RTR_ClosestHitReflectionRay";
-			//closesthit_group.HitGroupExport = L"RTRClosestHitGroupReflectionRay";
-			//rtr_state_object_builder.AddSubObject(closesthit_group);
-		}
-		ray_traced_reflections_so.reset(rtr_state_object_builder.CreateStateObject(gfx));
+		ray_traced_reflections_pso = gfx->CreateRayTracingPipeline(rtr_pipeline_desc);
+		ADRIA_ASSERT(ray_traced_reflections_pso != nullptr);
+		ADRIA_ASSERT(ray_traced_reflections_pso->IsValid());
 	}
 
 	void RayTracedReflectionsPass::OnLibraryRecompiled(GfxShaderKey const& key)
 	{
-		if (key.GetShaderID() == LIB_Reflections) CreateStateObject();
+		if (key.GetShaderID() == LIB_Reflections)
+		{
+			CreateStateObject();
+		}
 	}
 
 }

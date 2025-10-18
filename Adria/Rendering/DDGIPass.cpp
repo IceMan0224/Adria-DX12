@@ -6,12 +6,11 @@
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxShader.h"
 #include "Graphics/GfxShaderKey.h"
-#include "Graphics/GfxStateObject.h"
+#include "Graphics/GfxRayTracingPipeline.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Graphics/GfxReflection.h"
 #include "Graphics/GfxBufferView.h"
-#include "Graphics/GfxRayTracingShaderTable.h"
-#include "Graphics/D3D12/D3D12Device.h"
+#include "Graphics/GfxRayTracingShaderBindings.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Math/Constants.h"
 #include "Editor/GUICommand.h"
@@ -191,10 +190,11 @@ namespace adria
 					.ray_buffer_index = i
 				};
 
-				GfxRayTracingShaderTable& table = cmd_list->SetStateObject(ddgi_trace_so.get());
-				table.SetRayGenShader("DDGI_RayGen");
-				table.AddMissShader("DDGI_Miss", 0);
-				table.AddHitGroup("DDGI_HitGroup", 0);
+				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ddgi_trace_pso.get());
+				bindings->SetRayGenShader("DDGI_RayGen");
+				bindings->AddMissShader("DDGI_Miss");
+				bindings->AddHitGroup("DDGI_HitGroup");
+				bindings->Commit();
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);
@@ -452,38 +452,25 @@ namespace adria
 
 	void DDGIPass::CreateStateObject()
 	{
-		D3D12Device* d3d12_device = static_cast<D3D12Device*>(gfx);
+		GfxShader const& ddgi_shader = SM_GetGfxShader(LIB_DDGIRayTracing);
+		GfxRayTracingPipelineDesc ddgi_pipeline_desc = {};
+		ddgi_pipeline_desc.max_payload_size = 16;
+		ddgi_pipeline_desc.max_attribute_size = 8;
+		ddgi_pipeline_desc.max_recursion_depth = 1;
+		ddgi_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-		GfxShader const& ddgi_blob = SM_GetGfxShader(LIB_DDGIRayTracing);
-		GfxStateObjectBuilder ddgi_state_object_builder(5);
-		{
-			D3D12_DXIL_LIBRARY_DESC	dxil_lib_desc{};
-			dxil_lib_desc.DXILLibrary.BytecodeLength = ddgi_blob.GetSize();
-			dxil_lib_desc.DXILLibrary.pShaderBytecode = ddgi_blob.GetData();
-			dxil_lib_desc.NumExports = 0;
-			dxil_lib_desc.pExports = nullptr;
-			ddgi_state_object_builder.AddSubObject(dxil_lib_desc);
+		GfxRayTracingShaderLibrary ddgi_library(&ddgi_shader);
+		ddgi_pipeline_desc.libraries.push_back(ddgi_library);
 
-			D3D12_RAYTRACING_SHADER_CONFIG ddgi_shader_config{};
-			ddgi_shader_config.MaxPayloadSizeInBytes = 16;
-			ddgi_shader_config.MaxAttributeSizeInBytes = D3D12_RAYTRACING_MAX_ATTRIBUTE_SIZE_IN_BYTES;
-			ddgi_state_object_builder.AddSubObject(ddgi_shader_config);
-
-			D3D12_GLOBAL_ROOT_SIGNATURE global_root_sig{};
-			global_root_sig.pGlobalRootSignature = d3d12_device->GetCommonRootSignature();
-			ddgi_state_object_builder.AddSubObject(global_root_sig);
-
-			D3D12_RAYTRACING_PIPELINE_CONFIG pipeline_config{};
-			pipeline_config.MaxTraceRecursionDepth = 1;
-			ddgi_state_object_builder.AddSubObject(pipeline_config);
-
-			D3D12_HIT_GROUP_DESC hit_group{};
-			hit_group.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
-			hit_group.ClosestHitShaderImport = L"DDGI_ClosestHit";
-			hit_group.HitGroupExport = L"DDGI_HitGroup";
-			ddgi_state_object_builder.AddSubObject(hit_group);
-		}
-		ddgi_trace_so.reset(ddgi_state_object_builder.CreateStateObject(gfx));
+		GfxRayTracingHitGroup ddgi_hit_group = GfxRayTracingHitGroup::Triangle(
+			"DDGI_HitGroup",
+			"DDGI_ClosestHit",
+			""
+		);
+		ddgi_pipeline_desc.hit_groups.push_back(ddgi_hit_group);
+		ddgi_trace_pso = gfx->CreateRayTracingPipeline(ddgi_pipeline_desc);
+		ADRIA_ASSERT(ddgi_trace_pso != nullptr);
+		ADRIA_ASSERT(ddgi_trace_pso->IsValid());
 	}
 
 	void DDGIPass::OnLibraryRecompiled(GfxShaderKey const& key)

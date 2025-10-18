@@ -1,5 +1,4 @@
 #pragma once
-#include "Graphics/GfxRayTracingShaderTable.h"
 #include "Graphics/GfxPipelineStateFwd.h"
 #include "RenderGraph/RenderGraphResourceName.h"
 #include "entt/entity/fwd.hpp"
@@ -10,7 +9,7 @@ namespace adria
 	class GfxTexture;
 	class GfxDevice;
 	class GfxShaderKey;
-	class GfxStateObject;
+	class GfxRayTracingPipeline;
 	class SVGFDenoiserPass;
 
 	class PathTracingPass
@@ -32,8 +31,8 @@ namespace adria
 		Uint32 width, height;
 		Bool is_supported;
 
-		std::unique_ptr<GfxStateObject> path_tracing_so;
-		std::unique_ptr<GfxStateObject> path_tracing_svgf_enabled_so;
+		std::unique_ptr<GfxRayTracingPipeline> path_tracing_pso;
+		std::unique_ptr<GfxRayTracingPipeline> path_tracing_svgf_enabled_pso;
 		std::unique_ptr<GfxGraphicsPipelineState> pt_gbuffer_pso;
 
 		std::unique_ptr<GfxTexture> accumulation_texture = nullptr;
@@ -45,7 +44,7 @@ namespace adria
 	private:
 		void CreatePSOs();
 		void CreateStateObjects();
-		GfxStateObject* CreateStateObjectCommon(GfxShaderKey const&);
+		std::unique_ptr<GfxRayTracingPipeline> CreateRayTracingPipelineCommon(GfxShaderKey const&);
 		void OnLibraryRecompiled(GfxShaderKey const&);
 
 		void AddPTGBufferPass(RenderGraph&);

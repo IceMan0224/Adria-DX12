@@ -2,13 +2,12 @@
 #include "PostEffect.h"
 #include "BlurPass.h"
 #include "HelperPasses.h"
-#include "Graphics/GfxRayTracingShaderTable.h"
 
 namespace adria
 {
 	class RenderGraph;
 	class GfxDevice;
-	class GfxStateObject;
+	class GfxRayTracingPipeline;
 	class GfxShaderKey;
 
 	class RayTracedReflectionsPass : public PostEffect
@@ -25,7 +24,7 @@ namespace adria
 
 	private:
 		GfxDevice* gfx;
-		std::unique_ptr<GfxStateObject> ray_traced_reflections_so;
+		std::unique_ptr<GfxRayTracingPipeline> ray_traced_reflections_pso;
 		Uint32 width, height;
 		BlurPass blur_pass;
 

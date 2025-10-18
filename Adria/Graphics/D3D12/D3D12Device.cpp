@@ -806,26 +806,22 @@ namespace adria
 				shader_name_ptrs.push_back(shader_names_wide.back().c_str());
 			}
 
-			D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION subobject_association = {};
+			D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION subobject_association{};
 			subobject_association.pSubobjectToAssociate = local_rs_subobject;
 			subobject_association.NumExports = static_cast<UINT>(shader_name_ptrs.size());
 			subobject_association.pExports = shader_name_ptrs.data();
 			builder.AddSubObject(subobject_association);
 		}
 
-		GfxStateObject* state_object = builder.CreateStateObject(this, GfxStateObjectType::RayTracingPipeline);
+		D3D12StateObject* state_object = builder.CreateStateObject(this, D3D12StateObjectType::RayTracingPipeline);
 		ADRIA_ASSERT(state_object != nullptr);
 		ADRIA_ASSERT(state_object->IsValid());
 
-		// 8. Create and return the ray tracing pipeline wrapper
 		ID3D12StateObject* d3d12_state_object = static_cast<ID3D12StateObject*>(state_object->GetNative());
 		ADRIA_ASSERT(d3d12_state_object != nullptr);
-		d3d12_state_object->AddRef(); // AddRef because GfxStateObject will release it
-
-		delete state_object; // Delete the temporary wrapper
-
-		GfxRayTracingPipeline_D3D12* pipeline = new GfxRayTracingPipeline_D3D12(d3d12_state_object);
-		return pipeline;
+		d3d12_state_object->AddRef(); 
+		delete state_object; 
+		return std::make_unique<D3D12RayTracingPipeline>(d3d12_state_object);
 	}
 
 	GfxDescriptor D3D12Device::CreateBufferSRV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)

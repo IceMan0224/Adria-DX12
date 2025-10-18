@@ -13,13 +13,13 @@ namespace adria
 	class GfxBuffer;
 	class GfxTexture;
 	class GfxPipelineState;
-	class GfxStateObject;
+	class GfxRayTracingPipeline;
+	class GfxRayTracingShaderBindings;
 	class GfxQueryHeap;
 	struct GfxVertexBufferView;
 	struct GfxIndexBufferView;
 	struct GfxRenderPassDesc;
 	struct GfxShadingRateInfo;
-	class GfxRayTracingShaderTable;
 	template<bool>
 	class GfxRingDescriptorAllocator;
 	using GfxOnlineDescriptorAllocator = GfxRingDescriptorAllocator<GFX_MULTITHREADED>;
@@ -100,8 +100,7 @@ namespace adria
 		virtual void EndRenderPass() = 0;
 
 		virtual void SetPipelineState(GfxPipelineState const* state) = 0;
-		virtual GfxRayTracingShaderTable& SetStateObject(GfxStateObject const* state_object) = 0;
-
+		virtual GfxRayTracingShaderBindings* BeginRayTracingShaderBindings(GfxRayTracingPipeline const* pipeline) = 0;
 		virtual void SetStencilReference(Uint8 stencil) = 0;
 		virtual void SetBlendFactor(Float const* blend_factor) = 0;
 		virtual void SetPrimitiveTopology(GfxPrimitiveTopology topology) = 0;

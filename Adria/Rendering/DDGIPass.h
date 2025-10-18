@@ -9,7 +9,7 @@ namespace adria
 	class GfxTexture;
 	class GfxDevice;
 	class GfxShaderKey;
-	class GfxStateObject;
+	class GfxRayTracingPipeline;
 	class RenderGraph;
 
 	class DDGIPass
@@ -70,7 +70,7 @@ namespace adria
 		entt::registry& reg;
 		Uint32 width, height;
 		Bool is_supported;
-		std::unique_ptr<GfxStateObject> ddgi_trace_so;
+		std::unique_ptr<GfxRayTracingPipeline> ddgi_trace_pso;
 		DDGIVolume ddgi_volume;
 		std::unique_ptr<GfxBuffer>  ddgi_volume_buffer;
 		GfxDescriptor ddgi_volume_buffer_srv;

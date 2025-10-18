@@ -1,5 +1,4 @@
 #pragma once
-#include "Graphics/GfxRayTracingShaderTable.h"
 #include "RenderGraph/RenderGraphResourceName.h"
 
 namespace adria
@@ -8,6 +7,7 @@ namespace adria
 	class GfxDevice;
 	class GfxStateObject;
 	class GfxShaderKey;
+	class GfxRayTracingPipeline;
 
 	class RayTracedShadowsPass
 	{
@@ -21,7 +21,7 @@ namespace adria
 
 	private:
 		GfxDevice* gfx;
-		std::unique_ptr<GfxStateObject> ray_traced_shadows_so;
+		std::unique_ptr<GfxRayTracingPipeline> ray_traced_shadows_pso;
 		Uint32 width, height;
 		Bool is_supported;
 

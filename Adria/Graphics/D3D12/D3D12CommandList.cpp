@@ -7,13 +7,13 @@
 #include "D3D12Texture.h"
 #include "D3D12QueryHeap.h"
 #include "D3D12PipelineState.h"
+#include "D3D12RayTracingPipeline.h"
+#include "D3D12RayTracingShaderBindings.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxScopedEvent.h"
 #include "Graphics/GfxRingDescriptorAllocator.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
-#include "Graphics/GfxRayTracingShaderTable.h"
-#include "Graphics/GfxStateObject.h"
 #include "Graphics/GfxProfiler.h"
 #include "Graphics/GfxNsightPerfManager.h"
 #include "Utilities/StringConversions.h"
@@ -127,7 +127,7 @@ namespace adria
 	}
 
 	D3D12CommandList::D3D12CommandList(GfxDevice* gfx, GfxCommandListType type, Char const* name)
-		: gfx((D3D12Device*)gfx), type(type), cmd_queue(gfx->GetCommandQueue(type)), use_legacy_barriers(!gfx->GetCapabilities().SupportsEnhancedBarriers()), current_rt_table(nullptr)
+		: gfx((D3D12Device*)gfx), type(type), cmd_queue(gfx->GetCommandQueue(type)), use_legacy_barriers(!gfx->GetCapabilities().SupportsEnhancedBarriers()), current_rt_bindings(nullptr)
 	{
 
 		draw_indirect_signature = std::make_unique<DrawIndirectSignature>(gfx);
@@ -225,7 +225,7 @@ namespace adria
 		current_state_object = nullptr;
 		current_primitive_topology = GfxPrimitiveTopology::Undefined;
 		current_stencil_ref = 0;
-		current_rt_table.reset();
+		current_rt_bindings.reset();
 		current_context = Context::Invalid;
 
 		if (type == GfxCommandListType::Graphics || type == GfxCommandListType::Compute)
@@ -371,6 +371,18 @@ namespace adria
 		cmd_list->ExecuteIndirect(dispatch_mesh_indirect_signature->Get(), 1, (ID3D12Resource*)buffer.GetNative(), offset, nullptr, 0);
 	}
 
+	GfxRayTracingShaderBindings* D3D12CommandList::BeginRayTracingShaderBindings(GfxRayTracingPipeline const* pipeline)
+	{
+		ADRIA_ASSERT(pipeline != nullptr);
+		ADRIA_ASSERT(pipeline->IsValid());
+
+		D3D12RayTracingPipeline const* d3d12_pipeline = static_cast<D3D12RayTracingPipeline const*>(pipeline);
+		ID3D12StateObject* state_object = d3d12_pipeline->GetD3D12StateObject();
+		cmd_list->SetPipelineState1(state_object);
+		current_rt_bindings = std::make_unique<D3D12RayTracingShaderBindings>(d3d12_pipeline);
+		return current_rt_bindings.get();
+	}
+
 	void D3D12CommandList::DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth)
 	{
 		ADRIA_ASSERT(current_context == Context::Compute);
@@ -378,12 +390,15 @@ namespace adria
 		{
 			return;
 		}
+		ADRIA_ASSERT(current_rt_bindings != nullptr);
+
 		D3D12_DISPATCH_RAYS_DESC dispatch_desc{};
+		current_rt_bindings->CommitWithAllocator(*gfx->GetDynamicAllocator(), dispatch_desc);
 		dispatch_desc.Width = dispatch_width;
 		dispatch_desc.Height = dispatch_height;
 		dispatch_desc.Depth = dispatch_depth;
-		current_rt_table->Commit(*gfx->GetDynamicAllocator(), dispatch_desc);
 		cmd_list->DispatchRays(&dispatch_desc);
+		current_rt_bindings.reset();
 	}
 
 	void D3D12CommandList::TextureBarrier(GfxTexture const& texture, GfxResourceState flags_before, GfxResourceState flags_after, Uint32 subresource)
@@ -739,20 +754,6 @@ namespace adria
 				}
 			}
 		}
-	}
-
-	GfxRayTracingShaderTable& D3D12CommandList::SetStateObject(GfxStateObject const* state_object)
-	{
-		ADRIA_ASSERT(state_object);
-		ID3D12StateObject* d3d12_state_object = (ID3D12StateObject*)state_object->GetNative();
-		if (d3d12_state_object != current_state_object)
-		{
-			current_state_object = d3d12_state_object;
-			cmd_list->SetPipelineState1(d3d12_state_object);
-			current_context = d3d12_state_object ? Context::Compute : Context::Invalid;
-			current_rt_table = std::make_unique<GfxRayTracingShaderTable>(state_object);
-		}
-		return *current_rt_table;
 	}
 
 	void D3D12CommandList::SetStencilReference(Uint8 stencil_ref)

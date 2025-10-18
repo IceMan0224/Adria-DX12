@@ -1,19 +1,18 @@
 #pragma once
 #include "BlurPass.h"
 #include "Graphics/GfxPipelineStateFwd.h"
-#include "Graphics/GfxRayTracingShaderTable.h"
 #include "RenderGraph/RenderGraphResourceName.h"
 
 namespace adria
 {
 	class GfxDevice;
-	class D3D12Device;
-	class GfxStateObject;
+	class GfxRayTracingPipeline;
 	class GfxShaderKey;
 	class RenderGraph;
 
 	class RayTracedAmbientOcclusionPass
 	{
+		ADRIA_TODO("Move this to console variables");
 		struct RTAOParams
 		{
 			Float radius = 2.0f;
@@ -32,8 +31,8 @@ namespace adria
 		Bool IsSupported() const;
 
 	private:
-		D3D12Device* d3d12_gfx;
-		std::unique_ptr<GfxStateObject> ray_traced_ambient_occlusion_so;
+		GfxDevice* gfx;
+		std::unique_ptr<GfxRayTracingPipeline> ray_traced_ambient_occlusion_pso;
 		std::unique_ptr<GfxComputePipelineState> rtao_filter_pso;
 		Uint32 width, height;
 		BlurPass blur_pass;
