@@ -3,7 +3,7 @@
 #include "Components.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"
-#include "Graphics/GfxReflection.h"
+#include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"
 #include "entt/entity/registry.hpp"
@@ -79,7 +79,7 @@ namespace adria
 	void SunPass::CreatePSO()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_Sun), gfx_pso_desc.input_layout);
+		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_Sun), gfx_pso_desc.input_layout);
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_Sun;
 		gfx_pso_desc.PS = PS_Texture;

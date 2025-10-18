@@ -3,7 +3,7 @@
 #include "ShaderManager.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxDynamicAllocation.h"
-#include "Graphics/GfxReflection.h"
+#include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxPipelineStatePermutations.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Math/Packing.h"
@@ -321,7 +321,7 @@ namespace adria
 	void DebugRenderer::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc = {};
-		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_Debug), gfx_pso_desc.input_layout);
+		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_Debug), gfx_pso_desc.input_layout);
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_Debug;
 		gfx_pso_desc.PS = PS_Debug;

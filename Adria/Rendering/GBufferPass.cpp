@@ -5,7 +5,7 @@
 #include "ShaderManager.h"
 #include "RendererDebugViewPass.h"
 #include "Graphics/GfxBufferView.h"
-#include "Graphics/GfxReflection.h"
+#include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxTracyProfiler.h"
 #include "Graphics/GfxPipelineStatePermutations.h"
 #include "RenderGraph/RenderGraph.h"
@@ -110,7 +110,7 @@ namespace adria
 	void GBufferPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc gbuffer_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_GBuffer), gbuffer_pso_desc.input_layout);
+		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_GBuffer), gbuffer_pso_desc.input_layout);
 		gbuffer_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gbuffer_pso_desc.VS = VS_GBuffer;
 		gbuffer_pso_desc.PS = PS_GBuffer;

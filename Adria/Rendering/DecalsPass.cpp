@@ -5,7 +5,7 @@
 #include "ShaderManager.h"
 #include "TextureManager.h"
 #include "Graphics/GfxBufferView.h"
-#include "Graphics/GfxReflection.h"
+#include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxPipelineStatePermutations.h"
 #include "RenderGraph/RenderGraph.h"
 #include "entt/entity/registry.hpp"
@@ -124,7 +124,7 @@ namespace adria
 	void DecalsPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc decals_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_Decals), decals_pso_desc.input_layout);
+		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_Decals), decals_pso_desc.input_layout);
 		decals_pso_desc.root_signature = GfxRootSignatureID::Common;
 		decals_pso_desc.VS = VS_Decals;
 		decals_pso_desc.PS = PS_Decals;

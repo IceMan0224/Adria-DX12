@@ -8,7 +8,7 @@
 #include "RenderGraph/RenderGraph.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxPipelineStatePermutations.h"
-#include "Graphics/GfxReflection.h"
+#include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxCommon.h"
 #include "Core/ConsoleManager.h"
 #include "Editor/GUICommand.h"
@@ -451,7 +451,7 @@ namespace adria
 	void OceanRenderer::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_Ocean), gfx_pso_desc.input_layout);
+		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_Ocean), gfx_pso_desc.input_layout);
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_Ocean;
 		gfx_pso_desc.PS = PS_Ocean;

@@ -298,8 +298,6 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRayTracingAS.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRayTracingPipeline.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRayTracingShaderBindings.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxReflection.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxReflection.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRenderDoc.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRenderDoc.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRenderPass.h"

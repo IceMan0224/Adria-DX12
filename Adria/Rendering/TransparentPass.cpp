@@ -5,7 +5,7 @@
 #include "ShaderManager.h"
 #include "RendererDebugViewPass.h"
 #include "Graphics/GfxBufferView.h"
-#include "Graphics/GfxReflection.h"
+#include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxPipelineStatePermutations.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Core/ConsoleManager.h"
@@ -158,7 +158,7 @@ namespace adria
 	void TransparentPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc transparent_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_Transparent), transparent_pso_desc.input_layout);
+		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_Transparent), transparent_pso_desc.input_layout);
 		transparent_pso_desc.root_signature = GfxRootSignatureID::Common;
 		transparent_pso_desc.VS = VS_Transparent;
 		transparent_pso_desc.PS = PS_Transparent;

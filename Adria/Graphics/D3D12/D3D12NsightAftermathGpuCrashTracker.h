@@ -9,7 +9,7 @@ namespace adria
 	class GfxDevice;
 	enum ShaderID : Uint8;
 
-	class D3D12NsightAftermathGpuCrashTracker
+	class D3D12NsightAftermathGpuCrashTracker final
 	{
 		struct GFSDK_Aftermath_ShaderDebugInfoIdentifierComparator
 		{

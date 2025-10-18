@@ -8,7 +8,7 @@ namespace adria
 	class GfxLinearDynamicAllocator;
 	class GfxRingDynamicAllocator;
 
-	class D3D12RayTracingShaderBindings : public GfxRayTracingShaderBindings
+	class D3D12RayTracingShaderBindings final : public GfxRayTracingShaderBindings
 	{
 	public:
 		explicit D3D12RayTracingShaderBindings(D3D12RayTracingPipeline const* pipeline);

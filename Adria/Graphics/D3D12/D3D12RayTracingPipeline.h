@@ -4,7 +4,7 @@
 
 namespace adria
 {
-	class D3D12RayTracingPipeline : public GfxRayTracingPipeline
+	class D3D12RayTracingPipeline final : public GfxRayTracingPipeline
 	{
 	public:
 		explicit D3D12RayTracingPipeline(ID3D12StateObject* state_object);

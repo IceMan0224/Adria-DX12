@@ -8,7 +8,7 @@ namespace adria
 	class D3D12NsightPerfReporter;
 	class D3D12NsightPerfHUD;
 
-	class D3D12NsightPerfManager : public GfxNsightPerfManager
+	class D3D12NsightPerfManager final : public GfxNsightPerfManager
 	{
 	public:
 		D3D12NsightPerfManager(GfxDevice* gfx, GfxNsightPerfMode perf_mode);

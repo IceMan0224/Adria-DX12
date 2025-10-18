@@ -7,7 +7,7 @@
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxPipelineState.h"
-#include "Graphics/GfxReflection.h"
+#include "Graphics/GfxShaderCompiler.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 #include "entt/entity/registry.hpp"
@@ -111,7 +111,7 @@ namespace adria
 	void RainBlockerMapPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_RainBlocker), gfx_pso_desc.input_layout);
+		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_RainBlocker), gfx_pso_desc.input_layout);
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_RainBlocker;
 		gfx_pso_desc.PS = ShaderID_Invalid;

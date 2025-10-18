@@ -11,7 +11,7 @@
 #include "Graphics/GfxRayTracingShaderBindings.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Graphics/GfxCommon.h"
-#include "Graphics/GfxReflection.h"
+#include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxBufferView.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
@@ -128,7 +128,7 @@ namespace adria
 	void PathTracingPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc pt_gbuffer_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_PT_GBuffer), pt_gbuffer_pso_desc.input_layout);
+		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_PT_GBuffer), pt_gbuffer_pso_desc.input_layout);
 		pt_gbuffer_pso_desc.root_signature = GfxRootSignatureID::Common;
 		pt_gbuffer_pso_desc.VS = VS_PT_GBuffer;
 		pt_gbuffer_pso_desc.PS = PS_PT_GBuffer;

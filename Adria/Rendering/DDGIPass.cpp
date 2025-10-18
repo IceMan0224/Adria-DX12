@@ -8,7 +8,7 @@
 #include "Graphics/GfxShaderKey.h"
 #include "Graphics/GfxRayTracingPipeline.h"
 #include "Graphics/GfxPipelineState.h"
-#include "Graphics/GfxReflection.h"
+#include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxRayTracingShaderBindings.h"
 #include "RenderGraph/RenderGraph.h"
@@ -429,7 +429,7 @@ namespace adria
 	void DDGIPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc  gfx_pso_desc{};
-		GfxReflection::FillInputLayoutDesc(SM_GetGfxShader(VS_DDGIVisualize), gfx_pso_desc.input_layout);
+		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_DDGIVisualize), gfx_pso_desc.input_layout);
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_DDGIVisualize;
 		gfx_pso_desc.PS = PS_DDGIVisualize;
