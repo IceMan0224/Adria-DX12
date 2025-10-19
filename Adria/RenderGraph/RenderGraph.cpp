@@ -7,6 +7,7 @@
 #include "Core/ConsoleManager.h"
 #include "Utilities/StringConversions.h"
 #include "Utilities/PathHelpers.h"
+#include "tracy/Tracy.hpp"
 
 #if GFX_MULTITHREADED
 #define RG_MULTITHREADED 1
@@ -1353,7 +1354,6 @@ namespace adria
 
 				ZoneTransientN(__tracy, pass->name.c_str(), true);
 				AdriaGfxScopedEvent(cmd_list, pass->name.c_str());
-				TracyGfxProfileScope(cmd_list->GetNative(), pass->name.c_str());
 				cmd_list->SetContext(GfxCommandList::Context::Graphics);
 				cmd_list->BeginRenderPass(render_pass_desc);
 				pass->Execute(render_graph_ctx);
@@ -1363,7 +1363,6 @@ namespace adria
 			{
 				ZoneTransientN(__tracy, pass->name.c_str(), true);
 				AdriaGfxScopedEvent(cmd_list, pass->name.c_str());
-				TracyGfxProfileScope(cmd_list->GetNative(), pass->name.c_str());
 				cmd_list->SetContext(GfxCommandList::Context::Compute);
 				pass->Execute(render_graph_ctx);
 			}

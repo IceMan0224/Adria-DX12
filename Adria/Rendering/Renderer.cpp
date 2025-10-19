@@ -49,7 +49,6 @@ namespace adria
 	{
 		g_DebugRenderer.Initialize(gfx, width, height);
 		g_GfxProfiler.Initialize(gfx);
-		GfxTracyProfiler::Initialize(gfx);
 		CreateDisplaySizeDependentResources();
 		CreateRenderSizeDependentResources();
 		RegisterEventListeners();
@@ -59,7 +58,6 @@ namespace adria
 
 	Renderer::~Renderer()
 	{
-		GfxTracyProfiler::Destroy();
 		g_GfxProfiler.Shutdown();
 		gfx->WaitForGPU();
 		reg.clear();
@@ -87,7 +85,6 @@ namespace adria
 		camera = _camera;
 		backbuffer_index = gfx->GetBackbufferIndex();
 		g_GfxProfiler.NewFrame();
-		GfxTracyProfiler::NewFrame();
 	}
 	void Renderer::Update(Float dt)
 	{

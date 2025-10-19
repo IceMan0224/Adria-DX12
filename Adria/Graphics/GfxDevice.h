@@ -113,7 +113,7 @@ namespace adria
 		virtual GfxNsightPerfManager* GetNsightPerfManager() const = 0;
 
 		virtual void WaitForGPU() = 0;
-		virtual GfxCommandQueue* GetCommandQueue(GfxCommandListType type) = 0;
+		virtual GfxCommandQueue* GetCommandQueue(GfxCommandListType type) const = 0;
 		virtual GfxFence& GetFence(GfxCommandListType type) = 0;
 		virtual Uint64 GetFenceValue(GfxCommandListType type) const = 0;
 		virtual void SetFenceValue(GfxCommandListType type, Uint64 value) = 0;
@@ -175,6 +175,19 @@ namespace adria
 
 		virtual void GetTimestampFrequency(Uint64& frequency) const = 0;
 		virtual GPUMemoryUsage GetMemoryUsage() const = 0;
+
+		GfxCommandQueue* GetGraphicsCommandQueue() const
+		{
+			return GetCommandQueue(GfxCommandListType::Graphics);
+		}
+		GfxCommandQueue* GetComputeCommandQueue() const
+		{
+			return GetCommandQueue(GfxCommandListType::Compute);
+		}
+		GfxCommandQueue* GetCopyCommandQueue() const
+		{
+			return GetCommandQueue(GfxCommandListType::Copy);
+		}
 
 		GfxCommandList* GetGraphicsCommandList() const
 		{

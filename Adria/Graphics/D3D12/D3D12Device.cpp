@@ -371,7 +371,7 @@ namespace adria
 		wait_fence.Wait(wait_fence_value);
 		wait_fence_value++;
 	}
-	GfxCommandQueue* D3D12Device::GetCommandQueue(GfxCommandListType type)
+	GfxCommandQueue* D3D12Device::GetCommandQueue(GfxCommandListType type) const
 	{
 		switch (type)
 		{

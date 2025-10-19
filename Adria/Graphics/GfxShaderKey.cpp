@@ -7,8 +7,8 @@ namespace adria
 {
 	struct GfxShaderKey::Impl
 	{
-		ShaderID id = ShaderID_Invalid;
 		std::vector<GfxShaderDefine> defines;
+		ShaderID id = ShaderID_Invalid;
 	};
 
 	GfxShaderKey::GfxShaderKey()

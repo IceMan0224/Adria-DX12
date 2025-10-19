@@ -1,39 +1,43 @@
 #pragma once
 #include "GfxDefines.h"
+#include "GfxTimestampProfilerFwd.h"
 #include "Utilities/Singleton.h"
-#include "GfxProfilerFwd.h"
-#include "Utilities/Tree.h"
-#include "Utilities/LinearAllocator.h"
 
 namespace adria
 {
 	class GfxDevice;
-	class GfxBuffer;
-	class GfxQueryHeap;
-	using GfxProfilerTreeNode = typename GfxProfilerTree::NodeType;
+	class GfxCommandList;
 
-	class GfxProfiler : public Singleton<GfxProfiler>
+	class GfxProfiler
 	{
-		friend class Singleton<GfxProfiler>;
-		struct Impl;
-		static constexpr Uint64 FRAME_COUNT = GFX_BACKBUFFER_COUNT;
-		static constexpr Uint64 MAX_PROFILES = 256;
+	public:
+		virtual ~GfxProfiler() = default;
+		virtual void Initialize(GfxDevice* gfx) = 0;
+		virtual void Shutdown() = 0;
+		virtual void NewFrame() = 0;
+		virtual void BeginProfileScope(GfxCommandList* cmd_list, Char const* name, Bool active = true) = 0;
+		virtual void EndProfileScope(GfxCommandList* cmd_list) = 0;
+		virtual GfxProfilerTree const* GetProfilerTree() const = 0;
+	};
 
+	class GfxProfilerManager : public Singleton<GfxProfilerManager>
+	{
+		friend class Singleton<GfxProfilerManager>;
 	public:
 		void Initialize(GfxDevice* gfx);
 		void Shutdown();
-
 		void NewFrame();
-		void BeginProfileScope(GfxCommandList* cmd_list, Char const* name);
+		void BeginProfileScope(GfxCommandList* cmd_list, Char const* name, Bool active = true);
 		void EndProfileScope(GfxCommandList* cmd_list);
 		GfxProfilerTree const* GetProfilerTree() const;
 
 	private:
-		std::unique_ptr<Impl> pimpl;
+		std::unique_ptr<GfxProfiler> timestamp_profiler;
+		std::unique_ptr<GfxProfiler> tracy_profiler;
 
 	private:
-		GfxProfiler();
-		~GfxProfiler();
+		GfxProfilerManager();
+		~GfxProfilerManager();
 	};
-	#define g_GfxProfiler GfxProfiler::Get()
+	#define g_GfxProfiler GfxProfilerManager::Get()
 }

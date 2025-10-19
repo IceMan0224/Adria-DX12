@@ -68,8 +68,8 @@ namespace adria
 		{
 			if (active)
 			{
-				GfxCommandQueue* cmd_queue = gfx->GetCommandQueue(GfxCommandListType::Graphics);
-				report_generator.OnFrameStart((ID3D12CommandQueue*)cmd_queue->GetHandle());
+				GfxCommandQueue* cmd_queue = gfx->GetGraphicsCommandQueue();
+				report_generator.OnFrameStart((ID3D12CommandQueue*)cmd_queue->GetNative());
 			}
 		}
 		void EndFrame()
@@ -137,7 +137,7 @@ namespace adria
 				const nv::perf::DeviceIdentifiers device_identifiers = periodic_sampler.GetGpuDeviceIdentifiers();
 				static constexpr Uint32 SamplingIntervalInNanoSeconds = 1000 * 1000 * 1000 / SamplingFrequency;
 				static constexpr Uint32 MaxDecodeLatencyInNanoSeconds = 1000 * 1000 * 1000;
-				ID3D12CommandQueue* d3d12_cmd_queue = (ID3D12CommandQueue*)gfx->GetCommandQueue(GfxCommandListType::Graphics)->GetHandle();
+				ID3D12CommandQueue* d3d12_cmd_queue = (ID3D12CommandQueue*)gfx->GetGraphicsCommandQueue()->GetNative();
 				if (!periodic_sampler.BeginSession(d3d12_cmd_queue, SamplingIntervalInNanoSeconds, MaxDecodeLatencyInNanoSeconds, GFX_BACKBUFFER_COUNT))
 				{
 					ADRIA_WARNING("NsightPerf Periodic Sampler BeginSession failed, check the VS Output View for NVPERF logs");

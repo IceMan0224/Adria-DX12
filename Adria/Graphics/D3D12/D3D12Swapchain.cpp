@@ -33,13 +33,13 @@ namespace adria
 		fullscreen_desc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 		fullscreen_desc.Windowed = desc.fullscreen_windowed;
 
-		GfxCommandQueue* graphics_queue = gfx->GetCommandQueue(GfxCommandListType::Graphics);
+		GfxCommandQueue* graphics_queue = gfx->GetGraphicsCommandQueue();
 		Ref<IDXGISwapChain1> swapchain1 = nullptr;
 
         D3D12Device* d3d12gfx = (D3D12Device*)gfx;
 
 		GFX_CHECK_HR(d3d12gfx->GetFactory()->CreateSwapChainForHwnd(
-			(ID3D12CommandQueue*)graphics_queue->GetHandle(),
+			(ID3D12CommandQueue*)graphics_queue->GetNative(),
 			static_cast<HWND>(gfx->GetWindowHandle()),
 			&swapchain_desc,
 			&fullscreen_desc,

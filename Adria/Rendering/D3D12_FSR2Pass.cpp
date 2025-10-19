@@ -7,6 +7,7 @@
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 #include "Core/ConsoleManager.h"
+#include "Utilities/StringConversions.h"
 
 namespace adria
 {

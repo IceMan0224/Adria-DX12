@@ -18,7 +18,7 @@ namespace adria
 		virtual void Wait(GfxFence& fence, Uint64 fence_value) override;
 		ADRIA_FORCEINLINE virtual Uint64 GetTimestampFrequency() const override { return timestamp_frequency; }
 		ADRIA_FORCEINLINE virtual GfxCommandListType GetType() const override { return type; }
-		ADRIA_FORCEINLINE virtual void* GetHandle() const override { return command_queue.Get(); }
+		ADRIA_FORCEINLINE virtual void* GetNative() const override { return command_queue.Get(); }
 
 	private:
 		Ref<ID3D12CommandQueue> command_queue;

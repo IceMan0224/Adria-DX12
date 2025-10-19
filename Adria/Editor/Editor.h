@@ -1,7 +1,7 @@
 #pragma once
 #include "GUICommand.h"
 #include "EditorEvents.h"
-#include "Graphics/GfxProfilerFwd.h"
+#include "Graphics/GfxTimestampProfilerFwd.h"
 #include "Rendering/ViewportData.h"
 #include "Utilities/Singleton.h"
 #include "entt/entity/fwd.hpp"

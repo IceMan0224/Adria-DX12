@@ -49,7 +49,7 @@ namespace adria
 		virtual GfxNsightPerfManager* GetNsightPerfManager() const override { return nsight_perf_manager.get(); }
 
 		virtual void WaitForGPU() override;
-		virtual GfxCommandQueue* GetCommandQueue(GfxCommandListType type) override;
+		virtual GfxCommandQueue* GetCommandQueue(GfxCommandListType type) const override;
 		virtual GfxFence& GetFence(GfxCommandListType type) override;
 		virtual Uint64 GetFenceValue(GfxCommandListType type) const override;
 		virtual void SetFenceValue(GfxCommandListType type, Uint64 value) override;

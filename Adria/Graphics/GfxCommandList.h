@@ -13,9 +13,9 @@ namespace adria
 	class GfxBuffer;
 	class GfxTexture;
 	class GfxPipelineState;
+	class GfxQueryHeap;
 	class GfxRayTracingPipeline;
 	class GfxRayTracingShaderBindings;
-	class GfxQueryHeap;
 	struct GfxVertexBufferView;
 	struct GfxIndexBufferView;
 	struct GfxRenderPassDesc;

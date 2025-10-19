@@ -21,7 +21,7 @@ namespace adria
 
 		virtual Uint64 GetTimestampFrequency() const = 0;
 		virtual GfxCommandListType GetType() const = 0;
-		virtual void* GetHandle() const = 0;
+		virtual void* GetNative() const = 0;
 	};
 
 	inline void ExecuteCommandListPool(GfxCommandQueue* queue, GfxCommandListPool& cmd_list_pool)

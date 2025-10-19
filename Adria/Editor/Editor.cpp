@@ -28,6 +28,7 @@
 #include "Utilities/PathHelpers.h"
 #include "Utilities/StringConversions.h"
 #include "Utilities/Random.h"
+#include "Utilities/Tree.h"
 #include "Math/BoundingVolumeUtil.h"
 
 
@@ -1099,6 +1100,7 @@ namespace adria
 					ImGui::TableSetupColumn("Time");
 					ImGui::TableHeadersRow();
 
+					using GfxProfilerTreeNode = typename GfxProfilerTree::NodeType;
 					std::unordered_map<GfxProfilerTreeNode*, Bool> visible_nodes;
 					profiler_tree->TraversePreOrder([&](GfxProfilerTreeNode* node)
 						{

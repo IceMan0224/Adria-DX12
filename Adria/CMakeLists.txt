@@ -293,7 +293,7 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxPipelineStatePermutations.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxProfiler.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxProfiler.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxProfilerFwd.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxTimestampProfilerFwd.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxQueryHeap.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRayTracingAS.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxRayTracingPipeline.h"
@@ -359,8 +359,12 @@ set(ADRIA_D3D12_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12NsightAftermathGpuCrashTracker.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12NsightPerfManager.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12NsightPerfManager.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12PIX.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12PIX.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12PIX.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12TimestampProfiler.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12TimestampProfiler.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12TracyProfiler.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12TracyProfiler.cpp"
 
     "${CMAKE_CURRENT_SOURCE_DIR}/Editor/D3D12/D3D12ImGuiManager.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Editor/D3D12/D3D12ImGuiManager.cpp"
@@ -466,7 +470,7 @@ target_include_directories(Adria PRIVATE
 target_compile_options(Adria PRIVATE /MP)
 
 target_compile_definitions(Adria PRIVATE
-    $<$<CONFIG:Debug>:_DEBUG;_CONSOLE>
+    $<$<CONFIG:Debug>:_DEBUG;_CONSOLE;TRACY_ENABLE>
     $<$<CONFIG:Profile>:NDEBUG;_PROFILE;_CONSOLE;TRACY_ENABLE>
     $<$<CONFIG:Release,RelWithDebInfo>:NDEBUG;_CONSOLE>
 )
