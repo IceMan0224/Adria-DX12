@@ -3,7 +3,7 @@
 #include "HBAOPass.h"
 #include "NNAOPass.h"
 #include "RayTracedAmbientOcclusionPass.h"
-#include "D3D12_FFXCACAOPass.h"
+#include "FFXCACAOPass.h"
 
 namespace adria
 {
@@ -24,7 +24,7 @@ namespace adria
 		SSAOPass	 ssao_pass;
 		HBAOPass     hbao_pass;
 		NNAOPass     nnao_pass;
-		D3D12_FFXCACAOPass cacao_pass;
+		FFXCACAOPass cacao_pass;
 		RayTracedAmbientOcclusionPass rtao_pass;
 	};
 }

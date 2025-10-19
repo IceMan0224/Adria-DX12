@@ -1,4 +1,4 @@
-#include "D3D12_FFXVRSPass.h"
+#include "FFXVRSPass.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
@@ -11,6 +11,8 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(PostProcessor);
+
 	static TAutoConsoleVariable<Bool>  VariableRateShading("r.VariableRateShading", false, "");
 	static TAutoConsoleVariable<Bool>  VariableRateShadingImage("r.VariableRateShading.Image", false, "");
 	static TAutoConsoleVariable<Bool>  VariableRateShadingOverlay("r.VariableRateShading.Overlay", false, "");
@@ -30,14 +32,16 @@ namespace adria
 		GfxShadingRate_4X4,
 	};
 
-	D3D12_FFXVRSPass::D3D12_FFXVRSPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), shading_rate_image_tile_size(0),
+	FFXVRSPass::FFXVRSPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), shading_rate_image_tile_size(0),
 		ffx_interface(nullptr), vrs_context{}, vrs_context_description{}
 	{
-		is_supported = gfx->GetCapabilities().CheckVRSSupport(VRSSupport::Tier2);
+		is_supported = gfx->GetCapabilities().CheckVRSSupport(VRSSupport::Tier2) && gfx->GetBackend() == GfxBackend::D3D12;
 		if (!is_supported)
 		{
+			ADRIA_LOG(WARNING, "FFXVRS requires D3D12 backend and VRS Tier2 support!");
 			return;
 		}
+
 		sprintf(name_version, "FFX VRS %d.%d.%d", FFX_VRS_VERSION_MAJOR, FFX_VRS_VERSION_MINOR, FFX_VRS_VERSION_PATCH);
 		ffx_interface = CreateFfxInterface(gfx, FFX_VRS_CONTEXT_COUNT);
 		vrs_context_description.backendInterface = *ffx_interface;
@@ -52,7 +56,7 @@ namespace adria
 		CreateContext();
 	}
 
-	D3D12_FFXVRSPass::~D3D12_FFXVRSPass()
+	FFXVRSPass::~FFXVRSPass()
 	{
 		DestroyContext();
 		if (ffx_interface != nullptr)
@@ -61,7 +65,7 @@ namespace adria
 		}
 	}
 
-	void D3D12_FFXVRSPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void FFXVRSPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		if (!IsSupported())
 		{
@@ -166,7 +170,7 @@ namespace adria
 		}
 	}
 
-	void D3D12_FFXVRSPass::GUI()
+	void FFXVRSPass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -194,18 +198,18 @@ namespace adria
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_None);
 	}
 
-	void D3D12_FFXVRSPass::OnResize(Uint32 w, Uint32 h)
+	void FFXVRSPass::OnResize(Uint32 w, Uint32 h)
 	{
 		width = w, height = h;
 		CreateVRSImage();
 	}
 
-	Bool D3D12_FFXVRSPass::IsEnabled(PostProcessor const*) const
+	Bool FFXVRSPass::IsEnabled(PostProcessor const*) const
 	{
 		return true;
 	}
 
-	void D3D12_FFXVRSPass::CreateVRSImage()
+	void FFXVRSPass::CreateVRSImage()
 	{
 		if (!IsSupported())
 		{
@@ -224,7 +228,7 @@ namespace adria
 		vrs_image_srv = gfx->CreateTextureSRV(vrs_image.get());
 	}
 
-	void D3D12_FFXVRSPass::CreateOverlayPSO()
+	void FFXVRSPass::CreateOverlayPSO()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
@@ -244,7 +248,7 @@ namespace adria
 		vrs_overlay_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
 	}
 
-	void D3D12_FFXVRSPass::DestroyContext()
+	void FFXVRSPass::DestroyContext()
 	{
 		if (context_created)
 		{
@@ -255,7 +259,7 @@ namespace adria
 		}
 	}
 
-	void D3D12_FFXVRSPass::CreateContext()
+	void FFXVRSPass::CreateContext()
 	{
 		if (!context_created)
 		{

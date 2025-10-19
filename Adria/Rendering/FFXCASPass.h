@@ -7,19 +7,21 @@ namespace adria
 	class GfxDevice;
 	class RenderGraph;
 
-	class D3D12_FFXCASPass : public PostEffect
+	class FFXCASPass : public PostEffect
 	{
 	public:
-		D3D12_FFXCASPass(GfxDevice* gfx, Uint32 w, Uint32 h);
-		~D3D12_FFXCASPass();
+		FFXCASPass(GfxDevice* gfx, Uint32 w, Uint32 h);
+		~FFXCASPass();
 
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual void OnResize(Uint32, Uint32) override;
 		virtual Bool IsEnabled(PostProcessor const*) const override;
 		virtual void GUI() override;
 		virtual Bool IsGUIVisible(PostProcessor const*) const override;
+		virtual Bool IsSupported() const override { return is_supported; }
 
 	private:
+		Bool is_supported = true;
 		Char name_version[16] = {};
 		GfxDevice* gfx;
 		Uint32 width, height;

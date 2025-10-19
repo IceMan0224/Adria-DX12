@@ -61,7 +61,14 @@ namespace adria
 			{
 				if (ImGui::Combo("Ambient Occlusion Type", AmbientOcclusion.GetPtr(), "None\0SSAO\0HBAO\0NNAO\0CACAO\0RTAO\0", 6))
 				{
-					if (!gfx->GetCapabilities().SupportsRayTracing() && AmbientOcclusion.Get() == 4) AmbientOcclusion->Set(AmbientOcclusionType_SSAO);
+					if (!gfx->GetCapabilities().SupportsRayTracing() && AmbientOcclusion.Get() == AmbientOcclusionType_RTAO)
+					{
+						AmbientOcclusion->Set(AmbientOcclusionType_SSAO);
+					}
+					else if (!cacao_pass.IsSupported() && AmbientOcclusion.Get() == AmbientOcclusionType_CACAO)
+					{
+						AmbientOcclusion->Set(AmbientOcclusionType_SSAO);
+					}
 				}
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_AO);
 

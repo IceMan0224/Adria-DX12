@@ -1,5 +1,5 @@
 #define NV_WINDOWS
-#include "D3D12_DLSS3Pass.h"
+#include "DLSS3Pass.h"
 #include "nvsdk_ngx_helpers.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"
@@ -20,16 +20,23 @@ namespace adria
 		}
 	}
 
-	D3D12_DLSS3Pass::D3D12_DLSS3Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
+	DLSS3Pass::DLSS3Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
 		: gfx(gfx), display_width(), display_height(), render_width(), render_height()
 	{
+		is_supported = gfx->GetBackend() == GfxBackend::D3D12 && gfx->GetVendor() == GfxVendor::Nvidia;
+		if(!is_supported)
+		{
+			ADRIA_LOG(WARNING, "DLSS 3.5 is only supported on D3D12 backend and NVIDIA GPUs");
+			return;
+		}
+
 		sprintf(name_version, "DLSS 3.5");
 		is_supported = InitializeNVSDK_NGX();
 	}
 
-	D3D12_DLSS3Pass::~D3D12_DLSS3Pass()
+	DLSS3Pass::~DLSS3Pass()
 	{
-		if (is_supported)
+		if (ngx_parameters)
 		{
 			gfx->WaitForGPU();
 			NVSDK_NGX_Result result = NVSDK_NGX_D3D12_DestroyParameters(ngx_parameters);
@@ -39,7 +46,7 @@ namespace adria
 		}
 	}
 
-	void D3D12_DLSS3Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void DLSS3Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		if (!IsSupported())
 		{
@@ -113,12 +120,12 @@ namespace adria
 		postprocessor->SetFinalResource(RG_NAME(DLSS3Output));
 	}
 
-	Bool D3D12_DLSS3Pass::IsEnabled(PostProcessor const*) const
+	Bool DLSS3Pass::IsEnabled(PostProcessor const*) const
 	{
 		return true;
 	}
 
-	void D3D12_DLSS3Pass::GUI()
+	void DLSS3Pass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -135,13 +142,8 @@ namespace adria
 
 	}
 
-	Bool D3D12_DLSS3Pass::InitializeNVSDK_NGX()
+	Bool DLSS3Pass::InitializeNVSDK_NGX()
 	{
-		if (gfx->GetVendor() != GfxVendor::Nvidia)
-		{
-			return false;
-		}
-
 		ID3D12Device* device = (ID3D12Device*)gfx->GetNative();
 
 		static const Wchar* dll_paths[] = 
@@ -200,7 +202,7 @@ namespace adria
 		return true;
 	}
 
-	void D3D12_DLSS3Pass::RecreateRenderResolution()
+	void DLSS3Pass::RecreateRenderResolution()
 	{
 		Uint optimal_width;
 		Uint optimal_height;
@@ -217,7 +219,7 @@ namespace adria
 		BroadcastRenderResolutionChanged(render_width, render_height);
 	}
 
-	void D3D12_DLSS3Pass::CreateDLSS(GfxCommandList* cmd_list)
+	void DLSS3Pass::CreateDLSS(GfxCommandList* cmd_list)
 	{
 		if (!IsSupported())
 		{
@@ -244,7 +246,7 @@ namespace adria
 		needs_create = false;
 	}
 
-	void D3D12_DLSS3Pass::ReleaseDLSS()
+	void DLSS3Pass::ReleaseDLSS()
 	{
 		if (dlss_feature)
 		{

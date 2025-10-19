@@ -1,4 +1,4 @@
-#include "D3D12_FFXCASPass.h"
+#include "FFXCASPass.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "Postprocessor.h"
@@ -9,25 +9,43 @@
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(PostProcessor);
+
 	static TAutoConsoleVariable<Bool> CAS("r.CAS", false, "Enable or Disable Contrast-Adaptive Sharpening, TAA must be enabled");
 
-	D3D12_FFXCASPass::D3D12_FFXCASPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), ffx_interface(nullptr)
+	FFXCASPass::FFXCASPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), ffx_interface(nullptr)
 	{
-		if (!gfx->GetCapabilities().SupportsShaderModel(SM_6_6)) return;
+		is_supported = gfx->GetBackend() == GfxBackend::D3D12 && gfx->GetCapabilities().SupportsShaderModel(SM_6_6);
+		if (!is_supported)
+		{
+			ADRIA_LOG(WARNING, "FFXCAS is only supported on D3D12 backend with SM 6.6 support");
+			return;
+		}
+
 		sprintf(name_version, "FFX CAS %d.%d.%d", FFX_CAS_VERSION_MAJOR, FFX_CAS_VERSION_MINOR, FFX_CAS_VERSION_PATCH);
 		ffx_interface = CreateFfxInterface(gfx, FFX_CAS_CONTEXT_COUNT);
 		cas_context_desc.backendInterface = *ffx_interface;
 		CreateContext();
+		is_supported = true;
 	}
 
-	D3D12_FFXCASPass::~D3D12_FFXCASPass()
+	FFXCASPass::~FFXCASPass()
 	{
-		DestroyContext();
-		DestroyFfxInterface(ffx_interface);
+		if (IsSupported())
+		{
+			DestroyContext();
+			DestroyFfxInterface(ffx_interface);
+		}
 	}
 
-	void D3D12_FFXCASPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void FFXCASPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
+		if (!IsSupported())
+		{
+			ADRIA_ASSERT_MSG(false, "FFXCAS is not supported on this device");
+			return;
+		}
+
 		struct FFXCASPassData
 		{
 			RGTextureReadOnlyId input;
@@ -67,19 +85,19 @@ namespace adria
 		postprocessor->SetFinalResource(RG_NAME(FFXCASOutput));
 	}
 
-	void D3D12_FFXCASPass::OnResize(Uint32 w, Uint32 h)
+	void FFXCASPass::OnResize(Uint32 w, Uint32 h)
 	{
 		width = w, height = h;
 		DestroyContext();
 		CreateContext();
 	}
 
-	Bool D3D12_FFXCASPass::IsEnabled(PostProcessor const*) const
+	Bool FFXCASPass::IsEnabled(PostProcessor const*) const
 	{
 		return CAS.Get();
 	}
 
-	void D3D12_FFXCASPass::GUI()
+	void FFXCASPass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -95,12 +113,12 @@ namespace adria
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_Antialiasing);
 	}
 
-	Bool D3D12_FFXCASPass::IsGUIVisible(PostProcessor const* postprocessor) const
+	Bool FFXCASPass::IsGUIVisible(PostProcessor const* postprocessor) const
 	{
 		return postprocessor->HasTAA() || postprocessor->HasUpscaler();
 	}
 
-	void D3D12_FFXCASPass::CreateContext()
+	void FFXCASPass::CreateContext()
 	{
 		cas_context_desc.colorSpaceConversion = FFX_CAS_COLOR_SPACE_LINEAR;
 		cas_context_desc.flags |= FFX_CAS_SHARPEN_ONLY;
@@ -112,7 +130,7 @@ namespace adria
 		ADRIA_ASSERT(error_code == FFX_OK);
 	}
 
-	void D3D12_FFXCASPass::DestroyContext()
+	void FFXCASPass::DestroyContext()
 	{
 		gfx->WaitForGPU();
 		ffxCasContextDestroy(&cas_context);

@@ -1,5 +1,5 @@
-#include "D3D12_FSR3Pass.h"
-#include "FidelityFX/gpu/fsr3/ffx_fsr3_resources.h"
+#include "FSR2Pass.h"
+#include "FidelityFX/gpu/fsr2/ffx_fsr2_resources.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"
@@ -15,7 +15,7 @@ namespace adria
 
 	namespace
 	{
-		void FSR3Log(FfxMsgType type, Wchar const* message)
+		void FSR2Log(FfxMsgType type, const Wchar* message)
 		{
 			std::string msg = ToString(message);
 			switch (type)
@@ -31,30 +31,38 @@ namespace adria
 			}
 		}
 	}
-
-	D3D12_FSR3Pass::D3D12_FSR3Pass(GfxDevice* _gfx, Uint32 w, Uint32 h) : gfx(_gfx), display_width(w), display_height(h), render_width(), render_height(), ffx_interface(nullptr)
+	FSR2Pass::FSR2Pass(GfxDevice* _gfx, Uint32 w, Uint32 h) : gfx(_gfx), display_width(w), display_height(h), render_width(), render_height()
 	{
-		if (!gfx->GetCapabilities().SupportsShaderModel(SM_6_6))
+		is_supported = gfx->GetBackend() == GfxBackend::D3D12;
+		if (!is_supported)
 		{
+			ADRIA_LOG(WARNING, "FSR2 is only supported on D3D12 backend");
 			return;
 		}
 
-		sprintf(name_version, "FSR %d.%d.%d", FFX_FSR3_VERSION_MAJOR, FFX_FSR3_VERSION_MINOR, FFX_FSR3_VERSION_PATCH);
-		ffx_interface = CreateFfxInterface(gfx, FFX_FSR3UPSCALER_CONTEXT_COUNT);
-		fsr3_context_desc.backendInterfaceUpscaling = *ffx_interface;
-		fsr3_context_desc.backendInterfaceFrameInterpolation = *ffx_interface;
+		sprintf(name_version, "FSR %d.%d.%d", FFX_FSR2_VERSION_MAJOR, FFX_FSR2_VERSION_MINOR, FFX_FSR2_VERSION_PATCH);
+		ffx_interface = CreateFfxInterface(gfx, FFX_FSR2_CONTEXT_COUNT);
+		fsr2_context_desc.backendInterface = *ffx_interface;
 		RecreateRenderResolution();
 		CreateContext();
 	}
 
-	D3D12_FSR3Pass::~D3D12_FSR3Pass()
+	FSR2Pass::~FSR2Pass()
 	{
-		DestroyContext();
-		DestroyFfxInterface(ffx_interface);
+		if(ffx_interface)
+		{
+			DestroyContext();
+			DestroyFfxInterface(ffx_interface);
+		}
 	}
 
-	void D3D12_FSR3Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void FSR2Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
+		if (!IsSupported())
+		{
+			return;
+		}
+
 		if (recreate_context)
 		{
 			DestroyContext();
@@ -63,7 +71,7 @@ namespace adria
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
-		struct FSR3PassData
+		struct FSR2PassData
 		{
 			RGTextureReadOnlyId input;
 			RGTextureReadOnlyId depth;
@@ -71,22 +79,23 @@ namespace adria
 			RGTextureReadOnlyId exposure;
 			RGTextureReadWriteId output;
 		};
-		rg.AddPass<FSR3PassData>(name_version,
-			[=](FSR3PassData& data, RenderGraphBuilder& builder)
-			{
-				RGTextureDesc fsr3_desc{};
-				fsr3_desc.format = GfxFormat::R16G16B16A16_FLOAT;
-				fsr3_desc.width = display_width;
-				fsr3_desc.height = display_height;
-				fsr3_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
-				builder.DeclareTexture(RG_NAME(FSR3Output), fsr3_desc);
 
-				data.output = builder.WriteTexture(RG_NAME(FSR3Output));
+		rg.AddPass<FSR2PassData>(name_version,
+			[=](FSR2PassData& data, RenderGraphBuilder& builder)
+			{
+				RGTextureDesc fsr2_desc{};
+				fsr2_desc.format = GfxFormat::R16G16B16A16_FLOAT;
+				fsr2_desc.width = display_width;
+				fsr2_desc.height = display_height;
+				fsr2_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
+				builder.DeclareTexture(RG_NAME(FSR2Output), fsr2_desc);
+
+				data.output = builder.WriteTexture(RG_NAME(FSR2Output));
 				data.input = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](FSR3PassData const& data, RenderGraphContext& ctx)
+			[=](FSR2PassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
@@ -95,7 +104,7 @@ namespace adria
 				GfxTexture& depth_texture = ctx.GetTexture(*data.depth);
 				GfxTexture& output_texture = ctx.GetTexture(*data.output);
 
-				FfxFsr3DispatchUpscaleDescription dispatch_desc{};
+				FfxFsr2DispatchDescription dispatch_desc{};
 				dispatch_desc.commandList = ffxGetCommandListDX12((ID3D12CommandList*)cmd_list->GetNative());
 				dispatch_desc.color = GetFfxResource(input_texture);
 				dispatch_desc.depth = GetFfxResource(depth_texture);
@@ -103,13 +112,13 @@ namespace adria
 				dispatch_desc.exposure = GetFfxResource();
 				dispatch_desc.reactive = GetFfxResource();
 				dispatch_desc.transparencyAndComposition = GetFfxResource();
-				dispatch_desc.upscaleOutput = GetFfxResource(output_texture, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+				dispatch_desc.output = GetFfxResource(output_texture, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 				dispatch_desc.jitterOffset.x = frame_data.camera_jitter_x;
 				dispatch_desc.jitterOffset.y = frame_data.camera_jitter_y;
 				dispatch_desc.motionVectorScale.x = (Float)render_width;
 				dispatch_desc.motionVectorScale.y = (Float)render_height;
 				dispatch_desc.reset = false;
-				dispatch_desc.enableSharpening = sharpening_enabled;
+				dispatch_desc.enableSharpening = true;
 				dispatch_desc.sharpness = sharpness;
 				dispatch_desc.frameTimeDelta = frame_data.delta_time;
 				dispatch_desc.preExposure = 1.0f;
@@ -119,33 +128,33 @@ namespace adria
 				dispatch_desc.cameraNear = frame_data.camera_near;
 				dispatch_desc.cameraFovAngleVertical = frame_data.camera_fov;
 
-				FfxErrorCode error_code = ffxFsr3ContextDispatchUpscale(&fsr3_context, &dispatch_desc);
+				FfxErrorCode error_code = ffxFsr2ContextDispatch(&fsr2_context, &dispatch_desc);
 				ADRIA_ASSERT(error_code == FFX_OK);
 
 				cmd_list->ResetState();
 			}, RGPassType::Compute);
 
-		postprocessor->SetFinalResource(RG_NAME(FSR3Output));
+		postprocessor->SetFinalResource(RG_NAME(FSR2Output));
 	}
 
-	Bool D3D12_FSR3Pass::IsEnabled(PostProcessor const*) const
+	Bool FSR2Pass::IsEnabled(PostProcessor const*) const
 	{
-		return true; 
+		return true;
 	}
 
-	void D3D12_FSR3Pass::GUI()
+	void FSR2Pass::GUI()
 	{
 		QueueGUI([&]()
 			{
 				if (ImGui::TreeNodeEx(name_version, ImGuiTreeNodeFlags_None))
 				{
-					if (ImGui::Combo("Quality Mode", (Int32*)&fsr3_quality_mode, "Custom\0Quality (1.5x)\0Balanced (1.7x)\0Performance (2.0x)\0Ultra Performance (3.0x)\0", 5))
+					if (ImGui::Combo("Quality Mode", (Int32*)&fsr2_quality_mode, "Custom\0Quality (1.5x)\0Balanced (1.7x)\0Performance (2.0x)\0Ultra Performance (3.0x)\0", 5))
 					{
 						RecreateRenderResolution();
 						recreate_context = true;
 					}
 
-					if (fsr3_quality_mode == 0)
+					if (fsr2_quality_mode == 0)
 					{
 						if (ImGui::SliderFloat("Upscale Ratio", &custom_upscale_ratio, 1.0, 3.0))
 						{
@@ -153,46 +162,39 @@ namespace adria
 							recreate_context = true;
 						}
 					}
-					ImGui::Checkbox("Enable sharpening", &sharpening_enabled);
-					if (sharpening_enabled)
-					{
-						ImGui::SliderFloat("Sharpness", &sharpness, 0.0f, 1.0f, "%.2f");
-					}
+					ImGui::SliderFloat("Sharpness", &sharpness, 0.0f, 1.0f, "%.2f");
 					ImGui::TreePop();
 				}
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_Upscaler);
 	}
 
-	void D3D12_FSR3Pass::CreateContext()
+	void FSR2Pass::CreateContext()
 	{
 		ADRIA_ASSERT(recreate_context);
 
-		fsr3_context_desc.fpMessage = FSR3Log;
-		fsr3_context_desc.maxRenderSize.width = render_width;
-		fsr3_context_desc.maxRenderSize.height = render_height;
-		fsr3_context_desc.maxUpscaleSize.width = display_width;
-		fsr3_context_desc.maxUpscaleSize.height = display_height;
-		fsr3_context_desc.displaySize.width = display_width;
-		fsr3_context_desc.displaySize.height = display_height;
-		fsr3_context_desc.flags = FFX_FSR3_ENABLE_HIGH_DYNAMIC_RANGE | FFX_FSR3_ENABLE_AUTO_EXPOSURE | FFX_FSR3_ENABLE_UPSCALING_ONLY | FFX_FSR3_ENABLE_DEPTH_INVERTED;
-		FfxErrorCode error_code = ffxFsr3ContextCreate(&fsr3_context, &fsr3_context_desc);
+		fsr2_context_desc.fpMessage = FSR2Log;
+		fsr2_context_desc.maxRenderSize.width = render_width;
+		fsr2_context_desc.maxRenderSize.height = render_height;
+		fsr2_context_desc.displaySize.width = display_width;
+		fsr2_context_desc.displaySize.height = display_height;
+		fsr2_context_desc.flags = FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE | FFX_FSR2_ENABLE_AUTO_EXPOSURE | FFX_FSR2_ENABLE_DEPTH_INVERTED;
+
+		FfxErrorCode error_code = ffxFsr2ContextCreate(&fsr2_context, &fsr2_context_desc);
 		ADRIA_ASSERT(error_code == FFX_OK);
 		recreate_context = false;
 	}
 
-	void D3D12_FSR3Pass::DestroyContext()
+	void FSR2Pass::DestroyContext()
 	{
 		gfx->WaitForGPU();
-		ffxFsr3ContextDestroy(&fsr3_context);
+		ffxFsr2ContextDestroy(&fsr2_context);
 	}
 
-	void D3D12_FSR3Pass::RecreateRenderResolution()
+	void FSR2Pass::RecreateRenderResolution()
 	{
-		Float upscale_ratio = (fsr3_quality_mode == 0 ? custom_upscale_ratio : ffxFsr3GetUpscaleRatioFromQualityMode(fsr3_quality_mode));
+		Float upscale_ratio = (fsr2_quality_mode == 0 ? custom_upscale_ratio : ffxFsr2GetUpscaleRatioFromQualityMode(fsr2_quality_mode));
 		render_width = (Uint32)((Float)display_width / upscale_ratio);
 		render_height = (Uint32)((Float)display_height / upscale_ratio);
 		BroadcastRenderResolutionChanged(render_width, render_height);
 	}
-
 }
-

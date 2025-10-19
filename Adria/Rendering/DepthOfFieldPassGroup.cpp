@@ -1,6 +1,6 @@
 #include "DepthOfFieldPassGroup.h"
 #include "DepthOfFieldPass.h"
-#include "D3D12_FFXDepthOfFieldPass.h"
+#include "FFXDepthOfFieldPass.h"
 #include "Core/ConsoleManager.h"
 #include "Editor/GUICommand.h"
 
@@ -28,7 +28,7 @@ namespace adria
 		post_effects.resize((Uint32)Count);
 		post_effects[(Uint32)None] = std::make_unique<EmptyPostEffect>();
 		post_effects[(Uint32)Custom] = std::make_unique<DepthOfFieldPass>(gfx, width, height);
-		post_effects[(Uint32)FFX] = std::make_unique<D3D12_FFXDepthOfFieldPass>(gfx, width, height);
+		post_effects[(Uint32)FFX] = std::make_unique<FFXDepthOfFieldPass>(gfx, width, height);
 	}
 
 	void DepthOfFieldPassGroup::GroupGUI()

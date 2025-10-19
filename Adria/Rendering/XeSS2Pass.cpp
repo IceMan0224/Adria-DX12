@@ -1,4 +1,4 @@
-#include "D3D12_XeSS2Pass.h"
+#include "XeSS2Pass.h"
 #include "XeSS/xess_d3d12.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"
@@ -32,7 +32,7 @@ namespace adria
 		}
 	}
 
-	D3D12_XeSS2Pass::D3D12_XeSS2Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
+	XeSS2Pass::XeSS2Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
 		: gfx(gfx), display_width(), display_height(), render_width(), render_height()
 	{
 		if (!gfx->GetCapabilities().SupportsRayTracing()) 
@@ -53,13 +53,13 @@ namespace adria
 		OnResize(w, h);
 	}
 
-	D3D12_XeSS2Pass::~D3D12_XeSS2Pass()
+	XeSS2Pass::~XeSS2Pass()
 	{
 		gfx->WaitForGPU();
 		xessDestroyContext(context);
 	}
 
-	void D3D12_XeSS2Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
+	void XeSS2Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		if (needs_init)
 		{
@@ -130,12 +130,12 @@ namespace adria
 		postprocessor->SetFinalResource(RG_NAME(XeSS2Output));
 	}
 
-	Bool D3D12_XeSS2Pass::IsEnabled(PostProcessor const*) const
+	Bool XeSS2Pass::IsEnabled(PostProcessor const*) const
 	{
 		return true; 
 	}
 
-	void D3D12_XeSS2Pass::GUI()
+	void XeSS2Pass::GUI()
 	{
 		QueueGUI([&]()
 			{
@@ -153,7 +153,7 @@ namespace adria
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_Upscaler);
 	}
 
-	void D3D12_XeSS2Pass::XeSSInit()
+	void XeSS2Pass::XeSSInit()
 	{
 		ADRIA_ASSERT(needs_init);
 
@@ -170,7 +170,7 @@ namespace adria
 		needs_init = false;
 	}
 
-	void D3D12_XeSS2Pass::RecreateRenderResolution()
+	void XeSS2Pass::RecreateRenderResolution()
 	{
 		xess_2d_t output_resolution = { display_width, display_height };
 		xess_2d_t input_resolution;

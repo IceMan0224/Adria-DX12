@@ -9,11 +9,11 @@ namespace adria
 	class RenderGraph;
 
 	
-	class D3D12_XeSS2Pass : public UpscalerPass
+	class XeSS2Pass : public UpscalerPass
 	{
 	public:
-		D3D12_XeSS2Pass(GfxDevice* gfx, Uint32 w, Uint32 h);
-		~D3D12_XeSS2Pass();
+		XeSS2Pass(GfxDevice* gfx, Uint32 w, Uint32 h);
+		~XeSS2Pass();
 
 		virtual void OnResize(Uint32 w, Uint32 h) override
 		{

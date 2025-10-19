@@ -15,11 +15,11 @@ namespace adria
 	class GfxTexture;
 	class PostProcessor;
 
-	class D3D12_FFXVRSPass : public PostEffect
+	class FFXVRSPass : public PostEffect
 	{
 	public:
-		D3D12_FFXVRSPass(GfxDevice* gfx, Uint32 w, Uint32 h);
-		~D3D12_FFXVRSPass();
+		FFXVRSPass(GfxDevice* gfx, Uint32 w, Uint32 h);
+		~FFXVRSPass();
 
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual void GUI() override;
@@ -28,6 +28,7 @@ namespace adria
 		virtual Bool IsSupported() const override { return is_supported; }
 
 	private:
+		Bool is_supported = false;
 		Char name_version[16] = {};
 		GfxDevice* gfx;
 		Uint32 width, height;
@@ -41,7 +42,6 @@ namespace adria
 		GfxDescriptor vrs_image_srv;
 		std::unique_ptr<GfxGraphicsPipelineState> vrs_overlay_pso;
 
-		Bool is_supported = false;
 		Bool  additional_shading_rates_supported = false;
 		Uint32 shading_rate_image_tile_size;
 

@@ -6,7 +6,6 @@
 #include "RendererDebugViewPass.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxShaderCompiler.h"
-#include "Graphics/GfxTracyProfiler.h"
 #include "Graphics/GfxPipelineStatePermutations.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"

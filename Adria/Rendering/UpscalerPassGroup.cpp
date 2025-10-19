@@ -1,8 +1,8 @@
 #include "UpscalerPassGroup.h"
-#include "D3D12_FSR2Pass.h"
-#include "D3D12_FSR3Pass.h"
-#include "D3D12_XeSS2Pass.h"
-#include "D3D12_DLSS3Pass.h"
+#include "FSR2Pass.h"
+#include "FSR3Pass.h"
+#include "XeSS2Pass.h"
+#include "DLSS3Pass.h"
 #include "Core/ConsoleManager.h"
 #include "Editor/GUICommand.h"
 
@@ -41,10 +41,10 @@ namespace adria
 		using enum UpscalerType; 
 		post_effects.resize((Uint32)Count);
 		post_effects[(Uint32)None]  = std::make_unique<EmptyUpscalerPass>();
-		post_effects[(Uint32)FSR2]  = std::make_unique<D3D12_FSR2Pass>(gfx, width, height);
-		post_effects[(Uint32)FSR3]  = std::make_unique<D3D12_FSR3Pass>(gfx, width, height);
-		post_effects[(Uint32)XeSS2]  = std::make_unique<D3D12_XeSS2Pass>(gfx, width, height);
-		post_effects[(Uint32)DLSS3] = std::make_unique<D3D12_DLSS3Pass>(gfx, width, height);
+		post_effects[(Uint32)FSR2]  = std::make_unique<FSR2Pass>(gfx, width, height);
+		post_effects[(Uint32)FSR3]  = std::make_unique<FSR3Pass>(gfx, width, height);
+		post_effects[(Uint32)XeSS2]  = std::make_unique<XeSS2Pass>(gfx, width, height);
+		post_effects[(Uint32)DLSS3] = std::make_unique<DLSS3Pass>(gfx, width, height);
 	}
 
 	void UpscalerPassGroup::OnResize(Uint32 w, Uint32 h)
@@ -75,7 +75,7 @@ namespace adria
 		QueueGUI([&]()
 			{
 				static Int current_upscaler = (Int)upscaler_type;
-				if (ImGui::Combo("Upscaler", &current_upscaler, "None\0FSR2\0FSR3\0XeSS2\0DLSS3\0DirectML\0", 6))
+				if (ImGui::Combo("Upscaler", &current_upscaler, "None\0FSR2\0FSR3\0XeSS2\0DLSS3\0", 5))
 				{
 					upscaler_type = static_cast<UpscalerType>(current_upscaler);
 					if (!post_effects[current_upscaler]->IsSupported())
