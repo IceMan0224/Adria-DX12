@@ -4,12 +4,10 @@
 
 namespace adria
 {
-	
 	inline Bool IsPressed(Int32 key_code)
 	{
 		return (::GetKeyState(key_code) & 0x8000) != 0;
 	}
-
 
 	Input::Input() : keys{}, prev_keys{}, input_events{}
 	{
@@ -192,6 +190,4 @@ namespace adria
 			}
 		}
 	}
-
-
 }

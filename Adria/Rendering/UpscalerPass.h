@@ -20,10 +20,10 @@ namespace adria
 		}
 	};
 
-	class EmptyUpscalerPass : public UpscalerPass
+	class DummyUpscalerPass : public UpscalerPass
 	{
 	public:
-		EmptyUpscalerPass() {}
+		DummyUpscalerPass() {}
 		virtual void AddPass(RenderGraph&, PostProcessor*) {}
 		virtual void OnResize(Uint32, Uint32) {}
 		virtual Bool IsEnabled(PostProcessor const*) const { return false; }

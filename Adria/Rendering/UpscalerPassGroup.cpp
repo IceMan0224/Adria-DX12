@@ -40,10 +40,10 @@ namespace adria
 
 		using enum UpscalerType; 
 		post_effects.resize((Uint32)Count);
-		post_effects[(Uint32)None]  = std::make_unique<EmptyUpscalerPass>();
+		post_effects[(Uint32)None]  = std::make_unique<DummyUpscalerPass>();
 		post_effects[(Uint32)FSR2]  = std::make_unique<FSR2Pass>(gfx, width, height);
 		post_effects[(Uint32)FSR3]  = std::make_unique<FSR3Pass>(gfx, width, height);
-		post_effects[(Uint32)XeSS2]  = std::make_unique<XeSS2Pass>(gfx, width, height);
+		post_effects[(Uint32)XeSS2] = std::make_unique<XeSS2Pass>(gfx, width, height);
 		post_effects[(Uint32)DLSS3] = std::make_unique<DLSS3Pass>(gfx, width, height);
 	}
 
