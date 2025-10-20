@@ -7,10 +7,10 @@ namespace adria
 	class GfxDevice;
 	class D3D12Device;
 	template<Bool>
-	class GfxRingDescriptorAllocator;
+	class D3D12RingDescriptorAllocator;
 	class GfxCommandList;
 
-	using GUIDescriptorAllocator = GfxRingDescriptorAllocator<false>;
+	using GUIDescriptorAllocator = D3D12RingDescriptorAllocator<false>;
 
 	class D3D12ImGuiManager : public ImGuiManager
 	{
@@ -33,9 +33,6 @@ namespace adria
 		std::unique_ptr<GUIDescriptorAllocator> imgui_allocator;
 		Bool visible = true;
 		mutable Uint64 frame_count = 0;
-
-	private:
-		GfxDescriptor AllocateDescriptorsGPU(Uint32 count = 1) const;
 	};
 
 }

@@ -103,15 +103,15 @@ namespace adria
 				switch (type)
 				{
 				case RGDescriptorType::RenderTarget:
-					gfx->FreeDescriptorCPU(view, GfxDescriptorHeapType::RTV);
+					gfx->FreeDescriptorCPU(view, GfxDescriptorType::RTV);
 					continue;
 				case RGDescriptorType::DepthStencil:
-					gfx->FreeDescriptorCPU(view, GfxDescriptorHeapType::DSV);
+					gfx->FreeDescriptorCPU(view, GfxDescriptorType::DSV);
 					continue;
 				case RGDescriptorType::ReadWrite:
 				case RGDescriptorType::ReadOnly:
 				default:
-					gfx->FreeDescriptorCPU(view, GfxDescriptorHeapType::CBV_SRV_UAV);
+					gfx->FreeDescriptorCPU(view, GfxDescriptorType::CBV_SRV_UAV);
 				}
 			}
 		}
@@ -120,7 +120,7 @@ namespace adria
 		{
 			for (auto [view, type] : view_vector)
 			{
-				gfx->FreeDescriptorCPU(view, GfxDescriptorHeapType::CBV_SRV_UAV);
+				gfx->FreeDescriptorCPU(view, GfxDescriptorType::CBV_SRV_UAV);
 			}
 		}
 	}

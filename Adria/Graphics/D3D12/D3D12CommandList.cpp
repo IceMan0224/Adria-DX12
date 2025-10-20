@@ -12,7 +12,7 @@
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxScopedEvent.h"
-#include "Graphics/GfxRingDescriptorAllocator.h"
+#include "Graphics/D3D12RingDescriptorAllocator.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
 #include "Graphics/GfxProfiler.h"
 #include "Graphics/GfxNsightPerfManager.h"

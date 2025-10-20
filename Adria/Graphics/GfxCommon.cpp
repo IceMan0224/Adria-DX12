@@ -1,7 +1,7 @@
 #include "GfxCommon.h"
 #include "GfxDevice.h"
 #include "GfxTexture.h"
-#include "GfxDescriptorAllocator.h"
+#include "D3D12DescriptorAllocator.h"
 #include "d3d12/D3D12Conversions.h"
 
 namespace adria
@@ -13,7 +13,7 @@ namespace adria
 		{
 			Bool initialized = false;
 			std::array<std::unique_ptr<GfxTexture>, (Uint64)Count>	common_textures;
-			std::unique_ptr<GfxDescriptorHeap> common_views_heap;
+			std::unique_ptr<D3D12DescriptorHeap> common_views_heap;
 
 			void CreateCommonTextures(GfxDevice* gfx)
 			{
@@ -75,8 +75,8 @@ namespace adria
 				{
 					ID3D12Device* device = (ID3D12Device*)gfx->GetNative();
 
-					GfxDescriptorHeapDesc desc{};
-					desc.type = GfxDescriptorHeapType::CBV_SRV_UAV;
+					D3D12DescriptorHeapDesc desc{};
+					desc.type = GfxDescriptorType::CBV_SRV_UAV;
 					desc.shader_visible = false;
 					desc.descriptor_count = (Uint64)Count;
 

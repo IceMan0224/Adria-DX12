@@ -17,7 +17,7 @@
 #include "Graphics/D3D12/D3D12Device.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxTexture.h"
-#include "Graphics/GfxRingDescriptorAllocator.h"
+#include "Graphics/D3D12RingDescriptorAllocator.h"
 #include "Graphics/GfxProfiler.h"
 #include "Graphics/GfxNsightPerfManager.h"
 #include "Graphics/GfxRenderDoc.h"

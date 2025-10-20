@@ -1,22 +1,22 @@
-#include "GfxDescriptorAllocator.h"
+#include "D3D12DescriptorAllocator.h"
 
 namespace adria
 {
-	GfxDescriptorAllocator::GfxDescriptorAllocator(std::unique_ptr<GfxDescriptorHeap> heap)
+	D3D12DescriptorAllocator::D3D12DescriptorAllocator(std::unique_ptr<D3D12DescriptorHeap> heap)
 		: heap(std::move(heap))
 	{
-		GfxDescriptor head_descriptor = this->heap->GetDescriptor(0);
-		GfxDescriptor tail_descriptor = this->heap->GetDescriptor(this->heap->GetCapacity() - 1);
+		D3D12Descriptor head_descriptor = this->heap->GetDescriptor(0);
+		D3D12Descriptor tail_descriptor = this->heap->GetDescriptor(this->heap->GetCapacity() - 1);
 		free_descriptor_ranges.emplace_back(head_descriptor, tail_descriptor);
 	}
 
-	GfxDescriptorAllocator::~GfxDescriptorAllocator() = default;
+	D3D12DescriptorAllocator::~D3D12DescriptorAllocator() = default;
 
-	GfxDescriptor GfxDescriptorAllocator::AllocateDescriptor()
+	D3D12Descriptor D3D12DescriptorAllocator::AllocateDescriptor()
 	{
 		ADRIA_ASSERT(!free_descriptor_ranges.empty() && "Out of descriptor space!");
-		GfxDescriptorRange& range = free_descriptor_ranges.front();
-		GfxDescriptor handle = range.begin;
+		D3D12DescriptorRange& range = free_descriptor_ranges.front();
+		D3D12Descriptor handle = range.begin;
 
 		range.begin.Increment(1);
 		if (range.begin == range.end)
@@ -26,12 +26,12 @@ namespace adria
 		return handle;
 	}
 
-	void GfxDescriptorAllocator::FreeDescriptor(GfxDescriptor handle)
+	void D3D12DescriptorAllocator::FreeDescriptor(D3D12Descriptor handle)
 	{
-		GfxDescriptor next_handle = handle;
+		D3D12Descriptor next_handle = handle;
 		next_handle.Increment(1);
 
-		GfxDescriptorRange new_range{ .begin = handle, .end = next_handle };
+		D3D12DescriptorRange new_range{ .begin = handle, .end = next_handle };
 		Bool merged = false;
 		for (auto it = free_descriptor_ranges.begin(); it != free_descriptor_ranges.end(); ++it)
 		{
@@ -53,7 +53,7 @@ namespace adria
 				merged = true;
 				break;
 			}
-			else if (it->begin.GetIndex() > handle.GetIndex())
+			else if (it->begin.index > handle.index)
 			{
 				free_descriptor_ranges.insert(it, new_range);
 				merged = true;

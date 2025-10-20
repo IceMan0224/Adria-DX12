@@ -40,9 +40,9 @@ namespace adria
 
 			GfxRayTracingInstance& rt_instance = rt_instances.emplace_back();
 			rt_instance.flags = GfxRayTracingInstanceFlag_None;
-			rt_instance.instance_id = instance_id++; //#todo temporary
+			rt_instance.instance_id = instance_id++;
 			rt_instance.instance_mask = 0xff;
-			const auto T = XMMatrixTranspose(instance.world_transform);
+			auto const T = XMMatrixTranspose(instance.world_transform);
 			memcpy(rt_instance.transform, &T, sizeof(T));
 		}
 	}
@@ -53,8 +53,9 @@ namespace adria
 		{
 			return;
 		}
+
 		BuildBottomLevels();
-		for (auto& rt_instance : rt_instances)
+		for (GfxRayTracingInstance& rt_instance : rt_instances)
 		{
 			rt_instance.blas = blases[rt_instance.instance_id].get();
 		}
@@ -72,9 +73,10 @@ namespace adria
 
 	Int32 AccelerationStructure::GetTLASIndex() const
 	{
-		GfxDescriptor tlas_srv_gpu = gfx->AllocateDescriptorsGPU();
-		gfx->CopyDescriptors(1, tlas_srv_gpu, tlas_srv);
-		return (Int32)tlas_srv_gpu.GetIndex();
+		GfxBindlessTable table = gfx->AllocateBindlessTable(1);
+		gfx->UpdateBindlessTable(table, 0, tlas_srv);
+		Int32 new_index = (Int32)table.base;
+		return new_index;
 	}
 
 	void AccelerationStructure::BuildBottomLevels()

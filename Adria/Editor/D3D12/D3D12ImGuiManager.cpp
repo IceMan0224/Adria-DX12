@@ -9,7 +9,7 @@
 #include "Core/Paths.h"
 #include "Platform/Window.h"
 #include "Graphics/GfxCommandList.h"
-#include "Graphics/GfxRingDescriptorAllocator.h"
+#include "Graphics/D3D12/D3D12RingDescriptorAllocator.h"
 #include "Graphics/D3D12/D3D12Device.h"
 #include "Graphics/D3D12/D3D12Conversions.h"
 
@@ -44,17 +44,16 @@ namespace adria
 		io.Fonts->Build();
 		ImGui_ImplWin32_Init(gfx->GetWindowHandle());
 
-		GfxDescriptorHeapDesc gui_heap_desc{};
+		D3D12DescriptorHeapDesc gui_heap_desc{};
 		gui_heap_desc.descriptor_count = 30;
 		gui_heap_desc.shader_visible = true;
-		gui_heap_desc.type = GfxDescriptorHeapType::CBV_SRV_UAV;
-		std::unique_ptr<GfxDescriptorHeap> gui_heap = gfx->CreateDescriptorHeap(gui_heap_desc);
+		gui_heap_desc.type = GfxDescriptorType::CBV_SRV_UAV;
+		std::unique_ptr<D3D12DescriptorHeap> gui_heap = gfx->CreateDescriptorHeap(gui_heap_desc);
 
 		imgui_allocator = std::make_unique<GUIDescriptorAllocator>(std::move(gui_heap), 1);
-		GfxDescriptor handle = imgui_allocator->GetDescriptor(0);
+		D3D12Descriptor handle = imgui_allocator->GetDescriptor(0);
 		ImGui_ImplDX12_Init(d3d12_gfx->GetD3D12Device(), gfx->GetBackbufferCount(), DXGI_FORMAT_R8G8B8A8_UNORM,
-							(ID3D12DescriptorHeap*)imgui_allocator->GetHeap()->GetNative(), 
-							ToD3D12CpuHandle(handle), ToD3D12GpuHandle(handle));
+							imgui_allocator->GetHeap()->GetD3D12Heap(), ToD3D12CPUHandle(handle), ToD3D12GPUHandle(handle));
 	}
 
 	D3D12ImGuiManager::~D3D12ImGuiManager()
@@ -80,7 +79,7 @@ namespace adria
 		if (visible)
 		{
 			ID3D12GraphicsCommandList* d3d12_cmd_list = (ID3D12GraphicsCommandList*)cmd_list->GetNative();
-			ID3D12DescriptorHeap* imgui_heap[] = { (ID3D12DescriptorHeap*)imgui_allocator->GetHeap()->GetNative() };
+			ID3D12DescriptorHeap* imgui_heap[] = { (ID3D12DescriptorHeap*)imgui_allocator->GetHeap()->GetD3D12Heap() };
 			d3d12_cmd_list->SetDescriptorHeaps(ARRAYSIZE(imgui_heap), imgui_heap);
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), d3d12_cmd_list);
 		}
@@ -105,9 +104,9 @@ namespace adria
 
 	void D3D12ImGuiManager::ShowImage(GfxDescriptor image_descriptor, ImVec2 image_size)
 	{
-		GfxDescriptor dst_descriptor = AllocateDescriptorsGPU();
-		d3d12_gfx->CopyDescriptors(1, dst_descriptor, image_descriptor);
-		ImGui::Image((ImTextureID)ToD3D12GpuHandle(dst_descriptor).ptr, image_size);
+		D3D12Descriptor dst_descriptor = imgui_allocator->Allocate(); 
+		d3d12_gfx->GetD3D12Device()->CopyDescriptorsSimple(1, ToD3D12CPUHandle(dst_descriptor), DecodeToD3D12CPUHandle(image_descriptor), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		ImGui::Image((ImTextureID)ToD3D12GPUHandle(dst_descriptor).ptr, image_size);
 	}
 
 	void D3D12ImGuiManager::OnWindowEvent(WindowEventInfo const& msg_data) const
@@ -115,12 +114,4 @@ namespace adria
 		ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(msg_data.handle),
 			msg_data.msg, msg_data.wparam, msg_data.lparam);
 	}
-
-	GfxDescriptor D3D12ImGuiManager::AllocateDescriptorsGPU(Uint32 count) const
-	{
-		return imgui_allocator->Allocate(count);
-	}
-
-
-
 }

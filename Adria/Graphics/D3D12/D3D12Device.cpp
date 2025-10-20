@@ -4,6 +4,7 @@
 #include "D3D12CommandList.h"
 #include "D3D12Texture.h"
 #include "D3D12Buffer.h"
+#include "D3D12Descriptor.h"
 #include "D3D12DescriptorHeap.h"
 #include "D3D12CommandSignature.h"
 #include "D3D12QueryHeap.h"
@@ -11,13 +12,13 @@
 #include "D3D12RayTracingAS.h"
 #include "D3D12RayTracingPipeline.h"
 #include "D3D12StateObject.h"
+#include "D3D12DescriptorAllocator.h"
+#include "D3D12RingDescriptorAllocator.h"
 #include "D3D12NsightAftermathGpuCrashTracker.h"
 #include "D3D12NsightPerfManager.h"
 #include "D3D12Conversions.h"
 #include "D3D12PIX.h"
 #include "Graphics/GfxCommandListPool.h"
-#include "Graphics/GfxDescriptorAllocator.h"
-#include "Graphics/GfxRingDescriptorAllocator.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
 #include "Graphics/GfxRenderDoc.h"
 #include "d3dx12.h"
@@ -187,14 +188,14 @@ namespace adria
 			copy_cmd_list_pool[i] = std::make_unique<GfxCopyCommandListPool>(this);
 		}
 
-		for (Uint32 i = 0; i < (Uint32)GfxDescriptorHeapType::Count; ++i)
+		for (Uint32 i = 0; i < (Uint32)GfxDescriptorType::Count; ++i)
 		{
-			GfxDescriptorHeapDesc desc{};
+			D3D12DescriptorHeapDesc desc{};
 			desc.descriptor_count = 1024;
 			desc.shader_visible = false;
-			desc.type = static_cast<GfxDescriptorHeapType>(i);
-			std::unique_ptr<GfxDescriptorHeap> descriptor_heap = CreateDescriptorHeap(desc); 
-			cpu_descriptor_allocators[i] = std::make_unique<GfxDescriptorAllocator>(std::move(descriptor_heap));
+			desc.type = static_cast<GfxDescriptorType>(i);
+			std::unique_ptr<D3D12DescriptorHeap> descriptor_heap = CreateDescriptorHeap(desc); 
+			cpu_descriptor_allocators[i] = std::make_unique<D3D12DescriptorAllocator>(std::move(descriptor_heap));
 		}
 
 		for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
@@ -487,65 +488,17 @@ namespace adria
 		ADRIA_UNREACHABLE();
 	}
 
-	void D3D12Device::CopyDescriptors(Uint32 count, GfxDescriptor dst, GfxDescriptor src, GfxDescriptorHeapType type)
-	{
-		device->CopyDescriptorsSimple(count, ToD3D12CpuHandle(dst), ToD3D12CpuHandle(src), ToD3D12HeapType(type));
-	}
-	void D3D12Device::CopyDescriptors(GfxDescriptor dst, std::span<GfxDescriptor> src_descriptors, GfxDescriptorHeapType type)
-	{
-		Uint32 const dst_ranges_count = 1;
-		Uint32 const src_ranges_count = (Uint32)src_descriptors.size();
-
-		D3D12_CPU_DESCRIPTOR_HANDLE dst_handles[] = { ToD3D12CpuHandle(dst) };
-		Uint32 dst_range_sizes[] = { (Uint32)src_descriptors.size() };
-
-		std::vector<Uint32> src_range_sizes(src_descriptors.size(), 1);
-		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> src_handles(src_descriptors.size());
-		for (Uint64 i = 0; i < src_handles.size(); ++i)
-		{
-			src_handles[i] = ToD3D12CpuHandle(src_descriptors[i]);
-		}
-
-		device->CopyDescriptors(dst_ranges_count, dst_handles, dst_range_sizes, src_ranges_count, src_handles.data(), src_range_sizes.data(), ToD3D12HeapType(type));
-	}
-	void D3D12Device::CopyDescriptors(std::span<std::pair<GfxDescriptor, Uint32>> dst_range_starts_and_size, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size, GfxDescriptorHeapType type)
-	{
-		Uint32 const dst_ranges_count = (Uint32)dst_range_starts_and_size.size();
-		Uint32 const src_ranges_count = (Uint32)src_range_starts_and_size.size();
-		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> dst_handles(dst_ranges_count);
-		std::vector<Uint32> dst_range_sizes(dst_ranges_count);
-		for (Uint64 i = 0; i < dst_ranges_count; ++i)
-		{
-			dst_handles[i] = ToD3D12CpuHandle(dst_range_starts_and_size[i].first);
-			dst_range_sizes[i] = dst_range_starts_and_size[i].second;
-		}
-
-		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> src_handles(src_ranges_count);
-		std::vector<Uint32> src_range_sizes(src_ranges_count);
-		for (Uint64 i = 0; i < src_ranges_count; ++i)
-		{
-			src_handles[i] = ToD3D12CpuHandle(src_range_starts_and_size[i].first);
-			src_range_sizes[i] = src_range_starts_and_size[i].second;
-		}
-
-		device->CopyDescriptors(dst_ranges_count, dst_handles.data(), dst_range_sizes.data(), src_ranges_count, src_handles.data(), src_range_sizes.data(), ToD3D12HeapType(type));
-	}
-
-	GfxDescriptor	D3D12Device::AllocateDescriptorCPU(GfxDescriptorHeapType type)
+	D3D12Descriptor D3D12Device::AllocateDescriptorCPU(GfxDescriptorType type)
 	{
 		return cpu_descriptor_allocators[(Uint64)type]->AllocateDescriptor();
 	}
-	void			D3D12Device::FreeDescriptorCPU(GfxDescriptor descriptor, GfxDescriptorHeapType type)
+	void D3D12Device::FreeDescriptorCPU(D3D12Descriptor descriptor, GfxDescriptorType type)
 	{
 		cpu_descriptor_allocators[(Uint64)type]->FreeDescriptor(descriptor);
 	}
-	GfxDescriptor D3D12Device::AllocateDescriptorsGPU(Uint32 count)
+	D3D12Descriptor D3D12Device::AllocateDescriptorsGPU(Uint32 count)
 	{
 		return GetDescriptorAllocator()->Allocate(count);
-	}
-	GfxDescriptor D3D12Device::GetDescriptorGPU(Uint32 i) const
-	{
-		return GetDescriptorAllocator()->GetHeap()->GetDescriptor(i);
 	}
 
 	GfxOnlineDescriptorAllocator* D3D12Device::GetDescriptorAllocator() const
@@ -556,13 +509,149 @@ namespace adria
 	{
 		return rendering_not_started ? dynamic_allocator_on_init.get() : dynamic_allocators[swapchain->GetBackbufferIndex()].get();
 	}
+
+	GfxBindlessTable D3D12Device::AllocateBindlessTable(Uint32 count, GfxDescriptorType type)
+	{
+		D3D12Descriptor base_descriptor = GetDescriptorAllocator()->Allocate(count);
+		GfxBindlessTable table{};
+		table.count = count;
+		table.type = type;
+		table.base = base_descriptor.index;
+		return table;
+	}
+
+	void D3D12Device::UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors)
+	{
+		if (!table.IsValid() || src_descriptors.empty())
+		{
+			return;
+		}
+		ADRIA_ASSERT_MSG(table.count == src_descriptors.size(), "Source descriptor count must match table size!");
+
+		D3D12DescriptorHeap* gpu_heap = gpu_descriptor_allocator->GetHeap();
+		D3D12_CPU_DESCRIPTOR_HANDLE dst_range_starts[] = { gpu_heap->GetCpuHandle(table.base) };
+		UINT dst_range_sizes[] = { table.count };
+
+		Uint64 const num_src_descriptors = src_descriptors.size();
+		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> src_range_starts;
+		src_range_starts.reserve(num_src_descriptors);
+		for (GfxDescriptor const& opaque_src_descriptor : src_descriptors)
+		{
+			src_range_starts.push_back(DecodeToD3D12CPUHandle(opaque_src_descriptor));
+		}
+
+		std::vector<UINT> src_range_sizes(num_src_descriptors, 1);
+		device->CopyDescriptors(
+			1,
+			dst_range_starts,
+			dst_range_sizes,
+			(UINT)num_src_descriptors,
+			src_range_starts.data(),
+			src_range_sizes.data(),
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV 
+		);
+	}
+
+	void D3D12Device::UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count)
+	{
+		if (!table.IsValid() || !src_descriptor.IsValid())
+		{
+			return;
+		}
+		ADRIA_ASSERT_MSG(table_offset + src_count < table.count, "Table offset is out of bounds!");
+
+		D3D12DescriptorHeap* gpu_heap = gpu_descriptor_allocator->GetHeap();
+		D3D12_CPU_DESCRIPTOR_HANDLE dst_handle = gpu_heap->GetCpuHandle(table.base + table_offset);
+		D3D12_CPU_DESCRIPTOR_HANDLE src_handle = DecodeToD3D12CPUHandle(src_descriptor);
+
+		device->CopyDescriptorsSimple(
+			src_count,
+			dst_handle,
+			src_handle,
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+		);
+	}
+
+	void D3D12Device::UpdateBindlessTables(std::vector<GfxBindlessTable> const& tables, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size)
+	{
+		if (tables.empty() || src_range_starts_and_size.empty())
+		{
+			return;
+		}
+
+		ADRIA_ASSERT_MSG(tables.size() == src_range_starts_and_size.size(), "Mismatch between destination table count and source range count");
+
+		D3D12DescriptorHeap* gpu_heap = gpu_descriptor_allocator->GetHeap();
+
+		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> dst_range_starts;
+		std::vector<UINT> dst_range_sizes;
+		dst_range_starts.reserve(tables.size());
+		dst_range_sizes.reserve(tables.size());
+		Uint64 total_dst_descriptors = 0;
+		for (auto const& table : tables)
+		{
+			ADRIA_ASSERT(table.IsValid());
+			dst_range_starts.push_back(gpu_heap->GetCpuHandle(table.base));
+			dst_range_sizes.push_back(table.count);
+			total_dst_descriptors += table.count;
+		}
+
+		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> src_range_starts;
+		std::vector<UINT> src_range_sizes;
+		src_range_starts.reserve(src_range_starts_and_size.size());
+		src_range_sizes.reserve(src_range_starts_and_size.size());
+
+		Uint64 total_src_descriptors = 0;
+		for (auto const& [opaque_desc, size] : src_range_starts_and_size)
+		{
+			ADRIA_ASSERT(opaque_desc.IsValid());
+			src_range_starts.push_back(DecodeToD3D12CPUHandle(opaque_desc));
+			src_range_sizes.push_back(size);
+			total_src_descriptors += size;
+		}
+
+		ADRIA_ASSERT(total_dst_descriptors == total_src_descriptors && "Total number of source and destination descriptors must match!");
+		device->CopyDescriptors(
+			(UINT)tables.size(),
+			dst_range_starts.data(),
+			dst_range_sizes.data(),
+			(UINT)src_range_starts_and_size.size(),
+			src_range_starts.data(),
+			src_range_sizes.data(),
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+		);
+	}
+
+	void D3D12Device::FreeDescriptor(GfxDescriptor descriptor)
+	{
+		if (!descriptor.IsValid())
+		{
+			return;
+		}
+
+		D3D12Descriptor internal_desc = DecodeToD3D12Descriptor(descriptor);
+		if (!internal_desc.parent_heap)
+		{
+			ADRIA_LOG(WARNING, "Attempting to free a descriptor with a null parent heap.");
+			return;
+		}
+
+		GfxDescriptorType const descriptor_type = internal_desc.parent_heap->GetType();
+		ADRIA_ASSERT(!internal_desc.parent_heap->IsShaderVisible() && "Cannot free a GPU descriptor handle directly!");
+		if (internal_desc.parent_heap->IsShaderVisible())
+		{
+			return;
+		}
+		cpu_descriptor_allocators[(Uint32)descriptor_type]->FreeDescriptor(internal_desc);
+	}
+
 	void D3D12Device::InitGlobalResourceBindings(Uint32 reserve)
 	{
-		GfxDescriptorHeapDesc heap_desc{};
+		D3D12DescriptorHeapDesc heap_desc{};
 		heap_desc.descriptor_count = 32767;
 		heap_desc.shader_visible = true;
-		heap_desc.type = GfxDescriptorHeapType::CBV_SRV_UAV;
-		std::unique_ptr<GfxDescriptorHeap> descriptor_heap = CreateDescriptorHeap(heap_desc);
+		heap_desc.type = GfxDescriptorType::CBV_SRV_UAV;
+		std::unique_ptr<D3D12DescriptorHeap> descriptor_heap = CreateDescriptorHeap(heap_desc);
 		gpu_descriptor_allocator = std::make_unique<GfxOnlineDescriptorAllocator>(std::move(descriptor_heap), reserve);
 	}
 
@@ -570,7 +659,7 @@ namespace adria
 	{
 		return std::make_unique<D3D12CommandList>(this, type);
 	}
-	std::unique_ptr<GfxDescriptorHeap> D3D12Device::CreateDescriptorHeap(GfxDescriptorHeapDesc const& desc)
+	std::unique_ptr<D3D12DescriptorHeap> D3D12Device::CreateDescriptorHeap(D3D12DescriptorHeapDesc const& desc)
 	{
 		return std::make_unique<D3D12DescriptorHeap>(this, desc);
 	}
@@ -827,37 +916,37 @@ namespace adria
 	GfxDescriptor D3D12Device::CreateBufferSRV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)
 	{
 		GfxBufferDescriptorDesc _desc = desc ? *desc : GfxBufferDescriptorDesc{};
-		return CreateBufferView(buffer, GfxSubresourceType::SRV, _desc);
+		return EncodeFromD3D12Descriptor(CreateBufferViewImpl(buffer, GfxSubresourceType::SRV, _desc));
 	}
 	GfxDescriptor D3D12Device::CreateBufferUAV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)
 	{
 		GfxBufferDescriptorDesc _desc = desc ? *desc : GfxBufferDescriptorDesc{};
-		return CreateBufferView(buffer, GfxSubresourceType::UAV, _desc);
+		return EncodeFromD3D12Descriptor(CreateBufferViewImpl(buffer, GfxSubresourceType::UAV, _desc));
 	}
 	GfxDescriptor D3D12Device::CreateBufferUAV(GfxBuffer const* buffer, GfxBuffer const* counter, GfxBufferDescriptorDesc const* desc/*= nullptr*/)
 	{
 		GfxBufferDescriptorDesc _desc = desc ? *desc : GfxBufferDescriptorDesc{};
-		return CreateBufferView(buffer, GfxSubresourceType::UAV, _desc, counter);
+		return EncodeFromD3D12Descriptor(CreateBufferViewImpl(buffer, GfxSubresourceType::UAV, _desc, counter));
 	}
 	GfxDescriptor D3D12Device::CreateTextureSRV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
 	{
 		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
-		return CreateTextureView(texture, GfxSubresourceType::SRV, _desc);
+		return EncodeFromD3D12Descriptor(CreateTextureViewImpl(texture, GfxSubresourceType::SRV, _desc));
 	}
 	GfxDescriptor D3D12Device::CreateTextureUAV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
 	{
 		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
-		return CreateTextureView(texture, GfxSubresourceType::UAV, _desc);
+		return EncodeFromD3D12Descriptor(CreateTextureViewImpl(texture, GfxSubresourceType::UAV, _desc));
 	}
 	GfxDescriptor D3D12Device::CreateTextureRTV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
 	{
 		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
-		return CreateTextureView(texture, GfxSubresourceType::RTV, _desc);
+		return EncodeFromD3D12Descriptor(CreateTextureViewImpl(texture, GfxSubresourceType::RTV, _desc));
 	}
 	GfxDescriptor D3D12Device::CreateTextureDSV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
 	{
 		GfxTextureDescriptorDesc _desc = desc ? *desc : GfxTextureDescriptorDesc{};
-		return CreateTextureView(texture, GfxSubresourceType::DSV, _desc);
+		return EncodeFromD3D12Descriptor(CreateTextureViewImpl(texture, GfxSubresourceType::DSV, _desc));
 	}
 
 	Uint64 D3D12Device::GetLinearBufferSize(GfxTexture const* texture) const
@@ -1074,7 +1163,7 @@ namespace adria
 		GFX_CHECK_HR(hr);
 	}
 
-	GfxDescriptor D3D12Device::CreateBufferView(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter)
+	D3D12Descriptor D3D12Device::CreateBufferViewImpl(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter)
 	{
 		if (uav_counter)
 		{
@@ -1083,7 +1172,7 @@ namespace adria
 
 		GfxBufferDesc desc = buffer->GetDesc();
 		GfxFormat format = desc.format;
-		GfxDescriptor heap_descriptor = AllocateDescriptorCPU(GfxDescriptorHeapType::CBV_SRV_UAV);
+		D3D12Descriptor heap_descriptor = AllocateDescriptorCPU(GfxDescriptorType::CBV_SRV_UAV);
 		switch (view_type)
 		{
 		case GfxSubresourceType::SRV:
@@ -1123,7 +1212,7 @@ namespace adria
 				srv_desc.Buffer.FirstElement = view_desc.offset / stride;
 				srv_desc.Buffer.NumElements = (Uint32)std::min<Uint64>(view_desc.size, desc.size - view_desc.offset) / stride;
 			}
-			device->CreateShaderResourceView(!is_accel_struct ? (ID3D12Resource*)buffer->GetNative() : nullptr, &srv_desc, ToD3D12CpuHandle(heap_descriptor));
+			device->CreateShaderResourceView(!is_accel_struct ? (ID3D12Resource*)buffer->GetNative() : nullptr, &srv_desc, ToD3D12CPUHandle(heap_descriptor));
 		}
 		break;
 		case GfxSubresourceType::UAV:
@@ -1162,7 +1251,7 @@ namespace adria
 				uav_desc.Buffer.FirstElement = (Uint32)view_desc.offset / stride;
 				uav_desc.Buffer.NumElements = (Uint32)std::min<Uint64>(view_desc.size, desc.size - view_desc.offset) / stride;
 			}
-			device->CreateUnorderedAccessView((ID3D12Resource*)buffer->GetNative(), uav_counter ? (ID3D12Resource*)uav_counter->GetNative() : nullptr, &uav_desc, ToD3D12CpuHandle(heap_descriptor));
+			device->CreateUnorderedAccessView((ID3D12Resource*)buffer->GetNative(), uav_counter ? (ID3D12Resource*)uav_counter->GetNative() : nullptr, &uav_desc, ToD3D12CPUHandle(heap_descriptor));
 		}
 		break;
 		case GfxSubresourceType::RTV:
@@ -1172,7 +1261,7 @@ namespace adria
 		}
 		return heap_descriptor;
 	}
-	GfxDescriptor D3D12Device::CreateTextureView(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc)
+	D3D12Descriptor D3D12Device::CreateTextureViewImpl(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc)
 	{
 		GfxTextureDesc desc = texture->GetDesc();
 		GfxFormat format = desc.format;
@@ -1180,7 +1269,7 @@ namespace adria
 		{
 		case GfxSubresourceType::SRV:
 		{
-			GfxDescriptor descriptor = AllocateDescriptorCPU(GfxDescriptorHeapType::CBV_SRV_UAV);
+			D3D12Descriptor descriptor = AllocateDescriptorCPU(GfxDescriptorType::CBV_SRV_UAV);
 			D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc{};
 			srv_desc.Shader4ComponentMapping = view_desc.channel_mapping;
 			switch (format)
@@ -1294,13 +1383,13 @@ namespace adria
 				srv_desc.Format = AdjustFormatSRGB(srv_desc.Format);
 			}
 
-			device->CreateShaderResourceView((ID3D12Resource*)texture->GetNative(), &srv_desc, ToD3D12CpuHandle(descriptor));
+			device->CreateShaderResourceView((ID3D12Resource*)texture->GetNative(), &srv_desc, ToD3D12CPUHandle(descriptor));
 			return descriptor;
 		}
 		break;
 		case GfxSubresourceType::UAV:
 		{
-			GfxDescriptor descriptor = AllocateDescriptorCPU(GfxDescriptorHeapType::CBV_SRV_UAV);
+			D3D12Descriptor descriptor = AllocateDescriptorCPU(GfxDescriptorType::CBV_SRV_UAV);
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc{};
 			switch (format)
 			{
@@ -1359,13 +1448,13 @@ namespace adria
 				uav_desc.Texture3D.WSize = -1;
 			}
 
-			device->CreateUnorderedAccessView((ID3D12Resource*)texture->GetNative(), nullptr, &uav_desc, ToD3D12CpuHandle(descriptor));
+			device->CreateUnorderedAccessView((ID3D12Resource*)texture->GetNative(), nullptr, &uav_desc, ToD3D12CPUHandle(descriptor));
 			return descriptor;
 		}
 		break;
 		case GfxSubresourceType::RTV:
 		{
-			GfxDescriptor descriptor = AllocateDescriptorCPU(GfxDescriptorHeapType::RTV);
+			D3D12Descriptor descriptor = AllocateDescriptorCPU(GfxDescriptorType::RTV);
 			D3D12_RENDER_TARGET_VIEW_DESC rtv_desc{};
 			switch (format)
 			{
@@ -1439,13 +1528,13 @@ namespace adria
 				rtv_desc.Texture3D.FirstWSlice = 0;
 				rtv_desc.Texture3D.WSize = -1;
 			}
-			device->CreateRenderTargetView((ID3D12Resource*)texture->GetNative(), &rtv_desc, ToD3D12CpuHandle(descriptor));
+			device->CreateRenderTargetView((ID3D12Resource*)texture->GetNative(), &rtv_desc, ToD3D12CPUHandle(descriptor));
 			return descriptor;
 		}
 		break;
 		case GfxSubresourceType::DSV:
 		{
-			GfxDescriptor descriptor = AllocateDescriptorCPU(GfxDescriptorHeapType::DSV);
+			D3D12Descriptor descriptor = AllocateDescriptorCPU(GfxDescriptorType::DSV);
 			D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc{};
 			switch (format)
 			{
@@ -1515,7 +1604,7 @@ namespace adria
 				}
 			}
 
-			device->CreateDepthStencilView((ID3D12Resource*)texture->GetNative(), &dsv_desc, ToD3D12CpuHandle(descriptor));
+			device->CreateDepthStencilView((ID3D12Resource*)texture->GetNative(), &dsv_desc, ToD3D12CPUHandle(descriptor));
 			return descriptor;
 		}
 		break;

@@ -1,23 +1,23 @@
 #pragma once
-#include "GfxDescriptorHeap.h"
+#include "D3D12DescriptorHeap.h"
 #include "Utilities/RingOffsetAllocator.h" 
 
 namespace adria
 {
-	template<bool UseMutex>
-	class GfxRingDescriptorAllocator
+	template<Bool UseMutex>
+	class D3D12RingDescriptorAllocator
 	{
 		using Mutex = std::conditional_t<UseMutex, std::mutex, DummyMutex>;
 
 	public:
-		GfxRingDescriptorAllocator(std::unique_ptr<GfxDescriptorHeap> heap, Uint32 reserve = 0)
+		D3D12RingDescriptorAllocator(std::unique_ptr<D3D12DescriptorHeap> heap, Uint32 reserve = 0)
 			: heap(std::move(heap)), ring_offset_allocator(this->heap->GetCapacity(), reserve)
 		{
 		}
-		ADRIA_NONCOPYABLE_NONMOVABLE(GfxRingDescriptorAllocator)
-		~GfxRingDescriptorAllocator() = default;
+		ADRIA_NONCOPYABLE_NONMOVABLE(D3D12RingDescriptorAllocator)
+		~D3D12RingDescriptorAllocator() = default;
 
-		ADRIA_NODISCARD GfxDescriptor Allocate(uint32_t count = 1)
+		ADRIA_NODISCARD D3D12Descriptor Allocate(uint32_t count = 1)
 		{
 			Uint64 start_offset = INVALID_ALLOC_OFFSET;
 			{
@@ -28,33 +28,33 @@ namespace adria
 			ADRIA_ASSERT_MSG(start_offset != INVALID_ALLOC_OFFSET, "Ring Descriptor Allocator has no free space!");
 			if (start_offset == INVALID_ALLOC_OFFSET)
 			{
-				return GfxDescriptor{}; 
+				return D3D12Descriptor{};
 			}
 			return heap->GetDescriptor(static_cast<Uint32>(start_offset));
 		}
 
-		void FinishCurrentFrame(uint64_t frame)
+		void FinishCurrentFrame(Uint64 frame)
 		{
 			std::lock_guard guard(alloc_mutex);
 			ring_offset_allocator.FinishCurrentFrame(frame);
 		}
 
-		void ReleaseCompletedFrames(uint64_t completed_frame)
+		void ReleaseCompletedFrames(Uint64 completed_frame)
 		{
 			std::lock_guard guard(alloc_mutex);
 			ring_offset_allocator.ReleaseCompletedFrames(completed_frame);
 		}
 
-		GfxDescriptorHeap* GetHeap() const { return heap.get(); }
+		D3D12DescriptorHeap* GetHeap() const { return heap.get(); }
 
-		GfxDescriptor GetDescriptor(Uint32 index = 0) const
+		D3D12Descriptor GetDescriptor(Uint32 index = 0) const
 		{
 			return heap->GetDescriptor(index);
 		}
 
 	private:
-		std::unique_ptr<GfxDescriptorHeap> heap;
-		mutable Mutex alloc_mutex;
+		std::unique_ptr<D3D12DescriptorHeap> heap;
 		RingOffsetAllocator ring_offset_allocator;
+		mutable Mutex alloc_mutex;
 	};
 }

@@ -21,8 +21,8 @@ namespace adria
 	struct GfxRenderPassDesc;
 	struct GfxShadingRateInfo;
 	template<bool>
-	class GfxRingDescriptorAllocator;
-	using GfxOnlineDescriptorAllocator = GfxRingDescriptorAllocator<GFX_MULTITHREADED>;
+	class D3D12RingDescriptorAllocator;
+	using GfxOnlineDescriptorAllocator = D3D12RingDescriptorAllocator<GFX_MULTITHREADED>;
 
 	enum class GfxCommandListType : Uint8
 	{

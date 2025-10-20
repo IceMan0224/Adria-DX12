@@ -23,7 +23,7 @@ namespace adria
 	{
 		for (auto& [handle, descriptor] : texture_srv_map)
 		{
-			gfx->FreeDescriptorCPU(descriptor, GfxDescriptorHeapType::CBV_SRV_UAV);
+			gfx->FreeDescriptorCPU(descriptor, GfxDescriptorType::CBV_SRV_UAV);
 		}
 		handle = TEXTURE_MANAGER_START_HANDLE;
 		texture_srv_map.clear();

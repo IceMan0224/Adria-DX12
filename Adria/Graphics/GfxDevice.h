@@ -36,8 +36,8 @@ namespace adria
 	class GfxQueryHeap;
 	struct GfxQueryHeapDesc;
 
-	class GfxDescriptorHeap;
-	struct GfxDescriptorHeapDesc;
+	class D3D12DescriptorHeap;
+	struct D3D12DescriptorHeapDesc;
 
 	struct GfxGraphicsPipelineStateDesc;
 	struct GfxComputePipelineStateDesc;
@@ -49,13 +49,13 @@ namespace adria
 	class DispatchMeshIndirectSignature;
 
 	class GfxLinearDynamicAllocator;
-	class GfxDescriptorAllocator;
+	class D3D12DescriptorAllocator;
 	template<Bool>
-	class GfxRingDescriptorAllocator;
+	class D3D12RingDescriptorAllocator;
 
 	class GfxNsightAftermathGpuCrashTracker;
 	class GfxNsightPerfManager;
-	using GfxOnlineDescriptorAllocator = GfxRingDescriptorAllocator<GFX_MULTITHREADED>;
+	using GfxOnlineDescriptorAllocator = D3D12RingDescriptorAllocator<GFX_MULTITHREADED>;
 
 	class GfxRayTracingPipeline;
 	struct GfxRayTracingPipelineDesc;
@@ -129,18 +129,16 @@ namespace adria
 			AddToReleaseQueue_Internal(new ReleasableResource(alloc));
 		}
 
-		virtual GfxDescriptor AllocateDescriptorCPU(GfxDescriptorHeapType type) = 0;
-		virtual void FreeDescriptorCPU(GfxDescriptor descriptor, GfxDescriptorHeapType type) = 0;
-		virtual GfxDescriptor AllocateDescriptorsGPU(Uint32 count = 1) = 0;
-		virtual GfxDescriptor GetDescriptorGPU(Uint32 count = 1) const = 0;
-
 		virtual GfxLinearDynamicAllocator* GetDynamicAllocator() const = 0;
-		virtual void CopyDescriptors(Uint32 count, GfxDescriptor dst, GfxDescriptor src, GfxDescriptorHeapType type = GfxDescriptorHeapType::CBV_SRV_UAV) = 0;
-		virtual void CopyDescriptors(GfxDescriptor dst, std::span<GfxDescriptor> src_descriptors, GfxDescriptorHeapType type = GfxDescriptorHeapType::CBV_SRV_UAV) = 0;
-		virtual void CopyDescriptors(std::span<std::pair<GfxDescriptor, Uint32>> dst_range_starts_and_size, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size, GfxDescriptorHeapType type = GfxDescriptorHeapType::CBV_SRV_UAV) = 0;
+
+		virtual GfxBindlessTable AllocateBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) = 0;
+		virtual void UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors) = 0;
+		virtual void UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count = 1) = 0;
+		virtual void UpdateBindlessTables(std::vector<GfxBindlessTable> const& table, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size) = 0;
+		virtual void FreeDescriptor(GfxDescriptor descriptor) = 0;
 
 		virtual std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) = 0;
-		virtual std::unique_ptr<GfxDescriptorHeap> CreateDescriptorHeap(GfxDescriptorHeapDesc const& desc) = 0;
+		virtual std::unique_ptr<D3D12DescriptorHeap> CreateDescriptorHeap(D3D12DescriptorHeapDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc, GfxTextureData const& data) = 0;
 		virtual std::unique_ptr<GfxTexture> CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer) = 0;
