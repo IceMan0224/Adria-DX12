@@ -189,9 +189,7 @@ namespace adria
 					ctx.GetReadWriteTexture(data.output_moments), ctx.GetReadWriteTexture(data.output_normal_depth),
 					ctx.GetReadWriteTexture(data.output_history_length)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct ReprojectionPassConstants
 				{
@@ -215,9 +213,9 @@ namespace adria
 				} constants =
 				{
 					.reset = reset_history, .alpha = SVGF_Alpha.Get(), .moments_alpha = SVGF_MomentsAlpha.Get(),
-					.direct_illum_idx = i + 0, .indirect_illum_idx = i + 1, .motion_idx = i + 2, .compact_norm_depth_idx = i + 3,
-					.history_direct_idx = i + 4, .history_indirect_idx = i + 5, .history_moments_idx = i + 6, .history_normal_depth_idx = i + 7, .history_length_idx = i + 8,
-					.output_direct_idx = i + 9, .output_indirect_idx = i + 10, .output_moments_idx = i + 11, .output_normal_depth_idx = i + 12, .output_history_length_idx = i + 13
+					.direct_illum_idx = table + 0, .indirect_illum_idx = table + 1, .motion_idx = table + 2, .compact_norm_depth_idx = table + 3,
+					.history_direct_idx = table + 4, .history_indirect_idx = table + 5, .history_moments_idx = table + 6, .history_normal_depth_idx = table + 7, .history_length_idx = table + 8,
+					.output_direct_idx = table + 9, .output_indirect_idx = table + 10, .output_moments_idx = table + 11, .output_normal_depth_idx = table + 12, .output_history_length_idx = table + 13
 				};
 				reset_history = false;
 
@@ -269,9 +267,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.compact_norm_depth),
 					ctx.GetReadWriteTexture(data.output_direct), ctx.GetReadWriteTexture(data.output_indirect)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct FilterMomentsConstants
 				{
@@ -287,9 +283,9 @@ namespace adria
 				} constants =
 				{
 					.phi_color = SVGF_PhiColor.Get(), .phi_normal = SVGF_PhiNormal.Get(),
-					.direct_illum_idx = i, .indirect_illum_idx = i + 1, .moments_idx = i + 2,
-					.history_length_idx = i + 3, .compact_norm_depth_idx = i + 4,
-					.output_direct_idx = i + 5, .output_indirect_idx = i + 6
+					.direct_illum_idx = table, .indirect_illum_idx = table + 1, .moments_idx = table + 2,
+					.history_length_idx = table + 3, .compact_norm_depth_idx = table + 4,
+					.output_direct_idx = table + 5, .output_indirect_idx = table + 6
 				};
 
 				cmd_list->SetPipelineState(filter_moments_pso->Get());
@@ -420,10 +416,7 @@ namespace adria
 						src_descriptors.push_back(ctx.GetReadWriteTexture(data.feedback_direct_out));
 						src_descriptors.push_back(ctx.GetReadWriteTexture(data.feedback_indirect_out));
 					}
-
-					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU((Uint32)src_descriptors.size());
-					gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-					Uint32 const base_index = dst_descriptor.GetIndex();
+					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 					struct AtrousPassConstants
 					{
@@ -446,11 +439,11 @@ namespace adria
 					{
 						.step_size = 1 << i, .perform_modulation = is_final_iteration,
 						.phi_color = SVGF_PhiColor.Get(), .phi_normal = SVGF_PhiNormal.Get(), .phi_depth = SVGF_PhiDepth.Get(),
-						.direct_in_idx = base_index, .indirect_in_idx = base_index + 1, .history_length_idx = base_index + 2, .compact_norm_depth_idx = base_index + 3,
-						.direct_albedo_idx = base_index + 4, .indirect_albedo_idx = base_index + 5, .direct_out_idx = base_index + 6,
-						.indirect_out_idx = is_final_iteration ? 0 : (base_index + 7),
-						.feedback_direct_out_idx = is_final_iteration ? (base_index + 7) : 0,
-						.feedback_indirect_out_idx = is_final_iteration ? (base_index + 8) : 0
+						.direct_in_idx = table, .indirect_in_idx = table + 1, .history_length_idx = table + 2, .compact_norm_depth_idx = table + 3,
+						.direct_albedo_idx = table + 4, .indirect_albedo_idx = table + 5, .direct_out_idx = table + 6,
+						.indirect_out_idx = is_final_iteration ? 0 : (table + 7),
+						.feedback_direct_out_idx = is_final_iteration ? (table + 7) : 0,
+						.feedback_indirect_out_idx = is_final_iteration ? (table + 8) : 0
 					};
 
 					cmd_list->SetPipelineState(atrous_pso->Get());

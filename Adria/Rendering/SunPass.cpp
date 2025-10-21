@@ -25,7 +25,10 @@ namespace adria
 		for (entt::entity light : lights)
 		{
 			Light const& light_data = lights.get<Light>(light);
-			if (!light_data.active) continue;
+			if (!light_data.active)
+			{
+				continue;
+			}
 			if (light_data.type == LightType::Directional)
 			{
 				sun = light;

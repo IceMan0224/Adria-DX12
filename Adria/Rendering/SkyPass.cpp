@@ -66,9 +66,8 @@ namespace adria
 				GfxCommandList* cmd_list = context.GetCommandList();
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-				GfxDescriptor sky = gfx->AllocateDescriptorsGPU(1);
-				gfx->CopyDescriptors(1, sky, context.GetReadWriteTexture(data.sky_uav));
-				cmd_list->SetRootConstant(1, sky.GetIndex());
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(context.GetReadWriteTexture(data.sky_uav));
+				cmd_list->SetRootConstant(1, table);
 
 				switch (sky_type)
 				{
@@ -196,10 +195,8 @@ namespace adria
 				return (Int32)skybox.cubemap_texture;
 			}
 		}
-
-		GfxDescriptor sky_srv_gpu = gfx->AllocateDescriptorsGPU();
-		gfx->CopyDescriptors(1, sky_srv_gpu, sky_texture_srv);
-		return (Int32)sky_srv_gpu.GetIndex();
+		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(sky_texture_srv);
+		return static_cast<Int32>(table);
 	}
 
 	void SkyPass::CreatePSOs()

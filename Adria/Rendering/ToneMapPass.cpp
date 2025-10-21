@@ -86,18 +86,15 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
+				Bool const bloom_enabled = data.bloom.IsValid();
 				GfxDescriptor src_descriptors[] =
 				{
 					ctx.GetReadOnlyTexture(data.hdr_input),
 					data.exposure.IsValid() ? ctx.GetReadOnlyTexture(data.exposure) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
-					ctx.GetReadWriteTexture(data.output)
+					ctx.GetReadWriteTexture(data.output),
+					bloom_enabled ? ctx.GetReadOnlyTexture(data.bloom) : gfxcommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors) + 1);
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
-
-				Bool const bloom_enabled = data.bloom.IsValid();
-				if (bloom_enabled) gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + ARRAYSIZE(src_descriptors)), ctx.GetReadOnlyTexture(data.bloom));
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct TonemapConstants
 				{
@@ -112,12 +109,12 @@ namespace adria
 				} constants =
 				{
 					.tonemap_exposure = TonemapExposure.Get(), .tonemap_operator_lut_packed = PackTwoUint16ToUint32((Uint16)TonemapOperator.Get(), (Uint16)tony_mc_mapface_lut_handle),
-					.hdr_idx = i, .exposure_idx = i + 1, .output_idx = i + 2, .bloom_idx = -1
+					.hdr_idx = table, .exposure_idx = table + 1, .output_idx = table + 2, .bloom_idx = -1
 				};
 				if (bloom_enabled)
 				{
 					ADRIA_ASSERT(bloom_data != nullptr);
-					constants.bloom_idx = i + ARRAYSIZE(src_descriptors);
+					constants.bloom_idx = table + 3;
 					constants.lens_dirt_idx = (Uint32)lens_dirt_handle;
 					constants.bloom_params_packed = PackTwoFloatsToUint32(bloom_data->bloom_intensity, bloom_data->bloom_blend_factor);
 				}

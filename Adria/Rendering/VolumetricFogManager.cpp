@@ -29,7 +29,10 @@ namespace adria
 		{
 			return view.get<Light>(entity).volumetric;
 		});
-		if (volumetric_light_count == 0) return;
+		if (volumetric_light_count == 0)
+		{
+			return;
+		}
 
 		if (volumetric_fog_type == VolumetricFogType::FogVolume)
 		{

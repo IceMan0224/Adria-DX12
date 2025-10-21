@@ -76,10 +76,8 @@ namespace adria
 												data.ambient_occlusion.IsValid() ? context.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
 												context.GetReadWriteTexture(data.output),
 												context.GetReadWriteTexture(data.debug_output) };
-				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_handles));
-				gfx->CopyDescriptors(dst_handle, src_handles);
 
-				Uint32 i = dst_handle.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 
 				struct TiledLightingConstants
 				{
@@ -93,9 +91,9 @@ namespace adria
 					Uint32 debug_data_packed;
 				} constants =
 				{
-					.normal_idx = i, .diffuse_idx = i + 1, .emissive_idx = i + 2, .custom_idx = i + 3, 
-					.depth_idx = i + 4, .ao_idx = i + 5, .output_idx = i + 6, 
-					.debug_data_packed = PackTwoUint16ToUint32(visualize_tiled ? Uint16(i + 7) : 0, (Uint16)visualize_max_lights)
+					.normal_idx = table, .diffuse_idx = table + 1, .emissive_idx = table + 2, .custom_idx = table + 3,
+					.depth_idx = table + 4, .ao_idx = table + 5, .output_idx = table + 6,
+					.debug_data_packed = PackTwoUint16ToUint32(visualize_tiled ? Uint16(table + 7) : 0, (Uint16)visualize_max_lights)
 				};
 
 				if (visualize_tiled)
@@ -106,8 +104,8 @@ namespace adria
 				static constexpr Float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 				GfxTexture const& tiled_target = context.GetTexture(*data.output);
 				GfxTexture const& tiled_debug_target = context.GetTexture(*data.debug_output);
-				cmd_list->ClearUAV(tiled_target, gfx->GetDescriptorGPU(i + 5), context.GetReadWriteTexture(data.output), black);
-				cmd_list->ClearUAV(tiled_debug_target, gfx->GetDescriptorGPU(i + 6), context.GetReadWriteTexture(data.debug_output), black);
+				cmd_list->ClearTexture(tiled_target, black);
+				cmd_list->ClearTexture(tiled_debug_target, black);
 
 				cmd_list->SetPipelineState(tiled_deferred_lighting_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

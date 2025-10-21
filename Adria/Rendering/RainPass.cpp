@@ -86,7 +86,10 @@ namespace adria
 
 	void RainPass::OnSceneInitialized()
 	{
-		if (rain_data_buffer != nullptr) return; 
+		if (rain_data_buffer != nullptr)
+		{
+			return;
+		}
 
 		rain_streak_handle = g_TextureManager.LoadTexture(paths::TexturesDir + "Rain/RainStreak.dds");
 		rain_splash_bump_handle = g_TextureManager.LoadTexture(paths::TexturesDir + "Rain/SplashBump.dds");
@@ -148,11 +151,7 @@ namespace adria
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
 
-				GfxDescriptor src_handle = context.GetReadWriteBuffer(data.rain_data_buffer);
-				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU();
-				gfx->CopyDescriptors(1, dst_handle, src_handle);
-
-				Uint32 i = dst_handle.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(context.GetReadWriteBuffer(data.rain_data_buffer));
 				struct RainSimulationConstants
 				{
 					Uint32   rain_data_idx;
@@ -161,7 +160,7 @@ namespace adria
 					Float    range_radius;
 				} constants =
 				{
-					.rain_data_idx = i,
+					.rain_data_idx = table,
 					.simulation_speed = simulation_speed,
 					.range_radius = range_radius
 				};
@@ -196,11 +195,8 @@ namespace adria
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
 
-				GfxDescriptor src_handles[] = { context.GetReadOnlyBuffer(data.rain_data_buffer) };
-				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_handles));
-				gfx->CopyDescriptors(dst_handle, src_handles);
-
-				Uint32 i = dst_handle.GetIndex();
+				GfxDescriptor src_handle[] = { context.GetReadOnlyBuffer(data.rain_data_buffer) };
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handle);
 
 				struct Constants
 				{
@@ -210,7 +206,7 @@ namespace adria
 
 				} constants =
 				{
-					.rain_data_idx = i,
+					.rain_data_idx = table,
 					.rain_streak_idx = (Uint32)rain_streak_handle,
 					.rain_streak_scale = streak_scale
 				};

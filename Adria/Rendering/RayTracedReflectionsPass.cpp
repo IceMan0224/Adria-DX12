@@ -66,9 +66,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.diffuse),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct RayTracedReflectionsConstants
 				{
@@ -80,7 +78,7 @@ namespace adria
 				} constants =
 				{
 					.roughness_scale = reflection_roughness_scale,
-					.depth_idx = i + 0, .normal_idx = i + 1, .albedo_idx = i + 2, .output_idx = i + 3
+					.depth_idx = table + 0, .normal_idx = table + 1, .albedo_idx = table + 2, .output_idx = table + 3
 				};
 				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ray_traced_reflections_pso.get());
 				bindings->SetRayGenShader("RTR_RayGen");

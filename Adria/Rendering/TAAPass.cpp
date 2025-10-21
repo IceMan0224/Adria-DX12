@@ -58,9 +58,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.velocity),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct TAAConstants
 				{
@@ -70,7 +68,7 @@ namespace adria
 					Uint32 output_idx;
 				} constants =
 				{
-					.scene_idx = i, .prev_scene_idx = i + 1, .velocity_idx = i + 2, .output_idx = i + 3
+					.scene_idx = table, .prev_scene_idx = table + 1, .velocity_idx = table + 2, .output_idx = table + 3
 				};
 
 				cmd_list->SetPipelineState(taa_pso->Get());

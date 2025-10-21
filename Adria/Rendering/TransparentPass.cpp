@@ -116,11 +116,9 @@ namespace adria
 							context.GetReadOnlyTexture(data.scene),
 							context.GetReadOnlyTexture(data.depth)
 						};
-						GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-						gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-						Uint32 const i = dst_descriptor.GetIndex();
-						constants.scene_idx = i;
-						constants.depth_idx = i + 1;
+						GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
+						constants.scene_idx = table;
+						constants.depth_idx = table + 1;
 					}
 					cmd_list->SetRootConstants(1, constants);
 

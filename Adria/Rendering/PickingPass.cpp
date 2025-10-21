@@ -10,8 +10,7 @@
 namespace adria
 {
 
-	PickingPass::PickingPass(GfxDevice* gfx, Uint32 width, Uint32 height) : gfx(gfx),
-		width(width), height(height)
+	PickingPass::PickingPass(GfxDevice* gfx, Uint32 width, Uint32 height) : gfx(gfx), width(width), height(height)
 	{
 		CreatePSO();
 		CreatePickingBuffers();
@@ -60,9 +59,7 @@ namespace adria
 					context.GetReadOnlyTexture(data.normal),
 					context.GetReadWriteBuffer(data.pick_buffer)
 				};	
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct PickingConstants
 				{
@@ -71,7 +68,7 @@ namespace adria
 					Uint32 buffer_idx;
 				} constants =
 				{
-					.depth_idx = i, .normal_idx = i + 1, .buffer_idx = i + 2
+					.depth_idx = table, .normal_idx = table + 1, .buffer_idx = table + 2
 				};
 				
 				cmd_list->SetPipelineState(picking_pso->Get());

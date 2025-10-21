@@ -78,9 +78,7 @@ namespace adria
 					ssao_random_texture_srv,
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				Uint32 ssao_width  = width >> SSAOResolution.Get();
 				Uint32 ssao_height = height >> SSAOResolution.Get();
@@ -100,7 +98,7 @@ namespace adria
 				{
 					.ssao_params_packed = PackTwoFloatsToUint32(SSAORadius.Get(),SSAOPower.Get()), .resolution_factor = (Uint32)SSAOResolution.Get(),
 					.noise_scale_x = ssao_width * 1.0f / NOISE_DIM, .noise_scale_y = ssao_height * 1.0f / NOISE_DIM,
-					.depth_idx = i, .normal_idx = i + 1, .noise_idx = i + 2, .output_idx = i + 3
+					.depth_idx = table, .normal_idx = table + 1, .noise_idx = table + 2, .output_idx = table + 3
 				};
 
 				cmd_list->SetPipelineState(ssao_pso->Get());

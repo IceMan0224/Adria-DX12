@@ -23,7 +23,7 @@ namespace adria
 	{
 		for (auto& [handle, descriptor] : texture_srv_map)
 		{
-			gfx->FreeDescriptorCPU(descriptor, GfxDescriptorType::CBV_SRV_UAV);
+			gfx->FreeDescriptor(descriptor);
 		}
 		handle = TEXTURE_MANAGER_START_HANDLE;
 		texture_srv_map.clear();
@@ -174,5 +174,4 @@ namespace adria
         texture_srv_map[handle] = gfx->CreateTextureSRV(texture);
         gfx->CopyDescriptors(1, gfx->GetDescriptorGPU((Uint32)handle), texture_srv_map[handle]);
 	}
-
 }

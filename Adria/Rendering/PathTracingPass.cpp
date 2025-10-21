@@ -328,9 +328,7 @@ namespace adria
 						ctx.GetReadWriteTexture(data.direct_albedo),
 						ctx.GetReadWriteTexture(data.indirect_albedo),
 					};
-					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-					gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-					Uint32 const i = dst_descriptor.GetIndex();
+					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 					struct PathTracingConstants
 					{
@@ -343,8 +341,8 @@ namespace adria
 					} constants =
 					{
 						.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
-						.direct_radiance_idx = i + 0, .indirect_radiance_idx = i + 1,
-						.direct_albedo_idx = i + 2, .indirect_albedo_idx = i + 3
+						.direct_radiance_idx = table + 0, .indirect_radiance_idx = table + 1,
+						.direct_albedo_idx = table + 2, .indirect_albedo_idx = table + 3
 					};
 
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
@@ -362,9 +360,7 @@ namespace adria
 						ctx.GetReadWriteTexture(data.accumulation),
 						ctx.GetReadWriteTexture(data.output)
 					};
-					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-					gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-					Uint32 const i = dst_descriptor.GetIndex();
+					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 					struct PathTracingConstants
 					{
@@ -375,7 +371,7 @@ namespace adria
 					} constants =
 					{
 						.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
-						.accum_idx = i + 0, .output_idx = i + 1
+						.accum_idx = table + 0, .output_idx = table + 1
 					};
 
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

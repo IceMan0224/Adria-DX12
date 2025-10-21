@@ -104,8 +104,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.albedo),
 					ctx.GetReadWriteBuffer(data.reservoir),
 				};
-				Uint32 i = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors)).GetIndex();
-				gfx->CopyDescriptors(gfx->GetDescriptorGPU(i), src_descriptors);
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(ctx.GetReadOnlyTexture(data.depth));
 
 				struct InitialSamplingPassParameters
 				{
@@ -115,10 +114,10 @@ namespace adria
 					Uint32 reservoir_idx;
 				} parameters = 
 				{
-					.depth_idx = i,
-					.normal_idx = i + 1,
-					.albedo_idx = i + 2,
-					.reservoir_idx = i + 3,
+					.depth_idx = table,
+					.normal_idx = table + 1,
+					.albedo_idx = table + 2,
+					.reservoir_idx = table + 3,
 				};
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);

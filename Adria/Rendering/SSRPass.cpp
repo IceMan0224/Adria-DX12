@@ -67,9 +67,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.input),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct SSRConstants
 				{
@@ -84,7 +82,7 @@ namespace adria
 				} constants =
 				{
 					.ssr_ray_step = SSRRayStep.Get(), .ssr_ray_hit_threshold = SSRRayHitThreshold.Get(),
-					.depth_idx = i, .normal_idx = i + 1, .diffuse_idx = i + 2, .scene_idx = i + 3, .output_idx = i + 4
+					.depth_idx = table, .normal_idx = table + 1, .diffuse_idx = table + 2, .scene_idx = table + 3, .output_idx = table + 4
 				};
 
 				cmd_list->SetPipelineState(ssr_pso->Get());

@@ -42,16 +42,14 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				Uint32 i = gfx->AllocateDescriptorsGPU(1).GetIndex();
-				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), ctx.GetReadOnlyTexture(data.depth));
-
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(ctx.GetReadOnlyTexture(data.depth));
 				struct RayTracedShadowsConstants
 				{
 					Uint32  depth_idx;
 					Uint32  light_idx;
 				} constants =
 				{
-					.depth_idx = i,
+					.depth_idx = table,
 					.light_idx = light_index
 				};
 				
@@ -94,7 +92,6 @@ namespace adria
 		GfxRayTracingShaderLibrary library(rt_shader);
 		rt_pipeline_desc.libraries.push_back(library);
 
-		// Option 2: Explicitly list the correct exports
 		/*
 		GfxRayTracingShaderLibrary library(rt_shader,
 		{

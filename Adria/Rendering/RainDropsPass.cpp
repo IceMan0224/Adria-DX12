@@ -53,9 +53,7 @@ namespace adria
 					ctx.GetReadWriteTexture(data.output),
 					g_TextureManager.GetSRV(noise_texture_handle)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct RainDropsConstants
 				{
@@ -63,10 +61,9 @@ namespace adria
 					Uint32   noise_idx;
 				} constants =
 				{
-					.output_idx = i,
-					.noise_idx = i + 1
+					.output_idx = table,
+					.noise_idx = table + 1
 				};
-
 				cmd_list->SetPipelineState(rain_drops_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);

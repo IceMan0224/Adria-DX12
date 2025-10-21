@@ -66,9 +66,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.normal),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct RayTracedAmbientOcclusionConstants
 				{
@@ -79,7 +77,7 @@ namespace adria
 					Float   ao_power;
 				} constants =
 				{
-					.depth_idx = i + 0, .gbuf_normals_idx = i + 1, .output_idx = i + 2,
+					.depth_idx = table + 0, .gbuf_normals_idx = table + 1, .output_idx = table + 2,
 					.ao_radius = params.radius, .ao_power = pow(2.f, params.power_log)
 				};
 
@@ -126,9 +124,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.input),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct RTAOFilterIndices
 				{
@@ -137,7 +133,7 @@ namespace adria
 					Uint32  output_idx;
 				} indices =
 				{
-					.depth_idx = i + 0, .input_idx = i + 1, .output_idx = i + 2
+					.depth_idx = table + 0, .input_idx = table + 1, .output_idx = table + 2
 				};
 
 				Float distance_kernel[6];
@@ -194,7 +190,10 @@ namespace adria
 
 	void RayTracedAmbientOcclusionPass::OnResize(Uint32 w, Uint32 h)
 	{
-		if (!IsSupported()) return;
+		if (!IsSupported())
+		{
+			return;
+		}
 		width = w, height = h;
 	}
 

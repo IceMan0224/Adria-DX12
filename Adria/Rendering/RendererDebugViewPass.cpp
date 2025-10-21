@@ -62,6 +62,9 @@ namespace adria
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
 				
+				const Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+				cmd_list->ClearTexture(context.GetTexture(*data.output), clear);
+
 				GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.gbuffer_normal),
 												context.GetReadOnlyTexture(data.gbuffer_albedo),
 												context.GetReadOnlyTexture(data.depth),
@@ -70,13 +73,7 @@ namespace adria
 												data.ambient_occlusion.IsValid() ? context.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
 												data.motion_vectors.IsValid()    ? context.GetReadOnlyTexture(data.motion_vectors)    : gfxcommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV),
 												context.GetReadWriteTexture(data.output) };
-
-				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_handles));
-				Uint32 i = dst_handle.GetIndex();
-				gfx->CopyDescriptors(dst_handle, src_handles);
-
-				Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-				cmd_list->ClearUAV(context.GetTexture(*data.output), gfx->GetDescriptorGPU(i + 5), context.GetReadWriteTexture(data.output), clear);
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 
 				struct RendererDebugViewIndices
 				{
@@ -90,8 +87,8 @@ namespace adria
 					Uint32 output_idx;
 				} indices =
 				{
-					.normal_metallic_idx = i, .diffuse_idx = i + 1, .depth_idx = i + 2, .emissive_idx = i + 3, 
-					.custom_idx = i + 4, .ao_idx = i + 5, .motion_vectors_idx = i + 6, .output_idx = i + 7,
+					.normal_metallic_idx = table, .diffuse_idx = table + 1, .depth_idx = table + 2, .emissive_idx = table + 3,
+					.custom_idx = table + 4, .ao_idx = table + 5, .motion_vectors_idx = table + 6, .output_idx = table + 7,
 				};
 
 				struct RendererDebugViewConstants

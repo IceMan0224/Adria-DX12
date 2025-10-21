@@ -62,11 +62,7 @@ namespace adria
 				
 				GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.depth),
 												context.GetReadWriteTexture(data.output) };
-				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_handles));
-				gfx->CopyDescriptors(dst_handle, src_handles);
-				Uint32 i = dst_handle.GetIndex();
-
-				
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 				struct VolumetricLightingConstants
 				{
 					Uint32 depth_idx;
@@ -75,7 +71,7 @@ namespace adria
 					Uint32 sample_count;
 				} constants =
 				{
-					.depth_idx = i, .output_idx = i + 1, .resolution_scale = (Uint32)resolution, .sample_count = (Uint32)RayMarchedVolumetricFogSampleCount.Get()
+					.depth_idx = table, .output_idx = table + 1, .resolution_scale = (Uint32)resolution, .sample_count = (Uint32)RayMarchedVolumetricFogSampleCount.Get()
 				};
 
 				Bool const use_pcf = RayMarchedVolumetricFogUsePCF.Get();

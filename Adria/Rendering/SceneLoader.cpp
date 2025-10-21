@@ -36,26 +36,29 @@ namespace adria
 	entt::entity SceneLoader::LoadSkybox(SkyboxParameters const& params)
     {
         entt::entity skybox = reg.create();
-
         Skybox sky{};
         sky.active = true;
-
-        if (params.cubemap.has_value()) sky.cubemap_texture = g_TextureManager.LoadTexture(params.cubemap.value());
-        else sky.cubemap_texture = g_TextureManager.LoadCubemap(params.cubemap_textures);
-
+		if (params.cubemap.has_value())
+		{
+			sky.cubemap_texture = g_TextureManager.LoadTexture(params.cubemap.value());
+		}
+		else
+		{
+			sky.cubemap_texture = g_TextureManager.LoadCubemap(params.cubemap_textures);
+		}
         reg.emplace<Skybox>(skybox, sky);
         reg.emplace<Tag>(skybox, "Skybox");
         return skybox;
-
     }
 
 	entt::entity SceneLoader::LoadLight(LightParameters const& params)
     {
         entt::entity light = reg.create();
 
-        if (params.light_data.type == LightType::Directional)
-            const_cast<LightParameters&>(params).light_data.position = -params.light_data.direction * 1e3;
-
+		if (params.light_data.type == LightType::Directional)
+		{
+			const_cast<LightParameters&>(params).light_data.position = -params.light_data.direction * 1e3;
+		}
         reg.emplace<Light>(light, params.light_data);
         if (params.mesh_type == LightMesh::Quad)
         {
