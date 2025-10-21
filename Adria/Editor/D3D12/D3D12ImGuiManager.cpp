@@ -48,7 +48,7 @@ namespace adria
 		gui_heap_desc.descriptor_count = 30;
 		gui_heap_desc.shader_visible = true;
 		gui_heap_desc.type = GfxDescriptorType::CBV_SRV_UAV;
-		std::unique_ptr<D3D12DescriptorHeap> gui_heap = gfx->CreateDescriptorHeap(gui_heap_desc);
+		std::unique_ptr<D3D12DescriptorHeap> gui_heap = d3d12_gfx->CreateDescriptorHeap(gui_heap_desc);
 
 		imgui_allocator = std::make_unique<GUIDescriptorAllocator>(std::move(gui_heap), 1);
 		D3D12Descriptor handle = imgui_allocator->GetDescriptor(0);

@@ -128,7 +128,7 @@ namespace adria
 		LIB_PathTracing,
 		CS_TensorToTexture,
 		CS_TextureToTensor,
-		ShaderId_Count
+		ShaderID_Count
 	};
 
 	DECLARE_MULTICAST_DELEGATE(ShaderRecompiledEvent, GfxShaderKey const&)

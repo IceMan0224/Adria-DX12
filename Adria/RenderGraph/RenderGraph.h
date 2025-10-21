@@ -119,10 +119,10 @@ namespace adria
 		std::unordered_map<RGBufferReadWriteId, RGBufferId> buffer_uav_counter_map;
 
 		mutable std::unordered_map<RGTextureId, std::vector<std::pair<GfxTextureDescriptorDesc, RGDescriptorType>>> texture_view_desc_map;
-		mutable std::unordered_map<RGTextureId, std::vector<std::pair<GfxDescriptor, RGDescriptorType>>> texture_view_map;
+		mutable std::unordered_map<RGTextureId, std::vector<GfxDescriptor>> texture_view_map;
 
 		mutable std::unordered_map<RGBufferId, std::vector<std::pair<GfxBufferDescriptorDesc, RGDescriptorType>>> buffer_view_desc_map;
-		mutable std::unordered_map<RGBufferId, std::vector<std::pair<GfxDescriptor, RGDescriptorType>>> buffer_view_map;
+		mutable std::unordered_map<RGBufferId, std::vector<GfxDescriptor>> buffer_view_map;
 
 	private:
 

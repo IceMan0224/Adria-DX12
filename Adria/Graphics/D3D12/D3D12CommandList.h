@@ -6,6 +6,10 @@ namespace adria
 {
 	class D3D12Device;
 	class D3D12RayTracingShaderBindings;
+	template<Bool UseMutex>
+	class D3D12RingDescriptorAllocator;
+
+	using D3D12OnlineDescriptorAllocator = D3D12RingDescriptorAllocator<GFX_MULTITHREADED>;
 
 	class D3D12CommandList final : public GfxCommandList
 	{
@@ -28,8 +32,6 @@ namespace adria
 		virtual void Submit() override;
 		virtual void SignalAll() override;
 		virtual void ResetState() override;
-		virtual void SetHeap(GfxOnlineDescriptorAllocator* heap) override;
-		virtual void ResetHeap() override;
 
 		virtual void BeginEvent(Char const* event_name) override;
 		virtual void BeginEvent(Char const* event_name, Uint32 event_color) override;
@@ -61,10 +63,10 @@ namespace adria
 		virtual void CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array) override;
 		virtual void CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset) override;
 
-		virtual void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Float const* clear_value) override;
-		virtual void ClearUAV(GfxTexture const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Float const* clear_value) override;
-		virtual void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Uint32 const* clear_value) override;
-		virtual void ClearUAV(GfxTexture const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Uint32 const* clear_value) override;
+		virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float clear_value[4]) override;
+		virtual void ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Float clear_value[4]) override;
+		virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 clear_value[4]) override;
+		virtual void ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 clear_value[4]) override;
 		virtual void WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data) override;
 
 		virtual void BeginRenderPass(GfxRenderPassDesc const& render_pass_desc) override;

@@ -36,9 +36,6 @@ namespace adria
 	class GfxQueryHeap;
 	struct GfxQueryHeapDesc;
 
-	class D3D12DescriptorHeap;
-	struct D3D12DescriptorHeapDesc;
-
 	struct GfxGraphicsPipelineStateDesc;
 	struct GfxComputePipelineStateDesc;
 	struct GfxMeshShaderPipelineStateDesc;
@@ -55,7 +52,6 @@ namespace adria
 
 	class GfxNsightAftermathGpuCrashTracker;
 	class GfxNsightPerfManager;
-	using GfxOnlineDescriptorAllocator = D3D12RingDescriptorAllocator<GFX_MULTITHREADED>;
 
 	class GfxRayTracingPipeline;
 	struct GfxRayTracingPipelineDesc;
@@ -138,7 +134,6 @@ namespace adria
 		virtual void FreeDescriptor(GfxDescriptor descriptor) = 0;
 
 		virtual std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) = 0;
-		virtual std::unique_ptr<D3D12DescriptorHeap> CreateDescriptorHeap(D3D12DescriptorHeapDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) = 0;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc, GfxTextureData const& data) = 0;
 		virtual std::unique_ptr<GfxTexture> CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer) = 0;

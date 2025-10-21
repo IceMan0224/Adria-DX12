@@ -98,29 +98,17 @@ namespace adria
 	{
 		for (auto& [tex_id, view_vector] : texture_view_map)
 		{
-			for (auto [view, type] : view_vector)
+			for (GfxDescriptor const& view : view_vector)
 			{
-				switch (type)
-				{
-				case RGDescriptorType::RenderTarget:
-					gfx->FreeDescriptorCPU(view, GfxDescriptorType::RTV);
-					continue;
-				case RGDescriptorType::DepthStencil:
-					gfx->FreeDescriptorCPU(view, GfxDescriptorType::DSV);
-					continue;
-				case RGDescriptorType::ReadWrite:
-				case RGDescriptorType::ReadOnly:
-				default:
-					gfx->FreeDescriptorCPU(view, GfxDescriptorType::CBV_SRV_UAV);
-				}
+				gfx->FreeDescriptor(view);
 			}
 		}
 
 		for (auto& [buf_id, view_vector] : buffer_view_map)
 		{
-			for (auto [view, type] : view_vector)
+			for (GfxDescriptor const& view : view_vector)
 			{
-				gfx->FreeDescriptorCPU(view, GfxDescriptorType::CBV_SRV_UAV);
+				gfx->FreeDescriptor(view);
 			}
 		}
 	}
@@ -728,7 +716,7 @@ namespace adria
 			default:
 				ADRIA_ASSERT_MSG(false, "invalid resource view type for texture");
 			}
-			texture_view_map[res_id].emplace_back(view, type);
+			texture_view_map[res_id].push_back(view);
 		}
 	}
 
@@ -1098,42 +1086,42 @@ namespace adria
 	{
 		RGTextureId tex_id = res_id.GetResourceId();
 		auto const& views = texture_view_map[tex_id];
-		return views[res_id.GetViewId()].first;
+		return views[res_id.GetViewId()];
 	}
 
 	GfxDescriptor RenderGraph::GetDepthStencil(RGDepthStencilId res_id) const
 	{
 		RGTextureId tex_id = res_id.GetResourceId();
 		auto const& views = texture_view_map[tex_id];
-		return views[res_id.GetViewId()].first;
+		return views[res_id.GetViewId()];
 	}
 
 	GfxDescriptor RenderGraph::GetReadOnlyTexture(RGTextureReadOnlyId res_id) const
 	{
 		RGTextureId tex_id = res_id.GetResourceId();
 		auto const& views = texture_view_map[tex_id];
-		return views[res_id.GetViewId()].first;
+		return views[res_id.GetViewId()];
 	}
 
 	GfxDescriptor RenderGraph::GetReadWriteTexture(RGTextureReadWriteId res_id) const
 	{
 		RGTextureId tex_id = res_id.GetResourceId();
 		auto const& views = texture_view_map[tex_id];
-		return views[res_id.GetViewId()].first;
+		return views[res_id.GetViewId()];
 	}
 
 	GfxDescriptor RenderGraph::GetReadOnlyBuffer(RGBufferReadOnlyId res_id) const
 	{
 		RGBufferId buf_id = res_id.GetResourceId();
 		auto const& views = buffer_view_map[buf_id];
-		return views[res_id.GetViewId()].first;
+		return views[res_id.GetViewId()];
 	}
 
 	GfxDescriptor RenderGraph::GetReadWriteBuffer(RGBufferReadWriteId res_id) const
 	{
 		RGBufferId buf_id = res_id.GetResourceId();
 		auto const& views = buffer_view_map[buf_id];
-		return views[res_id.GetViewId()].first;
+		return views[res_id.GetViewId()];
 	}
 
 	void RenderGraph::DependencyLevel::AddPass(RenderGraphPassBase* pass)

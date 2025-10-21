@@ -20,9 +20,8 @@ namespace adria
 	struct GfxIndexBufferView;
 	struct GfxRenderPassDesc;
 	struct GfxShadingRateInfo;
-	template<bool>
-	class D3D12RingDescriptorAllocator;
-	using GfxOnlineDescriptorAllocator = D3D12RingDescriptorAllocator<GFX_MULTITHREADED>;
+	struct GfxBufferDescriptorDesc;
+	struct GfxTextureDescriptorDesc;
 
 	enum class GfxCommandListType : Uint8
 	{
@@ -57,8 +56,6 @@ namespace adria
 		virtual void Submit() = 0;
 		virtual void SignalAll() = 0;
 		virtual void ResetState() = 0;
-		virtual void SetHeap(GfxOnlineDescriptorAllocator* heap) = 0;
-		virtual void ResetHeap() = 0;
 
 		virtual void BeginEvent(Char const* event_name) = 0;
 		virtual void BeginEvent(Char const* event_name, Uint32 event_color) = 0;
@@ -90,10 +87,10 @@ namespace adria
 		virtual void CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array) = 0;
 		virtual void CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset) = 0;
 
-		virtual void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Float const* clear_value) = 0;
-		virtual void ClearUAV(GfxTexture const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Float const* clear_value) = 0;
-		virtual void ClearUAV(GfxBuffer const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Uint32 const* clear_value) = 0;
-		virtual void ClearUAV(GfxTexture const& resource, GfxDescriptor uav_gpu, GfxDescriptor uav_cpu, Uint32 const* clear_value) = 0;
+		virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float clear_value[4]) = 0;
+		virtual void ClearTexture(GfxTexture const& resource,	GfxTextureDescriptorDesc const& uav_desc, Float clear_value[4]) = 0;
+		virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 clear_value[4]) = 0;
+		virtual void ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 clear_value[4]) = 0;
 		virtual void WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data) = 0;
 
 		virtual void BeginRenderPass(GfxRenderPassDesc const& render_pass_desc) = 0;
@@ -133,7 +130,6 @@ namespace adria
 		virtual void SetRootSRV(Uint32 slot, Uint64 gpu_address) = 0;
 		virtual void SetRootUAV(Uint32 slot, Uint64 gpu_address) = 0;
 		virtual void SetRootDescriptorTable(Uint32 slot, GfxDescriptor base_descriptor) = 0;
-
 		virtual GfxDynamicAllocation AllocateTransient(Uint32 size, Uint32 align = 0) = 0;
 
 		virtual void ClearRenderTarget(GfxDescriptor rtv, Float const* clear_color) = 0;
@@ -141,5 +137,10 @@ namespace adria
 		virtual void SetRenderTargets(std::span<GfxDescriptor const> rtvs, GfxDescriptor const* dsv = nullptr, Bool single_rt = false) = 0;
 
 		virtual void SetContext(Context ctx) = 0;
+
+		void ClearBuffer(GfxBuffer const& resource, Float clear_value[4]);
+		void ClearTexture(GfxTexture const& resource, Float clear_value[4]);
+		void ClearBuffer(GfxBuffer const& resource, Uint32 clear_value[4]);
+		void ClearTexture(GfxTexture const& resource, Uint32 clear_value[4]);
 	};
 }

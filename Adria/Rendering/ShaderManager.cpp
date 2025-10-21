@@ -167,7 +167,7 @@ namespace adria
 			case LIB_PathTracing:
 			case LIB_DDGIRayTracing:
 				return GfxShaderStage::LIB;
-			case ShaderId_Count:
+			case ShaderID_Count:
 			default:
 				return GfxShaderStage::ShaderStageCount;
 			}
@@ -371,7 +371,7 @@ namespace adria
 			case CS_TensorToTexture:
 			case CS_TextureToTensor:
 				return "Other/TensorTextureConversions.hlsl";
-			case ShaderId_Count:
+			case ShaderID_Count:
 			default:
 				return "";
 			}

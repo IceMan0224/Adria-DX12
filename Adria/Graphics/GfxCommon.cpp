@@ -1,8 +1,9 @@
 #include "GfxCommon.h"
 #include "GfxDevice.h"
 #include "GfxTexture.h"
-#include "D3D12DescriptorAllocator.h"
-#include "d3d12/D3D12Conversions.h"
+#include "D3D12/D3D12DescriptorAllocator.h"
+#include "D3D12/D3D12Conversions.h"
+#include "D3D12/D3D12Device.h"
 
 namespace adria
 {
@@ -73,14 +74,15 @@ namespace adria
 
 				if (gfx->GetBackend() == GfxBackend::D3D12)
 				{
-					ID3D12Device* device = (ID3D12Device*)gfx->GetNative();
+					D3D12Device* device = (D3D12Device*)gfx;
+					ID3D12Device* d3d12_device = device->GetD3D12Device();
 
 					D3D12DescriptorHeapDesc desc{};
 					desc.type = GfxDescriptorType::CBV_SRV_UAV;
 					desc.shader_visible = false;
 					desc.descriptor_count = (Uint64)Count;
 
-					common_views_heap = gfx->CreateDescriptorHeap(desc);
+					common_views_heap = device->CreateDescriptorHeap(desc);
 
 					D3D12_SHADER_RESOURCE_VIEW_DESC null_srv_desc{};
 					null_srv_desc.Texture2D.MostDetailedMip = 0;
@@ -91,26 +93,26 @@ namespace adria
 					null_srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 					null_srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
-					device->CreateShaderResourceView(nullptr, &null_srv_desc, ToD3D12CpuHandle(common_views_heap->GetDescriptor((Uint64)NullTexture2D_SRV)));
+					d3d12_device->CreateShaderResourceView(nullptr, &null_srv_desc, ToD3D12CPUHandle(common_views_heap->GetDescriptor((Uint64)NullTexture2D_SRV)));
 					null_srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-					device->CreateShaderResourceView(nullptr, &null_srv_desc, ToD3D12CpuHandle(common_views_heap->GetDescriptor((Uint64)NullTextureCube_SRV)));
+					d3d12_device->CreateShaderResourceView(nullptr, &null_srv_desc, ToD3D12CPUHandle(common_views_heap->GetDescriptor((Uint64)NullTextureCube_SRV)));
 					null_srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-					device->CreateShaderResourceView(nullptr, &null_srv_desc, ToD3D12CpuHandle(common_views_heap->GetDescriptor((Uint64)NullTexture2DArray_SRV)));
+					d3d12_device->CreateShaderResourceView(nullptr, &null_srv_desc, ToD3D12CPUHandle(common_views_heap->GetDescriptor((Uint64)NullTexture2DArray_SRV)));
 
 					D3D12_UNORDERED_ACCESS_VIEW_DESC null_uav_desc{};
 					null_uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 					null_uav_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-					device->CreateUnorderedAccessView(nullptr, nullptr, &null_uav_desc, ToD3D12CpuHandle(common_views_heap->GetDescriptor((Uint64)NullTexture2D_UAV)));
+					d3d12_device->CreateUnorderedAccessView(nullptr, nullptr, &null_uav_desc, ToD3D12CPUHandle(common_views_heap->GetDescriptor((Uint64)NullTexture2D_UAV)));
 
 					GfxDescriptor white_srv = gfx->CreateTextureSRV(common_textures[(Uint64)WhiteTexture2D].get());
 					GfxDescriptor black_srv = gfx->CreateTextureSRV(common_textures[(Uint64)BlackTexture2D].get());
 					GfxDescriptor default_normal_srv = gfx->CreateTextureSRV(common_textures[(Uint64)DefaultNormal2D].get());
 					GfxDescriptor metallic_roughness_srv = gfx->CreateTextureSRV(common_textures[(Uint64)MetallicRoughness2D].get());
 
-					gfx->CopyDescriptors(1, common_views_heap->GetDescriptor((Uint64)WhiteTexture2D_SRV), white_srv);
-					gfx->CopyDescriptors(1, common_views_heap->GetDescriptor((Uint64)BlackTexture2D_SRV), black_srv);
-					gfx->CopyDescriptors(1, common_views_heap->GetDescriptor((Uint64)DefaultNormal2D_SRV), default_normal_srv);
-					gfx->CopyDescriptors(1, common_views_heap->GetDescriptor((Uint64)MetallicRoughness2D_SRV), metallic_roughness_srv);
+					d3d12_device->CopyDescriptorsSimple(1, ToD3D12CPUHandle(common_views_heap->GetDescriptor((Uint64)WhiteTexture2D_SRV)), DecodeToD3D12CPUHandle(white_srv), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					d3d12_device->CopyDescriptorsSimple(1, ToD3D12CPUHandle(common_views_heap->GetDescriptor((Uint64)BlackTexture2D_SRV)), DecodeToD3D12CPUHandle(black_srv), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					d3d12_device->CopyDescriptorsSimple(1, ToD3D12CPUHandle(common_views_heap->GetDescriptor((Uint64)DefaultNormal2D_SRV)), DecodeToD3D12CPUHandle(default_normal_srv), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					d3d12_device->CopyDescriptorsSimple(1, ToD3D12CPUHandle(common_views_heap->GetDescriptor((Uint64)MetallicRoughness2D_SRV)), DecodeToD3D12CPUHandle(metallic_roughness_srv), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 				}
 			}
 		}
@@ -139,7 +141,7 @@ namespace adria
 
 		GfxDescriptor GetCommonView(GfxCommonViewType type)
 		{
-			return common_views_heap->GetDescriptor((Uint64)type);
+			return EncodeFromD3D12Descriptor(common_views_heap->GetDescriptor((Uint64)type));
 		}
 
 	}

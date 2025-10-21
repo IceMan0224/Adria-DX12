@@ -76,7 +76,7 @@ namespace adria
 		return access;
 	}
 
-	constexpr D3D12_RESOURCE_STATES ToD3D12LegacyResourceState(GfxResourceState state)
+	D3D12_RESOURCE_STATES ToD3D12LegacyResourceState(GfxResourceState state)
 	{
 		using enum GfxResourceState;
 

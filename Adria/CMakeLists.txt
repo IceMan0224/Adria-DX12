@@ -268,6 +268,7 @@ set(ADRIA_GRAPHICS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxBufferView.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCapabilities.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandList.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandList.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandListPool.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandListPool.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/GfxCommandQueue.h"

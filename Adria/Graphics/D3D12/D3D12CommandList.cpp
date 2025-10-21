@@ -9,10 +9,10 @@
 #include "D3D12PipelineState.h"
 #include "D3D12RayTracingPipeline.h"
 #include "D3D12RayTracingShaderBindings.h"
+#include "D3D12RingDescriptorAllocator.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxScopedEvent.h"
-#include "Graphics/D3D12RingDescriptorAllocator.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
 #include "Graphics/GfxProfiler.h"
 #include "Graphics/GfxNsightPerfManager.h"
@@ -230,10 +230,10 @@ namespace adria
 
 		if (type == GfxCommandListType::Graphics || type == GfxCommandListType::Compute)
 		{
-			GfxOnlineDescriptorAllocator* descriptor_allocator = gfx->GetDescriptorAllocator();
+			D3D12OnlineDescriptorAllocator* descriptor_allocator = gfx->GetDescriptorAllocator();
 			if (descriptor_allocator)
 			{
-				ID3D12DescriptorHeap* heaps[] = { (ID3D12DescriptorHeap*)descriptor_allocator->GetHeap()->GetNative() };
+				ID3D12DescriptorHeap* heaps[] = { descriptor_allocator->GetHeap()->GetD3D12Heap() };
 				cmd_list->SetDescriptorHeaps(1, heaps);
 
 				ID3D12RootSignature* common_rs = gfx->GetCommonRootSignature();
@@ -243,25 +243,6 @@ namespace adria
 					cmd_list->SetGraphicsRootSignature(common_rs);
 				}
 			}
-		}
-	}
-
-	void D3D12CommandList::SetHeap(GfxOnlineDescriptorAllocator* heap)
-	{
-		if (heap && (type == GfxCommandListType::Graphics || type == GfxCommandListType::Compute))
-		{
-			ID3D12DescriptorHeap* heaps[] = { (ID3D12DescriptorHeap*)heap->GetHeap()->GetNative() };
-			cmd_list->SetDescriptorHeaps(1, heaps);
-		}
-	}
-
-	void D3D12CommandList::ResetHeap()
-	{
-		GfxOnlineDescriptorAllocator* default_heap = gfx->GetDescriptorAllocator();
-		if (default_heap && (type == GfxCommandListType::Graphics || type == GfxCommandListType::Compute))
-		{
-			ID3D12DescriptorHeap* heaps[] = { (ID3D12DescriptorHeap*)default_heap->GetHeap()->GetNative() };
-			cmd_list->SetDescriptorHeaps(1, heaps);
 		}
 	}
 
@@ -627,24 +608,33 @@ namespace adria
 		cmd_list->CopyTextureRegion(&copy_dst, 0, 0, 0, &copy_src, nullptr);
 	}
 
-	void D3D12CommandList::ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Float* clear_value)
+	void D3D12CommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float clear_value[4])
 	{
-		cmd_list->ClearUnorderedAccessViewFloat(ToD3D12GpuHandle(uav), ToD3D12CpuHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
+		D3D12Descriptor uav_cpu = gfx->CreateBufferViewImpl(&resource, GfxSubresourceType::UAV, uav_desc);
+		D3D12Descriptor uav_gpu = gfx->GetDescriptorAllocator()->Allocate(1);
+		gfx->GetD3D12Device()->CopyDescriptorsSimple(1, ToD3D12CPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		cmd_list->ClearUnorderedAccessViewFloat(ToD3D12GPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
-
-	void D3D12CommandList::ClearUAV(GfxBuffer const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Uint32* clear_value)
+	void D3D12CommandList::ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Float clear_value[4])
 	{
-		cmd_list->ClearUnorderedAccessViewUint(ToD3D12GpuHandle(uav), ToD3D12CpuHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
+		D3D12Descriptor uav_cpu = gfx->CreateTextureViewImpl(&resource, GfxSubresourceType::UAV, uav_desc);
+		D3D12Descriptor uav_gpu = gfx->GetDescriptorAllocator()->Allocate(1);
+		gfx->GetD3D12Device()->CopyDescriptorsSimple(1, ToD3D12CPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		cmd_list->ClearUnorderedAccessViewFloat(ToD3D12GPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
-
-	void D3D12CommandList::ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Float* clear_value)
+	void D3D12CommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 clear_value[4])
 	{
-		cmd_list->ClearUnorderedAccessViewFloat(ToD3D12GpuHandle(uav), ToD3D12CpuHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
+		D3D12Descriptor uav_cpu = gfx->CreateBufferViewImpl(&resource, GfxSubresourceType::UAV, uav_desc);
+		D3D12Descriptor uav_gpu = gfx->GetDescriptorAllocator()->Allocate(1);
+		gfx->GetD3D12Device()->CopyDescriptorsSimple(1, ToD3D12CPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		cmd_list->ClearUnorderedAccessViewUint(ToD3D12GPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
-
-	void D3D12CommandList::ClearUAV(GfxTexture const& resource, GfxDescriptor uav, GfxDescriptor uav_cpu, const Uint32* clear_value)
+	void D3D12CommandList::ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 clear_value[4])
 	{
-		cmd_list->ClearUnorderedAccessViewUint(ToD3D12GpuHandle(uav), ToD3D12CpuHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
+		D3D12Descriptor uav_cpu = gfx->CreateTextureViewImpl(&resource, GfxSubresourceType::UAV, uav_desc);
+		D3D12Descriptor uav_gpu = gfx->GetDescriptorAllocator()->Allocate(1);
+		gfx->GetD3D12Device()->CopyDescriptorsSimple(1, ToD3D12CPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		cmd_list->ClearUnorderedAccessViewUint(ToD3D12GPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
 
 	void D3D12CommandList::WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data)
@@ -667,7 +657,7 @@ namespace adria
 			for (GfxColorAttachmentDesc const& attachment : render_pass_desc.rtv_attachments)
 			{
 				D3D12_RENDER_PASS_RENDER_TARGET_DESC rtv_desc{};
-				rtv_desc.cpuDescriptor = ToD3D12CpuHandle(attachment.cpu_handle);
+				rtv_desc.cpuDescriptor = DecodeToD3D12CPUHandle(attachment.cpu_handle);
 				rtv_desc.BeginningAccess = { ToD3D12RenderPassBeginningAccess(attachment.beginning_access) };
 				ToD3D12ClearValue(attachment.clear_value, rtv_desc.BeginningAccess.Clear.ClearValue);
 				rtv_desc.EndingAccess = { ToD3D12RenderPassEndingAccess(attachment.ending_access), {} };
@@ -679,7 +669,7 @@ namespace adria
 				GfxDepthAttachmentDesc const& _dsv_desc = render_pass_desc.dsv_attachment.value();
 				dsv = std::make_unique<D3D12_RENDER_PASS_DEPTH_STENCIL_DESC>();
 
-				dsv->cpuDescriptor = ToD3D12CpuHandle(_dsv_desc.cpu_handle);
+				dsv->cpuDescriptor = DecodeToD3D12CPUHandle(_dsv_desc.cpu_handle);
 				dsv->DepthBeginningAccess = { ToD3D12RenderPassBeginningAccess(_dsv_desc.depth_beginning_access) };
 				ToD3D12ClearValue(_dsv_desc.clear_value, dsv->DepthBeginningAccess.Clear.ClearValue);
 				dsv->StencilBeginningAccess = { ToD3D12RenderPassBeginningAccess(_dsv_desc.stencil_beginning_access) };
@@ -989,11 +979,11 @@ namespace adria
 	{
 		if (current_context == Context::Graphics)
 		{
-			cmd_list->SetGraphicsRootDescriptorTable(slot, ToD3D12GpuHandle(base_descriptor));
+			cmd_list->SetGraphicsRootDescriptorTable(slot, DecodeToD3D12GPUHandle(base_descriptor));
 		}
 		else
 		{
-			cmd_list->SetComputeRootDescriptorTable(slot, ToD3D12GpuHandle(base_descriptor));
+			cmd_list->SetComputeRootDescriptorTable(slot, DecodeToD3D12GPUHandle(base_descriptor));
 		}
 	}
 
@@ -1004,7 +994,7 @@ namespace adria
 
 	void D3D12CommandList::ClearRenderTarget(GfxDescriptor rtv, Float const* clear_color)
 	{
-		cmd_list->ClearRenderTargetView(ToD3D12CpuHandle(rtv), clear_color, 0, nullptr);
+		cmd_list->ClearRenderTargetView(DecodeToD3D12CPUHandle(rtv), clear_color, 0, nullptr);
 	}
 
 	void D3D12CommandList::ClearDepth(GfxDescriptor dsv, Float depth, Uint8 stencil, Bool clear_stencil)
@@ -1014,7 +1004,7 @@ namespace adria
 		{
 			d3d12_clear_flags |= D3D12_CLEAR_FLAG_STENCIL;
 		}
-		cmd_list->ClearDepthStencilView(ToD3D12CpuHandle(dsv), d3d12_clear_flags, depth, stencil, 0, nullptr);
+		cmd_list->ClearDepthStencilView(DecodeToD3D12CPUHandle(dsv), d3d12_clear_flags, depth, stencil, 0, nullptr);
 	}
 
 	void D3D12CommandList::SetRenderTargets(std::span<GfxDescriptor const> rtvs, GfxDescriptor const* dsv, Bool single_rt)
@@ -1022,13 +1012,13 @@ namespace adria
 		D3D12_CPU_DESCRIPTOR_HANDLE* d3d12_dsv = nullptr;
 		if (dsv)
 		{
-			D3D12_CPU_DESCRIPTOR_HANDLE _d3d12_dsv = ToD3D12CpuHandle(*dsv);
+			D3D12_CPU_DESCRIPTOR_HANDLE _d3d12_dsv = DecodeToD3D12CPUHandle(*dsv);
 			d3d12_dsv = &_d3d12_dsv;
 		}
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> d3d12_rtvs(rtvs.size());
 		for (Uint64 i = 0; i < d3d12_rtvs.size(); ++i)
 		{
-			d3d12_rtvs[i] = ToD3D12CpuHandle(rtvs[i]);
+			d3d12_rtvs[i] = DecodeToD3D12CPUHandle(rtvs[i]);
 		}
 		cmd_list->OMSetRenderTargets((Uint32)d3d12_rtvs.size(), d3d12_rtvs.data(), single_rt, d3d12_dsv);
 	}

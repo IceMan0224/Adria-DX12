@@ -501,7 +501,7 @@ namespace adria
 		return GetDescriptorAllocator()->Allocate(count);
 	}
 
-	GfxOnlineDescriptorAllocator* D3D12Device::GetDescriptorAllocator() const
+	D3D12OnlineDescriptorAllocator* D3D12Device::GetDescriptorAllocator() const
 	{
 		return gpu_descriptor_allocator.get();
 	}
@@ -652,7 +652,7 @@ namespace adria
 		heap_desc.shader_visible = true;
 		heap_desc.type = GfxDescriptorType::CBV_SRV_UAV;
 		std::unique_ptr<D3D12DescriptorHeap> descriptor_heap = CreateDescriptorHeap(heap_desc);
-		gpu_descriptor_allocator = std::make_unique<GfxOnlineDescriptorAllocator>(std::move(descriptor_heap), reserve);
+		gpu_descriptor_allocator = std::make_unique<D3D12OnlineDescriptorAllocator>(std::move(descriptor_heap), reserve);
 	}
 
 	std::unique_ptr<GfxCommandList> D3D12Device::CreateCommandList(GfxCommandListType type)

@@ -16,9 +16,18 @@ namespace adria
 	class D3D12CommandQueue;
 	class D3D12NsightAftermathGpuCrashTracker;
 	struct DRED;
+	class D3D12DescriptorHeap;
+	struct D3D12DescriptorHeapDesc;
+	class D3D12CommandList;
+	template<Bool UseMutex>
+	class D3D12RingDescriptorAllocator;
+
+	using D3D12OnlineDescriptorAllocator = D3D12RingDescriptorAllocator<GFX_MULTITHREADED>;
+
 
 	class D3D12Device final : public GfxDevice
 	{
+		friend class D3D12CommandList;
 	public:
 		explicit D3D12Device(Window* window);
 		ADRIA_NONCOPYABLE(D3D12Device)
@@ -68,7 +77,6 @@ namespace adria
 		virtual void FreeDescriptor(GfxDescriptor descriptor) override;
 
 		virtual std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) override;
-		virtual std::unique_ptr<D3D12DescriptorHeap> CreateDescriptorHeap(D3D12DescriptorHeapDesc const& desc) override;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) override;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc, GfxTextureData const& data) override;
 		virtual std::unique_ptr<GfxTexture> CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer) override;
@@ -129,7 +137,9 @@ namespace adria
 		{
 			return allocator.get();
 		}
-		GfxOnlineDescriptorAllocator* GetDescriptorAllocator() const;
+
+		std::unique_ptr<D3D12DescriptorHeap> CreateDescriptorHeap(D3D12DescriptorHeapDesc const& desc);
+		D3D12OnlineDescriptorAllocator* GetDescriptorAllocator() const;
 
 	private:
 		void* hwnd;
@@ -141,7 +151,7 @@ namespace adria
 		D3D12Capabilities device_capabilities{};
 		GfxVendor vendor = GfxVendor::Unknown;
 
-		std::unique_ptr<GfxOnlineDescriptorAllocator> gpu_descriptor_allocator;
+		std::unique_ptr<D3D12OnlineDescriptorAllocator> gpu_descriptor_allocator;
 		std::array<std::unique_ptr<D3D12DescriptorAllocator>, (Uint64)GfxDescriptorType::Count> cpu_descriptor_allocators;
 
 		std::unique_ptr<GfxSwapchain> swapchain;
