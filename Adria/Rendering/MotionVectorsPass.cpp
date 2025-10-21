@@ -52,9 +52,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.depth),
 					ctx.GetReadWriteTexture(data.velocity)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct MotionVectorsConstants
 				{
@@ -62,7 +60,7 @@ namespace adria
 					Uint32   output_idx;
 				} constants =
 				{
-					.depth_idx = i, .output_idx = i + 1
+					.depth_idx = table, .output_idx = table + 1
 				};
 
 				cmd_list->SetPipelineState(motion_vectors_pso->Get());

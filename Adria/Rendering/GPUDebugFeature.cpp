@@ -19,7 +19,6 @@ namespace adria
 
 		srv_descriptor = gfx->CreateBufferSRV(gpu_buffer.get());
 		uav_descriptor = gfx->CreateBufferUAV(gpu_buffer.get());
-
 		gfx->GetGraphicsCommandList()->BufferBarrier(*gpu_buffer, GfxResourceState::Common, GfxResourceState::ComputeUAV);
 
 		for (auto& readback_buffer : cpu_readback_buffers)
@@ -29,9 +28,8 @@ namespace adria
 	}
 	Int32 GpuDebugFeature::GetBufferIndex()
 	{
-		gpu_uav_descriptor = gfx->AllocateDescriptorsGPU();
-		gfx->CopyDescriptors(1, gpu_uav_descriptor, uav_descriptor);
-		return (Int32)gpu_uav_descriptor.GetIndex();
+		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(uav_descriptor);
+		return (Int32)table;
 	}
 
 	void GpuDebugFeature::AddClearPass(RenderGraph& rg, Char const* pass_name)
@@ -50,7 +48,7 @@ namespace adria
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 				Uint32 clear[] = { 0,0,0,0 };
-				cmd_list->ClearUAV(*gpu_buffer, gpu_uav_descriptor, uav_descriptor, clear);
+				cmd_list->ClearBuffer(*gpu_buffer, clear);
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
 	}
 
@@ -73,7 +71,6 @@ namespace adria
 				Uint64 current_backbuffer_index = gfx->GetBackbufferIndex();
 				GfxBuffer& readback_buffer = *cpu_readback_buffers[current_backbuffer_index];
 				cmd_list->CopyBuffer(readback_buffer, *gpu_buffer);
-
 				Uint64 old_backbuffer_index = (current_backbuffer_index + 1) % gfx->GetBackbufferCount();
 				GfxBuffer& old_readback_buffer = *cpu_readback_buffers[old_backbuffer_index];
 				ProcessBufferData(old_readback_buffer);

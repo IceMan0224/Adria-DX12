@@ -64,7 +64,7 @@ namespace adria
 					Uint32 depth_idx;
 				} constants = 
 				{
-					.depth_idx = table.base
+					.depth_idx = table
 				};
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
@@ -72,24 +72,30 @@ namespace adria
 
 				auto decal_pass_lambda = [&](Bool modify_normals)
 				{
-					if (decal_view.empty()) return;
+					if (decal_view.empty())
+					{
+						return;
+					}
 
 					if (modify_normals)
 					{
 						using enum GfxShaderStage;
 						decal_psos->AddDefine<PS>("DECAL_MODIFY_NORMALS");
 						decal_psos->ModifyDesc([](GfxGraphicsPipelineStateDesc& desc)
-							{
-								desc.num_render_targets = 2;
-								desc.rtv_formats[1] = GfxFormat::R8G8B8A8_UNORM;
-							});
+						{
+							desc.num_render_targets = 2;
+							desc.rtv_formats[1] = GfxFormat::R8G8B8A8_UNORM;
+						});
 					}
 					GfxPipelineState const* pso = decal_psos->Get();
 					cmd_list->SetPipelineState(pso);
 					for (auto e : decal_view)
 					{
 						Decal& decal = decal_view.get<Decal>(e);
-						if (decal.modify_gbuffer_normals != modify_normals) continue;
+						if (decal.modify_gbuffer_normals != modify_normals)
+						{
+							continue;
+						}
 
 						constants.model_matrix = decal.decal_model_matrix;
 						constants.transposed_inverse_model = decal.decal_model_matrix.Invert().Transpose(); 

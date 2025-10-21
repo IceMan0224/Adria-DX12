@@ -59,9 +59,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.input),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				Float density = params.fog_density / 1000.0f;
 				Float falloff = params.fog_falloff / 1000.0f;
@@ -88,7 +86,7 @@ namespace adria
 					.fog_min_opacity = params.fog_min_opacity,
 					.fog_cutoff_distance = params.fog_cutoff_distance,
 					.fog_color = PackToUint(params.fog_color),
-					.depth_idx = i, .scene_idx = i + 1, .output_idx = i + 2
+					.depth_idx = table, .scene_idx = table + 1, .output_idx = table + 2
 				};
 
 				cmd_list->SetPipelineState(fog_pso->Get());

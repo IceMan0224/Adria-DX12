@@ -89,9 +89,9 @@ namespace adria
 	void FogVolumesPass::AddPasses(RenderGraph& rg)
 	{
 		RG_SCOPE(rg, "Fog Volumes");
-		GfxDescriptor fog_volume_buffer_srv_gpu = gfx->AllocateDescriptorsGPU();
-		gfx->CopyDescriptors(1, fog_volume_buffer_srv_gpu, fog_volume_buffer_srv);
-		fog_volume_buffer_idx = fog_volume_buffer_srv_gpu.GetIndex();
+
+		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(fog_volume_buffer_srv);
+		fog_volume_buffer_idx = table.base;
 
 		AddLightInjectionPass(rg);
 		AddScatteringIntegrationPass(rg);
@@ -133,10 +133,13 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 				
-				Uint32 i = gfx->AllocateDescriptorsGPU(2).GetIndex();
-				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 0), ctx.GetReadWriteTexture(data.light_injection_target));
-				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 1), ctx.GetReadOnlyTexture(data.light_injection_target_history));
-				
+				GfxDescriptor src_descriptors[] =
+				{
+					ctx.GetReadWriteTexture(data.light_injection_target),
+					ctx.GetReadOnlyTexture(data.light_injection_target_history)
+				};
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
+
 				struct LightInjectionConstants
 				{
 					Vector3u voxel_grid_dimensions;
@@ -150,8 +153,8 @@ namespace adria
 					.voxel_grid_dimensions = Vector3u(light_injection_target_history->GetWidth(), light_injection_target_history->GetHeight(), light_injection_target_history->GetDepth()),
 					.fog_volumes_count = fog_volume_buffer->GetCount(),
 					.fog_volume_buffer_idx = fog_volume_buffer_idx,
-					.light_injection_target_idx = i,
-					.light_injection_target_history_idx = i + 1,
+					.light_injection_target_idx = table,
+					.light_injection_target_history_idx = table + 1,
 					.blue_noise_idx = (Uint32)blue_noise_handles[gfx->GetFrameIndex() % BLUE_NOISE_TEXTURE_COUNT]
 				};
 				
@@ -198,9 +201,12 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				Uint32 i = gfx->AllocateDescriptorsGPU(2).GetIndex();
-				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 0), ctx.GetReadOnlyTexture(data.injected_light));
-				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 1), ctx.GetReadWriteTexture(data.integrated_scattering));
+				GfxDescriptor src_descriptors[] =
+				{
+					ctx.GetReadOnlyTexture(data.injected_light),
+					ctx.GetReadWriteTexture(data.integrated_scattering)
+				};
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct ScatteringAccumulationConstants
 				{
@@ -210,15 +216,15 @@ namespace adria
 				} constants =
 				{
 					.voxel_grid_dimensions = Vector3u(light_injection_target_history->GetWidth(), light_injection_target_history->GetHeight(), light_injection_target_history->GetDepth()),
-					.injected_light_idx = i,
-					.integrated_scattering_idx = i + 1
+					.injected_light_idx = table,
+					.integrated_scattering_idx = table + 1
 				};
 
 				cmd_list->SetPipelineState(scattering_integration_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(light_injection_target_history->GetWidth(), 8),
-					DivideAndRoundUp(light_injection_target_history->GetHeight(), 8));
+								   DivideAndRoundUp(light_injection_target_history->GetHeight(), 8));
 
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
 	}
@@ -247,12 +253,10 @@ namespace adria
 				cmd_list->SetPipelineState(combine_fog_pso->Get());
 
 				GfxDescriptor src_descriptors[] = { ctx.GetReadOnlyTexture(data.fog), ctx.GetReadOnlyTexture(data.depth) };
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
-				cmd_list->SetRootConstant(1, i, 0);
-				cmd_list->SetRootConstant(1, i + 1, 1);
+				cmd_list->SetRootConstant(1, table, 0);
+				cmd_list->SetRootConstant(1, table + 1, 1);
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->Draw(3);
 			}, RGPassType::Graphics, RGPassFlags::None);

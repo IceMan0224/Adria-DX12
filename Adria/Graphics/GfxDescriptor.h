@@ -40,11 +40,12 @@ namespace adria
 
 	struct GfxBindlessTable
 	{
-		Uint32 base = ~0u;
+		Uint32 base = UINT32_MAX;
 		Uint32 count = 0;
 		GfxDescriptorType type = GfxDescriptorType::Invalid;
 
 		Bool IsValid() const { return base != ~0u; }
+		operator Uint32() const { return base; }
 	};
 
 

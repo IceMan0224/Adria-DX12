@@ -190,20 +190,31 @@ namespace adria
 		{
 			DebugPrintHeader const* header = printf_reader.Consume<DebugPrintHeader>();
 			if (header->NumBytes == 0 || header->NumArgs > MaxDebugPrintArgs || !printf_reader.HasMoreData(header->NumBytes))
+			{
 				break;
+			}
 
 			std::string fmt = printf_reader.ConsumeString(header->StringSize);
-			if (fmt.length() == 0) break;
+			if (fmt.length() == 0)
+			{
+				break;
+			}
 
 			std::vector<std::string> arg_strings;
 			arg_strings.reserve(header->NumArgs);
 			for (Uint32 arg_idx = 0; arg_idx < header->NumArgs; ++arg_idx)
 			{
 				ArgCode const arg_code = (ArgCode)*printf_reader.Consume<Uint8>();
-				if (arg_code >= NumDebugPrintArgCodes || arg_code < 0) break;
+				if (arg_code >= NumDebugPrintArgCodes || arg_code < 0)
+				{
+					break;
+				}
 
 				Uint32 const arg_size = ArgCodeSizes[arg_code];
-				if (!printf_reader.HasMoreData(arg_size)) break;
+				if (!printf_reader.HasMoreData(arg_size))
+				{
+					break;
+				}
 
 				std::string const arg_string = MakeArgString(printf_reader, arg_code);
 				arg_strings.push_back(arg_string);

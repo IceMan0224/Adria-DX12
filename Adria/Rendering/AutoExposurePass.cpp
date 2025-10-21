@@ -57,7 +57,6 @@ namespace adria
 
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.scene_texture), ctx.GetReadWriteBuffer(data.histogram_buffer) };
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-				Uint32 const base_index = table.base;
 
 				struct BuildHistogramConstants
 				{
@@ -72,7 +71,7 @@ namespace adria
 				} constants = { .width = width, .height = height,
 								.rcp_width = 1.0f / width, .rcp_height = 1.0f / height,
 								.min_log_luminance = MinLogLuminance.Get(), .log_luminance_range_rcp = 1.0f/ (MaxLogLuminance.Get() - MinLogLuminance.Get()),
-								.scene_idx = base_index, .histogram_idx = base_index + 1 };
+								.scene_idx = table, .histogram_idx = table + 1 };
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::Compute, RGPassFlags::None);
@@ -118,7 +117,6 @@ namespace adria
 
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.histogram_buffer), ctx.GetReadWriteTexture(data.avg_luminance), ctx.GetReadWriteTexture(data.exposure) };
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-				Uint32 const base_index = table.base;
 
 				struct HistogramReductionConstants
 				{
@@ -132,12 +130,15 @@ namespace adria
 					Uint32 exposure_idx;
 				} constants = { .min_log_luminance = MinLogLuminance.Get(), .log_luminance_range = MaxLogLuminance.Get() - MinLogLuminance.Get(),
 								.delta_time = frame_data.delta_time, .adaption_speed = AdaptionSpeed.Get(), .pixel_count = data.pixel_count,
-								.histogram_idx = base_index, .luminance_idx = base_index + 1, .exposure_idx = base_index + 2 };
+								.histogram_idx = table, .luminance_idx = table + 1, .exposure_idx = table + 2 };
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(1, 1, 1);
 			}, RGPassType::Compute, RGPassFlags::None);
 
-		if (show_histogram) rg.ExportBuffer(RG_NAME(HistogramBuffer), histogram_copy.get());
+		if (show_histogram)
+		{
+			rg.ExportBuffer(RG_NAME(HistogramBuffer), histogram_copy.get());
+		}
 	}
 
 	void AutoExposurePass::OnSceneInitialized()

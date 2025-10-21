@@ -33,7 +33,10 @@ namespace adria
 
 	void GeometryBufferCache::DestroyGeometryBuffer(GeometryBufferHandle& handle)
 	{
-		if (buffer_map.empty()) return;
+		if (buffer_map.empty())
+		{
+			return;
+		}
 		if (auto it = buffer_map.find(handle); it != buffer_map.end())
 		{
 			it->second = nullptr;
@@ -43,29 +46,38 @@ namespace adria
 
 	GfxBuffer* GeometryBufferCache::GetGeometryBuffer(GeometryBufferHandle& handle) const
 	{
-		if (!handle.IsValid()) return nullptr;
+		if (!handle.IsValid())
+		{
+			return nullptr;
+		}
 
 		if (auto it = buffer_map.find(handle); it != buffer_map.end())
 		{
 			return it->second.get();
 		}
-		else return nullptr;
+		return nullptr;
 	}
 
 	GfxDescriptor GeometryBufferCache::GetGeometryBufferSRV(GeometryBufferHandle& handle) const
 	{
-		if (!handle.IsValid()) return GfxDescriptor{};
+		if (!handle.IsValid())
+		{
+			return GfxDescriptor{};
+		}
 
 		if (auto it = buffer_srv_map.find(handle); it != buffer_srv_map.end())
 		{
 			return it->second;
 		}
-		else return GfxDescriptor{};
+		return GfxDescriptor{};
 	}
 
 	GeometryBufferHandle::~GeometryBufferHandle()
 	{
-		if (IsValid()) g_GeometryBufferCache.DestroyGeometryBuffer(*this);
+		if (IsValid())
+		{
+			g_GeometryBufferCache.DestroyGeometryBuffer(*this);
+		}
 	}
 
 }

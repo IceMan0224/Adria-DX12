@@ -63,12 +63,12 @@ namespace adria
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 
-					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU();
-					gfx->CopyDescriptors(1, dst_descriptor, ctx.GetReadWriteBuffer(data.clusters));
+					GfxDescriptor src_descriptors[] = { ctx.GetReadWriteBuffer(data.clusters) };
+					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 					cmd_list->SetPipelineState(clustered_building_pso->Get());
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-					cmd_list->SetRootConstant(1, dst_descriptor.GetIndex(), 0);
+					cmd_list->SetRootConstant(1, table, 0);
 					cmd_list->Dispatch(CLUSTER_SIZE_X, CLUSTER_SIZE_Y, CLUSTER_SIZE_Z);
 				}, RGPassType::Compute, RGPassFlags::None);
 		}
@@ -99,7 +99,6 @@ namespace adria
 												ctx.GetReadWriteBuffer(data.light_grid) };
 
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-				Uint32 const base_index = table.base;
 
 				struct ClusterCullingConstants
 				{
@@ -109,8 +108,8 @@ namespace adria
 					Uint32 light_grid_idx;
 				} constants =
 				{
-					.clusters_idx = base_index, .light_index_counter_idx = base_index + 1,
-					.light_index_list_idx = base_index + 2, .light_grid_idx = base_index + 3
+					.clusters_idx = table, .light_index_counter_idx = table + 1,
+					.light_index_list_idx = table + 2, .light_grid_idx = table + 3
 				};
 
 				cmd_list->SetPipelineState(clustered_culling_pso->Get());
@@ -177,7 +176,6 @@ namespace adria
 												ctx.GetReadOnlyBuffer(data.light_list), ctx.GetReadOnlyBuffer(data.light_grid)
 				};
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-				Uint32 const base_index = table.base;
 
 				Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 				cmd_list->ClearTexture(ctx.GetTexture(*data.output), clear);
@@ -194,11 +192,11 @@ namespace adria
 					Uint32 light_buffer_data_packed;
 				} constants =
 				{
-					.normal_idx = base_index + 0, .diffuse_idx = base_index + 1,
-					.emissive_idx = base_index + 2,.custom_idx = base_index + 3,  .depth_idx = base_index + 4, .ao_idx = base_index + 5,
-					.output_idx = base_index + 6, .light_buffer_data_packed = PackTwoUint16ToUint32((Uint16)base_index + 7, (Uint16)base_index + 8)
+					.normal_idx = table + 0, .diffuse_idx = table + 1,
+					.emissive_idx = table + 2,.custom_idx = table + 3,  .depth_idx = table + 4, .ao_idx = table + 5,
+					.output_idx = table + 6, .light_buffer_data_packed = PackTwoUint16ToUint32((Uint16)table + 7, (Uint16)table + 8)
 				};
-				ADRIA_ASSERT(base_index + 8 < UINT32_MAX);
+				ADRIA_ASSERT(table + 8 < UINT32_MAX);
 
 				cmd_list->SetPipelineState(clustered_lighting_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

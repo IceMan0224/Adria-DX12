@@ -11,8 +11,7 @@
 namespace adria
 {
 	
-	HBAOPass::HBAOPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), hbao_random_texture(nullptr),
-		blur_pass(gfx)
+	HBAOPass::HBAOPass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h), hbao_random_texture(nullptr), blur_pass(gfx)
 	{
 		CreatePSO();
 	}
@@ -55,9 +54,7 @@ namespace adria
 					hbao_random_texture_srv,
 					ctx.GetReadWriteTexture(data.output_uav)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct HBAOConstants
 				{
@@ -75,7 +72,7 @@ namespace adria
 					.r2 = params.hbao_radius * params.hbao_radius, .radius_to_screen = params.hbao_radius * 0.5f * Float(height) / (tanf(frame_data.camera_fov * 0.5f) * 2.0f),
 					.power = params.hbao_power,
 					.noise_scale = std::max(width * 1.0f / NOISE_DIM,height * 1.0f / NOISE_DIM),
-					.depth_idx = i, .normal_idx = i + 1, .noise_idx = i + 2, .output_idx = i + 3
+					.depth_idx = table, .normal_idx = table + 1, .noise_idx = table + 2, .output_idx = table + 3
 				};
 
 				cmd_list->SetPipelineState(hbao_pso->Get());

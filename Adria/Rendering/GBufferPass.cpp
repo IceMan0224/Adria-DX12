@@ -16,8 +16,7 @@ using namespace DirectX;
 namespace adria
 {
 
-	GBufferPass::GBufferPass(entt::registry& reg, GfxDevice* gfx, Uint32 w, Uint32 h) :
-		reg{ reg }, gfx{ gfx }, width{ w }, height{ h }
+	GBufferPass::GBufferPass(entt::registry& reg, GfxDevice* gfx, Uint32 w, Uint32 h) : reg{ reg }, gfx{ gfx }, width{ w }, height{ h }
 	{
 		CreatePSOs();
 	}
@@ -156,7 +155,10 @@ namespace adria
 		for (entt::entity batch_entity : view)
 		{
 			Batch& batch = view.get<Batch>(batch_entity);
-			if (!batch.camera_visibility) continue;
+			if (!batch.camera_visibility)
+			{
+				continue;
+			}
 
 			GfxPipelineState const* pso = GetPSO(batch.shading_extension, batch.alpha_mode);
 			cmd_list->SetPipelineState(pso);

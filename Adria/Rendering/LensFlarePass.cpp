@@ -163,10 +163,7 @@ namespace adria
 					light_ss.y = -0.5f * light_pos.y / light_pos.w + 0.5f;
 					light_ss.z = light_pos.z / light_pos.w;
 				}
-
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(1);
-				gfx->CopyDescriptors(1, dst_descriptor, ctx.GetReadOnlyTexture(data.depth));
-				Uint32 i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(ctx.GetReadOnlyTexture(data.depth));
 
 				ADRIA_ASSERT(lens_flare_textures.size() == 7);
 				struct LensFlareConstants
@@ -184,7 +181,7 @@ namespace adria
 					.lens_idx0 = (Uint32)lens_flare_textures[0], .lens_idx1 = (Uint32)lens_flare_textures[1],
 					.lens_idx2 = (Uint32)lens_flare_textures[2], .lens_idx3 = (Uint32)lens_flare_textures[3],
 					.lens_idx4 = (Uint32)lens_flare_textures[4], .lens_idx5 = (Uint32)lens_flare_textures[5],
-					.lens_idx6 = (Uint32)lens_flare_textures[6], .depth_idx = i
+					.lens_idx6 = (Uint32)lens_flare_textures[6], .depth_idx = table
 				};
 
 				struct LensFlareConstants2
@@ -253,9 +250,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.depth),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct LensFlareConstants
 				{
@@ -267,8 +262,8 @@ namespace adria
 				{
 					.light_ss_x = light_ss.x,
 					.light_ss_y = light_ss.y,
-					.depth_idx = i + 0,
-					.output_idx = i + 1
+					.depth_idx = table + 0,
+					.output_idx = table + 1
 				};
 
 				cmd_list->SetPipelineState(procedural_lens_flare_pso->Get());

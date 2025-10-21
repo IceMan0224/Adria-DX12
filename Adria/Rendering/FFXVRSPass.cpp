@@ -156,12 +156,12 @@ namespace adria
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 
-					GfxDescriptor dst = gfx->AllocateDescriptorsGPU();
-					gfx->CopyDescriptors(1, dst, vrs_image_srv);
+					GfxDescriptor src_descriptors[] = { vrs_image_srv };
+					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 					cmd_list->SetPipelineState(vrs_overlay_pso->Get());
 					cmd_list->TextureBarrier(*vrs_image, GfxResourceState::ComputeUAV, GfxResourceState::PixelSRV);
-					cmd_list->SetRootConstant(1, dst.GetIndex(), 0);
+					cmd_list->SetRootConstant(1, table, 0);
 					cmd_list->SetRootConstant(1, shading_rate_image_tile_size, 1);
 					cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 					cmd_list->Draw(3);
@@ -181,7 +181,7 @@ namespace adria
 					{
 						if (ImGui::Combo("Shading Rate", VariableRateShadingMode.GetPtr(), "1x1\0 1x2\0 2x1\0 2x2\0 2x4\0 4x2\0 4x4\0", 7))
 						{
-							//#todo verify support
+							ADRIA_TODO("Verify support");
 						}
 						ImGui::Combo("Shading Rate Combiner", VariableRateShadingCombiner.GetPtr(), "Passthrough\0 Override\0 Min\0 Max\0 Sum\0", 5);
 						ImGui::Checkbox("Shading Rate Image", VariableRateShadingImage.GetPtr());

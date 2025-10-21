@@ -62,7 +62,6 @@ namespace adria
 					ctx.GetReadWriteTexture(data.output)
 				};
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-				Uint32 const base_index = table.base;
 
 				struct CRTFilterConstants
 				{
@@ -74,7 +73,7 @@ namespace adria
 					Float  warp_y;
 				} constants =
 				{
-					.input_idx = base_index, .output_idx = base_index + 1,
+					.input_idx = table, .output_idx = table + 1,
 					.hard_scan = CRTHardScan.Get(), .pixel_hardness = CRTPixelHardness.Get(),
 					.warp_x = CRTWarpX.Get(), .warp_y = CRTWarpY.Get()
 				};

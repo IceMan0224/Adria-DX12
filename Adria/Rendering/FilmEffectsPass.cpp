@@ -49,9 +49,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.input),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct FilmEffectsConstants
 				{
@@ -79,8 +77,8 @@ namespace adria
 					.film_grain_scale = film_grain_scale,
 					.film_grain_amount = film_grain_amount,
 					.film_grain_seed = GetFilmGrainSeed(frame_data.delta_time, film_grain_seed_update_rate),
-					.input_idx = i + 0,
-					.output_idx = i + 1
+					.input_idx = table + 0,
+					.output_idx = table + 1
 				};
 				cmd_list->SetPipelineState(film_effects_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

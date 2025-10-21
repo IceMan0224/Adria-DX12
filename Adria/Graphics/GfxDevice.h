@@ -245,6 +245,12 @@ namespace adria
 		std::unique_ptr<GfxComputePipelineState> CreateManagedComputePipelineState(GfxComputePipelineStateDesc const& desc);
 		std::unique_ptr<GfxMeshShaderPipelineState> CreateManagedMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc);
 
+		ADRIA_NODISCARD GfxBindlessTable AllocateAndUpdateBindlessTable(GfxDescriptor src_descriptor, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV)
+		{
+			GfxBindlessTable table = AllocateBindlessTable(1);
+			UpdateBindlessTable(table, 0, src_descriptor, 1);
+			return table;
+		}
 		ADRIA_NODISCARD GfxBindlessTable AllocateAndUpdateBindlessTable(std::span<GfxDescriptor const> src_descriptors, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV)
 		{
 			GfxBindlessTable table = AllocateBindlessTable(static_cast<Uint32>(src_descriptors.size()));

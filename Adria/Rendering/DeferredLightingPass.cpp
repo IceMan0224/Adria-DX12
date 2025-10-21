@@ -78,9 +78,7 @@ namespace adria
 												ctx.GetReadOnlyTexture(data.depth),
 												data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
 												ctx.GetReadWriteTexture(data.output) };
-
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-				Uint32 const base_index = table.base;
 
 				struct DeferredLightingConstants
 				{
@@ -93,7 +91,7 @@ namespace adria
 					Uint32 output_idx;
 				} constants =
 				{
-					.normal_metallic_idx = base_index, .diffuse_idx = base_index + 1, .emissive_idx = base_index + 2, .custom_idx = base_index + 3, .depth_idx = base_index + 4, .ao_idx = base_index + 5, .output_idx = base_index + 6
+					.normal_metallic_idx = table, .diffuse_idx = table + 1, .emissive_idx = table + 2, .custom_idx = table + 3, .depth_idx = table + 4, .ao_idx = table + 5, .output_idx = table + 6
 				};
 
 				cmd_list->SetPipelineState(deferred_lighting_pso->Get());

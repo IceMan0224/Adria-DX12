@@ -57,7 +57,6 @@ namespace adria
 					ctx.GetReadWriteTexture(data.dst_texture)
 				};
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-				Uint32 const base_index = table.base;
 
 				struct BlurConstants
 				{
@@ -65,7 +64,7 @@ namespace adria
 					Uint32 output_idx;
 				} constants =
 				{
-					.input_idx = base_index, .output_idx = base_index + 1
+					.input_idx = table, .output_idx = table + 1
 				};
 
 				cmd_list->SetPipelineState(blur_horizontal_pso->Get());
@@ -95,7 +94,6 @@ namespace adria
 					ctx.GetReadWriteTexture(data.dst_texture)
 				};
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-				Uint32 const base_index = table.base;
 
 				struct BlurConstants
 				{
@@ -103,7 +101,7 @@ namespace adria
 					Uint32 output_idx;
 				} constants =
 				{
-					.input_idx = base_index, .output_idx = base_index + 1
+					.input_idx = table, .output_idx = table + 1
 				};
 
 				cmd_list->SetPipelineState(blur_vertical_pso->Get());

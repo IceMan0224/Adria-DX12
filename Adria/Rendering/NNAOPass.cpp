@@ -57,9 +57,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.gbuffer_normal),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				ADRIA_ASSERT(F_texture_handles.size() == 4);
 				struct NNAOConstants
@@ -75,7 +73,7 @@ namespace adria
 				} constants =
 				{
 					.nnao_params_packed = PackTwoFloatsToUint32(NNAORadius.Get(), NNAOPower.Get()),
-					.depth_idx = i, .normal_idx = i + 1, .output_idx = i + 2,
+					.depth_idx = table, .normal_idx = table + 1, .output_idx = table + 2,
 					.F0_idx = (Uint32)F_texture_handles[0], .F1_idx = (Uint32)F_texture_handles[1],
 					.F2_idx = (Uint32)F_texture_handles[2], .F3_idx = (Uint32)F_texture_handles[3],
 				};

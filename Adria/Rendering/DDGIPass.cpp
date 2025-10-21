@@ -183,7 +183,7 @@ namespace adria
 					.random_vector = random_vector,
 					.random_angle = random_angle,
 					.history_blend_weight = 0.98f,
-					.ray_buffer_index = table.base
+					.ray_buffer_index = table
 				};
 
 				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ddgi_trace_pso.get());
@@ -246,7 +246,7 @@ namespace adria
 					.random_angle = random_angle,
 					.history_blend_weight = 0.98f,
 					.ray_buffer_index = ddgi_blackboard.heap_index,
-					.irradiance_idx = table.base
+					.irradiance_idx = table
 				};
 
 				cmd_list->SetPipelineState(update_irradiance_pso->Get());
@@ -303,7 +303,7 @@ namespace adria
 					.random_angle = random_angle,
 					.history_blend_weight = 0.98f,
 					.ray_buffer_index = ddgi_blackboard.heap_index,
-					.distance_idx = table.base
+					.distance_idx = table
 				};
 
 				cmd_list->SetPipelineState(update_distance_pso->Get());
@@ -426,10 +426,10 @@ namespace adria
 			ddgi_volume_buffer_srv
 		};
 		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-		ddgi_gpu.irradiance_history_idx = (Int32)table.base;
-		ddgi_gpu.distance_history_idx = (Int32)table.base + 1;
+		ddgi_gpu.irradiance_history_idx = (Int32)table;
+		ddgi_gpu.distance_history_idx = (Int32)table + 1;
 
-		return (Int32)table.base + 2;
+		return (Int32)table + 2;
 	}
 
 	void DDGIPass::CreatePSOs()

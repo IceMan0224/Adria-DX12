@@ -123,7 +123,6 @@ namespace adria
 					ctx.GetReadWriteTexture(data.output)
 				};
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-				Uint32 const base_index = table.base;
 
 				struct BloomDownsampleConstants
 				{
@@ -135,8 +134,8 @@ namespace adria
 				{
 					.dims_inv_x = 1.0f / target_dim_x,
 					.dims_inv_y = 1.0f / target_dim_y,
-					.source_idx = base_index,
-					.target_idx = base_index + 1
+					.source_idx = table,
+					.target_idx = table + 1
 				};
 				if (pass_idx == 1)
 				{
@@ -193,7 +192,6 @@ namespace adria
 					ctx.GetReadWriteTexture(data.output)
 				};
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-				Uint32 const base_index = table.base;
 
 				struct BloomUpsampleConstants
 				{
@@ -207,9 +205,9 @@ namespace adria
 				{
 					.dims_inv_x = 1.0f / (target_dim_x),
 					.dims_inv_y = 1.0f / (target_dim_y),
-					.low_input_idx = base_index,
-					.high_input_idx = base_index + 1,
-					.output_idx = base_index + 2,
+					.low_input_idx = table,
+					.high_input_idx = table + 1,
+					.output_idx = table + 2,
 					.radius = BloomRadius.Get()
 				};
 

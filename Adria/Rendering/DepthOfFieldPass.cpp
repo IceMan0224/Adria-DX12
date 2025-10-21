@@ -220,9 +220,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.depth),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct ComputeCircleOfConfusionPassConstants
 				{
@@ -235,7 +233,7 @@ namespace adria
 					Float max_circle_of_confusion;
 				} constants =
 				{
-					.depth_idx = i, .output_idx = i + 1,
+					.depth_idx = table, .output_idx = table + 1,
 					.camera_focal_length = FocalLength.Get(),		
 					.camera_focus_distance = FocusDistance.Get(),
 					.camera_aperture_ratio = FStop.Get(),
@@ -281,9 +279,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.input),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct DownsampleCircleOfConfusionPassConstants
 				{
@@ -291,7 +287,7 @@ namespace adria
 					Uint32 output_idx;
 				} constants =
 				{
-					.input_idx = i, .output_idx = i + 1,
+					.input_idx = table, .output_idx = table + 1,
 				};
 
 				cmd_list->SetRootConstants(1, constants);
@@ -337,15 +333,12 @@ namespace adria
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 
 					cmd_list->SetPipelineState(downsample_coc_pso->Get());
-
 					GfxDescriptor src_descriptors[] =
 					{
 						ctx.GetReadOnlyTexture(data.input),
 						ctx.GetReadWriteTexture(data.output)
 					};
-					GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-					gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-					Uint32 const i = dst_descriptor.GetIndex();
+					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 					struct DownsampleCircleOfConfusionPassConstants
 					{
@@ -353,7 +346,7 @@ namespace adria
 						Uint32 output_idx;
 					} constants =
 					{
-						.input_idx = i, .output_idx = i + 1,
+						.input_idx = table, .output_idx = table + 1,
 					};
 
 					cmd_list->SetRootConstants(1, constants);
@@ -409,9 +402,7 @@ namespace adria
 					ctx.GetReadWriteTexture(data.near_coc),
 					ctx.GetReadWriteTexture(data.far_coc)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct ComputePrefilteredTextureConstants
 				{
@@ -422,11 +413,11 @@ namespace adria
 					Uint32 background_output_idx;
 				} constants =
 				{
-					.color_idx = i, 
-					.coc_idx = i + 1,
-					.coc_dilation_idx = i + 2,		
-					.foreground_output_idx = i + 3,
-					.background_output_idx = i + 4,
+					.color_idx = table,
+					.coc_idx = table + 1,
+					.coc_dilation_idx = table + 2,
+					.foreground_output_idx = table + 3,
+					.background_output_idx = table + 4,
 				};
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
@@ -487,9 +478,7 @@ namespace adria
 					ctx.GetReadWriteTexture(data.output0),
 					ctx.GetReadWriteTexture(data.output1)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct BokehFirstPassConstants
 				{
@@ -503,12 +492,12 @@ namespace adria
 					Float  max_coc;
 				} constants =
 				{
-					.color_idx = i,
-					.kernel_idx = i + 1,
-					.coc_near_idx = i + 2,
-					.coc_far_idx = i + 3,
-					.output0_idx = i + 4,			
-					.output1_idx = i + 5,
+					.color_idx = table,
+					.kernel_idx = table + 1,
+					.coc_near_idx = table + 2,
+					.coc_far_idx = table + 3,
+					.output0_idx = table + 4,			
+					.output1_idx = table + 5,
 					.sample_count = GetSampleCount(BokehKernelRingCount.Get(), BokehKernelRingDensity.Get()),
 					.max_coc = MaxCircleOfConfusion.Get()
 				};
@@ -567,9 +556,7 @@ namespace adria
 					ctx.GetReadWriteTexture(data.output0),
 					ctx.GetReadWriteTexture(data.output1)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct BokehSecondPassConstants
 				{
@@ -582,11 +569,11 @@ namespace adria
 					Float  max_coc;
 				} constants =
 				{
-					.kernel_idx = i,
-					.coc_near_idx = i + 1,
-					.coc_far_idx = i + 2,
-					.output0_idx = i + 3,
-					.output1_idx = i + 4,
+					.kernel_idx = table,
+					.coc_near_idx = table + 1,
+					.coc_far_idx = table + 2,
+					.output0_idx = table + 3,
+					.output1_idx = table + 4,
 					.sample_count = GetSampleCount(SMALL_BOKEH_KERNEL_RING_COUNT, SMALL_BOKEH_KERNEL_RING_DENSITY),
 					.max_coc = MaxCircleOfConfusion.Get()
 				};
@@ -639,9 +626,7 @@ namespace adria
 					ctx.GetReadWriteTexture(data.output0),
 					ctx.GetReadWriteTexture(data.output1)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct ComputePostfilteredTextureConstants
 				{
@@ -651,10 +636,10 @@ namespace adria
 					Uint32 background_output_idx;
 				} constants =
 				{
-					.near_coc_idx = i,
-					.far_coc_idx = i + 1,
-					.foreground_output_idx = i + 2,
-					.background_output_idx = i + 3,
+					.near_coc_idx = table,
+					.far_coc_idx = table + 1,
+					.foreground_output_idx = table + 2,
+					.background_output_idx = table + 3,
 				};
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
@@ -707,9 +692,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.far_coc),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct CombineConstants
 				{
@@ -720,10 +703,10 @@ namespace adria
 					Float  alpha_interpolation;
 				} constants =
 				{
-					.color_idx = i,
-					.near_coc_idx = i + 1,
-					.far_coc_idx = i + 2,
-					.output_idx = i + 3,
+					.color_idx = table,
+					.near_coc_idx = table + 1,
+					.far_coc_idx = table + 2,
+					.output_idx = table + 3,
 					.alpha_interpolation = AlphaInterpolation.Get()
 				};
 

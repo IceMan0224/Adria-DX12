@@ -53,9 +53,7 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.velocity),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct MotionBlurConstants
 				{
@@ -64,7 +62,7 @@ namespace adria
 					Uint32 output_idx;
 				} constants =
 				{
-					.scene_idx = i, .velocity_idx = i + 1, .output_idx = i + 2
+					.scene_idx = table, .velocity_idx = table + 1, .output_idx = table + 2
 				};
 
 				cmd_list->SetPipelineState(motion_blur_pso->Get());
