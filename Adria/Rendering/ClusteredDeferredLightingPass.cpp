@@ -98,10 +98,9 @@ namespace adria
 												ctx.GetReadWriteBuffer(data.light_list),
 												ctx.GetReadWriteBuffer(data.light_grid) };
 
-				GfxBindlessTable table = gfx->AllocateBindlessTable(ARRAYSIZE(src_handles));
-				gfx->UpdateBindlessTable(table, src_handles);
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
+				Uint32 const base_index = table.base;
 
-				Uint32 i = dst_handle.GetIndex();
 				struct ClusterCullingConstants
 				{
 					Uint32 clusters_idx;
@@ -110,8 +109,8 @@ namespace adria
 					Uint32 light_grid_idx;
 				} constants =
 				{
-					.clusters_idx = i, .light_index_counter_idx = i + 1,
-					.light_index_list_idx = i + 2, .light_grid_idx = i + 3
+					.clusters_idx = base_index, .light_index_counter_idx = base_index + 1,
+					.light_index_list_idx = base_index + 2, .light_grid_idx = base_index + 3
 				};
 
 				cmd_list->SetPipelineState(clustered_culling_pso->Get());
@@ -177,9 +176,7 @@ namespace adria
 												ctx.GetReadWriteTexture(data.output),
 												ctx.GetReadOnlyBuffer(data.light_list), ctx.GetReadOnlyBuffer(data.light_grid)
 				};
-
-				GfxBindlessTable table = gfx->AllocateBindlessTable(ARRAYSIZE(src_handles));
-				gfx->UpdateBindlessTable(table, src_handles);
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 				Uint32 const base_index = table.base;
 
 				Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };

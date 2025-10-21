@@ -4,6 +4,7 @@
 #include "ShaderStructs.h"
 #include "ShaderManager.h"
 #include "Graphics/GfxDevice.h"
+#include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxShader.h"
 #include "Graphics/GfxShaderKey.h"
 #include "Graphics/GfxRayTracingPipeline.h"
@@ -133,17 +134,9 @@ namespace adria
 				[=](DDGIClearHistoryPassData const& data, RenderGraphContext& ctx) mutable
 				{
 					GfxCommandList* cmd_list = ctx.GetCommandList();
-
-					static constexpr Float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-					Uint32 i = gfx->AllocateDescriptorsGPU(2).GetIndex();
-					gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), ctx.GetReadWriteTexture(data.irradiance_history));
-					gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i + 1), ctx.GetReadWriteTexture(data.distance_history));
-
-					cmd_list->ClearUAV(ctx.GetTexture(*data.irradiance_history), gfx->GetDescriptorGPU(i),
-									   ctx.GetReadWriteTexture(data.irradiance_history), black);
-					cmd_list->ClearUAV(ctx.GetTexture(*data.distance_history), gfx->GetDescriptorGPU(i + 1),
-									   ctx.GetReadWriteTexture(data.distance_history), black);
+					static constexpr Float black[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+					cmd_list->ClearTexture(ctx.GetTexture(*data.distance_history), black);
+					cmd_list->ClearTexture(ctx.GetTexture(*data.distance_history), black);
 				}, RGPassType::Compute);
 		}
 
@@ -172,9 +165,12 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				Uint32 i = gfx->AllocateDescriptorsGPU(1).GetIndex();
-				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), ctx.GetReadWriteBuffer(data.ray_buffer));
-				ctx.GetBlackboard().Create<DDGIBlackboardData>(i);
+				GfxDescriptor src_descriptor[] = 
+				{
+					ctx.GetReadWriteBuffer(data.ray_buffer)
+				};
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptor);
+				ctx.GetBlackboard().Create<DDGIBlackboardData>(table.base);
 
 				struct DDGIParameters
 				{
@@ -187,7 +183,7 @@ namespace adria
 					.random_vector = random_vector,
 					.random_angle = random_angle,
 					.history_blend_weight = 0.98f,
-					.ray_buffer_index = i
+					.ray_buffer_index = table.base
 				};
 
 				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ddgi_trace_pso.get());
@@ -231,8 +227,11 @@ namespace adria
 
 				DDGIBlackboardData const& ddgi_blackboard = ctx.GetBlackboard().Get<DDGIBlackboardData>();
 
-				Uint32 i = gfx->AllocateDescriptorsGPU(1).GetIndex();
-				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), ctx.GetReadWriteTexture(data.irradiance));
+				GfxDescriptor src_descriptor[] = 
+				{
+					ctx.GetReadWriteTexture(data.irradiance)
+				};
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptor);
 
 				struct DDGIParameters
 				{
@@ -247,7 +246,7 @@ namespace adria
 					.random_angle = random_angle,
 					.history_blend_weight = 0.98f,
 					.ray_buffer_index = ddgi_blackboard.heap_index,
-					.irradiance_idx = i
+					.irradiance_idx = table.base
 				};
 
 				cmd_list->SetPipelineState(update_irradiance_pso->Get());
@@ -285,8 +284,11 @@ namespace adria
 
 				DDGIBlackboardData const& ddgi_blackboard = ctx.GetBlackboard().Get<DDGIBlackboardData>();
 
-				Uint32 i = gfx->AllocateDescriptorsGPU(1).GetIndex();
-				gfx->CopyDescriptors(1, gfx->GetDescriptorGPU(i), ctx.GetReadWriteTexture(data.distance));
+				GfxDescriptor src_descriptor[] =
+				{
+					ctx.GetReadWriteTexture(data.distance)
+				};
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptor);
 
 				struct DDGIParameters
 				{
@@ -301,7 +303,7 @@ namespace adria
 					.random_angle = random_angle,
 					.history_blend_weight = 0.98f,
 					.ray_buffer_index = ddgi_blackboard.heap_index,
-					.distance_idx = i
+					.distance_idx = table.base
 				};
 
 				cmd_list->SetPipelineState(update_distance_pso->Get());
@@ -317,7 +319,10 @@ namespace adria
 
 	void DDGIPass::AddVisualizePass(RenderGraph& rg)
 	{
-		if (!IsSupported() || !visualize) return;
+		if (!IsSupported() || !visualize)
+		{
+			return;
+		}
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
@@ -407,23 +412,24 @@ namespace adria
 		ddgi_gpu.normal_bias = 0.25f;
 		ddgi_gpu.energy_preservation = 0.85f;
 
-		GfxDescriptor irradiance_gpu = gfx->AllocateDescriptorsGPU();
-		GfxDescriptor distance_gpu = gfx->AllocateDescriptorsGPU();
-		gfx->CopyDescriptors(1, irradiance_gpu, ddgi_volume.irradiance_history_srv);
-		gfx->CopyDescriptors(1, distance_gpu, ddgi_volume.distance_history_srv);
-
-		ddgi_gpu.irradiance_history_idx = (Int32)irradiance_gpu.GetIndex();
-		ddgi_gpu.distance_history_idx = (Int32)distance_gpu.GetIndex();
 		if (!ddgi_volume_buffer || ddgi_volume_buffer->GetCount() < ddgi_data.size())
 		{
 			ddgi_volume_buffer = gfx->CreateBuffer(StructuredBufferDesc<DDGIVolumeGPU>(ddgi_data.size(), false, true));
 			ddgi_volume_buffer_srv = gfx->CreateBufferSRV(ddgi_volume_buffer.get());
 		}
-
 		ddgi_volume_buffer->Update(ddgi_data.data(), ddgi_data.size() * sizeof(DDGIVolumeGPU));
-		GfxDescriptor ddgi_volume_buffer_srv_gpu = gfx->AllocateDescriptorsGPU();
-		gfx->CopyDescriptors(1, ddgi_volume_buffer_srv_gpu, ddgi_volume_buffer_srv);
-		return (Int32)ddgi_volume_buffer_srv_gpu.GetIndex();
+
+		GfxDescriptor src_descriptors[] =
+		{
+			ddgi_volume.irradiance_history_srv,
+			ddgi_volume.distance_history_srv,
+			ddgi_volume_buffer_srv
+		};
+		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
+		ddgi_gpu.irradiance_history_idx = (Int32)table.base;
+		ddgi_gpu.distance_history_idx = (Int32)table.base + 1;
+
+		return (Int32)table.base + 2;
 	}
 
 	void DDGIPass::CreatePSOs()

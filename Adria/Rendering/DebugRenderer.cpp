@@ -320,7 +320,7 @@ namespace adria
 
 	void DebugRenderer::CreatePSOs()
 	{
-		GfxGraphicsPipelineStateDesc gfx_pso_desc = {};
+		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
 		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_Debug), gfx_pso_desc.input_layout);
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_Debug;

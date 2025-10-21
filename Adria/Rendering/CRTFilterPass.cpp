@@ -61,9 +61,8 @@ namespace adria
 					ctx.GetReadOnlyTexture(data.input),
 					ctx.GetReadWriteTexture(data.output)
 				};
-				GfxDescriptor dst_descriptor = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_descriptors));
-				gfx->CopyDescriptors(dst_descriptor, src_descriptors);
-				Uint32 const i = dst_descriptor.GetIndex();
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
+				Uint32 const base_index = table.base;
 
 				struct CRTFilterConstants
 				{
@@ -75,7 +74,7 @@ namespace adria
 					Float  warp_y;
 				} constants =
 				{
-					.input_idx = i, .output_idx = i + 1,
+					.input_idx = base_index, .output_idx = base_index + 1,
 					.hard_scan = CRTHardScan.Get(), .pixel_hardness = CRTPixelHardness.Get(),
 					.warp_x = CRTWarpX.Get(), .warp_y = CRTWarpY.Get()
 				};

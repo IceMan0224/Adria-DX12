@@ -608,28 +608,28 @@ namespace adria
 		cmd_list->CopyTextureRegion(&copy_dst, 0, 0, 0, &copy_src, nullptr);
 	}
 
-	void D3D12CommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float clear_value[4])
+	void D3D12CommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float const clear_value[4])
 	{
 		D3D12Descriptor uav_cpu = gfx->CreateBufferViewImpl(&resource, GfxSubresourceType::UAV, uav_desc);
 		D3D12Descriptor uav_gpu = gfx->GetDescriptorAllocator()->Allocate(1);
 		gfx->GetD3D12Device()->CopyDescriptorsSimple(1, ToD3D12CPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		cmd_list->ClearUnorderedAccessViewFloat(ToD3D12GPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
-	void D3D12CommandList::ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Float clear_value[4])
+	void D3D12CommandList::ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Float const clear_value[4])
 	{
 		D3D12Descriptor uav_cpu = gfx->CreateTextureViewImpl(&resource, GfxSubresourceType::UAV, uav_desc);
 		D3D12Descriptor uav_gpu = gfx->GetDescriptorAllocator()->Allocate(1);
 		gfx->GetD3D12Device()->CopyDescriptorsSimple(1, ToD3D12CPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		cmd_list->ClearUnorderedAccessViewFloat(ToD3D12GPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
-	void D3D12CommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 clear_value[4])
+	void D3D12CommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 const clear_value[4])
 	{
 		D3D12Descriptor uav_cpu = gfx->CreateBufferViewImpl(&resource, GfxSubresourceType::UAV, uav_desc);
 		D3D12Descriptor uav_gpu = gfx->GetDescriptorAllocator()->Allocate(1);
 		gfx->GetD3D12Device()->CopyDescriptorsSimple(1, ToD3D12CPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		cmd_list->ClearUnorderedAccessViewUint(ToD3D12GPUHandle(uav_gpu), ToD3D12CPUHandle(uav_cpu), (ID3D12Resource*)resource.GetNative(), clear_value, 0, nullptr);
 	}
-	void D3D12CommandList::ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 clear_value[4])
+	void D3D12CommandList::ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 const clear_value[4])
 	{
 		D3D12Descriptor uav_cpu = gfx->CreateTextureViewImpl(&resource, GfxSubresourceType::UAV, uav_desc);
 		D3D12Descriptor uav_gpu = gfx->GetDescriptorAllocator()->Allocate(1);

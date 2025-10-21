@@ -87,10 +87,10 @@ namespace adria
 		virtual void CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array) = 0;
 		virtual void CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset) = 0;
 
-		virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float clear_value[4]) = 0;
-		virtual void ClearTexture(GfxTexture const& resource,	GfxTextureDescriptorDesc const& uav_desc, Float clear_value[4]) = 0;
-		virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 clear_value[4]) = 0;
-		virtual void ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 clear_value[4]) = 0;
+		virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float const clear_value[4]) = 0;
+		virtual void ClearTexture(GfxTexture const& resource,	GfxTextureDescriptorDesc const& uav_desc, Float const clear_value[4]) = 0;
+		virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 const clear_value[4]) = 0;
+		virtual void ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 const clear_value[4]) = 0;
 		virtual void WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data) = 0;
 
 		virtual void BeginRenderPass(GfxRenderPassDesc const& render_pass_desc) = 0;
@@ -138,9 +138,9 @@ namespace adria
 
 		virtual void SetContext(Context ctx) = 0;
 
-		void ClearBuffer(GfxBuffer const& resource, Float clear_value[4]);
-		void ClearTexture(GfxTexture const& resource, Float clear_value[4]);
-		void ClearBuffer(GfxBuffer const& resource, Uint32 clear_value[4]);
-		void ClearTexture(GfxTexture const& resource, Uint32 clear_value[4]);
+		void ClearBuffer(GfxBuffer const& resource, Float const clear_value[4]);
+		void ClearTexture(GfxTexture const& resource, Float const clear_value[4]);
+		void ClearBuffer(GfxBuffer const& resource, Uint32 const clear_value[4]);
+		void ClearTexture(GfxTexture const& resource, Uint32 const clear_value[4]);
 	};
 }

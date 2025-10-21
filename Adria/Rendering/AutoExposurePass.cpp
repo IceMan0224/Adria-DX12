@@ -47,20 +47,17 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(2);
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.scene_texture), ctx.GetReadWriteBuffer(data.histogram_buffer) };
-				gfx->CopyDescriptors(dst_handle, src_handles);
-
-				Uint32 descriptor_index = dst_handle.GetIndex();
-				GfxDescriptor scene_srv = gfx->GetDescriptorGPU(descriptor_index);
-				GfxDescriptor buffer_gpu = gfx->GetDescriptorGPU(descriptor_index + 1);
-
 				GfxBuffer const& histogram_buffer = ctx.GetBuffer(*data.histogram_buffer);
 				Uint32 clear_value[4] = { 0, 0, 0, 0 };
-				cmd_list->ClearUAV(histogram_buffer, buffer_gpu, ctx.GetReadWriteBuffer(data.histogram_buffer), clear_value);
+				cmd_list->ClearBuffer(histogram_buffer, clear_value);
 				cmd_list->BufferBarrier(histogram_buffer, GfxResourceState::ComputeUAV, GfxResourceState::ComputeUAV);
+
 				cmd_list->FlushBarriers();
 				cmd_list->SetPipelineState(build_histogram_pso->Get());
+
+				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.scene_texture), ctx.GetReadWriteBuffer(data.histogram_buffer) };
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
+				Uint32 const base_index = table.base;
 
 				struct BuildHistogramConstants
 				{
@@ -75,7 +72,7 @@ namespace adria
 				} constants = { .width = width, .height = height,
 								.rcp_width = 1.0f / width, .rcp_height = 1.0f / height,
 								.min_log_luminance = MinLogLuminance.Get(), .log_luminance_range_rcp = 1.0f/ (MaxLogLuminance.Get() - MinLogLuminance.Get()),
-								.scene_idx = descriptor_index, .histogram_idx = descriptor_index + 1 };
+								.scene_idx = base_index, .histogram_idx = base_index + 1 };
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::Compute, RGPassFlags::None);
@@ -112,23 +109,16 @@ namespace adria
 
 				if (invalid_history)
 				{
-					GfxDescriptor cpu_descriptor = ctx.GetReadWriteTexture(data.avg_luminance);
-					GfxDescriptor gpu_descriptor = gfx->AllocateDescriptorsGPU();
-					gfx->CopyDescriptors(1, gpu_descriptor, cpu_descriptor);
 					Float clear_value[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-					cmd_list->ClearUAV(ctx.GetTexture(*data.avg_luminance), gpu_descriptor, cpu_descriptor, clear_value);
+					cmd_list->ClearTexture(ctx.GetTexture(*data.avg_luminance), clear_value);
 					invalid_history = false;
 				}
 
 				cmd_list->SetPipelineState(histogram_reduction_pso->Get());
-				Uint32 descriptor_index = gfx->AllocateDescriptorsGPU(3).GetIndex();
 
-				GfxDescriptor buffer_srv = gfx->GetDescriptorGPU(descriptor_index);
-				gfx->CopyDescriptors(1, buffer_srv, ctx.GetReadOnlyBuffer(data.histogram_buffer));
-				GfxDescriptor average_luminance_uav = gfx->GetDescriptorGPU(descriptor_index + 1);
-				gfx->CopyDescriptors(1, average_luminance_uav, ctx.GetReadWriteTexture(data.avg_luminance));
-				GfxDescriptor exposure_uav = gfx->GetDescriptorGPU(descriptor_index + 2);
-				gfx->CopyDescriptors(1, exposure_uav, ctx.GetReadWriteTexture(data.exposure));
+				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.histogram_buffer), ctx.GetReadWriteTexture(data.avg_luminance), ctx.GetReadWriteTexture(data.exposure) };
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
+				Uint32 const base_index = table.base;
 
 				struct HistogramReductionConstants
 				{
@@ -142,7 +132,7 @@ namespace adria
 					Uint32 exposure_idx;
 				} constants = { .min_log_luminance = MinLogLuminance.Get(), .log_luminance_range = MaxLogLuminance.Get() - MinLogLuminance.Get(),
 								.delta_time = frame_data.delta_time, .adaption_speed = AdaptionSpeed.Get(), .pixel_count = data.pixel_count,
-								.histogram_idx = descriptor_index, .luminance_idx = descriptor_index + 1, .exposure_idx = descriptor_index + 2 };
+								.histogram_idx = base_index, .luminance_idx = base_index + 1, .exposure_idx = base_index + 2 };
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(1, 1, 1);
 			}, RGPassType::Compute, RGPassFlags::None);

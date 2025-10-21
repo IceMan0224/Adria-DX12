@@ -68,6 +68,9 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
+				static const Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+				cmd_list->ClearTexture(ctx.GetTexture(*data.output), clear);
+
 				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.gbuffer_normal),
 												ctx.GetReadOnlyTexture(data.gbuffer_albedo),
 												ctx.GetReadOnlyTexture(data.gbuffer_emissive),
@@ -76,13 +79,8 @@ namespace adria
 												data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
 												ctx.GetReadWriteTexture(data.output) };
 
-				GfxDescriptor dst_handle = gfx->AllocateDescriptorsGPU(ARRAYSIZE(src_handles));
-				Uint32 i = dst_handle.GetIndex();
-				gfx->CopyDescriptors(dst_handle, src_handles);
-
-				Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-				cmd_list->ClearUAV(ctx.GetTexture(*data.output), gfx->GetDescriptorGPU(i + 6),
-					ctx.GetReadWriteTexture(data.output), clear);
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
+				Uint32 const base_index = table.base;
 
 				struct DeferredLightingConstants
 				{
@@ -95,7 +93,7 @@ namespace adria
 					Uint32 output_idx;
 				} constants =
 				{
-					.normal_metallic_idx = i, .diffuse_idx = i + 1, .emissive_idx = i + 2, .custom_idx = i + 3, .depth_idx = i + 4, .ao_idx = i + 5, .output_idx = i + 6
+					.normal_metallic_idx = base_index, .diffuse_idx = base_index + 1, .emissive_idx = base_index + 2, .custom_idx = base_index + 3, .depth_idx = base_index + 4, .ao_idx = base_index + 5, .output_idx = base_index + 6
 				};
 
 				cmd_list->SetPipelineState(deferred_lighting_pso->Get());

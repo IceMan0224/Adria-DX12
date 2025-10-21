@@ -47,11 +47,13 @@ namespace adria
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
-				
-				GfxDescriptor depth_srv = gfx->AllocateDescriptorsGPU();
-				gfx->CopyDescriptors(1, depth_srv, ctx.GetReadOnlyTexture(data.depth_srv));
 
-				Uint32 depth_idx = depth_srv.GetIndex();
+				GfxDescriptor src_descriptors[] =
+				{
+					ctx.GetReadOnlyTexture(data.depth_srv)
+				};
+				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
+
 				struct DecalsConstants
 				{
 					Matrix model_matrix;
@@ -62,7 +64,7 @@ namespace adria
 					Uint32 depth_idx;
 				} constants = 
 				{
-					.depth_idx = depth_idx
+					.depth_idx = table.base
 				};
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
