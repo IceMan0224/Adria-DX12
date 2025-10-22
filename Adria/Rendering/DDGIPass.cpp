@@ -417,7 +417,6 @@ namespace adria
 			ddgi_volume_buffer = gfx->CreateBuffer(StructuredBufferDesc<DDGIVolumeGPU>(ddgi_data.size(), false, true));
 			ddgi_volume_buffer_srv = gfx->CreateBufferSRV(ddgi_volume_buffer.get());
 		}
-		ddgi_volume_buffer->Update(ddgi_data.data(), ddgi_data.size() * sizeof(DDGIVolumeGPU));
 
 		GfxDescriptor src_descriptors[] =
 		{
@@ -426,10 +425,13 @@ namespace adria
 			ddgi_volume_buffer_srv
 		};
 		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-		ddgi_gpu.irradiance_history_idx = (Int32)table;
-		ddgi_gpu.distance_history_idx = (Int32)table + 1;
+		Int32 table_base_index = static_cast<Int32>(table);
 
-		return (Int32)table + 2;
+		ddgi_gpu.irradiance_history_idx = table_base_index;
+		ddgi_gpu.distance_history_idx = table_base_index + 1;
+		ddgi_volume_buffer->Update(ddgi_data.data(), ddgi_data.size() * sizeof(DDGIVolumeGPU));
+
+		return table_base_index + 2;
 	}
 
 	void DDGIPass::CreatePSOs()

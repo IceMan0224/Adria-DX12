@@ -375,6 +375,7 @@ set(ADRIA_WIN32_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Windows/Window.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Windows/Input.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Windows/Windows.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Windows/Adria.rc"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/Logging/Windows/DebuggerSink.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Logging/Windows/DebuggerSink.cpp"	
