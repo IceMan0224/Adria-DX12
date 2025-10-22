@@ -135,7 +135,7 @@ namespace adria
 				{
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 					static constexpr Float black[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-					cmd_list->ClearTexture(ctx.GetTexture(*data.distance_history), black);
+					cmd_list->ClearTexture(ctx.GetTexture(*data.irradiance_history), black);
 					cmd_list->ClearTexture(ctx.GetTexture(*data.distance_history), black);
 				}, RGPassType::Compute);
 		}
