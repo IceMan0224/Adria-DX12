@@ -510,6 +510,17 @@ namespace adria
 		return rendering_not_started ? dynamic_allocator_on_init.get() : dynamic_allocators[swapchain->GetBackbufferIndex()].get();
 	}
 
+	ADRIA_NODISCARD GfxBindlessTable D3D12Device::AllocatePersistentBindlessTable(Uint32 count, GfxDescriptorType type)
+	{
+		static Uint32 next_persistent_index = 0;
+		ADRIA_ASSERT_MSG(next_persistent_index + count <= gpu_descriptor_allocator->GetReservedSize(), "Out of persistent bindless slots!");
+		GfxBindlessTable table;
+		table.base = next_persistent_index;
+		table.count = count;
+		next_persistent_index += count;
+		return table;
+	}
+
 	GfxBindlessTable D3D12Device::AllocateBindlessTable(Uint32 count, GfxDescriptorType type)
 	{
 		D3D12Descriptor base_descriptor = GetDescriptorAllocator()->Allocate(count);

@@ -127,6 +127,7 @@ namespace adria
 
 		virtual GfxLinearDynamicAllocator* GetDynamicAllocator() const = 0;
 
+		ADRIA_NODISCARD virtual GfxBindlessTable AllocatePersistentBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) = 0;
 		ADRIA_NODISCARD virtual GfxBindlessTable AllocateBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) = 0;
 		virtual void UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors) = 0;
 		virtual void UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count = 1) = 0;

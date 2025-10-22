@@ -277,9 +277,8 @@ namespace adria
 
 			GfxBuffer* mesh_buffer = g_GeometryBufferCache.GetGeometryBuffer(mesh.geometry_buffer_handle);
 			GfxDescriptor mesh_buffer_srv = g_GeometryBufferCache.GetGeometryBufferSRV(mesh.geometry_buffer_handle);
-			GfxDescriptor mesh_buffer_online_srv = gfx->AllocateDescriptorsGPU();
-			gfx->CopyDescriptors(1, mesh_buffer_online_srv, mesh_buffer_srv);
 
+			GfxBindlessTable mesh_buffer_table = gfx->AllocateAndUpdateBindlessTable(mesh_buffer_srv);
 			for (SubMeshInstance const& instance : mesh.instances)
 			{
 				SubMeshGPU& submesh = mesh.submeshes[instance.submesh_index];
@@ -314,7 +313,7 @@ namespace adria
 			for (SubMeshGPU const& submesh : mesh.submeshes)
 			{
 				MeshGPU& mesh_gpu = meshes.emplace_back();
-				mesh_gpu.buffer_idx = mesh_buffer_online_srv.GetIndex();
+				mesh_gpu.buffer_idx = mesh_buffer_table;
 				mesh_gpu.indices_offset = submesh.indices_offset;
 				mesh_gpu.positions_offset = submesh.positions_offset;
 				mesh_gpu.normals_offset = submesh.normals_offset;
@@ -362,15 +361,19 @@ namespace adria
 
 		auto CopyBuffer = [&]<typename T>(std::vector<T> const& data, SceneBuffer& scene_buffer)
 		{
-			if (data.empty()) return;
+			if (data.empty())
+			{
+				return;
+			}
 			if (!scene_buffer.buffer || scene_buffer.buffer->GetCount() < data.size())
 			{
 				scene_buffer.buffer = gfx->CreateBuffer(StructuredBufferDesc<T>(data.size(), false, true));
 				scene_buffer.buffer_srv = gfx->CreateBufferSRV(scene_buffer.buffer.get());
 			}
 			scene_buffer.buffer->Update(data.data(), data.size() * sizeof(T));
-			scene_buffer.buffer_srv_gpu = gfx->AllocateDescriptorsGPU();
-			gfx->CopyDescriptors(1, scene_buffer.buffer_srv_gpu, scene_buffer.buffer_srv);
+
+			GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(scene_buffer.buffer_srv);
+			scene_buffer.buffer_srv_gpu_index = table;
 		};
 		CopyBuffer(hlsl_lights, scene_buffers[SceneBuffer_Light]);
 		CopyBuffer(meshes, scene_buffers[SceneBuffer_Mesh]);
@@ -417,10 +420,10 @@ namespace adria
 		frame_cbuf_data.mouse_normalized_coords_x = (viewport_data.mouse_position_x - viewport_data.scene_viewport_pos_x) / viewport_data.scene_viewport_size_x;
 		frame_cbuf_data.mouse_normalized_coords_y = (viewport_data.mouse_position_y - viewport_data.scene_viewport_pos_y) / viewport_data.scene_viewport_size_y;
 		frame_cbuf_data.env_map_idx = sky_pass.GetSkyIndex();
-		frame_cbuf_data.meshes_idx = (Int32)scene_buffers[SceneBuffer_Mesh].buffer_srv_gpu.GetIndex();
-		frame_cbuf_data.materials_idx = (Int32)scene_buffers[SceneBuffer_Material].buffer_srv_gpu.GetIndex();
-		frame_cbuf_data.instances_idx = (Int32)scene_buffers[SceneBuffer_Instance].buffer_srv_gpu.GetIndex();
-		frame_cbuf_data.lights_idx = (Int32)scene_buffers[SceneBuffer_Light].buffer_srv_gpu.GetIndex();
+		frame_cbuf_data.meshes_idx = (Int32)scene_buffers[SceneBuffer_Mesh].buffer_srv_gpu_index;
+		frame_cbuf_data.materials_idx = (Int32)scene_buffers[SceneBuffer_Material].buffer_srv_gpu_index;
+		frame_cbuf_data.instances_idx = (Int32)scene_buffers[SceneBuffer_Instance].buffer_srv_gpu_index;
+		frame_cbuf_data.lights_idx = (Int32)scene_buffers[SceneBuffer_Light].buffer_srv_gpu_index;
 		frame_cbuf_data.light_count = (Int32)scene_buffers[SceneBuffer_Light].buffer->GetCount();
 		shadow_renderer.FillFrameCBuffer(frame_cbuf_data);
 		frame_cbuf_data.ddgi_volumes_idx = ddgi.IsEnabled() ? ddgi.GetDDGIVolumeIndex() : -1;
@@ -438,9 +441,8 @@ namespace adria
 		}
 		if (renderer_debug_view_pass.GetDebugView() == RendererDebugView::TriangleOverdraw)
 		{
-			overdraw_texture_uav_gpu = gfx->AllocateDescriptorsGPU();
-			gfx->CopyDescriptors(1, overdraw_texture_uav_gpu, overdraw_texture_uav);
-			frame_cbuf_data.triangle_overdraw_idx = overdraw_texture_uav_gpu.GetIndex();
+			GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(overdraw_texture_uav);
+			frame_cbuf_data.triangle_overdraw_idx = table;
 		}
 
 		auto lights = reg.view<Light>();
@@ -689,8 +691,8 @@ namespace adria
 			[&](RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
-				Uint32 clear[] = { 0,0,0,0 };
-				cmd_list->ClearUAV(*overdraw_texture, overdraw_texture_uav_gpu, overdraw_texture_uav, clear);
+				static const Uint32 clear[] = { 0,0,0,0 };
+				cmd_list->ClearTexture(*overdraw_texture, clear);
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
 	}
 

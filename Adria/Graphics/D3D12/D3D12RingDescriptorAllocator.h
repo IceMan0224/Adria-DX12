@@ -45,12 +45,12 @@ namespace adria
 			ring_offset_allocator.ReleaseCompletedFrames(completed_frame);
 		}
 
-		D3D12DescriptorHeap* GetHeap() const { return heap.get(); }
-
-		D3D12Descriptor GetDescriptor(Uint32 index = 0) const
+		ADRIA_FORCEINLINE D3D12DescriptorHeap* GetHeap() const { return heap.get(); }
+		ADRIA_FORCEINLINE D3D12Descriptor GetDescriptor(Uint32 index = 0) const
 		{
 			return heap->GetDescriptor(index);
 		}
+		ADRIA_FORCEINLINE Uint32 GetReservedSize() const { return static_cast<Uint32>(ring_offset_allocator.ReservedSize()); }
 
 	private:
 		std::unique_ptr<D3D12DescriptorHeap> heap;

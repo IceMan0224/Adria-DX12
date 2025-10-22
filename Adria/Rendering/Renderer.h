@@ -104,7 +104,7 @@ namespace adria
 		{
 			std::unique_ptr<GfxBuffer>  buffer;
 			GfxDescriptor				buffer_srv;
-			GfxDescriptor				buffer_srv_gpu;
+			Uint32						buffer_srv_gpu_index;
 		};
 		std::array<SceneBuffer, SceneBuffer_Count> scene_buffers;
 

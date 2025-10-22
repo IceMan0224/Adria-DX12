@@ -754,7 +754,7 @@ namespace adria
 			default:
 				ADRIA_ASSERT_MSG(false, "invalid resource view type for buffer");
 			}
-			buffer_view_map[res_id].emplace_back(view, type);
+			buffer_view_map[res_id].push_back(view);
 		}
 	}
 

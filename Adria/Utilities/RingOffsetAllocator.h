@@ -95,6 +95,7 @@ namespace adria
 		Bool   Full()	  const { return used_size == max_size; };
 		Bool   Empty()	  const { return used_size == reserve; };
 		Uint64 UsedSize() const { return used_size; }
+		Uint64 ReservedSize() const { return reserve; }
 
 	private:
 		std::queue<BufferEntry> completed_frames;

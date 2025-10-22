@@ -150,10 +150,15 @@ namespace adria
 	void TextureManager::OnSceneInitialized()
 	{
 		gfx->InitGlobalResourceBindings(1024);
-		gfx->CopyDescriptors(1, gfx->GetDescriptorGPU((Uint32)DEFAULT_BLACK_TEXTURE_HANDLE), gfxcommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV));
-		gfx->CopyDescriptors(1, gfx->GetDescriptorGPU((Uint32)DEFAULT_WHITE_TEXTURE_HANDLE), gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV));
-		gfx->CopyDescriptors(1, gfx->GetDescriptorGPU((Uint32)DEFAULT_NORMAL_TEXTURE_HANDLE), gfxcommon::GetCommonView(GfxCommonViewType::DefaultNormal2D_SRV));
-		gfx->CopyDescriptors(1, gfx->GetDescriptorGPU((Uint32)DEFAULT_METALLIC_ROUGHNESS_TEXTURE_HANDLE), gfxcommon::GetCommonView(GfxCommonViewType::MetallicRoughness2D_SRV));
+
+		GfxBindlessTable persistent_table = gfx->AllocatePersistentBindlessTable(std::min(TEXTURE_MANAGER_START_HANDLE, handle));
+		std::vector<GfxDescriptor> src_descriptors(persistent_table.count);
+		src_descriptors[(Uint32)DEFAULT_BLACK_TEXTURE_HANDLE] = gfxcommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV);
+		src_descriptors[(Uint32)DEFAULT_WHITE_TEXTURE_HANDLE] = gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV);
+		src_descriptors[(Uint32)DEFAULT_NORMAL_TEXTURE_HANDLE] = gfxcommon::GetCommonView(GfxCommonViewType::DefaultNormal2D_SRV);
+		src_descriptors[(Uint32)DEFAULT_METALLIC_ROUGHNESS_TEXTURE_HANDLE] = gfxcommon::GetCommonView(GfxCommonViewType::MetallicRoughness2D_SRV);
+		gfx->UpdateBindlessTable(persistent_table, src_descriptors);
+
 		for (Uint64 i = TEXTURE_MANAGER_START_HANDLE; i <= handle; ++i)
         {
             GfxTexture* texture = texture_map[TextureHandle(i)].get();
@@ -167,11 +172,15 @@ namespace adria
 
 	void TextureManager::CreateViewForTexture(TextureHandle handle, Bool flag)
 	{
-        if (!is_scene_initialized && !flag) return;
+		if (!is_scene_initialized && !flag)
+		{
+			return;
+		}
 
 		GfxTexture* texture = texture_map[handle].get();
 		ADRIA_ASSERT(texture);
         texture_srv_map[handle] = gfx->CreateTextureSRV(texture);
-        gfx->CopyDescriptors(1, gfx->GetDescriptorGPU((Uint32)handle), texture_srv_map[handle]);
+		GfxBindlessTable persistent_table = gfx->AllocatePersistentBindlessTable(1);
+		gfx->UpdateBindlessTable(persistent_table, 1, texture_srv_map[handle]);
 	}
 }
