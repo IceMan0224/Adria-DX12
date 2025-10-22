@@ -98,7 +98,7 @@ namespace adria
 
 				if (visualize_tiled)
 				{
-					ADRIA_ASSERT(i + 7 < UINT16_MAX);
+					ADRIA_ASSERT(table + 7 < UINT16_MAX);
 				}
 
 				static constexpr Float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };

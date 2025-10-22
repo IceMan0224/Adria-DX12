@@ -569,7 +569,7 @@ namespace adria
 		{
 			return;
 		}
-		ADRIA_ASSERT_MSG(table_offset + src_count < table.count, "Table offset is out of bounds!");
+		ADRIA_ASSERT_MSG(table_offset + src_count <= table.count, "Table offset is out of bounds!");
 
 		D3D12DescriptorHeap* gpu_heap = gpu_descriptor_allocator->GetHeap();
 		D3D12_CPU_DESCRIPTOR_HANDLE dst_handle = gpu_heap->GetCpuHandle(table.base + table_offset);

@@ -181,6 +181,6 @@ namespace adria
 		ADRIA_ASSERT(texture);
         texture_srv_map[handle] = gfx->CreateTextureSRV(texture);
 		GfxBindlessTable persistent_table = gfx->AllocatePersistentBindlessTable(1);
-		gfx->UpdateBindlessTable(persistent_table, 1, texture_srv_map[handle]);
+		gfx->UpdateBindlessTable(persistent_table, 0, texture_srv_map[handle]);
 	}
 }
