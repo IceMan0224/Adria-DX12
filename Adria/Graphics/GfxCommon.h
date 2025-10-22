@@ -17,10 +17,6 @@ namespace adria
 
 	enum class GfxCommonViewType : Uint8
 	{
-		NullTexture2D_SRV,
-		NullTexture2D_UAV,
-		NullTextureCube_SRV,
-		NullTexture2DArray_SRV,
 		WhiteTexture2D_SRV,
 		BlackTexture2D_SRV,
 		DefaultNormal2D_SRV,
