@@ -416,9 +416,9 @@ namespace adria
 	{
 		switch (type)
 		{
-		case GfxCommandListType::Graphics: graphics_fence_value = value;
-		case GfxCommandListType::Compute:  compute_fence_value = value;
-		case GfxCommandListType::Copy:	   copy_fence_value = value;
+		case GfxCommandListType::Graphics: graphics_fence_value = value; break;
+		case GfxCommandListType::Compute:  compute_fence_value = value; break;
+		case GfxCommandListType::Copy:	   copy_fence_value = value; break;
 		default: ADRIA_UNREACHABLE();
 		}
 	}
@@ -488,15 +488,15 @@ namespace adria
 		ADRIA_UNREACHABLE();
 	}
 
-	D3D12Descriptor D3D12Device::AllocateDescriptorCPU(GfxDescriptorType type)
+	D3D12Descriptor D3D12Device::AllocateDescriptorImpl(GfxDescriptorType type)
 	{
 		return cpu_descriptor_allocators[(Uint64)type]->AllocateDescriptor();
 	}
-	void D3D12Device::FreeDescriptorCPU(D3D12Descriptor descriptor, GfxDescriptorType type)
+	void D3D12Device::FreeDescriptorImpl(D3D12Descriptor descriptor, GfxDescriptorType type)
 	{
 		cpu_descriptor_allocators[(Uint64)type]->FreeDescriptor(descriptor);
 	}
-	D3D12Descriptor D3D12Device::AllocateDescriptorsGPU(Uint32 count)
+	D3D12Descriptor D3D12Device::AllocateDescriptorsImpl(Uint32 count)
 	{
 		return GetDescriptorAllocator()->Allocate(count);
 	}
@@ -653,7 +653,7 @@ namespace adria
 		{
 			return;
 		}
-		cpu_descriptor_allocators[(Uint32)descriptor_type]->FreeDescriptor(internal_desc);
+		FreeDescriptorImpl(internal_desc, descriptor_type);
 	}
 
 	void D3D12Device::InitGlobalResourceBindings(Uint32 reserve)
@@ -1183,7 +1183,7 @@ namespace adria
 
 		GfxBufferDesc desc = buffer->GetDesc();
 		GfxFormat format = desc.format;
-		D3D12Descriptor heap_descriptor = AllocateDescriptorCPU(GfxDescriptorType::CBV_SRV_UAV);
+		D3D12Descriptor heap_descriptor = AllocateDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
 		switch (view_type)
 		{
 		case GfxSubresourceType::SRV:
@@ -1280,7 +1280,7 @@ namespace adria
 		{
 		case GfxSubresourceType::SRV:
 		{
-			D3D12Descriptor descriptor = AllocateDescriptorCPU(GfxDescriptorType::CBV_SRV_UAV);
+			D3D12Descriptor descriptor = AllocateDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
 			D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc{};
 			srv_desc.Shader4ComponentMapping = view_desc.channel_mapping;
 			switch (format)
@@ -1400,7 +1400,7 @@ namespace adria
 		break;
 		case GfxSubresourceType::UAV:
 		{
-			D3D12Descriptor descriptor = AllocateDescriptorCPU(GfxDescriptorType::CBV_SRV_UAV);
+			D3D12Descriptor descriptor = AllocateDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc{};
 			switch (format)
 			{
@@ -1465,7 +1465,7 @@ namespace adria
 		break;
 		case GfxSubresourceType::RTV:
 		{
-			D3D12Descriptor descriptor = AllocateDescriptorCPU(GfxDescriptorType::RTV);
+			D3D12Descriptor descriptor = AllocateDescriptorImpl(GfxDescriptorType::RTV);
 			D3D12_RENDER_TARGET_VIEW_DESC rtv_desc{};
 			switch (format)
 			{
@@ -1545,7 +1545,7 @@ namespace adria
 		break;
 		case GfxSubresourceType::DSV:
 		{
-			D3D12Descriptor descriptor = AllocateDescriptorCPU(GfxDescriptorType::DSV);
+			D3D12Descriptor descriptor = AllocateDescriptorImpl(GfxDescriptorType::DSV);
 			D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc{};
 			switch (format)
 			{

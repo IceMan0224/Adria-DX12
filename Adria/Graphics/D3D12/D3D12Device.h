@@ -219,9 +219,9 @@ namespace adria
 		void SetInfoQueue();
 		void CreateCommonRootSignature();
 
-		D3D12Descriptor AllocateDescriptorCPU(GfxDescriptorType type);
-		void FreeDescriptorCPU(D3D12Descriptor descriptor, GfxDescriptorType type);
-		D3D12Descriptor AllocateDescriptorsGPU(Uint32 count = 1);
+		D3D12Descriptor AllocateDescriptorImpl(GfxDescriptorType type);
+		void FreeDescriptorImpl(D3D12Descriptor descriptor, GfxDescriptorType type);
+		D3D12Descriptor AllocateDescriptorsImpl(Uint32 count = 1);
 
 		D3D12Descriptor CreateBufferViewImpl(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter = nullptr);
 		D3D12Descriptor CreateTextureViewImpl(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc);
