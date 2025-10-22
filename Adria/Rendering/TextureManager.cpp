@@ -43,8 +43,8 @@ namespace adria
         std::string texture_name(path);
         if (auto it = loaded_textures.find(texture_name); it == loaded_textures.end())
         {
-            ++handle;
-            loaded_textures.insert({ texture_name, handle });
+			TextureHandle texture_handle = handle++;
+            loaded_textures.insert({ texture_name, texture_handle });
             Image img(path);
 
 			GfxTextureDesc desc{};
@@ -66,7 +66,7 @@ namespace adria
 			}
 
             std::vector<GfxTextureSubData> tex_data;
-			const Image* curr_img = &img;
+			Image const* curr_img = &img;
 			while (curr_img)
 			{
 				for (Uint32 i = 0; i < desc.mip_levels; ++i)
@@ -84,16 +84,15 @@ namespace adria
 			init_data.sub_count = (Uint32)tex_data.size();
             std::unique_ptr<GfxTexture> tex = gfx->CreateTexture(desc, init_data);
 
-            texture_map[handle] = std::move(tex);
-			CreateViewForTexture(handle);
-			return handle;
+            texture_map[texture_handle] = std::move(tex);
+			CreateViewForTexture(texture_handle);
+			return texture_handle;
         }
 	    else return it->second;
     }
 
 	TextureHandle TextureManager::LoadCubemap(std::array<std::string, 6> const& cubemap_textures)
 	{
-		++handle;
 		GfxTextureDesc desc{};
 		desc.type = GfxTextureType_2D;
 		desc.mip_levels = 1;
@@ -119,9 +118,10 @@ namespace adria
 		init_data.sub_data = subresources.data();
 		std::unique_ptr<GfxTexture> cubemap = gfx->CreateTexture(desc, init_data);
 
-		texture_map.insert({ handle, std::move(cubemap) });
-		CreateViewForTexture(handle);
-		return handle;
+		TextureHandle texture_handle = handle++;
+		texture_map.insert({ texture_handle, std::move(cubemap) });
+		CreateViewForTexture(texture_handle);
+		return texture_handle;
 	}
 
 	GfxDescriptor TextureManager::GetSRV(TextureHandle tex_handle)
