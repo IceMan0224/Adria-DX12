@@ -34,6 +34,11 @@ namespace adria
 		{
 			
 		}
+#elif defined(ADRIA_PLATFORM_LINUX)
+		if (backend == GfxBackend::Vulkan)
+		{
+			
+		}
 #endif
 		ADRIA_ASSERT_MSG(false, "Requested Graphics Backend is not supported!");
 		return nullptr;

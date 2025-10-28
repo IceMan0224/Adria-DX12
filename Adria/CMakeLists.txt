@@ -455,6 +455,7 @@ target_include_directories(Adria PRIVATE
     "${EXTERNAL_DIR}/cereal"
     "${EXTERNAL_DIR}/ImGui"
     "${EXTERNAL_DIR}/Tracy"
+    "${EXTERNAL_DIR}/DirectXMath/Inc"
     "${EXTERNAL_DIR}/SimpleMath"
     "${EXTERNAL_DIR}/XeSS/inc"
     "${EXTERNAL_DIR}/DLSS/include"

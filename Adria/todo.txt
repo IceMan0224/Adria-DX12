@@ -1,3 +1,4 @@
+- Metal Backend
 - Improve SVGF 
 - Underwater and Caustics
 - LTC Area Lights
