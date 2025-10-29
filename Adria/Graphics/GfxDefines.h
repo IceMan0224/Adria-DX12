@@ -2,14 +2,10 @@
 
 // Platform-specific error checking
 #if defined(ADRIA_PLATFORM_WINDOWS)
-	// D3D12 uses HRESULT return values
 	#define GFX_CHECK_CALL(hr) if(FAILED(hr)) ADRIA_DEBUGBREAK()
 #elif defined(ADRIA_PLATFORM_MACOS)
-	// Metal uses nil/null returns or NSError, most calls don't need checking
-	// For now, just a no-op, but could be extended to check for nil
 	#define GFX_CHECK_CALL(result) ((void)0)
 #else
-	// Vulkan or other platforms
 	#define GFX_CHECK_CALL(result) ((void)0)
 #endif
 

@@ -273,8 +273,8 @@ namespace adria
 			ADRIA_ASSERT(result == FFX_OK);
 
 			context_created = true;
-			}
-
+		}
+	}
 }
 #endif
 

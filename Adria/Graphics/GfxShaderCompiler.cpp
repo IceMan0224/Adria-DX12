@@ -1,7 +1,5 @@
 #include "dxcapi.h"
-#include "cereal/archives/binary.hpp"
-#include "cereal/types/string.hpp"
-#include "cereal/types/vector.hpp"
+#include "d3d12shader.h"
 #include "GfxShaderCompiler.h"
 #include "GfxDefines.h"
 #include "GfxInputLayout.h"
@@ -12,6 +10,9 @@
 #include "Utilities/Hash.h"
 #include "Utilities/Ref.h"
 #include "Utilities/DynamicLibrary.h"
+#include "cereal/archives/binary.hpp"
+#include "cereal/types/string.hpp"
+#include "cereal/types/vector.hpp"
 
 namespace adria
 {

@@ -392,7 +392,6 @@ set(ADRIA_METAL_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDevice.mm"
 )
 
-# Set platform-specific sources
 if(WIN32)
 	set(ADRIA_PLATFORM_SOURCES ${ADRIA_WIN32_SOURCES})
 	set(ADRIA_BACKEND_SOURCES ${ADRIA_D3D12_SOURCES})
@@ -456,11 +455,7 @@ if(WIN32)
 		"${EXTERNAL_DIR}/D3D12MA/D3D12MemAlloc.cpp"
 	)
 elseif(APPLE)
-	# TODO: Add ImGui Metal/OSX implementations when needed
-	# list(APPEND EXTERNAL_SOURCES
-	# 	"${EXTERNAL_DIR}/ImGui/imgui_impl_metal.mm"
-	# 	"${EXTERNAL_DIR}/ImGui/imgui_impl_osx.mm"
-	# )
+	# TODO: Add ImGui Metal/OSX implementations later
 endif()
 
 source_group("External" FILES ${EXTERNAL_SOURCES})

@@ -1,7 +1,4 @@
 #pragma once
-#if defined(ADRIA_PLATFORM_WINDOWS)
-#define __d3d12_h__
-#endif
 #include "SimpleMath.h"
 
 namespace adria

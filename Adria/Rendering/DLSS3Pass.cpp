@@ -21,11 +21,11 @@ namespace adria
 		}
 	}
 
-	DLSS3Pass::DLSS3Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
+	DLSS3Pass::DLSS3Pass(GfxDevice* gfx, Uint32 w, Uint32 h)
 		: gfx(gfx), display_width(), display_height(), render_width(), render_height()
 	{
 		is_supported = gfx->GetBackend() == GfxBackend::D3D12 && gfx->GetVendor() == GfxVendor::Nvidia;
-		if(!is_supported)
+		if (!is_supported)
 		{
 			ADRIA_LOG(WARNING, "DLSS 3.5 is only supported on D3D12 backend and NVIDIA GPUs");
 			return;
@@ -147,8 +147,8 @@ namespace adria
 	{
 		ID3D12Device* device = (ID3D12Device*)gfx->GetNative();
 
-		static const Wchar* dll_paths[] = 
-		{ 
+		static const Wchar* dll_paths[] =
+		{
 		SOLUTION_DIR_W L"\\External\\DLSS\\lib\\dev",
 		SOLUTION_DIR_W L"\\External\\DLSS\\lib\\rel",
 		};
@@ -212,8 +212,8 @@ namespace adria
 		Uint min_width;
 		Uint min_height;
 		Float sharpness;
-		NGX_DLSS_GET_OPTIMAL_SETTINGS(ngx_parameters, display_width, display_height, perf_quality, 
-									  &optimal_width, &optimal_height, &max_width, &max_height, &min_width, &min_height, &sharpness);
+		NGX_DLSS_GET_OPTIMAL_SETTINGS(ngx_parameters, display_width, display_height, perf_quality,
+			&optimal_width, &optimal_height, &max_width, &max_height, &min_width, &min_height, &sharpness);
 		ADRIA_ASSERT(optimal_width != 0 && optimal_height != 0);
 		render_width = optimal_width;
 		render_height = optimal_height;
@@ -254,8 +254,8 @@ namespace adria
 			gfx->WaitForGPU();
 			NVSDK_NGX_D3D12_ReleaseFeature(dlss_feature);
 			dlss_feature = nullptr;
-			}
-
+		}
+	}
 }
 #endif
 
