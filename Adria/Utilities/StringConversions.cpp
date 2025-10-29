@@ -29,20 +29,20 @@ namespace adria
 		return str;
 	}
 #else
-	// POSIX implementation using mbsrtowcs/wcsrtombs
 	std::wstring ToWideString(std::string const& str)
 	{
 		std::wstring wstr;
 		const char* src = str.c_str();
 		std::mbstate_t state = std::mbstate_t();
 
-		// Get required size
 		size_t len = std::mbsrtowcs(nullptr, &src, 0, &state);
 		if (len == static_cast<size_t>(-1))
-			return wstr; // Conversion error
+		{
+			return wstr; 
+		}
 
 		wstr.resize(len);
-		src = str.c_str(); // Reset pointer
+		src = str.c_str(); 
 		state = std::mbstate_t();
 		std::mbsrtowcs(&wstr[0], &src, wstr.size(), &state);
 
@@ -55,13 +55,15 @@ namespace adria
 		const wchar_t* src = wstr.c_str();
 		std::mbstate_t state = std::mbstate_t();
 
-		// Get required size
+		
 		size_t len = std::wcsrtombs(nullptr, &src, 0, &state);
 		if (len == static_cast<size_t>(-1))
-			return str; // Conversion error
+		{
+			return str;
+		}
 
 		str.resize(len);
-		src = wstr.c_str(); // Reset pointer
+		src = wstr.c_str();
 		state = std::mbstate_t();
 		std::wcsrtombs(&str[0], &src, str.size(), &state);
 

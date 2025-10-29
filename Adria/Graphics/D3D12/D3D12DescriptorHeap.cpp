@@ -37,7 +37,7 @@ namespace adria
 		heap_desc.Type = ToD3D12HeapType(type);
 
 		ID3D12Device* device = d3d12_gfx->GetD3D12Device();
-		GFX_CHECK_HR(device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(heap.ReleaseAndGetAddressOf())));
+		GFX_CHECK_CALL(device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(heap.ReleaseAndGetAddressOf())));
 
 		cpu_start_handle = heap->GetCPUDescriptorHandleForHeapStart();
 		if (shader_visible)

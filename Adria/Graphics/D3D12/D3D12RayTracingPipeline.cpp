@@ -11,7 +11,7 @@ namespace adria
 		d3d12_state_object.Attach(state_object);
 
 		HRESULT hr = d3d12_state_object->QueryInterface(IID_PPV_ARGS(d3d12_state_object_properties.GetAddressOf()));
-		GFX_CHECK_HR(hr);
+		GFX_CHECK_CALL(hr);
 
 		CacheShaderNames();
 	}

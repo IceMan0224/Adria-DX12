@@ -14,11 +14,9 @@ int main(int argc, char* argv[])
 {
     @autoreleasepool
     {
-        // Initialize NSApplication
         [NSApplication sharedApplication];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
-        // Initialize command line options using argc/argv
         CommandLineOptions::Initialize(argc, argv);
 
         std::string log_file = CommandLineOptions::GetLogFile();
@@ -35,20 +33,14 @@ int main(int argc, char* argv[])
         Window window(window_params);
         g_Input.Initialize(&window);
 
-        // TODO: Editor initialization for macOS
         // EditorInitParams editor_params{ .window = &window, .scene_file = CommandLineOptions::GetSceneFile() };
         // g_Editor.Initialize(std::move(editor_params));
         // window.GetWindowEvent().AddLambda([](WindowEventInfo const& msg_data) { g_Editor.OnWindowEvent(msg_data); });
-
         [NSApp activateIgnoringOtherApps:YES];
-
-        // Just show a blank window and handle events
         while (window.Loop())
         {
             // g_Editor.Run();
-            // For now, just run the event loop
         }
-
         // g_Editor.Shutdown();
     }
 

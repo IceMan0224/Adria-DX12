@@ -32,7 +32,7 @@
 
     adria::WindowEventInfo event_info{};
     event_info.handle = (__bridge void*)nsWindow;
-    event_info.msg = 0; // NSWindow doesn't have message IDs like Windows
+    event_info.msg = 0; 
     event_info.wparam = 0;
     event_info.lparam = 0;
     event_info.width = static_cast<adria::Float>(contentRect.size.width);

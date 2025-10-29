@@ -78,25 +78,25 @@ namespace adria
 			&alloc,
 			IID_PPV_ARGS(resource.GetAddressOf())
 		);
-		GFX_CHECK_HR(hr);
+		GFX_CHECK_CALL(hr);
 		allocation.reset(alloc);
 
 		if (HasFlag(desc.misc_flags, GfxBufferMiscFlag::Shared))
 		{
 			hr = device->CreateSharedHandle(resource.Get(), nullptr, GENERIC_ALL, nullptr, &shared_handle);
-			GFX_CHECK_HR(hr);
+			GFX_CHECK_CALL(hr);
 		}
 
 		if (desc.resource_usage == GfxResourceUsage::Readback)
 		{
 			hr = resource->Map(0, nullptr, &mapped_data);
-			GFX_CHECK_HR(hr);
+			GFX_CHECK_CALL(hr);
 		}
 		else if (desc.resource_usage == GfxResourceUsage::Upload)
 		{
 			D3D12_RANGE read_range{};
 			hr = resource->Map(0, &read_range, &mapped_data);
-			GFX_CHECK_HR(hr);
+			GFX_CHECK_CALL(hr);
 			if (initial_data)
 			{
 				memcpy(mapped_data, initial_data, desc.size);
@@ -156,13 +156,13 @@ namespace adria
 		if (desc.resource_usage == GfxResourceUsage::Readback)
 		{
 			hr = resource->Map(0, nullptr, &mapped_data);
-			GFX_CHECK_HR(hr);
+			GFX_CHECK_CALL(hr);
 		}
 		else if (desc.resource_usage == GfxResourceUsage::Upload)
 		{
 			D3D12_RANGE read_range{};
 			hr = resource->Map(0, &read_range, &mapped_data);
-			GFX_CHECK_HR(hr);
+			GFX_CHECK_CALL(hr);
 		}
 		return mapped_data;
 	}

@@ -37,7 +37,7 @@ namespace adria
 		desc.ByteStride = GetArgumentStride(cmd_type);
 		argument_desc.Type = GetArgumentType(cmd_type);
 		D3D12Device* d3d12gfx = (D3D12Device*)gfx;
-		GFX_CHECK_HR(d3d12gfx->GetD3D12Device()->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(cmd_signature.GetAddressOf())));
+		GFX_CHECK_CALL(d3d12gfx->GetD3D12Device()->CreateCommandSignature(&desc, nullptr, IID_PPV_ARGS(cmd_signature.GetAddressOf())));
 	}
 }
 

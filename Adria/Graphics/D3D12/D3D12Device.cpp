@@ -112,7 +112,7 @@ namespace adria
 		HRESULT hr = E_FAIL;
 		Uint32 dxgi_factory_flags = 0;
 		SetupOptions(dxgi_factory_flags);
-		GFX_CHECK_HR(CreateDXGIFactory2(dxgi_factory_flags, IID_PPV_ARGS(dxgi_factory.GetAddressOf())));
+		GFX_CHECK_CALL(CreateDXGIFactory2(dxgi_factory_flags, IID_PPV_ARGS(dxgi_factory.GetAddressOf())));
 
 		Ref<IDXGIAdapter4> adapter;
 		Uint32 adapter_index = 0;
@@ -153,12 +153,12 @@ namespace adria
 			nsight_aftermath = std::make_unique<D3D12NsightAftermathGpuCrashTracker>(this);
 		}
 
-		GFX_CHECK_HR(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(device.GetAddressOf())));
+		GFX_CHECK_CALL(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(device.GetAddressOf())));
 		D3D12_FEATURE_DATA_FEATURE_LEVELS caps{};
 		caps.pFeatureLevelsRequested = feature_levels;
 		caps.NumFeatureLevels = ARRAYSIZE(feature_levels);
-		GFX_CHECK_HR(device->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &caps, sizeof(D3D12_FEATURE_DATA_FEATURE_LEVELS)));
-		GFX_CHECK_HR(D3D12CreateDevice(adapter.Get(), caps.MaxSupportedFeatureLevel, IID_PPV_ARGS(device.ReleaseAndGetAddressOf())));
+		GFX_CHECK_CALL(device->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &caps, sizeof(D3D12_FEATURE_DATA_FEATURE_LEVELS)));
+		GFX_CHECK_CALL(D3D12CreateDevice(adapter.Get(), caps.MaxSupportedFeatureLevel, IID_PPV_ARGS(device.ReleaseAndGetAddressOf())));
 
 		if (!device_capabilities.Initialize(this))
 		{
@@ -174,7 +174,7 @@ namespace adria
 		allocator_desc.pDevice = device.Get();
 		allocator_desc.pAdapter = adapter.Get();
 		D3D12MA::Allocator* _allocator = nullptr;
-		GFX_CHECK_HR(D3D12MA::CreateAllocator(&allocator_desc, &_allocator));
+		GFX_CHECK_CALL(D3D12MA::CreateAllocator(&allocator_desc, &_allocator));
 		allocator.reset(_allocator);
 
 		graphics_queue = std::make_unique<D3D12CommandQueue>(this, GfxCommandListType::Graphics, "Graphics Queue");
@@ -246,8 +246,8 @@ namespace adria
 			nsight_perf_manager = std::make_unique<D3D12NsightPerfManager>(this, perf_mode);
 		}
 
-		GFX_CHECK_HR(DMLCreateDevice(device, CommandLineOptions::GetDebugDML() ? DML_CREATE_DEVICE_FLAG_DEBUG : DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(dml_device.GetAddressOf())));
-		GFX_CHECK_HR(dml_device->CreateCommandRecorder(IID_PPV_ARGS(dml_command_recorder.GetAddressOf())));
+		GFX_CHECK_CALL(DMLCreateDevice(device, CommandLineOptions::GetDebugDML() ? DML_CREATE_DEVICE_FLAG_DEBUG : DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(dml_device.GetAddressOf())));
+		GFX_CHECK_CALL(dml_device->CreateCommandRecorder(IID_PPV_ARGS(dml_command_recorder.GetAddressOf())));
 	}
 	D3D12Device::~D3D12Device()
 	{
@@ -1044,9 +1044,9 @@ namespace adria
 			NewFilter.DenyList.NumIDs = ARRAYSIZE(DenyIds);
 			NewFilter.DenyList.pIDList = DenyIds;
 
-			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false));
-			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true));
-			GFX_CHECK_HR(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true));
+			GFX_CHECK_CALL(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false));
+			GFX_CHECK_CALL(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true));
+			GFX_CHECK_CALL(info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true));
 			info_queue->PushStorageFilter(&NewFilter);
 
 			Ref<ID3D12InfoQueue1> info_queue1;
@@ -1063,7 +1063,7 @@ namespace adria
 						ADRIA_LOG(WARNING, "D3D12 Validation Layer: %s", pDescription);
 					};
 				DWORD callbackCookie = 0;
-				GFX_CHECK_HR(info_queue1->RegisterMessageCallback(MessageCallback, D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &callbackCookie));
+				GFX_CHECK_CALL(info_queue1->RegisterMessageCallback(MessageCallback, D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &callbackCookie));
 			}
 		}
 	}
@@ -1169,9 +1169,9 @@ namespace adria
 		Ref<ID3DBlob> signature;
 		Ref<ID3DBlob> error;
 		HRESULT hr = D3DX12SerializeVersionedRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1_1, signature.GetAddressOf(), error.GetAddressOf());
-		GFX_CHECK_HR(hr);
+		GFX_CHECK_CALL(hr);
 		hr = device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(global_root_signature.GetAddressOf()));
-		GFX_CHECK_HR(hr);
+		GFX_CHECK_CALL(hr);
 	}
 
 	D3D12Descriptor D3D12Device::CreateBufferViewImpl(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter)

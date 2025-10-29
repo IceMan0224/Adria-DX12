@@ -5,7 +5,6 @@
 
 namespace adria
 {
-    // Map macOS key codes to our KeyCode enum
     static KeyCode MapNSKeyCode(unsigned short keyCode)
     {
         using enum KeyCode;
@@ -128,12 +127,10 @@ namespace adria
 
                 using enum KeyCode;
 
-                // Mouse buttons
                 keys[(Uint64)MouseLeft] = CGEventSourceButtonState(kCGEventSourceStateHIDSystemState, kCGMouseButtonLeft);
                 keys[(Uint64)MouseMiddle] = CGEventSourceButtonState(kCGEventSourceStateHIDSystemState, kCGMouseButtonCenter);
                 keys[(Uint64)MouseRight] = CGEventSourceButtonState(kCGEventSourceStateHIDSystemState, kCGMouseButtonRight);
 
-                // Function keys
                 keys[(Uint64)F1] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_F1);
                 keys[(Uint64)F2] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_F2);
                 keys[(Uint64)F3] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_F3);
@@ -147,7 +144,6 @@ namespace adria
                 keys[(Uint64)F11] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_F11);
                 keys[(Uint64)F12] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_F12);
 
-                // Number keys
                 keys[(Uint64)Alpha0] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_0);
                 keys[(Uint64)Alpha1] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_1);
                 keys[(Uint64)Alpha2] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_2);
@@ -159,7 +155,6 @@ namespace adria
                 keys[(Uint64)Alpha8] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_8);
                 keys[(Uint64)Alpha9] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_9);
 
-                // Numpad keys
                 keys[(Uint64)Numpad0] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_Keypad0);
                 keys[(Uint64)Numpad1] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_Keypad1);
                 keys[(Uint64)Numpad2] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_Keypad2);
@@ -171,7 +166,6 @@ namespace adria
                 keys[(Uint64)Numpad8] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_Keypad8);
                 keys[(Uint64)Numpad9] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_Keypad9);
 
-                // Letter keys
                 keys[(Uint64)Q] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_Q);
                 keys[(Uint64)W] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_W);
                 keys[(Uint64)E] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_E);
@@ -199,7 +193,6 @@ namespace adria
                 keys[(Uint64)N] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_N);
                 keys[(Uint64)M] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_M);
 
-                // Special keys
                 keys[(Uint64)Esc] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_Escape);
                 keys[(Uint64)Tab] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_Tab);
                 keys[(Uint64)ShiftLeft] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_Shift);
@@ -223,7 +216,6 @@ namespace adria
                 keys[(Uint64)End] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_End);
                 keys[(Uint64)Tilde] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_Grave);
 
-                // Check for Escape key to quit
                 if (GetKey(KeyCode::Esc))
                 {
                     window->Quit(0);
@@ -234,11 +226,6 @@ namespace adria
 
     void Input::OnWindowEvent(WindowEventInfo const& data)
     {
-        // Handle window events
-        // Note: On macOS, we don't have the same message-based system as Windows
-        // Most events will be handled through the window delegate
-
-        // For now, just handle resize
         if (data.width > 0 && data.height > 0)
         {
             if (!resizing)
@@ -270,11 +257,9 @@ namespace adria
             NSWindow* nsWindow = (__bridge NSWindow*)window->Handle();
             if (nsWindow && [nsWindow isKeyWindow])
             {
-                // Convert from client coordinates to screen coordinates
                 NSPoint windowPoint = NSMakePoint(xpos, ypos);
                 NSPoint screenPoint = [nsWindow convertPointToScreen:windowPoint];
 
-                // CGWarpMouseCursorPosition expects flipped coordinates
                 CGPoint cgPoint = CGPointMake(screenPoint.x, screenPoint.y);
                 CGWarpMouseCursorPosition(cgPoint);
             }

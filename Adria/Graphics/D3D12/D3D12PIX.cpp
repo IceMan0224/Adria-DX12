@@ -69,7 +69,7 @@ namespace adria::D3D12PIX
 
 		std::string full_capture_name = std::string(capture_name) + "_" + std::to_string(capture_index++) + ".wpix";
 		std::wstring wcapture_name = ToWideString(full_capture_name);
-		GFX_CHECK_HR(PIXGpuCaptureNextFrames(wcapture_name.c_str(), num_frames));
+		GFX_CHECK_CALL(PIXGpuCaptureNextFrames(wcapture_name.c_str(), num_frames));
 		ADRIA_LOG(INFO, "[PIX] Saving capture of %d frame(s) to %s...", num_frames, full_capture_name.c_str());
 	}
 #else

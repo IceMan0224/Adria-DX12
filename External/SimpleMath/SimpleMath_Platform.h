@@ -1,10 +1,3 @@
-//-------------------------------------------------------------------------------------
-// SimpleMath_Platform.h -- Platform compatibility definitions for SimpleMath
-//
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-//-------------------------------------------------------------------------------------
-
 #pragma once
 
 // Define Windows types for non-Windows platforms
@@ -20,7 +13,7 @@ typedef struct tagRECT {
     long bottom;
 } RECT;
 
-// Windows UINT type
+// Windows types
 typedef unsigned int UINT;
 typedef long LONG;
 

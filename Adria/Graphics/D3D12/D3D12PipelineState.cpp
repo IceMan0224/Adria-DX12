@@ -361,7 +361,7 @@ namespace adria
 		d3d12_desc.DepthStencilState.DepthEnable = d3d12_desc.DSVFormat != DXGI_FORMAT_UNKNOWN;
 
 		HRESULT hr = d3d12gfx->GetD3D12Device()->CreateGraphicsPipelineState(&d3d12_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf()));
-		GFX_CHECK_HR(hr);
+		GFX_CHECK_CALL(hr);
 	}
 
 
@@ -374,7 +374,7 @@ namespace adria
 
 		GfxShader const& CS = SM_GetGfxShader(desc.CS);
 		d3d12_desc.CS = D3D12_SHADER_BYTECODE{ CS.GetData(), CS.GetSize() };
-		GFX_CHECK_HR(d3d12gfx->GetD3D12Device()->CreateComputePipelineState(&d3d12_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())));
+		GFX_CHECK_CALL(d3d12gfx->GetD3D12Device()->CreateComputePipelineState(&d3d12_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())));
 	}
 
 	D3D12PipelineState::D3D12PipelineState(GfxDevice* gfx, GfxMeshShaderPipelineStateDesc const& desc) : type(GfxPipelineStateType::MeshShader)
@@ -411,7 +411,7 @@ namespace adria
 		stream_desc.pPipelineStateSubobjectStream = &pso_stream;
 		stream_desc.SizeInBytes = sizeof(pso_stream);
 
-		GFX_CHECK_HR(d3d12gfx->GetD3D12Device()->CreatePipelineState(&stream_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())));
+		GFX_CHECK_CALL(d3d12gfx->GetD3D12Device()->CreatePipelineState(&stream_desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())));
 	}
 
 }

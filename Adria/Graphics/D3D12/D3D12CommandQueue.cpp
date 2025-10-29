@@ -32,7 +32,7 @@ namespace adria
 		queue_desc.NodeMask = 0;
 
 		HRESULT hr = device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(command_queue.GetAddressOf()));
-		GFX_CHECK_HR(hr);
+		GFX_CHECK_CALL(hr);
 
 		command_queue->SetName(ToWideString(name).c_str());
 		if (type != GfxCommandListType::Copy)
