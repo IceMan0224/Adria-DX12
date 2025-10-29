@@ -1,6 +1,5 @@
 #include "GfxDevice.h"
 #include "GfxPipelineState.h"
-
 #if defined(ADRIA_PLATFORM_WINDOWS)
 #include "D3D12/D3D12Device.h"
 #elif defined(ADRIA_PLATFORM_MACOS)
