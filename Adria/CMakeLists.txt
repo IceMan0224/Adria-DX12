@@ -317,6 +317,7 @@ set(ADRIA_GRAPHICS_SOURCES
 )
 
 set(ADRIA_D3D12_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Defines.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Conversions.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Conversions.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Graphics/D3D12/D3D12Buffer.h"
@@ -447,7 +448,6 @@ set(EXTERNAL_SOURCES
     "${EXTERNAL_DIR}/tracy/TracyClient.cpp"
 )
 
-# Platform-specific external sources
 if(WIN32)
 	list(APPEND EXTERNAL_SOURCES
 		"${EXTERNAL_DIR}/ImGui/imgui_impl_dx12.cpp"
@@ -455,7 +455,6 @@ if(WIN32)
 		"${EXTERNAL_DIR}/D3D12MA/D3D12MemAlloc.cpp"
 	)
 elseif(APPLE)
-	# TODO: Add ImGui Metal/OSX implementations later
 endif()
 
 source_group("External" FILES ${EXTERNAL_SOURCES})
@@ -561,6 +560,14 @@ elseif(APPLE)
 		"-framework Metal"
 		"-framework MetalKit"
 		"-framework QuartzCore"
+
+		$<$<CONFIG:Debug>:
+			"${EXTERNAL_DIR}/nfd/lib/libnfd_d_arm64.a"
+		>
+
+		$<$<CONFIG:Profile,Release,RelWithDebInfo>:
+			"${EXTERNAL_DIR}/nfd/lib/libnfd_arm64.a"
+		>
 	)
 endif()
 

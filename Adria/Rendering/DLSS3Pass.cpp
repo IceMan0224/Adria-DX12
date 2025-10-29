@@ -1,5 +1,5 @@
 #include "DLSS3Pass.h"
-#if defined(ADRIA_DLSS3_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #define NV_WINDOWS
 #include "nvsdk_ngx_helpers.h"
 #include "BlackboardData.h"

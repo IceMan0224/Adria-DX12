@@ -1,15 +1,18 @@
 #pragma once
-#include "FidelityFX/host/ffx_dof.h" 
 #include "PostEffect.h"
+#if defined(ADRIA_PLATFORM_WINDOWS)
+#include "FidelityFX/host/ffx_dof.h"
+#endif
 
 namespace adria
 {
 	class GfxDevice;
 	class RenderGraph;
+	class PostProcessor;
 
+#if defined(ADRIA_PLATFORM_WINDOWS)
 	class FFXDepthOfFieldPass : public PostEffect
 	{
-		
 	public:
 		FFXDepthOfFieldPass(GfxDevice* gfx, Uint32 w, Uint32 h);
 		~FFXDepthOfFieldPass();
@@ -32,14 +35,21 @@ namespace adria
 		Float aperture = 0.01f;
 		Float focus_dist = 400.0f;
 		Float sensor_size = 0.02f;
-		Float coc_limit = 0.01f; 
+		Float coc_limit = 0.01f;
 		Int32 quality = 10;
 		Bool  enable_ring_merge = false;
 
 	private:
-
 		void CreateContext();
 		void DestroyContext();
 	};
+#else
 
+	class FFXDepthOfFieldPass : public EmptyPostEffect
+	{
+	public:
+		FFXDepthOfFieldPass(GfxDevice*, Uint32, Uint32) {}
+	};
+
+#endif
 }

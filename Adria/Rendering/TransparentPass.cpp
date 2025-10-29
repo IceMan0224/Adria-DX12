@@ -30,7 +30,10 @@ namespace adria
 
 	void TransparentPass::AddPass(RenderGraph& rg)
 	{
-		if (!EnableTransparent.Get()) return;
+		if (!EnableTransparent.Get())
+		{
+			return;
+		}
 		RG_SCOPE(rg, "Transparent");
 
 		Bool const reflections_enabled = EnableTransparentReflections.Get();
@@ -109,6 +112,7 @@ namespace adria
 						Uint32 scene_idx;
 						Uint32 depth_idx;
 					} constants{ .instance_id = batch.instance_id, .scene_idx = 0, .depth_idx = 0 };
+
 					if (reflections_enabled)
 					{
 						GfxDescriptor src_descriptors[] =

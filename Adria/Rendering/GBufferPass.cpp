@@ -154,7 +154,7 @@ namespace adria
 
 		for (entt::entity batch_entity : view)
 		{
-			Batch& batch = view.get<Batch>(batch_entity);
+			Batch& batch = view.template get<Batch>(batch_entity);
 			if (!batch.camera_visibility)
 			{
 				continue;

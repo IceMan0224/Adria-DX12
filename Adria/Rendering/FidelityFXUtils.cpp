@@ -1,9 +1,9 @@
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "FidelityFXUtils.h"
 #include "Graphics/GfxFormat.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxBuffer.h"
 #include "Graphics/GfxDevice.h"
-
 
 namespace adria
 {
@@ -150,5 +150,6 @@ namespace adria
 	{
 		return ffxGetResourceDX12((ID3D12Resource*)texture.GetNative(), GetFfxResourceDescription(texture, additional_usage), L"", state);
 	}
-
 }
+
+#endif // _WIN32

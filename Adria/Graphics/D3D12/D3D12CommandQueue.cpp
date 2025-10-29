@@ -1,4 +1,5 @@
 #include "D3D12CommandQueue.h"
+#include "D3D12Defines.h"
 #include "D3D12CommandList.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandListPool.h"
@@ -32,7 +33,7 @@ namespace adria
 		queue_desc.NodeMask = 0;
 
 		HRESULT hr = device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(command_queue.GetAddressOf()));
-		GFX_CHECK_CALL(hr);
+		D3D12_CHECK_CALL(hr);
 
 		command_queue->SetName(ToWideString(name).c_str());
 		if (type != GfxCommandListType::Copy)

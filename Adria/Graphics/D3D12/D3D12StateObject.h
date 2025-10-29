@@ -1,5 +1,5 @@
 #pragma once
-#include "Graphics/GfxDefines.h"
+#include "D3D12Defines.h"
 
 namespace adria
 {
@@ -97,7 +97,7 @@ namespace adria
 			ID3D12StateObject* state_obj = nullptr;
 			ID3D12Device5* d3d12gfx = gfx->GetD3D12Device();
 			HRESULT hr = d3d12gfx->CreateStateObject(&desc, IID_PPV_ARGS(&state_obj));
-			GFX_CHECK_CALL(hr);
+			D3D12_CHECK_CALL(hr);
 			return new D3D12StateObject(state_obj);
 		}
 

@@ -1,11 +1,7 @@
 #pragma once
-#if defined(ADRIA_PLATFORM_WINDOWS)
-#define ADRIA_FSR3_SUPPORTED
-#endif
-
 #include "UpscalerPass.h"
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "Utilities/Delegate.h"
-#if defined(ADRIA_FSR3_SUPPORTED)
 #include "FidelityFX/host/ffx_fsr3.h"
 #endif
 
@@ -16,7 +12,7 @@ namespace adria
 	class GfxDevice;
 	class RenderGraph;
 
-#if defined(ADRIA_FSR3_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 	class FSR3Pass : public UpscalerPass
 	{
 	public:

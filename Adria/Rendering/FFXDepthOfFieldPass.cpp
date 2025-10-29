@@ -1,4 +1,5 @@
 #include "FFXDepthOfFieldPass.h"
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"
@@ -164,4 +165,6 @@ namespace adria
 	}
 
 }
+
+#endif 
 

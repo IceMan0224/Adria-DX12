@@ -1,21 +1,16 @@
 #pragma once
-#if defined(ADRIA_PLATFORM_WINDOWS)
-#define ADRIA_FFXCACAO_SUPPORTED
-#endif
-
 #include "RenderGraph/RenderGraphResourceName.h"
-#if defined(ADRIA_FFXCACAO_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "FidelityFX/host/ffx_cacao.h"
-#endif
-
 struct FfxInterface;
+#endif
 
 namespace adria
 {
 	class GfxDevice;
 	class RenderGraph;
 
-#if defined(ADRIA_FFXCACAO_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 	class FFXCACAOPass
 	{
 	public:

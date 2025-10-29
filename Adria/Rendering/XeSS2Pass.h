@@ -1,11 +1,7 @@
 #pragma once
-#if defined(ADRIA_PLATFORM_WINDOWS)
-#define ADRIA_XESS2_SUPPORTED
-#endif
-
 #include "UpscalerPass.h"
 #include "Utilities/Delegate.h"
-#if defined(ADRIA_XESS2_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "XeSS/xess.h"
 #endif
 
@@ -14,7 +10,7 @@ namespace adria
 	class GfxDevice;
 	class RenderGraph;
 
-#if defined(ADRIA_XESS2_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 	class XeSS2Pass : public UpscalerPass
 	{
 	public:
@@ -50,7 +46,7 @@ namespace adria
     class XeSS2Pass : public DummyUpscalerPass
     {
     public:
-        XeSS2Pass(GfxDevice* gfx, Uint32 w, Uint32 h);
+        XeSS2Pass(GfxDevice*, Uint32, Uint32) {}
     };
 
 #endif

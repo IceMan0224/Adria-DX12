@@ -1,6 +1,6 @@
 
 #include "XeSS2Pass.h"
-#if defined(ADRIA_XESS2_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "XeSS/xess_d3d12.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"

@@ -1,3 +1,4 @@
+#if defined(_WIN32)
 #include "dxcapi.h"
 #include "d3d12shader.h"
 #include "GfxShaderCompiler.h"
@@ -13,6 +14,7 @@
 #include "cereal/archives/binary.hpp"
 #include "cereal/types/string.hpp"
 #include "cereal/types/vector.hpp"
+#include "D3D12/D3D12Defines.h"
 
 namespace adria
 {
@@ -101,7 +103,7 @@ namespace adria
 			{
 				return E_POINTER;
 			}
-			if (riid == __uuidof(IDxcBlob)) //uuid(guid_str)
+			if (riid == __uuidof(IDxcBlob))
 			{
 				*ppv = static_cast<IDxcBlob*>(this);
 			}
@@ -203,8 +205,14 @@ namespace adria
 			std::string cache_binary(cache_path); cache_binary += ".bin";
 			std::string cache_metadata(cache_path); cache_metadata += ".meta";
 
-			if (!FileExists(cache_binary) || !FileExists(cache_metadata)) return false;
-			if (GetFileLastWriteTime(cache_binary) < GetFileLastWriteTime(input.file)) return false;
+			if (!FileExists(cache_binary) || !FileExists(cache_metadata))
+			{
+				return false;
+			}
+			if (GetFileLastWriteTime(cache_binary) < GetFileLastWriteTime(input.file))
+			{
+				return false;
+			}
 
 			std::ifstream is(cache_metadata, std::ios::binary);
 			cereal::BinaryInputArchive metadata_archive(is);
@@ -217,8 +225,10 @@ namespace adria
 			//check if the one of the includes was modified after the cache binary was generated
 			for (std::string const& include : output.includes)
 			{
-				if (GetFileLastWriteTime(cache_binary) < GetFileLastWriteTime(include)) 
+				if (GetFileLastWriteTime(cache_binary) < GetFileLastWriteTime(include))
+				{
 					return false;
+				}
 			}
 
 			std::ifstream is2(cache_binary, std::ios::binary);
@@ -254,10 +264,10 @@ namespace adria
 			Bool const success = dxcompiler.GetSymbol("DxcCreateInstance", &PFN_DxcCreateInstance);
 			ADRIA_FATAL_ASSERT(success && PFN_DxcCreateInstance != nullptr, "Couldn't get DxcCreateInstance symbol from dxcompiler.dll!");
 
-			GFX_CHECK_CALL(PFN_DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(library.GetAddressOf())));
-			GFX_CHECK_CALL(PFN_DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(compiler.GetAddressOf())));
-			GFX_CHECK_CALL(library->CreateIncludeHandler(include_handler.GetAddressOf()));
-			GFX_CHECK_CALL(PFN_DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(utils.GetAddressOf())));
+			D3D12_CHECK_CALL(PFN_DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(library.GetAddressOf())));
+			D3D12_CHECK_CALL(PFN_DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(compiler.GetAddressOf())));
+			D3D12_CHECK_CALL(library->CreateIncludeHandler(include_handler.GetAddressOf()));
+			D3D12_CHECK_CALL(PFN_DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(utils.GetAddressOf())));
 
 			std::filesystem::create_directory(paths::ShaderPDBDir);
 		}
@@ -282,7 +292,10 @@ namespace adria
 			sprintf_s(cache_path, "%s%s_%s_%llx_%s", paths::ShaderCacheDir.c_str(), GetFilenameWithoutExtension(input.file).c_str(),
 												     input.entry_point.c_str(), define_hash, build_string.c_str());
 
-			if (CheckCache(cache_path, input, output)) return true;
+			if (CheckCache(cache_path, input, output))
+			{
+				return true;
+			}
 			ADRIA_LOG(INFO, "Shader '%s.%s' not found in cache. Compiling...", input.file.c_str(), input.entry_point.c_str());
 
 			compile:
@@ -291,7 +304,7 @@ namespace adria
 
 			std::wstring shader_source = ToWideString(input.file);
 			HRESULT hr = library->CreateBlobFromFile(shader_source.data(), &code_page, source_blob.GetAddressOf());
-			GFX_CHECK_CALL(hr);
+			D3D12_CHECK_CALL(hr);
 
 			std::wstring name = ToWideString(GetFilenameWithoutExtension(input.file));
 			std::wstring dir  = ToWideString(paths::ShaderDir);
@@ -363,13 +376,19 @@ namespace adria
 					std::string msg = "Click OK after you fixed the following errors: \n";
 					msg += err_msg;
 					Int32 result = MessageBoxA(NULL, msg.c_str(), NULL, MB_OKCANCEL);
-					if (result == IDOK) goto compile;
-					else if (result == IDCANCEL) return false;
+					if (result == IDOK) 
+					{
+						goto compile;
+					}
+					else if (result == IDCANCEL)
+					{
+						return false;
+					}
 				}
 			}
 			
 			Ref<IDxcBlob> blob;
-			GFX_CHECK_CALL(result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(blob.GetAddressOf()), nullptr));
+			D3D12_CHECK_CALL(result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(blob.GetAddressOf()), nullptr));
 			
 			if (input.flags & GfxShaderCompilerFlag_Debug)
 			{
@@ -412,7 +431,7 @@ namespace adria
 			Uint32 code_page = CP_UTF8;
 			Ref<IDxcBlobEncoding> source_blob;
 			HRESULT hr = library->CreateBlobFromFile(wide_filename.data(), &code_page, source_blob.GetAddressOf());
-			GFX_CHECK_CALL(hr);
+			D3D12_CHECK_CALL(hr);
 			blob.resize(source_blob->GetBufferSize());
 			memcpy(blob.data(), source_blob->GetBufferPointer(), source_blob->GetBufferSize());
 		}
@@ -422,21 +441,21 @@ namespace adria
 			Ref<IDxcContainerReflection> reflection;
 			HRESULT hr = PFN_DxcCreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(reflection.GetAddressOf()));
 			GfxShaderCompilerBlob my_blob{ vertex_shader.GetData(), vertex_shader.GetSize() };
-			GFX_CHECK_CALL(hr);
+			D3D12_CHECK_CALL(hr);
 			hr = reflection->Load(&my_blob);
-			GFX_CHECK_CALL(hr);
+			D3D12_CHECK_CALL(hr);
 			Uint32 part_index;
 #ifndef MAKEFOURCC
 #define MAKEFOURCC(a, b, c, d) (Uint)((Uchar)(a) | (Uchar)(b) << 8 | (Uchar)(c) << 16 | (Uchar)(d) << 24)
 #endif
-			GFX_CHECK_CALL(reflection->FindFirstPartKind(MAKEFOURCC('D', 'X', 'I', 'L'), &part_index));
+			D3D12_CHECK_CALL(reflection->FindFirstPartKind(MAKEFOURCC('D', 'X', 'I', 'L'), &part_index));
 #undef MAKEFOURCC
 
 			Ref<ID3D12ShaderReflection> vertex_shader_reflection;
-			GFX_CHECK_CALL(reflection->GetPartReflection(part_index, IID_PPV_ARGS(vertex_shader_reflection.GetAddressOf())));
+			D3D12_CHECK_CALL(reflection->GetPartReflection(part_index, IID_PPV_ARGS(vertex_shader_reflection.GetAddressOf())));
 
 			D3D12_SHADER_DESC shader_desc;
-			GFX_CHECK_CALL(vertex_shader_reflection->GetDesc(&shader_desc));
+			D3D12_CHECK_CALL(vertex_shader_reflection->GetDesc(&shader_desc));
 
 			D3D12_SIGNATURE_PARAMETER_DESC signature_param_desc{};
 			input_layout.elements.clear();
@@ -485,3 +504,37 @@ namespace adria
 
 	}
 }
+
+#else 
+
+#include "GfxShaderCompiler.h"
+#include "GfxInputLayout.h"
+
+namespace adria
+{
+	namespace GfxShaderCompiler
+	{
+		void Initialize()
+		{
+		}
+
+		void Destroy()
+		{
+		}
+
+		Bool CompileShader(GfxShaderCompileInput const& input, GfxShaderCompileOutput& output)
+		{
+			return false;
+		}
+
+		void ReadBlobFromFile(std::string const& filename, GfxShaderBlob& blob)
+		{
+		}
+
+		void FillInputLayoutDesc(GfxShader const& vertex_shader, GfxInputLayout& input_layout)
+		{
+		}
+	}
+}
+
+#endif // _WIN32

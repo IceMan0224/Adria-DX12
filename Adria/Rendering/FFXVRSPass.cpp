@@ -1,5 +1,5 @@
 #include "FFXVRSPass.h"
-#if defined(ADRIA_FFXVRS_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"

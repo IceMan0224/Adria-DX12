@@ -24,7 +24,6 @@ namespace adria
 
 	using D3D12OnlineDescriptorAllocator = D3D12RingDescriptorAllocator<GFX_MULTITHREADED>;
 
-
 	class D3D12Device final : public GfxDevice
 	{
 		friend class D3D12CommandList;

@@ -1,5 +1,5 @@
 #include "FFXCACAOPass.h"
-#if defined(ADRIA_FFXCACAO_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "Graphics/GfxDevice.h"

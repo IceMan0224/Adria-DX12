@@ -1,11 +1,7 @@
 #pragma once
-#if defined(ADRIA_PLATFORM_WINDOWS)
-#define ADRIA_DLSS3_SUPPORTED
-#endif
-
 #include "UpscalerPass.h"
 #include "Utilities/Delegate.h"
-#if defined(ADRIA_DLSS3_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "nvsdk_ngx_defs.h"
 #endif
 
@@ -19,7 +15,7 @@ namespace adria
 	class GfxCommandList;
 	class RenderGraph;
 
-#if defined(ADRIA_DLSS3_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 	class DLSS3Pass : public UpscalerPass
 	{
 	public:

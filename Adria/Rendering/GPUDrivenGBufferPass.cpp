@@ -368,8 +368,8 @@ namespace adria
 				RGBufferDesc meshlet_cull_args_desc{};
 				meshlet_cull_args_desc.resource_usage = GfxResourceUsage::Default;
 				meshlet_cull_args_desc.misc_flags = GfxBufferMiscFlag::IndirectArgs;
-				meshlet_cull_args_desc.stride = sizeof(D3D12_DISPATCH_ARGUMENTS);
-				meshlet_cull_args_desc.size = sizeof(D3D12_DISPATCH_ARGUMENTS);
+				meshlet_cull_args_desc.stride = sizeof(GfxDispatchArguments);
+				meshlet_cull_args_desc.size = sizeof(GfxDispatchArguments);
 				builder.DeclareBuffer(RG_NAME(MeshletCullArgs), meshlet_cull_args_desc);
 
 				data.meshlet_cull_args = builder.WriteBuffer(RG_NAME(MeshletCullArgs));
@@ -478,8 +478,8 @@ namespace adria
 				RGBufferDesc meshlet_cull_draw_desc{};
 				meshlet_cull_draw_desc.resource_usage = GfxResourceUsage::Default;
 				meshlet_cull_draw_desc.misc_flags = GfxBufferMiscFlag::IndirectArgs;
-				meshlet_cull_draw_desc.stride = sizeof(D3D12_DISPATCH_MESH_ARGUMENTS);
-				meshlet_cull_draw_desc.size = sizeof(D3D12_DISPATCH_MESH_ARGUMENTS);
+				meshlet_cull_draw_desc.stride = sizeof(GfxDispatchMeshArguments);
+				meshlet_cull_draw_desc.size = sizeof(GfxDispatchMeshArguments);
 				builder.DeclareBuffer(RG_NAME(MeshletDrawArgs), meshlet_cull_draw_desc);
 
 				data.meshlet_draw_args = builder.WriteBuffer(RG_NAME(MeshletDrawArgs));
@@ -604,8 +604,8 @@ namespace adria
 				RGBufferDesc instance_cull_args_desc{};
 				instance_cull_args_desc.resource_usage = GfxResourceUsage::Default;
 				instance_cull_args_desc.misc_flags = GfxBufferMiscFlag::IndirectArgs;
-				instance_cull_args_desc.stride = sizeof(D3D12_DISPATCH_ARGUMENTS);
-				instance_cull_args_desc.size = sizeof(D3D12_DISPATCH_ARGUMENTS);
+				instance_cull_args_desc.stride = sizeof(GfxDispatchArguments);
+				instance_cull_args_desc.size = sizeof(GfxDispatchArguments);
 				builder.DeclareBuffer(RG_NAME(InstanceCullArgs), instance_cull_args_desc);
 
 				data.instance_cull_args = builder.WriteBuffer(RG_NAME(InstanceCullArgs));
@@ -1009,12 +1009,12 @@ namespace adria
 					.work_group_offset_y = workGroupOffset[1]
 				};
 
-				DECLSPEC_ALIGN(16)
-				struct SPDIndices
+				alignas(16) struct SPDIndices
 				{
 					XMUINT4	dstIdx[12];
 					Uint32	spdGlobalAtomicIdx;
 				} indices{ .spdGlobalAtomicIdx = table };
+
 				for (Uint32 j = 0; j < hzb_mip_count; ++j)
 				{
 					indices.dstIdx[j].x = table + 1 + j;

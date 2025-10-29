@@ -1,4 +1,5 @@
 #include "D3D12RayTracingPipeline.h"
+#include "D3D12Defines.h"
 #include "Utilities/StringConversions.h"
 
 namespace adria
@@ -11,7 +12,7 @@ namespace adria
 		d3d12_state_object.Attach(state_object);
 
 		HRESULT hr = d3d12_state_object->QueryInterface(IID_PPV_ARGS(d3d12_state_object_properties.GetAddressOf()));
-		GFX_CHECK_CALL(hr);
+		D3D12_CHECK_CALL(hr);
 
 		CacheShaderNames();
 	}

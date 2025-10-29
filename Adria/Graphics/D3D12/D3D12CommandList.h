@@ -1,4 +1,5 @@
 #pragma once
+#include "D3D12Defines.h"
 #include "D3D12CommandSignature.h"
 #include "Graphics/GfxCommandList.h"
 

@@ -1,4 +1,6 @@
+#if defined(_WIN32)
 #include <shellapi.h>
+#endif
 #include "CLIParser.h"
 
 namespace adria
@@ -22,13 +24,19 @@ namespace adria
 
 	CLIParseResult CLIParser::Parse(std::wstring const& cmd_line)
 	{
+#if defined(_WIN32)
 		Int argc;
 		Wchar** argv = CommandLineToArgvW(cmd_line.c_str(), &argc);
 		return Parse(argc, argv);
+#else
+		ADRIA_ASSERT_MSG(false, "Wide string command line parsing is only supported on Windows!");
+		return ParseImpl({});
+#endif
 	}
 
 	CLIParseResult CLIParser::Parse(Int argc, Wchar** argv)
 	{
+#if defined(_WIN32)
 		std::vector<std::wstring> wide_cmd_line(argv, argv + argc);
 		std::vector<std::string> cmd_line; cmd_line.reserve(argc);
 		for (std::wstring const& wide_arg : wide_cmd_line)
@@ -36,6 +44,10 @@ namespace adria
 			cmd_line.push_back(ToString(wide_arg));
 		}
 		return ParseImpl(cmd_line);
+#else
+		ADRIA_ASSERT_MSG(false, "Wide string command line parsing is only supported on Windows!");
+		return ParseImpl({});
+#endif
 	}
 
 	CLIParseResult CLIParser::ParseImpl(std::vector<std::string> const& cmd_line)

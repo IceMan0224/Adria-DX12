@@ -56,6 +56,5 @@
 #include "Core/Types.h"
 #include "Core/Defines.h"
 #include "Logging/Log.h"
-#include "Graphics/GfxDefines.h"
 #include "Math/MathCommon.h"
 #include "Utilities/Ref.h"

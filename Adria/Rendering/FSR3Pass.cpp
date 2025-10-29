@@ -1,5 +1,5 @@
 #include "FSR3Pass.h"
-#if defined(ADRIA_FSR3_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "FidelityFX/gpu/fsr3/ffx_fsr3_resources.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"

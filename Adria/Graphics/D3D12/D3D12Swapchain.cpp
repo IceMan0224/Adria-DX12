@@ -1,4 +1,5 @@
 #include "D3D12Swapchain.h"
+#include "D3D12Defines.h"
 #include "D3D12Device.h"
 #include "D3D12Conversions.h"
 #include "Graphics/GfxDevice.h"
@@ -38,7 +39,7 @@ namespace adria
 
         D3D12Device* d3d12gfx = (D3D12Device*)gfx;
 
-		GFX_CHECK_CALL(d3d12gfx->GetFactory()->CreateSwapChainForHwnd(
+		D3D12_CHECK_CALL(d3d12gfx->GetFactory()->CreateSwapChainForHwnd(
 			(ID3D12CommandQueue*)graphics_queue->GetNative(),
 			static_cast<HWND>(gfx->GetWindowHandle()),
 			&swapchain_desc,
@@ -88,7 +89,7 @@ namespace adria
 		DXGI_SWAP_CHAIN_DESC desc{};
 		swapchain->GetDesc(&desc);
 		HRESULT hr = swapchain->ResizeBuffers(desc.BufferCount, width, height, desc.BufferDesc.Format, desc.Flags);
-		GFX_CHECK_CALL(hr);
+		D3D12_CHECK_CALL(hr);
 		
 		backbuffer_index = swapchain->GetCurrentBackBufferIndex();
 		CreateBackbuffers();
@@ -100,7 +101,7 @@ namespace adria
 		{
 			Ref<ID3D12Resource> backbuffer = nullptr;
 			HRESULT hr = swapchain->GetBuffer(i, IID_PPV_ARGS(backbuffer.GetAddressOf()));
-			GFX_CHECK_CALL(hr);
+			D3D12_CHECK_CALL(hr);
 			D3D12_RESOURCE_DESC desc = backbuffer->GetDesc();
 			GfxTextureDesc gfx_desc{};
 			gfx_desc.width = (Uint32)desc.Width;

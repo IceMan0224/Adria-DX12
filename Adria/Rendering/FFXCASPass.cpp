@@ -1,5 +1,5 @@
 #include "FFXCASPass.h"
-#if defined(ADRIA_FFXCAS_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "Postprocessor.h"

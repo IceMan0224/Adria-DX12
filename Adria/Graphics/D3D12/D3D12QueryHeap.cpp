@@ -1,4 +1,5 @@
 #include "D3D12QueryHeap.h"
+#include "D3D12Defines.h"
 #include "D3D12Device.h"
 
 namespace adria
@@ -25,6 +26,6 @@ namespace adria
 		heap_desc.Count = desc.count;
 		heap_desc.NodeMask = 0;
 		heap_desc.Type = ToD3D12QueryHeapType(desc.type);
-		GFX_CHECK_CALL(((D3D12Device*)gfx)->GetD3D12Device()->CreateQueryHeap(&heap_desc, IID_PPV_ARGS(query_heap.GetAddressOf())));
+		D3D12_CHECK_CALL(((D3D12Device*)gfx)->GetD3D12Device()->CreateQueryHeap(&heap_desc, IID_PPV_ARGS(query_heap.GetAddressOf())));
 	}
 }

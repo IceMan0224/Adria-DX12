@@ -1,5 +1,6 @@
 #pragma once
 #include "GfxDynamicAllocation.h"
+#include "GfxDefines.h"
 #include "Utilities/LinearOffsetAllocator.h"
 
 namespace adria

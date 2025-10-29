@@ -1,11 +1,6 @@
 #pragma once
-#if defined(ADRIA_PLATFORM_WINDOWS)
-#define ADRIA_FFXCAS_SUPPORTED
-#endif
-
 #include "PostEffect.h"
-
-#if defined(ADRIA_FFXCAS_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "FidelityFX/host/ffx_cas.h"
 #endif
 
@@ -15,7 +10,7 @@ namespace adria
 	class RenderGraph;
 	class PostProcessor;
 
-#if defined(ADRIA_FFXCAS_SUPPORTED)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 	class FFXCASPass : public PostEffect
 	{
 	public:
