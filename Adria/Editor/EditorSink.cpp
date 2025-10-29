@@ -38,7 +38,7 @@ namespace adria
 			LineColors.clear();
 		}
 
-		void AddLog(ImVec4 color, Char const* fmt, ...) IM_FMTARGS(2)
+		void AddLog(ImVec4 color, Char const* fmt, ...)
 		{
 			Int old_size = Buf.size();
 			va_list args;
@@ -56,7 +56,7 @@ namespace adria
 			}
 		}
 
-		void Draw(Char const* title, Bool* p_open = NULL)
+		void Draw(Char const* title, Bool* p_open = nullptr)
 		{
 			if (!ImGui::Begin(title, p_open))
 			{

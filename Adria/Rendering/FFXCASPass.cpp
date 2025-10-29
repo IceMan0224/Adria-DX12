@@ -1,4 +1,5 @@
 #include "FFXCASPass.h"
+#if defined(ADRIA_FFXCAS_SUPPORTED)
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "Postprocessor.h"
@@ -137,5 +138,6 @@ namespace adria
 	}
 
 }
+#endif
 
 

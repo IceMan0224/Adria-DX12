@@ -1,12 +1,19 @@
 #pragma once
+#if defined(ADRIA_PLATFORM_WINDOWS)
+#define ADRIA_FFXVRS_SUPPORTED
+#endif
+
 #include "PostEffect.h"
+#include "RenderGraph/RenderGraphResourceName.h"
+
+#if defined(ADRIA_FFXVRS_SUPPORTED)
 #include "FidelityFX/host/ffx_vrs.h"
 #include "Graphics/GfxShadingRate.h"
 #include "Graphics/GfxDescriptor.h"
 #include "Graphics/GfxPipelineStateFwd.h"
-#include "RenderGraph/RenderGraphResourceName.h"
 
 struct FfxInterface;
+#endif
 
 namespace adria
 {
@@ -15,6 +22,7 @@ namespace adria
 	class GfxTexture;
 	class PostProcessor;
 
+#if defined(ADRIA_FFXVRS_SUPPORTED)
 	class FFXVRSPass : public PostEffect
 	{
 	public:
@@ -51,4 +59,13 @@ namespace adria
 		void DestroyContext();
 		void CreateContext();
 	};
+#else
+
+	class FFXVRSPass : public EmptyPostEffect
+	{
+	public:
+		FFXVRSPass(GfxDevice*, Uint32, Uint32) {}
+	};
+
+#endif
 }

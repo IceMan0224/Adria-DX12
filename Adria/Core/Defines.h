@@ -21,7 +21,15 @@
 #define ADRIA_DEBUGZONE_BEGIN    __pragma(optimize("", off))
 #define ADRIA_DEBUGZONE_END      __pragma(optimize("", on))
 
-#elif defined(__GNUC__) || defined(__clang__) 
+#elif defined(__clang__)
+#define ADRIA_DEBUGBREAK()       __builtin_trap()
+#define ADRIA_UNREACHABLE()      __builtin_unreachable()
+#define ADRIA_FORCEINLINE        inline __attribute__((always_inline))
+#define ADRIA_NOINLINE           __attribute__((noinline))
+#define ADRIA_DEBUGZONE_BEGIN    _Pragma("clang optimize off")
+#define ADRIA_DEBUGZONE_END      _Pragma("clang optimize on")
+
+#elif defined(__GNUC__)
 #define ADRIA_DEBUGBREAK()       __builtin_trap()
 #define ADRIA_UNREACHABLE()      __builtin_unreachable()
 #define ADRIA_FORCEINLINE        inline __attribute__((always_inline))

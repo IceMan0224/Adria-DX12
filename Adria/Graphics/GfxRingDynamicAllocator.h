@@ -16,7 +16,7 @@ namespace adria
 		template<typename T>
 		GfxDynamicAllocation AllocateCBuffer()
 		{
-			return Allocate(sizeof(T), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+			return Allocate(sizeof(T), GFX_CONSTANT_BUFFER_DATA_ALIGNMENT);
 		}
 		void FinishCurrentFrame(Uint64 frame);
 		void ReleaseCompletedFrames(Uint64 completed_frame);

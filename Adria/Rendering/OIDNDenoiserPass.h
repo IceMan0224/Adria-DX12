@@ -1,6 +1,8 @@
 #pragma once
+#if defined(ADRIA_ENABLE_OIDN)
 #include "OpenImageDenoise/oidn.h"
 #include "Graphics/GfxFence.h"
+#endif
 
 namespace adria
 {
@@ -10,17 +12,19 @@ namespace adria
 	class GfxCommandList;
 	class RenderGraph;
 
+
 	class [[deprecated("Use SVGF denoiser")]] OIDNDenoiserPass
 	{
 	public:
 		explicit OIDNDenoiserPass(GfxDevice* gfx);
 		~OIDNDenoiserPass();
 
-		Bool IsSupported() const { return supported; }
+        Bool IsSupported() const;
 		void AddPass(RenderGraph& rendergraph);
 		void Reset();
 
 	private:
+#if defined(ADRIA_ENABLE_OIDN)
 		GfxDevice* gfx;
 		OIDNDevice oidn_device = nullptr;
 		OIDNFilter oidn_filter = nullptr;
@@ -41,5 +45,6 @@ namespace adria
 		void ReleaseBuffers();
 
 		void Denoise(GfxCommandList* cmd_list, GfxTexture const& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture);
+#endif
 	};
 }

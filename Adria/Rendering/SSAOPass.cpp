@@ -30,7 +30,7 @@ namespace adria
 	{
 		CreatePSO();
 		RealRandomGenerator rand_float(0.0f, 1.0f);
-		for (Uint32 i = 0; i < ARRAYSIZE(ssao_kernel); i++)
+		for (Uint32 i = 0; i < std::size(ssao_kernel); i++)
 		{
 			Vector4 offset(2 * rand_float() - 1, 2 * rand_float() - 1, rand_float(), 0.0f);
 			offset.Normalize();

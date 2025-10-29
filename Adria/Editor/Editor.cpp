@@ -1,4 +1,4 @@
-﻿#include "nfd.h"
+#include "nfd.h"
 #include "IconsFontAwesome6.h"
 #include "Editor.h"
 #include "ImGuiManager.h"
@@ -14,7 +14,6 @@
 #include "Rendering/DebugRenderer.h"
 #include "Rendering/HelperPasses.h"
 #include "Graphics/GfxDevice.h"
-#include "Graphics/D3D12/D3D12Device.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxProfiler.h"
@@ -823,7 +822,7 @@ namespace adria
 					{
 						if (ImGui::MenuItem(item_name, nullptr, lighting_path == current_path)) { engine->renderer->SetLightingPath(lighting_path); }
 					};
-					#define AddLightingPathMenuItem(name) AddMenuItem(LightingPath::##name, #name)
+					#define AddLightingPathMenuItem(name) AddMenuItem(LightingPath::name, #name)
 					AddLightingPathMenuItem(Deferred);
 					AddLightingPathMenuItem(TiledDeferred);
 					AddLightingPathMenuItem(ClusteredDeferred);
@@ -839,7 +838,7 @@ namespace adria
 						if (ImGui::MenuItem(item_name, nullptr, output == current_debug_view)) { engine->renderer->SetDebugView(output); }
 					};
 
-					#define AddDebugViewMenuItem(name) AddMenuItem(RendererDebugView::##name, #name)
+					#define AddDebugViewMenuItem(name) AddMenuItem(RendererDebugView::name, #name)
 					AddDebugViewMenuItem(Final);
 					AddDebugViewMenuItem(Diffuse);
 					AddDebugViewMenuItem(WorldNormal);
@@ -995,9 +994,9 @@ namespace adria
 				static ProfilerState state{};
 				static Float FrameTimeArray[NUM_FRAMES] = { 0 };
 				static Float RecentHighestFrameTime = 0.0f;
-				static Float FrameTimeGraphMaxValues[ARRAYSIZE(FRAME_TIME_GRAPH_MAX_FPS)] = { 0 };
-				for (Uint64 i = 0; i < ARRAYSIZE(FrameTimeGraphMaxValues); ++i) 
-				{ 
+				static Float FrameTimeGraphMaxValues[std::size(FRAME_TIME_GRAPH_MAX_FPS)] = { 0 };
+				for (Uint64 i = 0; i < std::size(FrameTimeGraphMaxValues); ++i)
+				{
 					FrameTimeGraphMaxValues[i] = 1000.f / FRAME_TIME_GRAPH_MAX_FPS[i]; 
 				}
 
@@ -1019,11 +1018,11 @@ namespace adria
 					ImGui::Spacing();
 
 					Uint64 max_i = 0;
-					for (Uint64 i = 0; i < ARRAYSIZE(FrameTimeGraphMaxValues); ++i)
+					for (Uint64 i = 0; i < std::size(FrameTimeGraphMaxValues); ++i)
 					{
 						if (RecentHighestFrameTime < FrameTimeGraphMaxValues[i])
 						{
-							max_i = std::min(ARRAYSIZE(FrameTimeGraphMaxValues) - 1, i + 1);
+							max_i = std::min<Uint64>(std::size(FrameTimeGraphMaxValues) - 1, i + 1);
 							break;
 						}
 					}
@@ -1032,17 +1031,11 @@ namespace adria
 					constexpr Uint32 avg_timestamp_update_interval = 1000;
 					static auto MillisecondsNow = []()
 					{
-						static LARGE_INTEGER s_frequency;
-						static BOOL s_use_qpc = QueryPerformanceFrequency(&s_frequency);
-						Float64 milliseconds = 0;
-						if (s_use_qpc)
-						{
-							LARGE_INTEGER now;
-							QueryPerformanceCounter(&now);
-							milliseconds = Float64(1000.0 * now.QuadPart) / s_frequency.QuadPart;
-						}
-						else milliseconds = Float64(GetTickCount64());
-						return milliseconds;
+						using namespace std::chrono;
+						static auto start_time = high_resolution_clock::now();
+						auto current = high_resolution_clock::now();
+						auto elapsed = duration_cast<milliseconds>(current - start_time);
+						return static_cast<Float64>(elapsed.count());
 					};
 					const Float64 current_time = MillisecondsNow();
 

@@ -1,5 +1,4 @@
 #pragma once
-#include "Windows.h"
 #include "Utilities/Delegate.h"
 #include "Utilities/Singleton.h"
 

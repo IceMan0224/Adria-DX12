@@ -28,7 +28,7 @@ namespace adria
 	constexpr T pi_times_4 = pi<T> * 4.0f;
 
 	template<FloatingPoint T = Float>
-	constexpr T pi_squared = pi<T> * pi;
+	constexpr T pi_squared = pi<T> * pi<T>;
 
 	template<FloatingPoint T = Float>
 	constexpr T pi_div_180 = pi<T> / 180.0f;

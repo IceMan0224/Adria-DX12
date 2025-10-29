@@ -1,4 +1,6 @@
+
 #include "XeSS2Pass.h"
+#if defined(ADRIA_XESS2_SUPPORTED)
 #include "XeSS/xess_d3d12.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"
@@ -181,3 +183,4 @@ namespace adria
 	}
 }
 
+#endif

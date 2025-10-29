@@ -2,7 +2,6 @@
 
 namespace adria
 {
-	class D3D12DescriptorHeap; 
 	enum class GfxDescriptorType : Uint8
 	{
 		CBV_SRV_UAV,

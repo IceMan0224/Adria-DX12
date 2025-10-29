@@ -2,8 +2,10 @@
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxBuffer.h"
 #include "Graphics/GfxQueryHeap.h"
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "D3D12/D3D12TimestampProfiler.h"
 #include "D3D12/D3D12TracyProfiler.h"
+#endif
 
 namespace adria
 {
@@ -32,7 +34,9 @@ namespace adria
 #if GFX_PROFILING
 		switch (backend)
 		{
+#if defined(ADRIA_PLATFORM_WINDOWS)
 		case GfxBackend::D3D12: timestamp_profiler = std::make_unique<D3D12TimestampProfiler>(); break;
+#endif
 		case GfxBackend::Vulkan:
 		case GfxBackend::Metal:
 		default:				timestamp_profiler = std::make_unique<GfxDummyProfiler>(); break;
@@ -44,7 +48,9 @@ namespace adria
 #if GFX_PROFILING_USE_TRACY
 		switch (backend)
 		{
+#if defined(ADRIA_PLATFORM_WINDOWS)
 		case GfxBackend::D3D12: tracy_profiler = std::make_unique<D3D12TracyProfiler>(); break;
+#endif
 		case GfxBackend::Vulkan:
 		case GfxBackend::Metal:
 		default:				tracy_profiler = std::make_unique<GfxDummyProfiler>(); break;

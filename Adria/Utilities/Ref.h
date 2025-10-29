@@ -1,4 +1,5 @@
 #pragma once
+
 #include <type_traits>
 
 namespace adria
@@ -190,12 +191,14 @@ namespace adria
 			return InternalRelease();
 		}
 
+#if defined(ADRIA_PLATFORM_WINDOWS)
 		// query for U interface
 		template<typename U>
 		HRESULT As(RefCountPtr<U>* p) const 
 		{
 			return ptr_->QueryInterface(__uuidof(U), reinterpret_cast<void**>(p->ReleaseAndGetAddressOf()));
 		}
+#endif
 
 	protected:
 		InterfaceType* ptr_;

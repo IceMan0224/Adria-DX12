@@ -1,4 +1,3 @@
-#include <d3dcompiler.h>
 #include "dxcapi.h"
 #include "cereal/archives/binary.hpp"
 #include "cereal/types/string.hpp"

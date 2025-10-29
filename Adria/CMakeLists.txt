@@ -376,12 +376,32 @@ set(ADRIA_WIN32_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Windows/Input.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Windows/Windows.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Windows/Adria.rc"
-	
+
 	"${CMAKE_CURRENT_SOURCE_DIR}/Logging/Windows/DebuggerSink.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Logging/Windows/DebuggerSink.cpp"	
+	"${CMAKE_CURRENT_SOURCE_DIR}/Logging/Windows/DebuggerSink.cpp"
 )
 
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_WIN32_SOURCES} ${ADRIA_D3D12_SOURCES})
+set(ADRIA_MACOS_SOURCES
+	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/macOS/main.mm"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/macOS/Window.mm"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/macOS/Input.mm"
+)
+
+set(ADRIA_METAL_SOURCES
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDevice.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDevice.mm"
+)
+
+# Set platform-specific sources
+if(WIN32)
+	set(ADRIA_PLATFORM_SOURCES ${ADRIA_WIN32_SOURCES})
+	set(ADRIA_BACKEND_SOURCES ${ADRIA_D3D12_SOURCES})
+elseif(APPLE)
+	set(ADRIA_PLATFORM_SOURCES ${ADRIA_MACOS_SOURCES})
+	set(ADRIA_BACKEND_SOURCES ${ADRIA_METAL_SOURCES})
+endif()
+
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_PLATFORM_SOURCES} ${ADRIA_BACKEND_SOURCES})
 
 file(GLOB_RECURSE SHADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Shaders/*.hlsl"
@@ -401,16 +421,12 @@ set(EXTERNAL_SOURCES
     "${EXTERNAL_DIR}/ImGui/imgui_draw.cpp"
     "${EXTERNAL_DIR}/ImGui/imgui_tables.cpp"
     "${EXTERNAL_DIR}/ImGui/imgui_widgets.cpp"
-    "${EXTERNAL_DIR}/ImGui/imgui_impl_dx12.cpp"
-    "${EXTERNAL_DIR}/ImGui/imgui_impl_win32.cpp"
-	
+
 	"${EXTERNAL_DIR}/SimpleMath/SimpleMath.cpp"
-	
-	"${EXTERNAL_DIR}/D3D12MA/D3D12MemAlloc.cpp"
-	
+
 	"${EXTERNAL_DIR}/ImPlot/implot.cpp"
 	"${EXTERNAL_DIR}/ImPlot/implot_items.cpp"
-	
+
 	"${EXTERNAL_DIR}/meshoptimizer/allocator.cpp"
     "${EXTERNAL_DIR}/meshoptimizer/clusterizer.cpp"
     "${EXTERNAL_DIR}/meshoptimizer/indexcodec.cpp"
@@ -428,22 +444,38 @@ set(EXTERNAL_SOURCES
     "${EXTERNAL_DIR}/meshoptimizer/vfetchoptimizer.cpp"
     "${EXTERNAL_DIR}/meshoptimizer/vertexcodec.cpp"
     "${EXTERNAL_DIR}/meshoptimizer/vertexfilter.cpp"
-	
+
     "${EXTERNAL_DIR}/tracy/TracyClient.cpp"
 )
+
+# Platform-specific external sources
+if(WIN32)
+	list(APPEND EXTERNAL_SOURCES
+		"${EXTERNAL_DIR}/ImGui/imgui_impl_dx12.cpp"
+		"${EXTERNAL_DIR}/ImGui/imgui_impl_win32.cpp"
+		"${EXTERNAL_DIR}/D3D12MA/D3D12MemAlloc.cpp"
+	)
+elseif(APPLE)
+	# TODO: Add ImGui Metal/OSX implementations when needed
+	# list(APPEND EXTERNAL_SOURCES
+	# 	"${EXTERNAL_DIR}/ImGui/imgui_impl_metal.mm"
+	# 	"${EXTERNAL_DIR}/ImGui/imgui_impl_osx.mm"
+	# )
+endif()
+
 source_group("External" FILES ${EXTERNAL_SOURCES})
 
-add_executable(Adria WIN32 ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_WIN32_SOURCES} ${ADRIA_D3D12_SOURCES} ${EXTERNAL_SOURCES} ${SHADER_FILES})
+if(WIN32)
+	add_executable(Adria WIN32 ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_PLATFORM_SOURCES} ${ADRIA_BACKEND_SOURCES} ${EXTERNAL_SOURCES} ${SHADER_FILES})
+elseif(APPLE)
+	add_executable(Adria MACOSX_BUNDLE ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_PLATFORM_SOURCES} ${ADRIA_BACKEND_SOURCES} ${EXTERNAL_SOURCES})
+endif()
 
 target_precompile_headers(Adria PRIVATE precomp.h)
 
 target_include_directories(Adria PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${EXTERNAL_DIR}/d3dx12"
-    "${EXTERNAL_DIR}/DirectMLX"
-    "${EXTERNAL_DIR}/D3D12MA"
     "${EXTERNAL_DIR}/stb"
-    "${EXTERNAL_DIR}/dxc/include"
     "${EXTERNAL_DIR}/cgltf"
     "${EXTERNAL_DIR}/tinyobjloader"
     "${EXTERNAL_DIR}/FastNoiseLite"
@@ -457,19 +489,30 @@ target_include_directories(Adria PRIVATE
     "${EXTERNAL_DIR}/Tracy"
     "${EXTERNAL_DIR}/DirectXMath/Inc"
     "${EXTERNAL_DIR}/SimpleMath"
-    "${EXTERNAL_DIR}/XeSS/inc"
-    "${EXTERNAL_DIR}/DLSS/include"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/include"
-    "${EXTERNAL_DIR}/NVIDIA_Aftermath_SDK/include"
-    "${EXTERNAL_DIR}/NvPerf"
     "${EXTERNAL_DIR}/ImPlot"
-    "${EXTERNAL_DIR}/oidn-2.3.2/include"
     "${EXTERNAL_DIR}/renderdoc"
-    "${EXTERNAL_DIR}/DirectX12 Agility SDK/include"
-    "${EXTERNAL_DIR}/winpixeventruntime/include/WinPixEventRuntime"
+    "${EXTERNAL_DIR}/dxc/include"
 )
 
-target_compile_options(Adria PRIVATE /MP)
+if(WIN32)
+    target_include_directories(Adria PRIVATE
+        "${EXTERNAL_DIR}/d3dx12"
+        "${EXTERNAL_DIR}/DirectMLX"
+        "${EXTERNAL_DIR}/D3D12MA"
+        "${EXTERNAL_DIR}/XeSS/inc"
+        "${EXTERNAL_DIR}/DLSS/include"
+        "${EXTERNAL_DIR}/FidelityFX-SDK/include"
+        "${EXTERNAL_DIR}/NVIDIA_Aftermath_SDK/include"
+        "${EXTERNAL_DIR}/NvPerf"
+        "${EXTERNAL_DIR}/oidn-2.3.2/include"
+        "${EXTERNAL_DIR}/DirectX12 Agility SDK/include"
+        "${EXTERNAL_DIR}/winpixeventruntime/include/WinPixEventRuntime"
+    )
+endif()
+
+if(MSVC)
+	target_compile_options(Adria PRIVATE /MP)
+endif()
 
 target_compile_definitions(Adria PRIVATE
     $<$<CONFIG:Debug>:_DEBUG;_CONSOLE;TRACY_ENABLE>
@@ -477,63 +520,73 @@ target_compile_definitions(Adria PRIVATE
     $<$<CONFIG:Release,RelWithDebInfo>:NDEBUG;_CONSOLE>
 )
 
-target_link_libraries(Adria PRIVATE
-    d3d12.lib
-    dxgi.lib
-    dxguid.lib
-    DirectML.lib
-    "${EXTERNAL_DIR}/NVIDIA_Aftermath_SDK/lib/GFSDK_Aftermath_Lib.x64.lib"
-    "${EXTERNAL_DIR}/XeSS/lib/libxess.lib"
-    "${EXTERNAL_DIR}/winpixeventruntime/lib/WinPixEventRuntime.lib"
+if(WIN32)
+	target_link_libraries(Adria PRIVATE
+		d3d12.lib
+		dxgi.lib
+		dxguid.lib
+		DirectML.lib
+		"${EXTERNAL_DIR}/NVIDIA_Aftermath_SDK/lib/GFSDK_Aftermath_Lib.x64.lib"
+		"${EXTERNAL_DIR}/XeSS/lib/libxess.lib"
+		"${EXTERNAL_DIR}/winpixeventruntime/lib/WinPixEventRuntime.lib"
 
-    $<$<CONFIG:Debug>:
-    "${EXTERNAL_DIR}/nfd/lib/nfd_d.lib"
-    "${EXTERNAL_DIR}/DLSS/lib/nvsdk_ngx_d_dbg.lib"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_dof_x64d.lib"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr2_x64d.lib"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3_x64d.lib"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cas_x64d.lib"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_backend_dx12_x64d.lib"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cacao_x64d.lib"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_frameinterpolation_x64d.lib"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_opticalflow_x64d.lib"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3upscaler_x64d.lib"
-    "${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_vrs_x64d.lib"
-	>
+		$<$<CONFIG:Debug>:
+		"${EXTERNAL_DIR}/nfd/lib/nfd_d.lib"
+		"${EXTERNAL_DIR}/DLSS/lib/nvsdk_ngx_d_dbg.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_dof_x64d.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr2_x64d.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3_x64d.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cas_x64d.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_backend_dx12_x64d.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cacao_x64d.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_frameinterpolation_x64d.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_opticalflow_x64d.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3upscaler_x64d.lib"
+		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_vrs_x64d.lib"
+		>
 
-	$<$<CONFIG:Profile,Release,RelWithDebInfo>:
-		"${EXTERNAL_DIR}/nfd/lib/nfd.lib"
-		"${EXTERNAL_DIR}/DLSS/lib/nvsdk_ngx_d.lib"
-		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_dof_x64.lib"
-		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr2_x64.lib"
-		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3_x64.lib"
-		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cas_x64.lib"
-		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_backend_dx12_x64.lib"
-		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cacao_x64.lib"
-		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_frameinterpolation_x64.lib"
-		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_opticalflow_x64.lib"
-		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3upscaler_x64.lib"
-		"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_vrs_x64.lib"
-	>
-)
+		$<$<CONFIG:Profile,Release,RelWithDebInfo>:
+			"${EXTERNAL_DIR}/nfd/lib/nfd.lib"
+			"${EXTERNAL_DIR}/DLSS/lib/nvsdk_ngx_d.lib"
+			"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_dof_x64.lib"
+			"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr2_x64.lib"
+			"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3_x64.lib"
+			"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cas_x64.lib"
+			"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_backend_dx12_x64.lib"
+			"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_cacao_x64.lib"
+			"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_frameinterpolation_x64.lib"
+			"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_opticalflow_x64.lib"
+			"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_fsr3upscaler_x64.lib"
+			"${EXTERNAL_DIR}/FidelityFX-SDK/lib/ffx_vrs_x64.lib"
+		>
+	)
+elseif(APPLE)
+	target_link_libraries(Adria PRIVATE
+		"-framework Cocoa"
+		"-framework Metal"
+		"-framework MetalKit"
+		"-framework QuartzCore"
+	)
+endif()
 
-function(copy_runtime_dll SOURCE_FILE TARGET_NAME)
-    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_FILE}"
-        $<TARGET_FILE_DIR:${TARGET_NAME}>
-        COMMENT "Copying ${SOURCE_FILE} to output directory"
-    )
-endfunction()
+if(WIN32)
+	function(copy_runtime_dll SOURCE_FILE TARGET_NAME)
+		add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_FILE}"
+			$<TARGET_FILE_DIR:${TARGET_NAME}>
+			COMMENT "Copying ${SOURCE_FILE} to output directory"
+		)
+	endfunction()
 
-
-copy_runtime_dll("D3D12Core.dll" Adria)
-copy_runtime_dll("d3d12SDKLayers.dll" Adria)
-copy_runtime_dll("D3D12StateObjectCompiler.dll" Adria)
-copy_runtime_dll("dxcompiler.dll" Adria)
-copy_runtime_dll("dxil.dll" Adria)
-copy_runtime_dll("GFSDK_Aftermath_Lib.x64.dll" Adria)
-copy_runtime_dll("libxess.dll" Adria)
-copy_runtime_dll("nvperf_grfx_host.dll" Adria)
-copy_runtime_dll("renderdoc.dll" Adria)
-copy_runtime_dll("WinPixEventRuntime.dll" Adria)
+	copy_runtime_dll("D3D12Core.dll" Adria)
+	copy_runtime_dll("d3d12SDKLayers.dll" Adria)
+	copy_runtime_dll("D3D12StateObjectCompiler.dll" Adria)
+	copy_runtime_dll("dxcompiler.dll" Adria)
+	copy_runtime_dll("dxil.dll" Adria)
+	copy_runtime_dll("GFSDK_Aftermath_Lib.x64.dll" Adria)
+	copy_runtime_dll("libxess.dll" Adria)
+	copy_runtime_dll("nvperf_grfx_host.dll" Adria)
+	copy_runtime_dll("renderdoc.dll" Adria)
+	copy_runtime_dll("WinPixEventRuntime.dll" Adria)
+endif()

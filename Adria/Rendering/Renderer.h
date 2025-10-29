@@ -1,7 +1,7 @@
 #pragma once
 #include "ViewportData.h"
 #include "ShaderStructs.h"
-#include "PostProcessor.h"
+#include "Postprocessor.h"
 #include "GBufferPass.h"
 #include "GPUDrivenGBufferPass.h"
 #include "SkyPass.h"

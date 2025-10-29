@@ -14,6 +14,9 @@
 #include <dxgi1_2.h>
 #endif
 
+// Include platform compatibility definitions for non-Windows platforms
+#include "SimpleMath_Platform.h"
+
 #include <cassert>
 #include <cstddef>
 #include <cstring>
@@ -23,9 +26,9 @@
 #include <compare>
 #endif
 
-#include <DirectXMath.h>
-#include <DirectXPackedVector.h>
-#include <DirectXCollision.h>
+#include "DirectXMath.h"
+#include "DirectXPackedVector.h"
+#include "DirectXCollision.h"
 
 #ifdef __clang__
 #pragma clang diagnostic push

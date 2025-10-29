@@ -1,7 +1,13 @@
 #pragma once
-#include "nvsdk_ngx_defs.h"
+#if defined(ADRIA_PLATFORM_WINDOWS)
+#define ADRIA_DLSS3_SUPPORTED
+#endif
+
 #include "UpscalerPass.h"
 #include "Utilities/Delegate.h"
+#if defined(ADRIA_DLSS3_SUPPORTED)
+#include "nvsdk_ngx_defs.h"
+#endif
 
 
 struct NVSDK_NGX_Parameter;
@@ -13,6 +19,7 @@ namespace adria
 	class GfxCommandList;
 	class RenderGraph;
 
+#if defined(ADRIA_DLSS3_SUPPORTED)
 	class DLSS3Pass : public UpscalerPass
 	{
 	public:
@@ -53,4 +60,13 @@ namespace adria
 		void CreateDLSS(GfxCommandList* cmd_list);
 		void ReleaseDLSS();
 	};
+#else
+
+	class DLSS3Pass : public DummyUpscalerPass
+	{
+    public:
+        DLSS3Pass(GfxDevice* gfx, Uint32 w, Uint32 h) {}
+	};
+
+#endif
 }

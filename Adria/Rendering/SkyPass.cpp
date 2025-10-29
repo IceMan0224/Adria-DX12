@@ -82,16 +82,16 @@ namespace adria
 					SkyParameters parameters = CalculateSkyParameters(turbidity, ground_albedo, dir);
 					struct HosekWilkieConstants
 					{
-						DECLSPEC_ALIGN(16) Vector3 A;
-						DECLSPEC_ALIGN(16) Vector3 B;
-						DECLSPEC_ALIGN(16) Vector3 C;
-						DECLSPEC_ALIGN(16) Vector3 D;
-						DECLSPEC_ALIGN(16) Vector3 E;
-						DECLSPEC_ALIGN(16) Vector3 F;
-						DECLSPEC_ALIGN(16) Vector3 G;
-						DECLSPEC_ALIGN(16) Vector3 H;
-						DECLSPEC_ALIGN(16) Vector3 I;
-						DECLSPEC_ALIGN(16) Vector3 Z;
+						alignas(16) Vector3 A;
+                        alignas(16) Vector3 B;
+                        alignas(16) Vector3 C;
+                        alignas(16) Vector3 D;
+                        alignas(16) Vector3 E;
+                        alignas(16) Vector3 F;
+                        alignas(16) Vector3 G;
+                        alignas(16) Vector3 H;
+                        alignas(16) Vector3 I;
+                        alignas(16) Vector3 Z;
 					} constants =
 					{
 							.A = parameters[SkyParam_A],

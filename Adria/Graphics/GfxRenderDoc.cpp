@@ -8,9 +8,9 @@
 
 namespace adria::GfxRenderDoc
 {
-#if defined(GFX_RENDERDOC_AVAILABLE)
+    ADRIA_LOG_CHANNEL(RenderDoc);
 
-	ADRIA_LOG_CHANNEL(RenderDoc);
+#if defined(GFX_RENDERDOC_AVAILABLE)
 
 	static AutoConsoleCommand RenderDoc_TakeCapture("r.RenderDoc", " Takes RenderDoc capture. Optional arguments are: [capture name, frame count]",
 		ConsoleCommandWithArgsDelegate::CreateLambda([](std::span<Char const*> args)

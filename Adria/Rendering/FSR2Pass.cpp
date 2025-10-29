@@ -1,4 +1,5 @@
 #include "FSR2Pass.h"
+#if defined(ADRIA_FSR2_SUPPORTED)
 #include "FidelityFX/gpu/fsr2/ffx_fsr2_resources.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
@@ -198,3 +199,4 @@ namespace adria
 		BroadcastRenderResolutionChanged(render_width, render_height);
 	}
 }
+#endif

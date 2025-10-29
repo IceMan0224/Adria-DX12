@@ -1,4 +1,5 @@
 #include "FFXCACAOPass.h"
+#if defined(ADRIA_FFXCACAO_SUPPORTED)
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "Graphics/GfxDevice.h"
@@ -9,12 +10,12 @@ namespace adria
 {
 	namespace
 	{
-		struct CacaoPreset 
+		struct CacaoPreset
 		{
 			Bool use_downsampled_ssao;
 			FfxCacaoSettings cacao_settings;
 		};
-		std::vector<std::string> FfxCacaoPresetNames = 
+		std::vector<std::string> FfxCacaoPresetNames =
 		{
 			"Native - Adaptive Quality",
 			"Native - High Quality",
@@ -413,8 +414,9 @@ namespace adria
 	{
 		gfx->WaitForGPU();
 		ffxCacaoContextDestroy(&cacao_context);
-		ffxCacaoContextDestroy(&cacao_downsampled_context);
+			ffxCacaoContextDestroy(&cacao_downsampled_context);
 	}
 
 }
+#endif
 

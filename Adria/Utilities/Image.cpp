@@ -4,6 +4,26 @@
 #include "Utilities/PathHelpers.h"
 #include "Utilities/StringConversions.h"
 
+// Define DXGI_FORMAT values for non-Windows platforms
+#if !defined(ADRIA_PLATFORM_WINDOWS)
+enum DXGI_FORMAT : uint32_t
+{
+	DXGI_FORMAT_BC1_UNORM = 71,
+	DXGI_FORMAT_BC1_UNORM_SRGB = 72,
+	DXGI_FORMAT_BC2_UNORM = 74,
+	DXGI_FORMAT_BC2_UNORM_SRGB = 75,
+	DXGI_FORMAT_BC3_UNORM = 77,
+	DXGI_FORMAT_BC4_UNORM = 80,
+	DXGI_FORMAT_BC5_UNORM = 83,
+	DXGI_FORMAT_BC6H_UF16 = 95,
+	DXGI_FORMAT_BC7_UNORM = 98,
+	DXGI_FORMAT_BC7_UNORM_SRGB = 99,
+	DXGI_FORMAT_R32G32B32A32_FLOAT = 2,
+	DXGI_FORMAT_R32G32_FLOAT = 16,
+	DXGI_FORMAT_R9G9B9E5_SHAREDEXP = 67,
+};
+#endif
+
 namespace adria
 {
 
@@ -92,8 +112,7 @@ namespace adria
 	{
 		//https://github.com/simco50/D3D12_Research/blob/master/D3D12/Content/Image.cpp - LoadDDS
 
-		FILE* file = nullptr;
-		fopen_s(&file, texture_path.data(), "rb");
+		FILE* file = fopen(texture_path.data(), "rb");
 		if (!file)
 			return false;
 

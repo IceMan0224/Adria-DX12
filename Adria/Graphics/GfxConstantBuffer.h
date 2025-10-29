@@ -9,7 +9,7 @@ namespace adria
 	{
 		static constexpr Uint32 GetCBufferSize()
 		{
-			return (sizeof(CBufferT) + (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1)) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+			return (sizeof(CBufferT) + (GFX_CONSTANT_BUFFER_DATA_ALIGNMENT - 1)) & ~(GFX_CONSTANT_BUFFER_DATA_ALIGNMENT - 1);
 		}
 
 	public:

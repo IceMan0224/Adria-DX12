@@ -1,7 +1,13 @@
 #pragma once
-#include "FidelityFX/host/ffx_fsr3.h"
+#if defined(ADRIA_PLATFORM_WINDOWS)
+#define ADRIA_FSR3_SUPPORTED
+#endif
+
 #include "UpscalerPass.h"
 #include "Utilities/Delegate.h"
+#if defined(ADRIA_FSR3_SUPPORTED)
+#include "FidelityFX/host/ffx_fsr3.h"
+#endif
 
 struct FfxInterface;
 
@@ -10,6 +16,7 @@ namespace adria
 	class GfxDevice;
 	class RenderGraph;
 
+#if defined(ADRIA_FSR3_SUPPORTED)
 	class FSR3Pass : public UpscalerPass
 	{
 	public:
@@ -49,4 +56,13 @@ namespace adria
 		void DestroyContext();
 		void RecreateRenderResolution();
 	};
+#else
+
+	class FSR3Pass : public DummyUpscalerPass
+	{
+    public:
+        FSR3Pass(GfxDevice* gfx, Uint32 w, Uint32 h) {}
+	};
+
+#endif
 }

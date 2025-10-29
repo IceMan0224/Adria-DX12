@@ -2,6 +2,7 @@
 #include "GfxPipelineStateFwd.h"
 #include "GfxStates.h"
 #include "GfxShaderKey.h"
+#include "GfxDevice.h"
 #include "GfxInputLayout.h"
 #include "Rendering/ShaderManager.h"
 #include "Utilities/Delegate.h"

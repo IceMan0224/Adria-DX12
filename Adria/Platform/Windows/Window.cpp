@@ -65,11 +65,11 @@ namespace adria
             return;
         }
 
-        hwnd = CreateWindowExW
+        HWND hwnd = CreateWindowExW
         (
             0, class_name,
             window_title.c_str(),
-            WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
+            WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
             window_width, window_height,
             nullptr, nullptr, hinstance, nullptr
         );
@@ -79,6 +79,8 @@ namespace adria
             MessageBox(nullptr, L"Window creation failed!", L"Fatal Error!", MB_ICONEXCLAMATION | MB_OK);
             return;
         }
+
+		window_handle = hwnd;
 
 		SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_MINIMIZEBOX);
         SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
@@ -98,6 +100,7 @@ namespace adria
 
 	Window::~Window()
 	{
+		HWND hwnd = static_cast<HWND>(window_handle);
         if (hwnd)
         {
             DestroyWindow(hwnd);
@@ -106,18 +109,21 @@ namespace adria
 
 	Uint32 Window::Width() const
 	{
+		HWND hwnd = static_cast<HWND>(window_handle);
 		RECT rect{};
         GetClientRect(hwnd, &rect);
 		return static_cast<Uint32>(rect.right - rect.left);
 	}
     Uint32 Window::Height() const
     {
+		HWND hwnd = static_cast<HWND>(window_handle);
         RECT rect{};
         GetClientRect(hwnd, &rect);
         return static_cast<Uint32>(rect.bottom - rect.top);
     }
     Uint32 Window::PositionX() const
     {
+		HWND hwnd = static_cast<HWND>(window_handle);
         RECT rect{};
         GetClientRect(hwnd, &rect);
         ClientToScreen(hwnd, (LPPOINT)&rect.left);
@@ -126,13 +132,14 @@ namespace adria
     }
 	Uint32 Window::PositionY() const
 	{
+		HWND hwnd = static_cast<HWND>(window_handle);
 		RECT rect{};
 		GetClientRect(hwnd, &rect);
 		ClientToScreen(hwnd, (LPPOINT)&rect.left);
 		ClientToScreen(hwnd, (LPPOINT)&rect.right);
 		return rect.top;
 	}
-    
+
 	Bool Window::Loop()
     {
         MSG msg{};
@@ -152,10 +159,11 @@ namespace adria
 
     void* Window::Handle() const
     {
-        return static_cast<void*>(hwnd);
+        return window_handle;
     }
     Bool Window::IsActive() const
     {
+		HWND hwnd = static_cast<HWND>(window_handle);
         return GetForegroundWindow() == hwnd;
     }
 

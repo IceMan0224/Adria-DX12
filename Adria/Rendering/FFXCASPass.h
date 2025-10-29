@@ -1,12 +1,21 @@
 #pragma once
-#include "FidelityFX/host/ffx_cas.h"
+#if defined(ADRIA_PLATFORM_WINDOWS)
+#define ADRIA_FFXCAS_SUPPORTED
+#endif
+
 #include "PostEffect.h"
+
+#if defined(ADRIA_FFXCAS_SUPPORTED)
+#include "FidelityFX/host/ffx_cas.h"
+#endif
 
 namespace adria
 {
 	class GfxDevice;
 	class RenderGraph;
+	class PostProcessor;
 
+#if defined(ADRIA_FFXCAS_SUPPORTED)
 	class FFXCASPass : public PostEffect
 	{
 	public:
@@ -34,4 +43,13 @@ namespace adria
 		void CreateContext();
 		void DestroyContext();
 	};
+#else
+
+	class FFXCASPass : public EmptyPostEffect
+	{
+	public:
+		FFXCASPass(GfxDevice*, Uint32, Uint32) {}
+	};
+
+#endif
 }

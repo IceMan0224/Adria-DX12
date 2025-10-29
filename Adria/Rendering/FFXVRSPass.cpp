@@ -1,4 +1,5 @@
 #include "FFXVRSPass.h"
+#if defined(ADRIA_FFXVRS_SUPPORTED)
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
@@ -272,8 +273,8 @@ namespace adria
 			ADRIA_ASSERT(result == FFX_OK);
 
 			context_created = true;
-		}
-	}
+			}
 
 }
+#endif
 

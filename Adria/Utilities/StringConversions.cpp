@@ -1,10 +1,11 @@
 #include <sstream>
-#include <codecvt>
 #include <locale>
+#include <cstring>
 #include "StringConversions.h"
 
 namespace adria
 {
+#if defined(ADRIA_PLATFORM_WINDOWS)
 	std::wstring ToWideString(std::string const& str)
 	{
 		Int num_chars = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (Int)str.length(), NULL, 0);
@@ -27,6 +28,46 @@ namespace adria
 		}
 		return str;
 	}
+#else
+	// POSIX implementation using mbsrtowcs/wcsrtombs
+	std::wstring ToWideString(std::string const& str)
+	{
+		std::wstring wstr;
+		const char* src = str.c_str();
+		std::mbstate_t state = std::mbstate_t();
+
+		// Get required size
+		size_t len = std::mbsrtowcs(nullptr, &src, 0, &state);
+		if (len == static_cast<size_t>(-1))
+			return wstr; // Conversion error
+
+		wstr.resize(len);
+		src = str.c_str(); // Reset pointer
+		state = std::mbstate_t();
+		std::mbsrtowcs(&wstr[0], &src, wstr.size(), &state);
+
+		return wstr;
+	}
+
+	std::string ToString(std::wstring const& wstr)
+	{
+		std::string str;
+		const wchar_t* src = wstr.c_str();
+		std::mbstate_t state = std::mbstate_t();
+
+		// Get required size
+		size_t len = std::wcsrtombs(nullptr, &src, 0, &state);
+		if (len == static_cast<size_t>(-1))
+			return str; // Conversion error
+
+		str.resize(len);
+		src = wstr.c_str(); // Reset pointer
+		state = std::mbstate_t();
+		std::wcsrtombs(&str[0], &src, str.size(), &state);
+
+		return str;
+	}
+#endif
 
 	std::string ToLower(std::string const& str)
 	{
@@ -46,7 +87,7 @@ namespace adria
 		}
 		return out;
 	}
-	
+
 	Bool FromCString(const Char* in, int& out)
 	{
 		std::istringstream iss(in);
@@ -88,7 +129,7 @@ namespace adria
 	{
 		std::istringstream iss(in);
 		Char open_parenthesis, comma1, comma2, close_parenthesis;
-		if (iss >> open_parenthesis >> out.x >> comma1 >> out.y >> comma2 >> out.z >> close_parenthesis) 
+		if (iss >> open_parenthesis >> out.x >> comma1 >> out.y >> comma2 >> out.z >> close_parenthesis)
 		{
 			return open_parenthesis == '(' && comma1 == ',' && comma2 == ',' && close_parenthesis == ')' && iss.eof();
 		}
@@ -130,4 +171,3 @@ namespace adria
 		return tokens;
 	}
 }
-

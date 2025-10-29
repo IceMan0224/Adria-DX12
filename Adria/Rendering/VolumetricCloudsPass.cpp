@@ -3,7 +3,7 @@
 #include "Components.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h" 
-#include "PostProcessor.h" 
+#include "Postprocessor.h" 
 #include "TextureManager.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Graphics/GfxTexture.h"

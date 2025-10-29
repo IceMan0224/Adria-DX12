@@ -1,4 +1,3 @@
-#include "d3dx12.h"
 #include "TextureManager.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxDevice.h"

@@ -1,6 +1,6 @@
 #include "Packing.h"
 #include "MathCommon.h"
-#include <DirectXPackedVector.h>
+#include "DirectXPackedVector.h"
 
 namespace adria
 {

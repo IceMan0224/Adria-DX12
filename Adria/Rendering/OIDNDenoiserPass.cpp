@@ -186,11 +186,13 @@ namespace adria
 			denoised = true;
 		}
 	}
+    Bool OIDNDenoiserPass::IsSupported() const { return supported; }
+
 #else
 	OIDNDenoiserPass::OIDNDenoiserPass(GfxDevice* gfx) {}
 	OIDNDenoiserPass::~OIDNDenoiserPass() {}
 	void OIDNDenoiserPass::AddPass(RenderGraph& rg) {}
+    Bool OIDNDenoiserPass::IsSupported() const { return false; }
 	void OIDNDenoiserPass::Reset() {}
-	void OIDNDenoiserPass::CreateBuffers(GfxTexture const& color_texture, GfxTexture const& albedo_texture, GfxTexture const& normal_texture) {}
 #endif
 }

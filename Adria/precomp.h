@@ -31,6 +31,7 @@
 #include <format>
 #include <concepts>
 
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <dxgidebug.h>
@@ -43,6 +44,12 @@
 #include "d3dx12.h"
 #include "DirectMLX.h"
 #include "D3D12MemAlloc.h"
+#endif
+
+#if defined(ADRIA_PLATFORM_MACOS)
+// macOS-specific headers if needed
+#endif
+
 #include "nfd.h"
 #include "entt/entt.hpp"
 #include "cereal/archives/binary.hpp"

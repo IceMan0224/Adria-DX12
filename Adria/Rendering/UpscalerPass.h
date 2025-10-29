@@ -24,8 +24,9 @@ namespace adria
 	{
 	public:
 		DummyUpscalerPass() {}
-		virtual void AddPass(RenderGraph&, PostProcessor*) {}
-		virtual void OnResize(Uint32, Uint32) {}
-		virtual Bool IsEnabled(PostProcessor const*) const { return false; }
+		virtual void AddPass(RenderGraph&, PostProcessor*) override {}
+		virtual void OnResize(Uint32, Uint32) override {}
+        virtual Bool IsEnabled(PostProcessor const*) const override { return false; }
+        virtual Bool IsSupported() const override { return false; }
 	};
 }

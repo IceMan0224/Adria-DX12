@@ -1,9 +1,10 @@
 #pragma once
-#include "Windows.h"
 #include "Utilities/Delegate.h"
 
 namespace adria
 {
+	using WindowHandle = void*;
+
 	struct WindowEventInfo
 	{
 		void*  handle	= nullptr;
@@ -45,7 +46,7 @@ namespace adria
 		void BroadcastEvent(WindowEventInfo const&);
 
 	private:
-		HWND hwnd = nullptr;
+		WindowHandle window_handle = nullptr;
 		WindowEvent window_event;
 	};
 }

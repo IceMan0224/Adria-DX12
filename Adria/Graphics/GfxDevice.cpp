@@ -3,6 +3,8 @@
 
 #if defined(ADRIA_PLATFORM_WINDOWS)
 #include "D3D12/D3D12Device.h"
+#elif defined(ADRIA_PLATFORM_MACOS)
+#include "Metal/MetalDevice.h"
 #endif
 
 namespace adria
@@ -32,7 +34,7 @@ namespace adria
 #elif defined(ADRIA_PLATFORM_MACOS)
 		if (backend == GfxBackend::Metal)
 		{
-			
+			return std::make_unique<MetalDevice>(window);
 		}
 #elif defined(ADRIA_PLATFORM_LINUX)
 		if (backend == GfxBackend::Vulkan)

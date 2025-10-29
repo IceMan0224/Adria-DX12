@@ -1,5 +1,6 @@
-#define NV_WINDOWS
 #include "DLSS3Pass.h"
+#if defined(ADRIA_DLSS3_SUPPORTED)
+#define NV_WINDOWS
 #include "nvsdk_ngx_helpers.h"
 #include "BlackboardData.h"
 #include "PostProcessor.h"
@@ -253,8 +254,8 @@ namespace adria
 			gfx->WaitForGPU();
 			NVSDK_NGX_D3D12_ReleaseFeature(dlss_feature);
 			dlss_feature = nullptr;
-		}
-	}
+			}
 
 }
+#endif
 
