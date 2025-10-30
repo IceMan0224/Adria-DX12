@@ -1,0 +1,80 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Adria (Debug) - Windows",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Debug/Adria.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "CMake: Build (Debug)"
+        },
+        {
+            "name": "Launch Adria (Release) - Windows",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Release/Adria.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "CMake: Build (Release)"
+        },
+        {
+            "name": "Launch Adria (Profile) - Windows",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Profile/Adria.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "CMake: Build (Profile)"
+        },
+        {
+            "name": "Launch Adria (RelWithDebInfo) - Windows",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/RelWithDebInfo/Adria.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "CMake: Build (RelWithDebInfo)"
+        },
+        {
+            "name": "Launch Adria (Debug) - macOS",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Adria.app/Contents/MacOS/Adria",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "CMake: Build (Debug)"
+        },
+        {
+            "name": "Launch Adria (Release) - macOS",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Adria.app/Contents/MacOS/Adria",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "CMake: Build (Release)"
+        },
+        {
+            "name": "Launch Adria (RelWithDebInfo) - macOS",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Adria.app/Contents/MacOS/Adria",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "CMake: Build (RelWithDebInfo)"
+        }
+    ]
+}

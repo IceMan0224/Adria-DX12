@@ -409,7 +409,6 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 /build
-.vscode/settings.json
 
 # macOS
 .DS_Store
