@@ -1,7 +1,7 @@
 #include "RayTracedReflectionsPass.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
-#include "PostProcessor.h"
+#include "Postprocessor.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxShader.h"
 #include "Graphics/GfxShaderKey.h"

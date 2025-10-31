@@ -3,7 +3,7 @@
 #include "FidelityFX/gpu/fsr3/ffx_fsr3_resources.h"
 #include "FidelityFXUtils.h"
 #include "BlackboardData.h"
-#include "PostProcessor.h"
+#include "Postprocessor.h"
 #include "Graphics/GfxDevice.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"

@@ -2,7 +2,7 @@
 #include "BlackboardData.h"
 #include "ShaderManager.h" 
 #include "TextureManager.h"
-#include "PostProcessor.h"
+#include "Postprocessor.h"
 #include "Core/Paths.h"
 #include "Core/ConsoleManager.h"
 #include "Graphics/GfxDevice.h"

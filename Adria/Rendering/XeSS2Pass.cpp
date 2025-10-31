@@ -3,7 +3,7 @@
 #if defined(ADRIA_PLATFORM_WINDOWS)
 #include "XeSS/xess_d3d12.h"
 #include "BlackboardData.h"
-#include "PostProcessor.h"
+#include "Postprocessor.h"
 #include "Graphics/GfxDevice.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"

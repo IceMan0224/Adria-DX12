@@ -2,7 +2,7 @@
 #include "ShaderManager.h"
 #include "Components.h"
 #include "BlackboardData.h"
-#include "PostProcessor.h"
+#include "Postprocessor.h"
 #include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"

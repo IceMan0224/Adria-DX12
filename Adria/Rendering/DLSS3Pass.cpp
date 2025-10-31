@@ -3,7 +3,7 @@
 #define NV_WINDOWS
 #include "nvsdk_ngx_helpers.h"
 #include "BlackboardData.h"
-#include "PostProcessor.h"
+#include "Postprocessor.h"
 #include "Graphics/GfxDevice.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
