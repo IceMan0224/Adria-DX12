@@ -1,4 +1,4 @@
-#if defined(_WIN32)
+#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "dxcapi.h"
 #include "d3d12shader.h"
 #include "GfxShaderCompiler.h"

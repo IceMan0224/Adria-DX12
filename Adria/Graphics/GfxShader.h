@@ -53,8 +53,6 @@ namespace adria
 	};
 
 	using GfxShaderBlob = std::vector<Uint8>;
-	using GfxDebugBlob = std::vector<Uint8>;
-
 	class GfxShader
 	{
 	public:
