@@ -453,12 +453,12 @@ namespace adria
 						rg.ImportTexture(RG_NAME_IDX(ShadowMap, light_matrix_index + i), light_shadow_maps[light_id][i].get());
 						std::string name = "Cascade Shadow Pass" + std::to_string(i);
 						rg.AddPass<void>(name.c_str(),
-							[=](RenderGraphBuilder& builder)
+							[=, this](RenderGraphBuilder& builder)
 							{
 								builder.WriteDepthStencil(RG_NAME_IDX(ShadowMap, light_matrix_index + i), RGLoadStoreAccessOp::Clear_Preserve);
 								builder.SetViewport(SHADOW_CASCADE_MAP_SIZE, SHADOW_CASCADE_MAP_SIZE);
 							},
-							[=](RenderGraphContext& context)
+							[=, this](RenderGraphContext& context)
 							{
 								GfxCommandList* cmd_list = context.GetCommandList();
 								cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
@@ -473,12 +473,12 @@ namespace adria
 					rg.ImportTexture(RG_NAME_IDX(ShadowMap, light.shadow_matrix_index), light_shadow_maps[light_id][0].get());
 					std::string name = "Directional Shadow Pass";
 					rg.AddPass<void>(name.c_str(),
-						[=](RenderGraphBuilder& builder)
+						[=, this](RenderGraphBuilder& builder)
 						{
 							builder.WriteDepthStencil(RG_NAME_IDX(ShadowMap, light.shadow_matrix_index), RGLoadStoreAccessOp::Clear_Preserve);
 							builder.SetViewport(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 						},
-						[=](RenderGraphContext& context)
+						[=, this](RenderGraphContext& context)
 						{
 							GfxCommandList* cmd_list = context.GetCommandList();
 							cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
@@ -495,12 +495,12 @@ namespace adria
 					rg.ImportTexture(RG_NAME_IDX(ShadowMap, light.shadow_matrix_index + i), light_shadow_maps[light_id][i].get());
 					std::string name = "Point Shadow Pass" + std::to_string(i);
 					rg.AddPass<void>(name.c_str(),
-						[=](RenderGraphBuilder& builder)
+						[=, this](RenderGraphBuilder& builder)
 						{
 							builder.WriteDepthStencil(RG_NAME_IDX(ShadowMap, light.shadow_matrix_index + i), RGLoadStoreAccessOp::Clear_Preserve);
 							builder.SetViewport(SHADOW_CUBE_SIZE, SHADOW_CUBE_SIZE);
 						},
-						[=](RenderGraphContext& context)
+						[=, this](RenderGraphContext& context)
 						{
 							GfxCommandList* cmd_list = context.GetCommandList();
 							cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
@@ -515,12 +515,12 @@ namespace adria
 				rg.ImportTexture(RG_NAME_IDX(ShadowMap, light_matrix_index), light_shadow_maps[light_id][0].get());
 				std::string name = "Spot Shadow Pass";
 				rg.AddPass<void>(name.c_str(),
-					[=](RenderGraphBuilder& builder)
+					[=, this](RenderGraphBuilder& builder)
 					{
 						builder.WriteDepthStencil(RG_NAME_IDX(ShadowMap, light_matrix_index), RGLoadStoreAccessOp::Clear_Preserve);
 						builder.SetViewport(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 					},
-					[=](RenderGraphContext& context)
+					[=, this](RenderGraphContext& context)
 					{
 						GfxCommandList* cmd_list = context.GetCommandList();
 						cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

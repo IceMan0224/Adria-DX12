@@ -53,14 +53,14 @@ namespace adria
 		};
 
 		rendergraph.AddPass<CloudsCombinePassData>("Volumetric Clouds Combine Pass",
-			[=](CloudsCombinePassData& data, RenderGraphBuilder& builder)
+			[=, this](CloudsCombinePassData& data, RenderGraphBuilder& builder)
 			{
 				builder.WriteRenderTarget(render_target, RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.WriteDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
 				data.clouds_src = builder.ReadTexture(RG_NAME(CloudsOutput), ReadAccess_PixelShader);
 				builder.SetViewport(width, height);
 			},
-			[=](CloudsCombinePassData const& data, RenderGraphContext& ctx)
+			[=, this](CloudsCombinePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -269,7 +269,7 @@ namespace adria
 					{
 						data.shape = builder.WriteTexture(RG_NAME(CloudShape), i, 1);
 					},
-					[=](CloudShapePassData const& data, RenderGraphContext& ctx)
+					[=, this](CloudShapePassData const& data, RenderGraphContext& ctx)
 					{
 						GfxDevice* gfx = ctx.GetDevice();
 						GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -302,7 +302,7 @@ namespace adria
 					{
 						data.detail = builder.WriteTexture(RG_NAME(CloudDetail), i, 1);
 					},
-					[=](CloudShapePassData const& data, RenderGraphContext& ctx)
+					[=, this](CloudShapePassData const& data, RenderGraphContext& ctx)
 					{
 						GfxDevice* gfx = ctx.GetDevice();
 						GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -333,7 +333,7 @@ namespace adria
 				{
 					data.type = builder.WriteTexture(RG_NAME(CloudType));
 				},
-				[=](CloudTypePassData const& data, RenderGraphContext& ctx)
+				[=, this](CloudTypePassData const& data, RenderGraphContext& ctx)
 				{
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -374,7 +374,7 @@ namespace adria
 			RGTextureReadWriteId output;
 		};
 		rg.AddPass<VolumetricCloudsPassData>("Volumetric Clouds Compute Pass",
-			[=](VolumetricCloudsPassData& data, RenderGraphBuilder& builder)
+			[=, this](VolumetricCloudsPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc clouds_output_desc{};
 				clouds_output_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
@@ -391,7 +391,7 @@ namespace adria
 				data.detail = builder.ReadTexture(RG_NAME(CloudDetail), ReadAccess_NonPixelShader);
 				data.prev_output = builder.ReadTexture(RG_NAME(PreviousCloudsOutput), ReadAccess_NonPixelShader);
 			},
-			[=](VolumetricCloudsPassData const& data, RenderGraphContext& ctx)
+			[=, this](VolumetricCloudsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

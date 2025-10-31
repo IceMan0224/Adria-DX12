@@ -56,7 +56,7 @@ namespace adria
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
 		rg.AddPass<FFXCASPassData>(name_version,
-			[=](FFXCASPassData& data, RenderGraphBuilder& builder)
+			[=, this](FFXCASPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc ffx_dof_desc = builder.GetTextureDesc(postprocessor->GetFinalResource());
 				builder.DeclareTexture(RG_NAME(FFXCASOutput), ffx_dof_desc);
@@ -64,7 +64,7 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(FFXCASOutput));
 				data.input = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
 			},
-			[=](FFXCASPassData const& data, RenderGraphContext& ctx)
+			[=, this](FFXCASPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 

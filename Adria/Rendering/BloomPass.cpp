@@ -101,7 +101,7 @@ namespace adria
 
 		std::string pass_name = std::format("Bloom Downsample Pass {}", pass_idx);
 		rg.AddPass<BloomDownsamplePassData>(pass_name.c_str(),
-			[=](BloomDownsamplePassData& data, RenderGraphBuilder& builder)
+			[=, this](BloomDownsamplePassData& data, RenderGraphBuilder& builder)
 			{
 				data.input = builder.ReadTexture(input, ReadAccess_NonPixelShader);
 
@@ -112,7 +112,7 @@ namespace adria
 				builder.DeclareTexture(output, desc);
 				data.output = builder.WriteTexture(output);
 			},
-			[=](BloomDownsamplePassData const& data, RenderGraphContext& ctx)
+			[=, this](BloomDownsamplePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -168,7 +168,7 @@ namespace adria
 
 		std::string pass_name = std::format("Bloom Upsample Pass {}", pass_idx);
 		rg.AddPass<BloomUpsamplePassData>(pass_name.c_str(),
-			[=](BloomUpsamplePassData& data, RenderGraphBuilder& builder)
+			[=, this](BloomUpsamplePassData& data, RenderGraphBuilder& builder)
 			{
 				data.input_high = builder.ReadTexture(input_high);
 				data.input_low  = builder.ReadTexture(input_low);
@@ -180,7 +180,7 @@ namespace adria
 				builder.DeclareTexture(output, desc);
 				data.output = builder.WriteTexture(output);
 			},
-			[=](BloomUpsamplePassData const& data, RenderGraphContext& ctx)
+			[=, this](BloomUpsamplePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

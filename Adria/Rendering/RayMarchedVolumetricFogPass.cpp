@@ -42,7 +42,7 @@ namespace adria
 		FrameBlackboardData const& frame_data = rendergraph.GetBlackboard().Get<FrameBlackboardData>();
 		Int const resolution = RayMarchedVolumetricFogRes.Get();
 		rendergraph.AddPass<LightingPassData>("Ray Marched Volumetric Fog Pass",
-			[=](LightingPassData& data, RenderGraphBuilder& builder)
+			[=, this](LightingPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc volumetric_output_desc{};
 				volumetric_output_desc.width = width >> resolution;
@@ -55,7 +55,7 @@ namespace adria
 
 				for (auto& shadow_texture : shadow_textures) std::ignore = builder.ReadTexture(shadow_texture);
 			},
-			[=](LightingPassData const& data, RenderGraphContext& context)
+			[=, this](LightingPassData const& data, RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();

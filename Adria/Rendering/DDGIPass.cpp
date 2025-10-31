@@ -126,12 +126,12 @@ namespace adria
 			};
 
 			rg.AddPass<DDGIClearHistoryPassData>("DDGI Clear History Pass",
-				[=](DDGIClearHistoryPassData& data, RenderGraphBuilder& builder)
+				[=, this](DDGIClearHistoryPassData& data, RenderGraphBuilder& builder)
 				{
 					data.irradiance_history = builder.WriteTexture(RG_NAME(DDGIIrradianceHistory));
 					data.distance_history = builder.WriteTexture(RG_NAME(DDGIDistanceHistory));
 				},
-				[=](DDGIClearHistoryPassData const& data, RenderGraphContext& ctx) mutable
+				[=, this](DDGIClearHistoryPassData const& data, RenderGraphContext& ctx) mutable
 				{
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 					static constexpr Float black[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -148,7 +148,7 @@ namespace adria
 		};
 
 		rg.AddPass<DDGIRayTracePassData>("DDGI Ray Trace Pass",
-			[=](DDGIRayTracePassData& data, RenderGraphBuilder& builder)
+			[=, this](DDGIRayTracePassData& data, RenderGraphBuilder& builder)
 			{
 				RGBufferDesc ray_buffer_desc{};
 				ray_buffer_desc.format = GfxFormat::R16G16B16A16_FLOAT;
@@ -160,7 +160,7 @@ namespace adria
 				data.irradiance_history = builder.ReadTexture(RG_NAME(DDGIIrradianceHistory));
 				data.distance_history = builder.ReadTexture(RG_NAME(DDGIDistanceHistory));
 			},
-			[=](DDGIRayTracePassData const& data, RenderGraphContext& ctx) mutable
+			[=, this](DDGIRayTracePassData const& data, RenderGraphContext& ctx) mutable
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -207,7 +207,7 @@ namespace adria
 		};
 
 		rg.AddPass<DDGIUpdateIrradiancePassData>("DDGI Update Irradiance Pass",
-			[=](DDGIUpdateIrradiancePassData& data, RenderGraphBuilder& builder)
+			[=, this](DDGIUpdateIrradiancePassData& data, RenderGraphBuilder& builder)
 			{
 				Vector2u irradiance_dimensions = ProbeTextureDimensions(ddgi_volume.num_probes, PROBE_IRRADIANCE_TEXELS);
 				RGTextureDesc irradiance_desc{};
@@ -220,7 +220,7 @@ namespace adria
 				data.ray_buffer		= builder.ReadBuffer(RG_NAME(DDGIRayBuffer));
 				data.irradiance_history = builder.ReadTexture(RG_NAME(DDGIIrradianceHistory));
 			},
-			[=](DDGIUpdateIrradiancePassData const& data, RenderGraphContext& ctx) mutable
+			[=, this](DDGIUpdateIrradiancePassData const& data, RenderGraphContext& ctx) mutable
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -264,7 +264,7 @@ namespace adria
 		};
 
 		rg.AddPass<DDGIUpdateDistancePassData>("DDGI Update Distance Pass",
-			[=](DDGIUpdateDistancePassData& data, RenderGraphBuilder& builder)
+			[=, this](DDGIUpdateDistancePassData& data, RenderGraphBuilder& builder)
 			{
 				Vector2u distance_dimensions = ProbeTextureDimensions(ddgi_volume.num_probes, PROBE_DISTANCE_TEXELS);
 				RGTextureDesc distance_desc{};
@@ -277,7 +277,7 @@ namespace adria
 				data.ray_buffer = builder.ReadBuffer(RG_NAME(DDGIRayBuffer));
 				data.distance_history = builder.ReadTexture(RG_NAME(DDGIDistanceHistory));
 			},
-			[=](DDGIUpdateDistancePassData const& data, RenderGraphContext& ctx) mutable
+			[=, this](DDGIUpdateDistancePassData const& data, RenderGraphContext& ctx) mutable
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -327,13 +327,13 @@ namespace adria
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
 		rg.AddPass<void>("DDGI Visualize Pass",
-			[=](RenderGraphBuilder& builder)
+			[=, this](RenderGraphBuilder& builder)
 			{
 				builder.WriteRenderTarget(RG_NAME(HDR_RenderTarget), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.WriteDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RenderGraphContext& ctx) mutable
+			[=, this](RenderGraphContext& ctx) mutable
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 

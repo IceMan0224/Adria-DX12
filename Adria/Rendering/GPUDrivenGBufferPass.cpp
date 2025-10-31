@@ -233,7 +233,7 @@ namespace adria
 		};
 
 		rg.AddPass<ClearCountersPassData>("Clear Counters Pass",
-			[=](ClearCountersPassData& data, RenderGraphBuilder& builder)
+			[=, this](ClearCountersPassData& data, RenderGraphBuilder& builder)
 			{
 				RGBufferDesc counter_desc{};
 				counter_desc.size = 3 * sizeof(Uint32);
@@ -250,7 +250,7 @@ namespace adria
 				builder.DeclareBuffer(RG_NAME(OccludedInstancesCounter), counter_desc);
 				data.occluded_instances_counter = builder.WriteBuffer(RG_NAME(OccludedInstancesCounter));
 			},
-			[=](ClearCountersPassData const& data, RenderGraphContext& ctx)
+			[=, this](ClearCountersPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -293,7 +293,7 @@ namespace adria
 		};
 
 		rg.AddPass<CullInstancesPassData>("1st Phase Cull Instances Pass",
-			[=](CullInstancesPassData& data, RenderGraphBuilder& builder)
+			[=, this](CullInstancesPassData& data, RenderGraphBuilder& builder)
 			{
 				RGBufferDesc candidate_meshlets_buffer_desc{};
 				candidate_meshlets_buffer_desc.resource_usage = GfxResourceUsage::Default;
@@ -315,7 +315,7 @@ namespace adria
 				data.candidate_meshlets = builder.WriteBuffer(RG_NAME(CandidateMeshlets));
 				data.candidate_meshlets_counter = builder.WriteBuffer(RG_NAME(CandidateMeshletsCounter));
 			},
-			[=](CullInstancesPassData const& data, RenderGraphContext& ctx)
+			[=, this](CullInstancesPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -363,7 +363,7 @@ namespace adria
 		};
 
 		rg.AddPass<BuildMeshletCullArgsPassData>("1st Phase Build Meshlet Cull Args Pass",
-			[=](BuildMeshletCullArgsPassData& data, RenderGraphBuilder& builder)
+			[=, this](BuildMeshletCullArgsPassData& data, RenderGraphBuilder& builder)
 			{
 				RGBufferDesc meshlet_cull_args_desc{};
 				meshlet_cull_args_desc.resource_usage = GfxResourceUsage::Default;
@@ -375,7 +375,7 @@ namespace adria
 				data.meshlet_cull_args = builder.WriteBuffer(RG_NAME(MeshletCullArgs));
 				data.candidate_meshlets_counter = builder.ReadBuffer(RG_NAME(CandidateMeshletsCounter));
 			},
-			[=](BuildMeshletCullArgsPassData const& data, RenderGraphContext& ctx)
+			[=, this](BuildMeshletCullArgsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -412,7 +412,7 @@ namespace adria
 		};
 
 		rg.AddPass<CullMeshletsPassData>("1st Phase Cull Meshlets Pass",
-			[=](CullMeshletsPassData& data, RenderGraphBuilder& builder)
+			[=, this](CullMeshletsPassData& data, RenderGraphBuilder& builder)
 			{
 				RGBufferDesc visible_meshlets_buffer_desc{};
 				visible_meshlets_buffer_desc.resource_usage = GfxResourceUsage::Default;
@@ -428,7 +428,7 @@ namespace adria
 				data.visible_meshlets = builder.WriteBuffer(RG_NAME(VisibleMeshlets));
 				data.visible_meshlets_counter = builder.WriteBuffer(RG_NAME(VisibleMeshletsCounter));
 			},
-			[=](CullMeshletsPassData const& data, RenderGraphContext& ctx)
+			[=, this](CullMeshletsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -473,7 +473,7 @@ namespace adria
 		};
 
 		rg.AddPass<BuildMeshletDrawArgsPassData>("1st Phase Build Meshlet Draw Args Pass",
-			[=](BuildMeshletDrawArgsPassData& data, RenderGraphBuilder& builder)
+			[=, this](BuildMeshletDrawArgsPassData& data, RenderGraphBuilder& builder)
 			{
 				RGBufferDesc meshlet_cull_draw_desc{};
 				meshlet_cull_draw_desc.resource_usage = GfxResourceUsage::Default;
@@ -485,7 +485,7 @@ namespace adria
 				data.meshlet_draw_args = builder.WriteBuffer(RG_NAME(MeshletDrawArgs));
 				data.visible_meshlets_counter = builder.ReadBuffer(RG_NAME(VisibleMeshletsCounter));
 			},
-			[=](BuildMeshletDrawArgsPassData const& data, RenderGraphContext& ctx)
+			[=, this](BuildMeshletDrawArgsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -515,7 +515,7 @@ namespace adria
 			RGBufferIndirectArgsId draw_args;
 		};
 		rg.AddPass<DrawMeshletsPassData>("1st Phase Draw Meshlets",
-			[=](DrawMeshletsPassData& data, RenderGraphBuilder& builder)
+			[=, this](DrawMeshletsPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc gbuffer_desc{};
 				gbuffer_desc.width = width;
@@ -545,7 +545,7 @@ namespace adria
 				data.visible_meshlets = builder.ReadBuffer(RG_NAME(VisibleMeshlets));
 				data.draw_args = builder.ReadIndirectArgsBuffer(RG_NAME(MeshletDrawArgs));
 			},
-			[=](DrawMeshletsPassData const& data, RenderGraphContext& ctx)
+			[=, this](DrawMeshletsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -599,7 +599,7 @@ namespace adria
 		};
 
 		rg.AddPass<BuildInstanceCullArgsPassData>("2nd Phase Build Instance Cull Args Pass",
-			[=](BuildInstanceCullArgsPassData& data, RenderGraphBuilder& builder)
+			[=, this](BuildInstanceCullArgsPassData& data, RenderGraphBuilder& builder)
 			{
 				RGBufferDesc instance_cull_args_desc{};
 				instance_cull_args_desc.resource_usage = GfxResourceUsage::Default;
@@ -611,7 +611,7 @@ namespace adria
 				data.instance_cull_args = builder.WriteBuffer(RG_NAME(InstanceCullArgs));
 				data.occluded_instances_counter = builder.ReadBuffer(RG_NAME(OccludedInstancesCounter));
 			},
-			[=](BuildInstanceCullArgsPassData const& data, RenderGraphContext& ctx)
+			[=, this](BuildInstanceCullArgsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -646,7 +646,7 @@ namespace adria
 		};
 
 		rg.AddPass<CullInstancesPassData>("2nd Phase Cull Instances Pass",
-			[=](CullInstancesPassData& data, RenderGraphBuilder& builder)
+			[=, this](CullInstancesPassData& data, RenderGraphBuilder& builder)
 			{
 				data.hzb = builder.ReadTexture(RG_NAME(HZB));
 				data.cull_args = builder.ReadIndirectArgsBuffer(RG_NAME(InstanceCullArgs));
@@ -655,7 +655,7 @@ namespace adria
 				data.candidate_meshlets = builder.WriteBuffer(RG_NAME(CandidateMeshlets));
 				data.candidate_meshlets_counter = builder.WriteBuffer(RG_NAME(CandidateMeshletsCounter));
 			},
-			[=](CullInstancesPassData const& data, RenderGraphContext& ctx)
+			[=, this](CullInstancesPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -703,12 +703,12 @@ namespace adria
 		};
 
 		rg.AddPass<BuildMeshletCullArgsPassData>("2nd Phase Build Meshlet Cull Args Pass",
-			[=](BuildMeshletCullArgsPassData& data, RenderGraphBuilder& builder)
+			[=, this](BuildMeshletCullArgsPassData& data, RenderGraphBuilder& builder)
 			{
 				data.meshlet_cull_args = builder.WriteBuffer(RG_NAME(MeshletCullArgs));
 				data.candidate_meshlets_counter = builder.ReadBuffer(RG_NAME(CandidateMeshletsCounter));
 			},
-			[=](BuildMeshletCullArgsPassData const& data, RenderGraphContext& ctx)
+			[=, this](BuildMeshletCullArgsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -745,7 +745,7 @@ namespace adria
 		};
 
 		rg.AddPass<CullMeshletsPassData>("2nd Phase Cull Meshlets Pass",
-			[=](CullMeshletsPassData& data, RenderGraphBuilder& builder)
+			[=, this](CullMeshletsPassData& data, RenderGraphBuilder& builder)
 			{
 				data.hzb = builder.ReadTexture(RG_NAME(HZB));
 				data.indirect_args = builder.ReadIndirectArgsBuffer(RG_NAME(MeshletCullArgs));
@@ -754,7 +754,7 @@ namespace adria
 				data.visible_meshlets = builder.WriteBuffer(RG_NAME(VisibleMeshlets));
 				data.visible_meshlets_counter = builder.WriteBuffer(RG_NAME(VisibleMeshletsCounter));
 			},
-			[=](CullMeshletsPassData const& data, RenderGraphContext& ctx)
+			[=, this](CullMeshletsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -799,12 +799,12 @@ namespace adria
 		};
 
 		rg.AddPass<BuildMeshletDrawArgsPassData>("2nd Phase Build Meshlet Draw Args Pass",
-			[=](BuildMeshletDrawArgsPassData& data, RenderGraphBuilder& builder)
+			[=, this](BuildMeshletDrawArgsPassData& data, RenderGraphBuilder& builder)
 			{
 				data.meshlet_draw_args = builder.WriteBuffer(RG_NAME(MeshletDrawArgs));
 				data.visible_meshlets_counter = builder.ReadBuffer(RG_NAME(VisibleMeshletsCounter));
 			},
-			[=](BuildMeshletDrawArgsPassData const& data, RenderGraphContext& ctx)
+			[=, this](BuildMeshletDrawArgsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -835,7 +835,7 @@ namespace adria
 			RGBufferIndirectArgsId draw_args;
 		};
 		rg.AddPass<DrawMeshletsPassData>("2nd Phase Draw Meshlets",
-			[=](DrawMeshletsPassData& data, RenderGraphBuilder& builder)
+			[=, this](DrawMeshletsPassData& data, RenderGraphBuilder& builder)
 			{
 				builder.WriteRenderTarget(RG_NAME(GBufferNormal), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.WriteRenderTarget(RG_NAME(GBufferAlbedo), RGLoadStoreAccessOp::Preserve_Preserve);
@@ -847,7 +847,7 @@ namespace adria
 				data.visible_meshlets = builder.ReadBuffer(RG_NAME(VisibleMeshlets));
 				data.draw_args = builder.ReadIndirectArgsBuffer(RG_NAME(MeshletDrawArgs));
 			},
-			[=](DrawMeshletsPassData const& data, RenderGraphContext& ctx)
+			[=, this](DrawMeshletsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -902,12 +902,12 @@ namespace adria
 		std::string hzb_init_name = "HZB Init ";
 		hzb_init_name += (second_phase ? "2nd phase" : "1st phase");
 		rg.AddPass<InitializeHZBPassData>(hzb_init_name.c_str(),
-			[=](InitializeHZBPassData& data, RenderGraphBuilder& builder)
+			[=, this](InitializeHZBPassData& data, RenderGraphBuilder& builder)
 			{
 				data.hzb = builder.WriteTexture(RG_NAME(HZB));
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil));
 			},
-			[=](InitializeHZBPassData const& data, RenderGraphContext& ctx)
+			[=, this](InitializeHZBPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -946,7 +946,7 @@ namespace adria
 		std::string hzb_mips_name = "HZB Mips ";
 		hzb_mips_name += (second_phase ? "2nd phase" : "1st phase");
 		rg.AddPass<HZBMipsPassData>(hzb_mips_name.c_str(),
-			[=](HZBMipsPassData& data, RenderGraphBuilder& builder)
+			[=, this](HZBMipsPassData& data, RenderGraphBuilder& builder)
 			{
 				if (!second_phase)
 				{
@@ -964,7 +964,7 @@ namespace adria
 				}
 				data.spd_counter = builder.WriteBuffer(RG_NAME(SPDCounter));
 			},
-			[=](HZBMipsPassData const& data, RenderGraphContext& ctx)
+			[=, this](HZBMipsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -1042,7 +1042,7 @@ namespace adria
 		rg.ImportBuffer(RG_NAME(GPUDrivenDebugBuffer), debug_buffer.get());
 
 		rg.AddPass<GPUDrivenDebugPassData>("GPU Driven Debug Pass",
-			[=](GPUDrivenDebugPassData& data, RenderGraphBuilder& builder)
+			[=, this](GPUDrivenDebugPassData& data, RenderGraphBuilder& builder)
 			{
 				data.debug_buffer = builder.WriteCopyDstBuffer(RG_NAME(GPUDrivenDebugBuffer));
 				data.candidate_meshlets_counter = builder.ReadCopySrcBuffer(RG_NAME(CandidateMeshletsCounter));

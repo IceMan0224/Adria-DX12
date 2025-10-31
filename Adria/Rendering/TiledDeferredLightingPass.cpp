@@ -39,7 +39,7 @@ namespace adria
 		};
 
 		rendergraph.AddPass<TiledDeferredLightingPassData>("Tiled Deferred Lighting Pass",
-			[=](TiledDeferredLightingPassData& data, RenderGraphBuilder& builder)
+			[=, this](TiledDeferredLightingPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc hdr_desc{};
 				hdr_desc.width = width;
@@ -63,7 +63,7 @@ namespace adria
 
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](TiledDeferredLightingPassData const& data, RenderGraphContext& context)
+			[=, this](TiledDeferredLightingPassData const& data, RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();

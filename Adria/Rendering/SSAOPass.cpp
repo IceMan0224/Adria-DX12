@@ -54,7 +54,7 @@ namespace adria
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		rg.AddPass<SSAOPassData>("SSAO Pass",
-			[=](SSAOPassData& data, RenderGraphBuilder& builder)
+			[=, this](SSAOPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc ssao_desc{};
 				ssao_desc.format = GfxFormat::R8_UNORM;

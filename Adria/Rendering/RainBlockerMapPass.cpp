@@ -55,12 +55,12 @@ namespace adria
 
 		rendergraph.ImportTexture(RG_NAME(RainBlocker), blocker_map.get());
 		rendergraph.AddPass<void>("Rain Blocker Pass",
-			[=](RenderGraphBuilder& builder)
+			[=, this](RenderGraphBuilder& builder)
 			{
 				builder.WriteDepthStencil(RG_NAME(RainBlocker), RGLoadStoreAccessOp::Clear_Preserve);
 				builder.SetViewport(BLOCKER_DIM, BLOCKER_DIM);
 			},
-			[=](RenderGraphContext& context)
+			[=, this](RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();

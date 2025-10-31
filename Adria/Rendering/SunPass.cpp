@@ -41,7 +41,7 @@ namespace adria
 		RGResourceName last_resource = postprocessor->GetFinalResource();
 
 		rg.AddPass<void>("Sun Pass",
-			[=](RenderGraphBuilder& builder)
+			[=, this](RenderGraphBuilder& builder)
 			{
 				RGTextureDesc sun_output_desc{};
 				sun_output_desc.format = GfxFormat::R16G16B16A16_FLOAT;
@@ -54,7 +54,7 @@ namespace adria
 				builder.WriteRenderTarget(RG_NAME(SunOutput), RGLoadStoreAccessOp::Clear_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=, &reg](RenderGraphContext& context)
+			[=, this, &reg](RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();

@@ -138,7 +138,7 @@ namespace adria
 		};
 
 		rg.AddPass<ReprojectionPassData>("SVGF Reprojection Pass",
-			[=](ReprojectionPassData& data, RenderGraphBuilder& builder)
+			[=, this](ReprojectionPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc desc{};
 				desc.width = width;
@@ -171,7 +171,7 @@ namespace adria
 				data.output_normal_depth = builder.WriteTexture(RG_NAME(SVGF_Output_NormalDepth));
 				data.output_history_length = builder.WriteTexture(RG_NAME(SVGF_Output_HistoryLength));
 			},
-			[=](ReprojectionPassData const& data, RenderGraphContext& ctx)
+			[=, this](ReprojectionPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -236,7 +236,7 @@ namespace adria
 		};
 
 		rg.AddPass<FilterMomentsData>("SVGF Filter Moments Pass",
-			[=](FilterMomentsData& data, RenderGraphBuilder& builder)
+			[=, this](FilterMomentsData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc desc{};
 				desc.width = width;
@@ -255,7 +255,7 @@ namespace adria
 				data.output_direct = builder.WriteTexture(RG_NAME(SVGF_Filtered_Direct));
 				data.output_indirect = builder.WriteTexture(RG_NAME(SVGF_Filtered_Indirect));
 			},
-			[=](FilterMomentsData const& data, RenderGraphContext& ctx)
+			[=, this](FilterMomentsData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -316,7 +316,7 @@ namespace adria
 					data.albedo_i = builder.ReadTexture(RG_NAME(PT_IndirectAlbedo));
 					data.output = builder.WriteTexture(RG_NAME(PT_Denoised));
 				},
-				[=](PassData const& data, RenderGraphContext& ctx) 
+				[=, this](PassData const& data, RenderGraphContext& ctx) 
 				{
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -357,7 +357,7 @@ namespace adria
 
 			std::string pass_name = "SVGF Atrous Filtering Pass " + std::to_string(i);
 			rg.AddPass<AtrousPassData>(pass_name.c_str(),
-				[=](AtrousPassData& data, RenderGraphBuilder& builder)
+				[=, this](AtrousPassData& data, RenderGraphBuilder& builder)
 				{
 					RGTextureDesc desc{};
 					desc.width = width;
@@ -393,7 +393,7 @@ namespace adria
 						data.feedback_indirect_out = builder.WriteTexture(RG_NAME(SVGF_Feedback_Indirect));
 					}
 				},
-				[=](AtrousPassData const& data, RenderGraphContext& ctx)
+				[=, this](AtrousPassData const& data, RenderGraphContext& ctx)
 				{
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();

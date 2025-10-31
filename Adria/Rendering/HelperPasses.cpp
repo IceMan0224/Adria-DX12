@@ -26,13 +26,13 @@ namespace adria
 		};
 
 		rendergraph.AddPass<CopyToTexturePassData>("Copy To Texture Pass",
-			[=](CopyToTexturePassData& data, RenderGraphBuilder& builder)
+			[=, this](CopyToTexturePassData& data, RenderGraphBuilder& builder)
 			{
 				builder.WriteRenderTarget(texture_dst, RGLoadStoreAccessOp::Preserve_Preserve);
 				data.texture_src = builder.ReadTexture(texture_src, ReadAccess_PixelShader);
 				builder.SetViewport(width, height);
 			},
-			[=](CopyToTexturePassData const& data, RenderGraphContext& ctx)
+			[=, this](CopyToTexturePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -114,14 +114,14 @@ namespace adria
 		};
 
 		rendergraph.AddPass<CopyToTexturePassData>("Add Textures Pass",
-			[=](CopyToTexturePassData& data, RenderGraphBuilder& builder)
+			[=, this](CopyToTexturePassData& data, RenderGraphBuilder& builder)
 			{
 				builder.WriteRenderTarget(texture_dst, RGLoadStoreAccessOp::Preserve_Preserve);
 				data.texture_src1 = builder.ReadTexture(texture_src1, ReadAccess_PixelShader);
 				data.texture_src2 = builder.ReadTexture(texture_src2, ReadAccess_PixelShader);
 				builder.SetViewport(width, height);
 			},
-			[=](CopyToTexturePassData const& data, RenderGraphContext& ctx)
+			[=, this](CopyToTexturePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

@@ -49,7 +49,7 @@ namespace adria
 		};
 
 		rg.AddPass<ToneMapPassData>("Tonemap Pass",
-			[=](ToneMapPassData& data, RenderGraphBuilder& builder)
+			[=, this](ToneMapPassData& data, RenderGraphBuilder& builder)
 			{
 				if (!builder.IsTextureDeclared(destination))
 				{
@@ -81,7 +81,7 @@ namespace adria
 				data.output = builder.WriteTexture(destination);
 				builder.SetViewport(width, height);
 			},
-			[=](ToneMapPassData const& data, RenderGraphContext& ctx)
+			[=, this](ToneMapPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

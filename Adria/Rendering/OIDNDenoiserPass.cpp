@@ -87,7 +87,7 @@ namespace adria
 		};
 
 		rg.AddPass<OIDNDenoiserPassData>("OIDN Denoiser Pass",
-			[=](OIDNDenoiserPassData& data, RenderGraphBuilder& builder)
+			[=, this](OIDNDenoiserPassData& data, RenderGraphBuilder& builder)
 			{
 				data.color =  builder.ReadCopySrcTexture(RG_NAME(PT_Output));
 				data.albedo = builder.ReadCopySrcTexture(RG_NAME(PT_Albedo));
@@ -109,11 +109,11 @@ namespace adria
 		};
 
 		rg.AddPass<OIDNCopyPassData>("OIDN Copy Pass",
-			[=](OIDNCopyPassData& data, RenderGraphBuilder& builder)
+			[=, this](OIDNCopyPassData& data, RenderGraphBuilder& builder)
 			{
 				data.color = builder.WriteCopyDstTexture(RG_NAME(PT_Output));
 			},
-			[=](OIDNCopyPassData const& data, RenderGraphContext& ctx)
+			[=, this](OIDNCopyPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 				GfxTexture& color_texture = ctx.GetTexture(data.color);

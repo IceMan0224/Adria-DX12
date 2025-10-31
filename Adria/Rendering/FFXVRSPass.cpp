@@ -107,12 +107,12 @@ namespace adria
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
 		rg.AddPass<FFXVRSPassData>(name_version,
-			[=](FFXVRSPassData& data, RenderGraphBuilder& builder)
+			[=, this](FFXVRSPassData& data, RenderGraphBuilder& builder)
 			{
 				data.color_history = builder.ReadTexture(RG_NAME(HistoryBuffer), ReadAccess_NonPixelShader);
 				data.motion_vectors = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 			},
-			[=](FFXVRSPassData const& data, RenderGraphContext& ctx)
+			[=, this](FFXVRSPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
@@ -147,12 +147,12 @@ namespace adria
 		if (VariableRateShadingOverlay.Get())
 		{
 			rg.AddPass<void>("VRS Overlay Pass",
-				[=](RenderGraphBuilder& builder)
+				[=, this](RenderGraphBuilder& builder)
 				{
 					builder.WriteRenderTarget(postprocessor->GetFinalResource(), RGLoadStoreAccessOp::Preserve_Preserve);
 					builder.SetViewport(width, height);
 				},
-				[=](RenderGraphContext& ctx)
+				[=, this](RenderGraphContext& ctx)
 				{
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();

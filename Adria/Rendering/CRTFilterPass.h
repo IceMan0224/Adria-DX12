@@ -15,7 +15,6 @@ namespace adria
 		virtual Bool IsEnabled(PostProcessor const*) const override;
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual void OnResize(Uint32, Uint32) override;
-		virtual void OnSceneInitialized() {}
 		virtual void GUI() override;
 
 	private:

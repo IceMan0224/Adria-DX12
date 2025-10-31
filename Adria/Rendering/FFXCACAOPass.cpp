@@ -315,7 +315,7 @@ namespace adria
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
 		rg.AddPass<FFXCACAOPassData>(name_version,
-			[=](FFXCACAOPassData& data, RenderGraphBuilder& builder)
+			[=, this](FFXCACAOPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc cacao_desc{};
 				cacao_desc.format = GfxFormat::R8_UNORM;
@@ -327,7 +327,7 @@ namespace adria
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 				data.gbuffer_normal = builder.ReadTexture(RG_NAME(GBufferNormal), ReadAccess_NonPixelShader);
 			},
-			[=](FFXCACAOPassData const& data, RenderGraphContext& ctx)
+			[=, this](FFXCACAOPassData const& data, RenderGraphContext& ctx)
 			{
 				static_assert(sizeof(Matrix) == sizeof(FfxFloat32x4x4));
 

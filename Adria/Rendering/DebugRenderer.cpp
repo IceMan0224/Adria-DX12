@@ -60,13 +60,13 @@ namespace adria
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
 		rg.AddPass<void>("Debug Renderer Pass",
-			[=](RenderGraphBuilder& builder)
+			[=, this](RenderGraphBuilder& builder)
 			{
 				builder.WriteRenderTarget(RG_NAME(FinalTexture), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.ReadDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RenderGraphContext& context)
+			[=, this](RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();

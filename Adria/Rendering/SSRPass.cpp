@@ -40,7 +40,7 @@ namespace adria
 		};
 
 		rg.AddPass<SSRPassData>("SSR Pass",
-			[=](SSRPassData& data, RenderGraphBuilder& builder)
+			[=, this](SSRPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc ssr_output_desc{};
 				ssr_output_desc.width = width;
@@ -54,7 +54,7 @@ namespace adria
 				data.roughness = builder.ReadTexture(RG_NAME(GBufferAlbedo), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](SSRPassData const& data, RenderGraphContext& ctx)
+			[=, this](SSRPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

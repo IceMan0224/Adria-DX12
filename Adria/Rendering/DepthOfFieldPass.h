@@ -19,7 +19,7 @@ namespace adria
 		virtual void OnResize(Uint32, Uint32) override;
 		virtual Bool IsEnabled(PostProcessor const*) const override;
 		virtual void OnSceneInitialized() override;
-		virtual void GUI();
+		virtual void GUI() override;
 
 	private:
 		GfxDevice* gfx;

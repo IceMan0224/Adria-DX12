@@ -40,7 +40,7 @@ namespace adria
 		};
 
 		rg.AddPass<CRTFilterPassData>("CRT Filter Pass",
-			[=](CRTFilterPassData& data, RenderGraphBuilder& builder)
+			[=, this](CRTFilterPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc crt_output_desc{};
 				crt_output_desc.width = width;
@@ -51,7 +51,7 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(CRT_Output));
 				data.input = builder.ReadTexture(last_resource, ReadAccess_NonPixelShader);
 			},
-			[=](CRTFilterPassData const& data, RenderGraphContext& ctx)
+			[=, this](CRTFilterPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

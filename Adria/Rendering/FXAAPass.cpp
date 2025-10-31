@@ -27,13 +27,13 @@ namespace adria
 		};
 
 		rg.AddPass<FXAAPassData>("FXAA Pass",
-			[=](FXAAPassData& data, RenderGraphBuilder& builder)
+			[=, this](FXAAPassData& data, RenderGraphBuilder& builder)
 			{
 				data.ldr = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
 				ADRIA_ASSERT(builder.IsTextureDeclared(RG_NAME(FinalTexture)));
 				data.output = builder.WriteTexture(RG_NAME(FinalTexture));
 			},
-			[=](FXAAPassData const& data, RenderGraphContext& ctx)
+			[=, this](FXAAPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

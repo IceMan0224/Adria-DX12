@@ -137,13 +137,13 @@ namespace adria
 		};
 
 		rg.AddPass<LensFlarePassData>("Lens Flare Pass",
-			[=](LensFlarePassData& data, RenderGraphBuilder& builder)
+			[=, this](LensFlarePassData& data, RenderGraphBuilder& builder)
 			{
 				builder.WriteRenderTarget(postprocessor->GetFinalResource(), RGLoadStoreAccessOp::Preserve_Preserve);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_PixelShader);
 				builder.SetViewport(width, height);
 			},
-			[=](LensFlarePassData const& data, RenderGraphContext& ctx)
+			[=, this](LensFlarePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -221,12 +221,12 @@ namespace adria
 		};
 
 		rg.AddPass<LensFlarePassData>("Procedural Lens Flare Pass",
-			[=](LensFlarePassData& data, RenderGraphBuilder& builder)
+			[=, this](LensFlarePassData& data, RenderGraphBuilder& builder)
 			{
 				data.output = builder.WriteTexture(postprocessor->GetFinalResource());
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](LensFlarePassData const& data, RenderGraphContext& ctx)
+			[=, this](LensFlarePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

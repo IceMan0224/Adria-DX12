@@ -43,7 +43,7 @@ namespace adria
 		};
 
 		rg.AddPass<RayTracedAmbientOcclusionPassData>("Ray Traced Ambient Occlusion Pass",
-			[=](RayTracedAmbientOcclusionPassData& data, RGBuilder& builder)
+			[=, this](RayTracedAmbientOcclusionPassData& data, RGBuilder& builder)
 			{
 				RGTextureDesc desc{};
 				desc.width = width;
@@ -55,7 +55,7 @@ namespace adria
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 				data.normal = builder.ReadTexture(RG_NAME(GBufferNormal), ReadAccess_NonPixelShader);
 			},
-			[=](RayTracedAmbientOcclusionPassData const& data, RenderGraphContext& ctx)
+			[=, this](RayTracedAmbientOcclusionPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -101,7 +101,7 @@ namespace adria
 		};
 
 		rg.AddPass<RTAOFilterPassData>("RTAO Filter Pass",
-			[=](RTAOFilterPassData& data, RGBuilder& builder)
+			[=, this](RTAOFilterPassData& data, RGBuilder& builder)
 			{
 				RGTextureDesc desc{};
 				desc.width = width;
@@ -113,7 +113,7 @@ namespace adria
 				data.input = builder.ReadTexture(RG_NAME(RTAO_Output), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](RTAOFilterPassData const& data, RenderGraphContext& ctx)
+			[=, this](RTAOFilterPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

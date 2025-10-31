@@ -33,11 +33,11 @@ namespace adria
 		};
 
 		rg.AddPass<RayTracedShadowsPassData>("Ray Traced Shadows Pass",
-			[=](RayTracedShadowsPassData& data, RGBuilder& builder)
+			[=, this](RayTracedShadowsPassData& data, RGBuilder& builder)
 			{
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](RayTracedShadowsPassData const& data, RenderGraphContext& ctx)
+			[=, this](RayTracedShadowsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

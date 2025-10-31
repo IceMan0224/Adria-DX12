@@ -35,7 +35,7 @@ namespace adria
 		};
 
 		rg.AddPass<ExponentialHeightFogPassData>("Exponential Height Fog Pass",
-			[=](ExponentialHeightFogPassData& data, RenderGraphBuilder& builder)
+			[=, this](ExponentialHeightFogPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc fog_output_desc{};
 				fog_output_desc.width = width;
@@ -48,7 +48,7 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(FogOutput));
 				builder.SetViewport(width, height);
 			},
-			[=](ExponentialHeightFogPassData const& data, RenderGraphContext& ctx)
+			[=, this](ExponentialHeightFogPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

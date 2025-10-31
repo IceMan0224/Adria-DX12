@@ -62,12 +62,7 @@ namespace adria
 
 	Bool UpscalerPassGroup::NeedsJitter() const
 	{
-		switch (upscaler_type)
-		{
-		case UpscalerType::None:
-			return false;
-		}
-		return true;
+		return upscaler_type != UpscalerType::None;
 	}
 
 	void UpscalerPassGroup::GroupGUI()

@@ -34,7 +34,7 @@ namespace adria
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		rg.AddPass<NNAOPassData>("NNAO Pass",
-			[=](NNAOPassData& data, RenderGraphBuilder& builder)
+			[=, this](NNAOPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc nnao_desc{};
 				nnao_desc.format = GfxFormat::R8_UNORM;

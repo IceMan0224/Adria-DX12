@@ -30,7 +30,7 @@ namespace adria
 		};
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		rg.AddPass<BuildHistogramData>("Build Histogram Pass",
-			[=](BuildHistogramData& data, RenderGraphBuilder& builder)
+			[=, this](BuildHistogramData& data, RenderGraphBuilder& builder)
 			{
 				data.scene_texture = builder.ReadTexture(postprocessor->GetFinalResource());
 
@@ -42,7 +42,7 @@ namespace adria
 				builder.DeclareBuffer(RG_NAME(HistogramBuffer), desc);
 				data.histogram_buffer = builder.WriteBuffer(RG_NAME(HistogramBuffer));
 			},
-			[=](BuildHistogramData const& data, RenderGraphContext& ctx)
+			[=, this](BuildHistogramData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -87,7 +87,7 @@ namespace adria
 			Uint32					pixel_count;
 		};
 		rg.AddPass<HistogramReductionData>("Histogram Reduction Pass",
-			[=](HistogramReductionData& data, RenderGraphBuilder& builder)
+			[=, this](HistogramReductionData& data, RenderGraphBuilder& builder)
 			{
 				data.histogram_buffer = builder.ReadBuffer(RG_NAME(HistogramBuffer));
 				data.avg_luminance = builder.WriteTexture(RG_NAME(AverageLuminance));
@@ -101,7 +101,7 @@ namespace adria
 				RGTextureDesc const& scene_desc = builder.GetTextureDesc(postprocessor->GetFinalResource());
 				data.pixel_count = scene_desc.width * scene_desc.height;
 			},
-			[=](HistogramReductionData const& data, RenderGraphContext& ctx)
+			[=, this](HistogramReductionData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

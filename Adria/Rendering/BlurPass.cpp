@@ -36,7 +36,7 @@ namespace adria
 		};
 
 		rendergraph.AddPass<BlurPassData>(horizontal_name.c_str(),
-			[=](BlurPassData& data, RenderGraphBuilder& builder)
+			[=, this](BlurPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc blur_desc = builder.GetTextureDesc(src_texture);
 
@@ -44,7 +44,7 @@ namespace adria
 				data.dst_texture = builder.WriteTexture(RG_NAME_IDX(Intermediate, counter));
 				data.src_texture = builder.ReadTexture(src_texture, ReadAccess_NonPixelShader);
 			},
-			[=](BlurPassData const& data, RenderGraphContext& ctx)
+			[=, this](BlurPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -74,14 +74,14 @@ namespace adria
 			}, async_compute ? RGPassType::AsyncCompute : RGPassType::Compute, RGPassFlags::None);
 
 		rendergraph.AddPass<BlurPassData>(vertical_name.c_str(),
-			[=](BlurPassData& data, RenderGraphBuilder& builder)
+			[=, this](BlurPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc blur_desc = builder.GetTextureDesc(src_texture);
 				builder.DeclareTexture(blurred_texture, blur_desc);
 				data.dst_texture = builder.WriteTexture(blurred_texture);
 				data.src_texture = builder.ReadTexture(RG_NAME_IDX(Intermediate, counter), ReadAccess_NonPixelShader);
 			},
-			[=](BlurPassData const& data, RenderGraphContext& ctx)
+			[=, this](BlurPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

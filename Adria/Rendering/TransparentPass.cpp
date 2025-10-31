@@ -70,7 +70,7 @@ namespace adria
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		rg.AddPass<TransparentPassData>("Transparent Pass",
-			[=](TransparentPassData& data, RenderGraphBuilder& builder)
+			[=, this](TransparentPassData& data, RenderGraphBuilder& builder)
 			{
 				builder.WriteRenderTarget(RG_NAME(HDR_RenderTarget), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.ReadDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
@@ -81,7 +81,7 @@ namespace adria
 				}
 				builder.SetViewport(width, height);
 			},
-			[=](TransparentPassData const& data, RenderGraphContext& context)
+			[=, this](TransparentPassData const& data, RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();

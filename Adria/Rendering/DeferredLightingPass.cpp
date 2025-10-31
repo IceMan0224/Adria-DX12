@@ -34,7 +34,7 @@ namespace adria
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		rg.AddPass<LightingPassData>("Deferred Lighting Pass",
-			[=](LightingPassData& data, RenderGraphBuilder& builder)
+			[=, this](LightingPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc hdr_desc{};
 				hdr_desc.format = GfxFormat::R16G16B16A16_FLOAT;
@@ -63,7 +63,7 @@ namespace adria
 					std::ignore = builder.ReadTexture(shadow_texture);
 				}
 			},
-			[=](LightingPassData const& data, RenderGraphContext& ctx)
+			[=, this](LightingPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

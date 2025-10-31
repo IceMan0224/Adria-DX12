@@ -73,7 +73,7 @@ namespace adria
 		};
 
 		rg.AddPass<GodRaysPassData>("God Rays Pass",
-			[=](GodRaysPassData& data, RenderGraphBuilder& builder)
+			[=, this](GodRaysPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc god_rays_desc{};
 				god_rays_desc.format = GfxFormat::R16G16B16A16_FLOAT;
@@ -84,7 +84,7 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(GodRaysOutput));
 				data.sun = builder.ReadTexture(RG_NAME(SunOutput));
 			},
-			[=](GodRaysPassData const& data, RenderGraphContext& ctx)
+			[=, this](GodRaysPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

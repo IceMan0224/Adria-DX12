@@ -30,7 +30,7 @@ namespace adria
 			RGTextureReadWriteId output;
 		};
 		rg.AddPass<MotionBlurPassData>("Motion Blur Pass",
-			[=](MotionBlurPassData& data, RenderGraphBuilder& builder)
+			[=, this](MotionBlurPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc motion_blur_desc{};
 				motion_blur_desc.width = width;
@@ -42,7 +42,7 @@ namespace adria
 				data.input = builder.ReadTexture(last_resource, ReadAccess_NonPixelShader);
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 			},
-			[=](MotionBlurPassData const& data, RenderGraphContext& ctx)
+			[=, this](MotionBlurPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

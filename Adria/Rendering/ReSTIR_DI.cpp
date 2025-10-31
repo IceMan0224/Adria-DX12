@@ -85,14 +85,14 @@ namespace adria
 
 		rg.ImportBuffer(RG_NAME(ReSTIR_DI_Reservoir), reservoir_buffer.get());
 		rg.AddPass<InitialSamplingPassData>("RESTIR DI Initial Sampling Pass",
-			[=](InitialSamplingPassData& data, RenderGraphBuilder& builder)
+			[=, this](InitialSamplingPassData& data, RenderGraphBuilder& builder)
 			{
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil));
 				data.normal = builder.ReadTexture(RG_NAME(GBufferNormal));
 				data.albedo = builder.ReadTexture(RG_NAME(GBufferAlbedo));
 				data.reservoir = builder.WriteBuffer(RG_NAME(ReSTIR_DI_Reservoir));
 			},
-			[=](InitialSamplingPassData const& data, RenderGraphContext& ctx) 
+			[=, this](InitialSamplingPassData const& data, RenderGraphContext& ctx) 
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -134,11 +134,11 @@ namespace adria
 		};
 
 		rg.AddPass<TemporalResamplingPassData>("ReSTIR DI Temporal Resampling Pass", 
-			[=](TemporalResamplingPassData& data, RGBuilder& builder)
+			[=, this](TemporalResamplingPassData& data, RGBuilder& builder)
 			{
 				
 			},
-			[=](TemporalResamplingPassData const& data, RenderGraphContext& ctx)
+			[=, this](TemporalResamplingPassData const& data, RenderGraphContext& ctx)
 			{
 				
 			}, RGPassType::Compute);
@@ -152,11 +152,11 @@ namespace adria
 		};
 
 		rg.AddPass<SpatialResamplingPassData>("ReSTIR DI Spatial Resampling Pass",
-			[=](SpatialResamplingPassData& data, RGBuilder& builder)
+			[=, this](SpatialResamplingPassData& data, RGBuilder& builder)
 			{
 
 			},
-			[=](SpatialResamplingPassData const& data, RenderGraphContext& ctx) 
+			[=, this](SpatialResamplingPassData const& data, RenderGraphContext& ctx) 
 			{
 
 			}, RGPassType::Compute);
@@ -170,11 +170,11 @@ namespace adria
 		};
 
 		rg.AddPass<FusedTemporalSpatialResamplingPassData>("ReSTIR DI Fused Temporal Spatial Resampling Pass",
-			[=](FusedTemporalSpatialResamplingPassData& data, RGBuilder& builder)
+			[=, this](FusedTemporalSpatialResamplingPassData& data, RGBuilder& builder)
 			{
 
 			},
-			[=](FusedTemporalSpatialResamplingPassData const& data, RenderGraphContext& ctx) 
+			[=, this](FusedTemporalSpatialResamplingPassData const& data, RenderGraphContext& ctx) 
 			{
 
 			}, RGPassType::Compute);

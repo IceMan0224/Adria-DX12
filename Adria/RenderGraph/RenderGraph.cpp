@@ -196,12 +196,12 @@ namespace adria
 		};
 
 		AddPass<ExportBufferCopyPassData>(buffer_copy_pass_name.c_str(),
-			[=](ExportBufferCopyPassData& data, RenderGraphBuilder& builder)
+			[=, this](ExportBufferCopyPassData& data, RenderGraphBuilder& builder)
 			{
 				ADRIA_ASSERT(IsBufferDeclared(export_buffer));
 				data.src = builder.ReadCopySrcBuffer(export_buffer);
 			},
-			[=](ExportBufferCopyPassData const& data, RenderGraphContext& context)
+			[=, this](ExportBufferCopyPassData const& data, RenderGraphContext& context)
 			{
 				GfxCommandList* cmd_list = context.GetCommandList();
 				GfxBuffer const& src_buffer = context.GetCopySrcBuffer(data.src);
@@ -223,12 +223,12 @@ namespace adria
 		};
 
 		AddPass<ExportTextureCopyPassData>(texture_copy_pass_name.c_str(),
-			[=](ExportTextureCopyPassData& data, RenderGraphBuilder& builder)
+			[=, this](ExportTextureCopyPassData& data, RenderGraphBuilder& builder)
 			{
 				ADRIA_ASSERT(IsTextureDeclared(export_texture));
 				data.src = builder.ReadCopySrcTexture(export_texture);
 			},
-			[=](ExportTextureCopyPassData const& data, RenderGraphContext& context)
+			[=, this](ExportTextureCopyPassData const& data, RenderGraphContext& context)
 			{
 				GfxCommandList* cmd_list = context.GetCommandList();
 				GfxTexture const& src_texture = context.GetCopySrcTexture(data.src);
@@ -1589,7 +1589,6 @@ namespace adria
 				auto decl_pair = std::make_pair(buffer->id, buffer->version);
 				if (!declared_buffers.contains(decl_pair))
 				{
-					buffer->desc.size;
 					graphviz.declarations += std::format("B{}_{} ", buffer->id, buffer->version);
 					std::string label = std::format("<{}<br/>dimension: Buffer<br/>size: {} bytes <br/>format: {} <br/>version: {} <br/>refs: {}<br/>{}>",
 						buffer->name, buffer->desc.size, GfxFormatToString(buffer->desc.format), buffer->version, buffer->ref_count, buffer->imported ? "Imported" : "Transient");

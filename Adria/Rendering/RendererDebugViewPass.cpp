@@ -42,7 +42,7 @@ namespace adria
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		rg.AddPass<RendererDebugViewPassData>("Renderer Debug View Pass",
-			[=](RendererDebugViewPassData& data, RenderGraphBuilder& builder)
+			[=, this](RendererDebugViewPassData& data, RenderGraphBuilder& builder)
 			{
 				data.output = builder.WriteTexture(RG_NAME(FinalTexture));
 				data.gbuffer_normal = builder.ReadTexture(RG_NAME(GBufferNormal), ReadAccess_NonPixelShader);
@@ -57,7 +57,7 @@ namespace adria
 				if (builder.IsTextureDeclared(RG_NAME(VelocityBuffer))) data.motion_vectors = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				else data.motion_vectors.Invalidate();
 			},
-			[=](RendererDebugViewPassData const& data, RenderGraphContext& context)
+			[=, this](RendererDebugViewPassData const& data, RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();

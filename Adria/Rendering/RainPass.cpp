@@ -142,11 +142,11 @@ namespace adria
 			RGBufferReadWriteId rain_data_buffer;
 		};
 		rg.AddPass<RainSimulationPassData>("Rain Simulation Pass",
-			[=](RainSimulationPassData& data, RenderGraphBuilder& builder)
+			[=, this](RainSimulationPassData& data, RenderGraphBuilder& builder)
 			{
 				data.rain_data_buffer = builder.WriteBuffer(RG_NAME(RainDataBuffer));
 			},
-			[=](RainSimulationPassData const& data, RenderGraphContext& context)
+			[=, this](RainSimulationPassData const& data, RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
@@ -183,14 +183,14 @@ namespace adria
 		};
 
 		rg.AddPass<RainDrawPassData>("Rain Draw Pass",
-			[=](RainDrawPassData& data, RenderGraphBuilder& builder)
+			[=, this](RainDrawPassData& data, RenderGraphBuilder& builder)
 			{
 				data.rain_data_buffer = builder.ReadBuffer(RG_NAME(RainDataBuffer), ReadAccess_NonPixelShader);
 				builder.WriteRenderTarget(RG_NAME(HDR_RenderTarget), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.WriteDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RainDrawPassData const& data, RenderGraphContext& context)
+			[=, this](RainDrawPassData const& data, RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();

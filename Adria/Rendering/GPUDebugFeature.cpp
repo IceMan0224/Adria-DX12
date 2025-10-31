@@ -40,11 +40,11 @@ namespace adria
 			RGBufferReadWriteId printf_buffer;
 		};
 		rg.AddPass<ClearBufferPassData>(pass_name,
-			[=](ClearBufferPassData& data, RenderGraphBuilder& builder)
+			[=, this](ClearBufferPassData& data, RenderGraphBuilder& builder)
 			{
 				data.printf_buffer = builder.WriteBuffer(gpu_buffer_name);
 			},
-			[=](ClearBufferPassData const& data, RenderGraphContext& ctx)
+			[=, this](ClearBufferPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 				Uint32 clear[] = { 0,0,0,0 };
@@ -59,7 +59,7 @@ namespace adria
 			RGBufferCopySrcId gpu_buffer;
 		};
 		rg.AddPass<CopyBufferPassData>(pass_name,
-			[=](CopyBufferPassData& data, RenderGraphBuilder& builder)
+			[=, this](CopyBufferPassData& data, RenderGraphBuilder& builder)
 			{
 				data.gpu_buffer = builder.ReadCopySrcBuffer(gpu_buffer_name);
 				std::ignore = builder.ReadCopySrcTexture(RG_NAME(FinalTexture)); //forcing dependency with the final texture so the debug pass doesn't run before some other pass

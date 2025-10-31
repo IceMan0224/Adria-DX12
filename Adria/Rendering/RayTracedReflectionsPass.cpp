@@ -41,7 +41,7 @@ namespace adria
 		};
 
 		rg.AddPass<RayTracedReflectionsPassData>("Ray Traced Reflections Pass",
-			[=](RayTracedReflectionsPassData& data, RGBuilder& builder)
+			[=, this](RayTracedReflectionsPassData& data, RGBuilder& builder)
 			{
 				RGTextureDesc desc{};
 				desc.width = width;
@@ -54,7 +54,7 @@ namespace adria
 				data.diffuse = builder.ReadTexture(RG_NAME(GBufferAlbedo));
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil));
 			},
-			[=](RayTracedReflectionsPassData const& data, RenderGraphContext& ctx)
+			[=, this](RayTracedReflectionsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

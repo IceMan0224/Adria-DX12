@@ -12,7 +12,7 @@ namespace adria
 
 	public:
 		ADRIA_NONCOPYABLE(GfxCommandListPool)
-		ADRIA_DEFAULT_MOVABLE(GfxCommandListPool)
+		ADRIA_NONMOVABLE(GfxCommandListPool)
 		~GfxCommandListPool() = default;
 
 		GfxCommandList* GetMainCmdList() const;

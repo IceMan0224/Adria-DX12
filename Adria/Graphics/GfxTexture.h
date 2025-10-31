@@ -36,7 +36,7 @@ namespace adria
 		GfxResourceState initial_state = GfxResourceState::AllSRV;
 		GfxFormat format = GfxFormat::UNKNOWN;
 
-		std::strong_ordering operator<=>(GfxTextureDesc const& other) const = default;
+		std::strong_ordering operator<=>(GfxTextureDesc const& other) const = delete;
 		Bool IsCompatible(GfxTextureDesc const& desc) const
 		{
 			return type == desc.type && width == desc.width && height == desc.height && array_size == desc.array_size

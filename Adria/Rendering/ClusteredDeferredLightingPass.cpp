@@ -54,11 +54,11 @@ namespace adria
 		if (recreate_clusters)
 		{
 			rendergraph.AddPass<ClusterBuildingPassData>("Cluster Building Pass",
-				[=](ClusterBuildingPassData& data, RenderGraphBuilder& builder)
+				[=, this](ClusterBuildingPassData& data, RenderGraphBuilder& builder)
 				{
 					data.clusters = builder.WriteBuffer(RG_NAME(ClustersBuffer));
 				},
-				[=](ClusterBuildingPassData const& data, RenderGraphContext& ctx)
+				[=, this](ClusterBuildingPassData const& data, RenderGraphContext& ctx)
 				{
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -81,14 +81,14 @@ namespace adria
 			RGBufferReadWriteId light_list;
 		};
 		rendergraph.AddPass<ClusterCullingPassData>("Cluster Culling Pass",
-			[=](ClusterCullingPassData& data, RenderGraphBuilder& builder)
+			[=, this](ClusterCullingPassData& data, RenderGraphBuilder& builder)
 			{
 				data.clusters = builder.ReadBuffer(RG_NAME(ClustersBuffer), ReadAccess_NonPixelShader);
 				data.light_counter = builder.WriteBuffer(RG_NAME(LightCounter));
 				data.light_grid = builder.WriteBuffer(RG_NAME(LightGrid));
 				data.light_list = builder.WriteBuffer(RG_NAME(LightList));
 			},
-			[=](ClusterCullingPassData const& data, RenderGraphContext& ctx)
+			[=, this](ClusterCullingPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -132,7 +132,7 @@ namespace adria
 			RGBufferReadOnlyId   light_list;
 		};
 		rendergraph.AddPass<ClusteredDeferredLightingPassData>("Clustered Deferred Lighting Pass",
-			[=](ClusteredDeferredLightingPassData& data, RenderGraphBuilder& builder)
+			[=, this](ClusteredDeferredLightingPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc hdr_desc{};
 				hdr_desc.width = width;
@@ -160,7 +160,7 @@ namespace adria
 
 				data.output = builder.WriteTexture(RG_NAME(HDR_RenderTarget));
 			},
-			[=](ClusteredDeferredLightingPassData const& data, RenderGraphContext& ctx)
+			[=, this](ClusteredDeferredLightingPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

@@ -28,7 +28,7 @@ namespace adria
 		};
 
 		rg.AddPass<FilmEffectsPassData>("Film Effects Pass",
-			[=](FilmEffectsPassData& data, RenderGraphBuilder& builder)
+			[=, this](FilmEffectsPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc film_effects_desc{};
 				film_effects_desc.format = GfxFormat::R16G16B16A16_FLOAT;
@@ -39,7 +39,7 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(FilmEffectsOutput));
 				data.input = builder.ReadTexture(postprocessor->GetFinalResource());
 			},
-			[=](FilmEffectsPassData const& data, RenderGraphContext& ctx)
+			[=, this](FilmEffectsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

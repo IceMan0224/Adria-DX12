@@ -515,6 +515,10 @@ if(MSVC)
 	target_compile_options(Adria PRIVATE /MP)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(Adria PRIVATE -Wno-switch -Wno-format-security -Wno-deprecated-declarations)
+endif()
+
 target_compile_definitions(Adria PRIVATE
     $<$<CONFIG:Debug>:_DEBUG;_CONSOLE;TRACY_ENABLE>
     $<$<CONFIG:Profile>:NDEBUG;_PROFILE;_CONSOLE;TRACY_ENABLE>

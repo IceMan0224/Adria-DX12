@@ -27,7 +27,7 @@ namespace adria
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		rg.AddPass<void>("GBuffer Pass",
-			[=](RenderGraphBuilder& builder)
+			[=, this](RenderGraphBuilder& builder)
 			{
 				RGTextureDesc gbuffer_desc{};
 				gbuffer_desc.width = width;
@@ -54,7 +54,7 @@ namespace adria
 				builder.WriteDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Clear_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RenderGraphContext& ctx)
+			[=, this](RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 

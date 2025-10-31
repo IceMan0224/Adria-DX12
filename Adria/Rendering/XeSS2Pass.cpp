@@ -80,7 +80,7 @@ namespace adria
 		};
 
 		rg.AddPass<XeSS2PassData>(name_version,
-			[=](XeSS2PassData& data, RenderGraphBuilder& builder)
+			[=, this](XeSS2PassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc xess_desc{};
 				xess_desc.format = GfxFormat::R16G16B16A16_FLOAT;
@@ -94,7 +94,7 @@ namespace adria
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](XeSS2PassData const& data, RenderGraphContext& ctx)
+			[=, this](XeSS2PassData const& data, RenderGraphContext& ctx)
 			{
 				if (needs_init)
 				{

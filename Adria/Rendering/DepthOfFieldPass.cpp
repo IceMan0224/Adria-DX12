@@ -197,7 +197,7 @@ namespace adria
 		};
 
 		rg.AddPass<ComputeCircleOfConfusionPassData>("Compute Circle Of Confusion Pass",
-			[=](ComputeCircleOfConfusionPassData& data, RenderGraphBuilder& builder)
+			[=, this](ComputeCircleOfConfusionPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc compute_coc_desc{};
 				compute_coc_desc.width = width;
@@ -208,7 +208,7 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(CoCTexture));
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](ComputeCircleOfConfusionPassData const& data, RenderGraphContext& ctx)
+			[=, this](ComputeCircleOfConfusionPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -256,7 +256,7 @@ namespace adria
 		};
 
 		rg.AddPass<SeparatedCircleOfConfusionPassData>("Separated Circle Of Confusion Pass",
-			[=](SeparatedCircleOfConfusionPassData& data, RenderGraphBuilder& builder)
+			[=, this](SeparatedCircleOfConfusionPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc compute_separated_coc_desc{};
 				compute_separated_coc_desc.width = width;
@@ -267,7 +267,7 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME_IDX(CoCDilationMip, 0));
 				data.input = builder.ReadTexture(RG_NAME(CoCTexture), ReadAccess_NonPixelShader);
 			},
-			[=](SeparatedCircleOfConfusionPassData const& data, RenderGraphContext& ctx)
+			[=, this](SeparatedCircleOfConfusionPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -316,7 +316,7 @@ namespace adria
 			};
 
 			rg.AddPass<DownsampleCircleOfConfusionPassData>("Downsample Circle Of Confusion Pass",
-				[=](DownsampleCircleOfConfusionPassData& data, RenderGraphBuilder& builder)
+				[=, this](DownsampleCircleOfConfusionPassData& data, RenderGraphBuilder& builder)
 				{
 					RGTextureDesc compute_separated_coc_desc{};
 					compute_separated_coc_desc.width = mip_width;
@@ -327,7 +327,7 @@ namespace adria
 					data.output = builder.WriteTexture(coc_mips[i]);
 					data.input = builder.ReadTexture(coc_mips[i - 1], ReadAccess_NonPixelShader);
 				},
-				[=](DownsampleCircleOfConfusionPassData const& data, RenderGraphContext& ctx)
+				[=, this](DownsampleCircleOfConfusionPassData const& data, RenderGraphContext& ctx)
 				{
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -371,7 +371,7 @@ namespace adria
 		};
 
 		rg.AddPass<ComputePrefilteredTexturePassData>("Compute Prefiltered Texture Pass",
-			[=](ComputePrefilteredTexturePassData& data, RenderGraphBuilder& builder)
+			[=, this](ComputePrefilteredTexturePassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc prefiltered_texture_desc{};
 				prefiltered_texture_desc.width = width / 2;
@@ -387,7 +387,7 @@ namespace adria
 				data.coc = builder.ReadTexture(RG_NAME(CoCTexture), ReadAccess_NonPixelShader);
 				data.coc_dilation = builder.ReadTexture(RG_NAME(CoCDilation), ReadAccess_NonPixelShader);
 			},
-			[=](ComputePrefilteredTexturePassData const& data, RenderGraphContext& ctx)
+			[=, this](ComputePrefilteredTexturePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -443,7 +443,7 @@ namespace adria
 		};
 
 		rg.AddPass<BokehFirstPassData>("Bokeh First Pass",
-			[=](BokehFirstPassData& data, RenderGraphBuilder& builder)
+			[=, this](BokehFirstPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc bokeh_desc{};
 				bokeh_desc.width = width / 2;
@@ -459,7 +459,7 @@ namespace adria
 				data.coc_near = builder.ReadTexture(RG_NAME(NearCoC));
 				data.coc_far = builder.ReadTexture(RG_NAME(FarCoC));
 			},
-			[=](BokehFirstPassData const& data, RenderGraphContext& ctx)
+			[=, this](BokehFirstPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -522,7 +522,7 @@ namespace adria
 		};
 
 		rg.AddPass<BokehSecondPassData>("Bokeh Second Pass",
-			[=](BokehSecondPassData& data, RenderGraphBuilder& builder)
+			[=, this](BokehSecondPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc bokeh_desc{};
 				bokeh_desc.width = width / 2;
@@ -537,7 +537,7 @@ namespace adria
 				data.coc_near = builder.ReadTexture(RG_NAME(BokehTexture0));
 				data.coc_far = builder.ReadTexture(RG_NAME(BokehTexture1));
 			},
-			[=](BokehSecondPassData const& data, RenderGraphContext& ctx)
+			[=, this](BokehSecondPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -596,7 +596,7 @@ namespace adria
 		};
 
 		rg.AddPass<ComputePostfilteredTexturePassData>("Compute Postfiltered Texture Pass",
-			[=](ComputePostfilteredTexturePassData& data, RenderGraphBuilder& builder)
+			[=, this](ComputePostfilteredTexturePassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc postfiltered_texture_desc{};
 				postfiltered_texture_desc.width = width / 2;
@@ -612,7 +612,7 @@ namespace adria
 				data.near_coc = builder.ReadTexture(RG_NAME(BokehTexture3), ReadAccess_NonPixelShader);
 				data.far_coc = builder.ReadTexture(RG_NAME(BokehTexture4), ReadAccess_NonPixelShader);
 			},
-			[=](ComputePostfilteredTexturePassData const& data, RenderGraphContext& ctx)
+			[=, this](ComputePostfilteredTexturePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -664,7 +664,7 @@ namespace adria
 		};
 
 		rg.AddPass<CombinePassData>("Combine Pass",
-			[=](CombinePassData& data, RenderGraphBuilder& builder)
+			[=, this](CombinePassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc result_desc{};
 				result_desc.width = width;
@@ -678,7 +678,7 @@ namespace adria
 				data.far_coc = builder.ReadTexture(RG_NAME(FinalFarCoC), ReadAccess_NonPixelShader);
 				data.color = builder.ReadTexture(color_texture, ReadAccess_NonPixelShader);
 			},
-			[=](CombinePassData const& data, RenderGraphContext& ctx)
+			[=, this](CombinePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

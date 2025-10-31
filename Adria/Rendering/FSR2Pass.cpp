@@ -82,7 +82,7 @@ namespace adria
 		};
 
 		rg.AddPass<FSR2PassData>(name_version,
-			[=](FSR2PassData& data, RenderGraphBuilder& builder)
+			[=, this](FSR2PassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc fsr2_desc{};
 				fsr2_desc.format = GfxFormat::R16G16B16A16_FLOAT;
@@ -96,7 +96,7 @@ namespace adria
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](FSR2PassData const& data, RenderGraphContext& ctx)
+			[=, this](FSR2PassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 

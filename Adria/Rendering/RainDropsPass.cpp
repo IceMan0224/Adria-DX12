@@ -39,11 +39,11 @@ namespace adria
 		};
 
 		rg.AddPass<RainDropsPassData>("Rain Drops Pass",
-			[=](RainDropsPassData& data, RenderGraphBuilder& builder)
+			[=, this](RainDropsPassData& data, RenderGraphBuilder& builder)
 			{
 				data.output = builder.WriteTexture(postprocessor->GetFinalResource());
 			},
-			[=](RainDropsPassData const& data, RenderGraphContext& ctx)
+			[=, this](RainDropsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

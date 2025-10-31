@@ -33,7 +33,7 @@ namespace adria
 		};
 
 		rg.AddPass<TAAPassData>("TAA Pass",
-			[=](TAAPassData& data, RenderGraphBuilder& builder)
+			[=, this](TAAPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc taa_desc{};
 				taa_desc.width = width;
@@ -46,7 +46,7 @@ namespace adria
 				data.history = builder.ReadTexture(RG_NAME(HistoryBuffer), ReadAccess_PixelShader);
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_PixelShader);
 			},
-			[=](TAAPassData const& data, RenderGraphContext& ctx)
+			[=, this](TAAPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

@@ -67,7 +67,7 @@ namespace adria
 		};
 
 		rg.AddPass<DLSS3PassData>(name_version,
-			[=](DLSS3PassData& data, RenderGraphBuilder& builder)
+			[=, this](DLSS3PassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc dlss3_desc{};
 				dlss3_desc.format = GfxFormat::R16G16B16A16_FLOAT;
@@ -81,7 +81,7 @@ namespace adria
 				data.velocity = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](DLSS3PassData const& data, RenderGraphContext& ctx)
+			[=, this](DLSS3PassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 				if (needs_create)

@@ -31,7 +31,7 @@ namespace adria
 			RGTextureReadWriteId velocity;
 		};
 		rg.AddPass<MotionVectorsPassData>("Velocity Buffer Pass",
-			[=](MotionVectorsPassData& data, RenderGraphBuilder& builder)
+			[=, this](MotionVectorsPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc velocity_buffer_desc{};
 				velocity_buffer_desc.width = width;
@@ -42,7 +42,7 @@ namespace adria
 				data.velocity = builder.WriteTexture(RG_NAME(VelocityBuffer));
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](MotionVectorsPassData const& data, RenderGraphContext& ctx)
+			[=, this](MotionVectorsPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

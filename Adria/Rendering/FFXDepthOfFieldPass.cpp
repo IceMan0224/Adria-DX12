@@ -58,7 +58,7 @@ namespace adria
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 
 		rg.AddPass<FFXDoFPassData>(name_version,
-			[=](FFXDoFPassData& data, RenderGraphBuilder& builder)
+			[=, this](FFXDoFPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc ffx_dof_desc = builder.GetTextureDesc(postprocessor->GetFinalResource());
 				builder.DeclareTexture(RG_NAME(FFXDoFOutput), ffx_dof_desc);
@@ -67,7 +67,7 @@ namespace adria
 				data.input = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
-			[=](FFXDoFPassData const& data, RenderGraphContext& ctx)
+			[=, this](FFXDoFPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 

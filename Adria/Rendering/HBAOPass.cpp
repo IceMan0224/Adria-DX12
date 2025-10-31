@@ -30,7 +30,7 @@ namespace adria
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		rg.AddPass<HBAOPassData>("HBAO Pass",
-			[=](HBAOPassData& data, RenderGraphBuilder& builder)
+			[=, this](HBAOPassData& data, RenderGraphBuilder& builder)
 			{
 				RGTextureDesc hbao_desc{};
 				hbao_desc.format = GfxFormat::R8_UNORM;

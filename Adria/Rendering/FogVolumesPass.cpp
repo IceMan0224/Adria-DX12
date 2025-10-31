@@ -112,7 +112,7 @@ namespace adria
 		};
 
 		rg.AddPass<LightInjectionPassData>("Fog Volumes Light Injection Pass",
-			[=](LightInjectionPassData& data, RenderGraphBuilder& builder)
+			[=, this](LightInjectionPassData& data, RenderGraphBuilder& builder)
 			{
 				Uint32 const voxel_grid_width = DivideAndRoundUp(width, VOXEL_TEXEL_SIZE_X);
 				Uint32 const voxel_grid_height = DivideAndRoundUp(height, VOXEL_TEXEL_SIZE_Y);
@@ -128,7 +128,7 @@ namespace adria
 				data.light_injection_target = builder.WriteTexture(RG_NAME(FogLightInjectionTarget));
 				data.light_injection_target_history = builder.ReadTexture(RG_NAME(FogLightInjectionTargetHistory));
 			},
-			[=](LightInjectionPassData const& data, RenderGraphContext& ctx)
+			[=, this](LightInjectionPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -180,7 +180,7 @@ namespace adria
 		};
 
 		rg.AddPass<ScatteringIntegrationPassData>("Fog Volumes Scattering Integration Pass",
-			[=](ScatteringIntegrationPassData& data, RenderGraphBuilder& builder)
+			[=, this](ScatteringIntegrationPassData& data, RenderGraphBuilder& builder)
 			{
 				Uint32 const voxel_grid_width = DivideAndRoundUp(width, VOXEL_TEXEL_SIZE_X);
 				Uint32 const voxel_grid_height = DivideAndRoundUp(height, VOXEL_TEXEL_SIZE_Y);
@@ -196,7 +196,7 @@ namespace adria
 				data.integrated_scattering = builder.WriteTexture(RG_NAME(FogFinal));
 				data.injected_light = builder.ReadTexture(RG_NAME(FogLightInjectionTarget));
 			},
-			[=](ScatteringIntegrationPassData const& data, RenderGraphContext& ctx)
+			[=, this](ScatteringIntegrationPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
@@ -238,14 +238,14 @@ namespace adria
 		};
 
 		rg.AddPass<CombinePassData>("Fog Volumes Combine Pass",
-			[=](CombinePassData& data, RenderGraphBuilder& builder)
+			[=, this](CombinePassData& data, RenderGraphBuilder& builder)
 			{
 				builder.WriteRenderTarget(RG_NAME(HDR_RenderTarget), RGLoadStoreAccessOp::Preserve_Preserve);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_PixelShader);
 				data.fog = builder.ReadTexture(RG_NAME(FogFinal), ReadAccess_PixelShader);
 				builder.SetViewport(width, height);
 			},
-			[=](CombinePassData const& data, RenderGraphContext& ctx)
+			[=, this](CombinePassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

@@ -686,7 +686,7 @@ namespace adria
 	void Renderer::ClearTriangleOverdrawTexture(RenderGraph& rg)
 	{
 		rg.AddPass<void>("Clear Triangle Overdraw Texture Pass",
-			[=](RenderGraphBuilder& builder)
+			[=, this](RenderGraphBuilder& builder)
 			{},
 			[&](RenderGraphContext& ctx)
 			{
@@ -705,12 +705,12 @@ namespace adria
 		};
 
 		rg.AddPass<CopyToBackbufferPassData>("Copy to Backbuffer Pass",
-			[=](CopyToBackbufferPassData& data, RenderGraphBuilder& builder)
+			[=, this](CopyToBackbufferPassData& data, RenderGraphBuilder& builder)
 			{
 				data.dst = builder.WriteCopyDstTexture(RG_NAME(Backbuffer));
 				data.src = builder.ReadCopySrcTexture(RG_NAME(FinalTexture));
 			},
-			[=](CopyToBackbufferPassData const& data, RenderGraphContext& ctx)
+			[=, this](CopyToBackbufferPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 				GfxTexture const& src_texture = ctx.GetCopySrcTexture(data.src);
@@ -740,12 +740,12 @@ namespace adria
 			RGTextureCopySrcId src;
 		};
 		rg.AddPass<ScreenshotPassData>("Screenshot Pass",
-			[=](ScreenshotPassData& data, RenderGraphBuilder& builder)
+			[=, this](ScreenshotPassData& data, RenderGraphBuilder& builder)
 			{
 				data.dst = builder.WriteCopyDstBuffer(RG_NAME(ScreenshotBuffer));
 				data.src = builder.ReadCopySrcTexture(RG_NAME(FinalTexture));
 			},
-			[=](ScreenshotPassData const& data, RenderGraphContext& ctx)
+			[=, this](ScreenshotPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 				GfxTexture const& src_texture = ctx.GetCopySrcTexture(data.src);

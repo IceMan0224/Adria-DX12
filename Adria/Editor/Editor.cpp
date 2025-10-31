@@ -136,14 +136,14 @@ namespace adria
 		};
 
 		rg.AddPass<EditorPassData>("Editor Pass",
-			[=](EditorPassData& data, RenderGraphBuilder& builder)
+			[=, this](EditorPassData& data, RenderGraphBuilder& builder)
 			{
 				data.src = builder.ReadTexture(RG_NAME(FinalTexture));
 				data.rt = builder.WriteRenderTarget(RG_NAME(Backbuffer), RGLoadStoreAccessOp::Preserve_Preserve);
 				Vector2u display_resolution = engine->renderer->GetDisplayResolution();
 				builder.SetViewport(display_resolution.x, display_resolution.y);
 			},
-			[=](EditorPassData const& data, RenderGraphContext& ctx)
+			[=, this](EditorPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 

@@ -186,7 +186,7 @@ namespace adria
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		rg.AddPass<void>("Path Tracing GBuffer Pass",
-			[=](RenderGraphBuilder& builder)
+			[=, this](RenderGraphBuilder& builder)
 			{
 				RGTextureDesc gbuffer_desc{};
 				gbuffer_desc.width = width;
@@ -215,7 +215,7 @@ namespace adria
 				builder.WriteDepthStencil(RG_NAME(PT_DepthStencil), RGLoadStoreAccessOp::Clear_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RenderGraphContext& context)
+			[=, this](RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
@@ -282,7 +282,7 @@ namespace adria
 		rg.ImportTexture(RG_NAME(PT_AccumulationTexture), accumulation_texture.get());
 
 		rg.AddPass<PathTracingPassData>("Path Tracing Pass",
-			[=](PathTracingPassData& data, RGBuilder& builder)
+			[=, this](PathTracingPassData& data, RGBuilder& builder)
 			{
 				RGTextureDesc render_target_desc{};
 				render_target_desc.format = GfxFormat::R16G16B16A16_FLOAT;
@@ -314,7 +314,7 @@ namespace adria
 					data.output = builder.WriteTexture(RG_NAME(PT_Output));
 				}
 			},
-			[=](PathTracingPassData const& data, RenderGraphContext& ctx)
+			[=, this](PathTracingPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();

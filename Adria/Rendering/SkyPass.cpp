@@ -56,7 +56,7 @@ namespace adria
 
 		rg.ImportTexture(RG_NAME(Sky), sky_texture.get());
 		rg.AddPass<ComputeSkyPassData>("Compute Sky Pass",
-			[=](ComputeSkyPassData& data, RenderGraphBuilder& builder)
+			[=, this](ComputeSkyPassData& data, RenderGraphBuilder& builder)
 			{
 				data.sky_uav = builder.WriteTexture(RG_NAME(Sky));
 			},
@@ -121,14 +121,14 @@ namespace adria
 	{
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		rg.AddPass<void>("Draw Sky Pass",
-			[=](RenderGraphBuilder& builder)
+			[=, this](RenderGraphBuilder& builder)
 			{
 				std::ignore = builder.ReadTexture(RG_NAME(Sky));
 				builder.WriteRenderTarget(RG_NAME(HDR_RenderTarget), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.ReadDepthStencil(RG_NAME(DepthStencil), RGLoadStoreAccessOp::Preserve_Preserve);
 				builder.SetViewport(width, height);
 			},
-			[=](RenderGraphContext& context)
+			[=, this](RenderGraphContext& context)
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
