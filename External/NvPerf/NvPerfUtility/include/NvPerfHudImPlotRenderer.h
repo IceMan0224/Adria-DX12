@@ -279,7 +279,7 @@ protected:
 
     bool RenderTimePlot(const TimePlot& plot) const override
     {
-        float plotHeight = 50.0f + ImGui::GetFont()->FontSize * float(plot.signals.size());
+        float plotHeight = 50.0f + ImGui::GetFontSize() * float(plot.signals.size());
 
         // Use only major ticks for seconds
         ImPlot::PushStyleVar(ImPlotStyleVar_MinorTickLen, ImPlot::GetStyle().MajorTickLen);
