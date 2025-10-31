@@ -339,10 +339,11 @@ void AddTextVertical(ImDrawList *DrawList, ImVec2 pos, ImU32 col, const char *te
         text_end = text_begin + strlen(text_begin);
     ImGuiContext& g = *GImGui;
     ImFont* font = g.Font;
+    ImFontBaked* font_baked = g.FontBaked;
     // Align to be pixel perfect
     pos.x = IM_FLOOR(pos.x);
     pos.y = IM_FLOOR(pos.y);
-    const float scale = g.FontSize / font->FontSize;
+    const float scale = g.FontSize / font_baked->Size;
     const char* s = text_begin;
     int chars_exp = (int)(text_end - s);
     int chars_rnd = 0;
@@ -359,7 +360,7 @@ void AddTextVertical(ImDrawList *DrawList, ImVec2 pos, ImU32 col, const char *te
             if (c == 0) // Malformed UTF-8?
                 break;
         }
-        const ImFontGlyph * glyph = font->FindGlyph((ImWchar)c);
+        const ImFontGlyph * glyph = font_baked->FindGlyph((ImWchar)c);
         if (glyph == nullptr) {
             continue;
         }

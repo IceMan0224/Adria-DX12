@@ -391,6 +391,9 @@ set(ADRIA_MACOS_SOURCES
 set(ADRIA_METAL_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDevice.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDevice.mm"
+
+	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Metal/MetalImGuiManager.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Metal/MetalImGuiManager.mm"
 )
 
 if(WIN32)
@@ -455,6 +458,10 @@ if(WIN32)
 		"${EXTERNAL_DIR}/D3D12MA/D3D12MemAlloc.cpp"
 	)
 elseif(APPLE)
+	list(APPEND EXTERNAL_SOURCES
+		"${EXTERNAL_DIR}/ImGui/imgui_impl_metal.mm"
+		"${EXTERNAL_DIR}/ImGui/imgui_impl_osx.mm"
+	)
 endif()
 
 source_group("External" FILES ${EXTERNAL_SOURCES})
@@ -560,6 +567,7 @@ elseif(APPLE)
 		"-framework Metal"
 		"-framework MetalKit"
 		"-framework QuartzCore"
+		"-framework GameController"
 
 		$<$<CONFIG:Debug>:
 			"${EXTERNAL_DIR}/nfd/lib/libnfd_d_arm64.a"
