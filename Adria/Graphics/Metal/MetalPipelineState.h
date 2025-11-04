@@ -39,8 +39,10 @@ namespace adria
         virtual GfxPipelineStateType GetType() const override { return GfxPipelineStateType::Compute; }
 
         id<MTLComputePipelineState> GetPipelineState() const { return pipeline_state; }
+        MTLSize GetThreadsPerThreadgroup() const { return threads_per_threadgroup; }
 
     private:
         id<MTLComputePipelineState> pipeline_state;
+        MTLSize threads_per_threadgroup;
     };
 }

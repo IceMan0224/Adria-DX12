@@ -15,7 +15,7 @@ namespace adria
 		return ToD3D12BarrierLayout(flags1) == ToD3D12BarrierLayout(flags2);
 	}
 
-	inline constexpr DXGI_FORMAT ConvertGfxFormat(GfxFormat _format)
+	inline constexpr DXGI_FORMAT ToDXGIFormat(GfxFormat _format)
 	{
 		switch (_format)
 		{
@@ -156,7 +156,7 @@ namespace adria
 		}
 		return DXGI_FORMAT_UNKNOWN;
 	}
-	inline constexpr GfxFormat ConvertDXGIFormat(DXGI_FORMAT _format)
+	inline constexpr GfxFormat FromDXGIFormat(DXGI_FORMAT _format)
 	{
 		switch (_format)
 		{

@@ -18,7 +18,7 @@ namespace adria
 		swapchain_desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 		swapchain_desc.BufferCount = GFX_BACKBUFFER_COUNT;
 		swapchain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapchain_desc.Format = ConvertGfxFormat(desc.backbuffer_format);
+		swapchain_desc.Format = ToDXGIFormat(desc.backbuffer_format);
 		swapchain_desc.Width = width;
 		swapchain_desc.Height = height;
 		swapchain_desc.Scaling = DXGI_SCALING_NONE;
@@ -106,7 +106,7 @@ namespace adria
 			GfxTextureDesc gfx_desc{};
 			gfx_desc.width = (Uint32)desc.Width;
 			gfx_desc.height = (Uint32)desc.Height;
-			gfx_desc.format = ConvertDXGIFormat(desc.Format);
+			gfx_desc.format = FromDXGIFormat(desc.Format);
 			gfx_desc.initial_state = GfxResourceState::Present;
 			gfx_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
 			gfx_desc.bind_flags = GfxBindFlag::RenderTarget;

@@ -92,7 +92,7 @@ namespace adria
 					vb_alloc.Update(transient_lines.data(), transient_vb_count * vb_stride, 0);
 					vb_alloc.Update(persistent_lines.data(), persistent_vb_count * vb_stride, transient_vb_count * vb_stride);
 
-					GfxVertexBufferView vbv[] = { GfxVertexBufferView(vb_alloc.gpu_address, vb_count, vb_stride) };
+					GfxVertexBufferView vbv[] = { GfxVertexBufferView(vb_alloc.buffer, vb_alloc.offset, vb_count * vb_stride, vb_stride) };
 
 					cmd_list->SetPipelineState(debug_psos->Get());
 					cmd_list->SetVertexBuffers(vbv);
@@ -110,7 +110,7 @@ namespace adria
 					vb_alloc.Update(transient_triangles.data(), transient_vb_count * vb_stride, 0);
 					vb_alloc.Update(persistent_triangles.data(), persistent_vb_count * vb_stride, transient_vb_count * vb_stride);
 
-					GfxVertexBufferView vbv[] = { GfxVertexBufferView(vb_alloc.gpu_address, vb_count, vb_stride) };
+					GfxVertexBufferView vbv[] = { GfxVertexBufferView(vb_alloc.buffer, vb_alloc.offset, vb_count * vb_stride, vb_stride) };
 					debug_psos->SetTopologyType(GfxPrimitiveTopologyType::Triangle);
 					debug_psos->SetFillMode(GfxFillMode::Solid);
 					cmd_list->SetPipelineState(debug_psos->Get());

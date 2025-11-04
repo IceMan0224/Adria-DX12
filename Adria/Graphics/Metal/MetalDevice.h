@@ -13,6 +13,7 @@ namespace adria
 {
     class MetalSwapchain;
     class MetalTexture;
+    class MetalArgumentBuffer;
 
     struct MetalCapabilities : GfxCapabilities
     {
@@ -39,7 +40,7 @@ namespace adria
         void EndFrame() override {}
         Bool IsFirstFrame() override { return false; }
 
-        void* GetNative() const override { return nullptr; }
+        void* GetNative() const override;
         void* GetWindowHandle() const override { return nullptr; }
 
         GfxCapabilities const& GetCapabilities() const override;
@@ -61,11 +62,11 @@ namespace adria
 
         GfxLinearDynamicAllocator* GetDynamicAllocator() const override { return nullptr; }
 
-        GfxBindlessTable AllocatePersistentBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) override { return {}; }
-        GfxBindlessTable AllocateBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) override { return {}; }
-        void UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors) override {}
-        void UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count = 1) override {}
-        void UpdateBindlessTables(std::vector<GfxBindlessTable> const& table, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size) override {}
+        GfxBindlessTable AllocatePersistentBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) override;
+        GfxBindlessTable AllocateBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) override;
+        void UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors) override;
+        void UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count = 1) override;
+        void UpdateBindlessTables(std::vector<GfxBindlessTable> const& table, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size) override;
         void FreeDescriptor(GfxDescriptor descriptor) override {}
 
         std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) override { return nullptr; }
@@ -83,17 +84,17 @@ namespace adria
         std::unique_ptr<GfxPipelineState> CreateMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc) override { return nullptr; }
         std::unique_ptr<GfxFence> CreateFence(Char const* name) override { return nullptr; }
         std::unique_ptr<GfxQueryHeap> CreateQueryHeap(GfxQueryHeapDesc const& desc) override { return nullptr; }
-        std::unique_ptr<GfxRayTracingTLAS> CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags) override { return nullptr; }
-        std::unique_ptr<GfxRayTracingBLAS> CreateRayTracingBLAS(std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags) override { return nullptr; }
-        std::unique_ptr<GfxRayTracingPipeline> CreateRayTracingPipeline(GfxRayTracingPipelineDesc const& desc) override { return nullptr; }
+        std::unique_ptr<GfxRayTracingTLAS> CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags) override;
+        std::unique_ptr<GfxRayTracingBLAS> CreateRayTracingBLAS(std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags) override;
+        std::unique_ptr<GfxRayTracingPipeline> CreateRayTracingPipeline(GfxRayTracingPipelineDesc const& desc) override;
 
-        GfxDescriptor CreateBufferSRV(GfxBuffer const*, GfxBufferDescriptorDesc const* = nullptr) override { return {}; }
-        GfxDescriptor CreateBufferUAV(GfxBuffer const*, GfxBufferDescriptorDesc const* = nullptr) override { return {}; }
-        GfxDescriptor CreateBufferUAV(GfxBuffer const*, GfxBuffer const*, GfxBufferDescriptorDesc const* = nullptr) override { return {}; }
-        GfxDescriptor CreateTextureSRV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override { return {}; }
-        GfxDescriptor CreateTextureUAV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override { return {}; }
-        GfxDescriptor CreateTextureRTV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override { return {}; }
-        GfxDescriptor CreateTextureDSV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override { return {}; }
+        GfxDescriptor CreateBufferSRV(GfxBuffer const*, GfxBufferDescriptorDesc const* = nullptr) override;
+        GfxDescriptor CreateBufferUAV(GfxBuffer const*, GfxBufferDescriptorDesc const* = nullptr) override;
+        GfxDescriptor CreateBufferUAV(GfxBuffer const*, GfxBuffer const*, GfxBufferDescriptorDesc const* = nullptr) override;
+        GfxDescriptor CreateTextureSRV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override;
+        GfxDescriptor CreateTextureUAV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override;
+        GfxDescriptor CreateTextureRTV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override;
+        GfxDescriptor CreateTextureDSV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override;
 
         Uint64 GetLinearBufferSize(GfxTexture const* texture) const override { return 0; }
         Uint64 GetLinearBufferSize(GfxBuffer const* buffer) const override { return 0; }
@@ -104,8 +105,9 @@ namespace adria
         void GetTimestampFrequency(Uint64& frequency) const override { frequency = 0; }
         GPUMemoryUsage GetMemoryUsage() const override { return {0, 0}; }
 
+        MetalArgumentBuffer* GetArgumentBuffer() const { return argument_buffer.get(); }
+
 #ifdef __OBJC__
-        // Metal-specific methods (only available in Objective-C++)
         id<MTLDevice> GetMTLDevice() const { return device; }
         id<MTLCommandQueue> GetMTLCommandQueue() const { return command_queue; }
         id<MTLLibrary> GetMTLLibrary() const { return shader_library; }
@@ -126,6 +128,7 @@ namespace adria
 #endif
         std::unique_ptr<MetalSwapchain> swapchain;
         std::unique_ptr<MetalTexture> backbuffer_textures[3];
+        std::unique_ptr<MetalArgumentBuffer> argument_buffer;
         Uint32 frame_index = 0;
         Uint32 backbuffer_index = 0;
         MetalCapabilities capabilities;

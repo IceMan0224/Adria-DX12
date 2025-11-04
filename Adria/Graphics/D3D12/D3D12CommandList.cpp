@@ -113,7 +113,7 @@ namespace adria
 		}
 		void ToD3D12ClearValue(GfxClearValue value, D3D12_CLEAR_VALUE& d3d12_clear_value)
 		{
-			d3d12_clear_value.Format = ConvertGfxFormat(value.format);
+			d3d12_clear_value.Format = ToDXGIFormat(value.format);
 			if (value.active_member == GfxClearValue::GfxActiveMember::Color)
 			{
 				memcpy(d3d12_clear_value.Color, value.color.color, sizeof(Float) * 4);
@@ -570,7 +570,7 @@ namespace adria
 		dst_texture.PlacedFootprint.Footprint.Width = desc.width;
 		dst_texture.PlacedFootprint.Footprint.Depth = 1;
 		dst_texture.PlacedFootprint.Footprint.Height = desc.height;
-		dst_texture.PlacedFootprint.Footprint.Format = ConvertGfxFormat(desc.format);
+		dst_texture.PlacedFootprint.Footprint.Format = ToDXGIFormat(desc.format);
 		dst_texture.PlacedFootprint.Footprint.RowPitch = (Uint32)AlignUp(GetRowPitch(desc.format, dst_texture.PlacedFootprint.Footprint.Width), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 
 		D3D12_TEXTURE_COPY_LOCATION src_texture;
@@ -600,7 +600,7 @@ namespace adria
 		copy_src.pResource = (ID3D12Resource*)src_buffer.GetNative();
 		copy_src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 		copy_src.PlacedFootprint.Offset = offset;
-		copy_src.PlacedFootprint.Footprint.Format = ConvertGfxFormat(desc.format);
+		copy_src.PlacedFootprint.Footprint.Format = ToDXGIFormat(desc.format);
 		copy_src.PlacedFootprint.Footprint.Width = w;
 		copy_src.PlacedFootprint.Footprint.Height = h;
 		copy_src.PlacedFootprint.Footprint.Depth = d;
@@ -782,7 +782,7 @@ namespace adria
 			D3D12_INDEX_BUFFER_VIEW ibv{};
 			ibv.BufferLocation = index_buffer_view->buffer_location;
 			ibv.SizeInBytes = index_buffer_view->size_in_bytes;
-			ibv.Format = ConvertGfxFormat(index_buffer_view->format);
+			ibv.Format = ToDXGIFormat(index_buffer_view->format);
 			cmd_list->IASetIndexBuffer(&ibv);
 		}
 		else

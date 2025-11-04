@@ -1,6 +1,7 @@
 #import <Metal/Metal.h>
 #include "MetalPipelineState.h"
 #include "MetalDevice.h"
+#include "MetalConversions.h"
 #include "Graphics/GfxShader.h"
 #include "Rendering/ShaderManager.h"
 
@@ -42,12 +43,12 @@ namespace adria
 
         for (Uint32 i = 0; i < desc.num_render_targets; ++i)
         {
-            pso_desc.colorAttachments[i].pixelFormat = MTLPixelFormatBGRA8Unorm; // TODO: Convert from desc.rtv_formats[i]
+            pso_desc.colorAttachments[i].pixelFormat = ToMTLPixelFormat(desc.rtv_formats[i]);
         }
 
         if (desc.dsv_format != GfxFormat::UNKNOWN)
         {
-            pso_desc.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float; // TODO: Convert from desc.dsv_format
+            pso_desc.depthAttachmentPixelFormat = ToMTLPixelFormat(desc.dsv_format);
         }
 
         NSError* error = nil;
@@ -102,6 +103,8 @@ namespace adria
             {
                 NSLog(@"Failed to create compute pipeline state: %@", error);
             }
+
+            threads_per_threadgroup = computeFunction.threadGroupSize;
         }
     }
 

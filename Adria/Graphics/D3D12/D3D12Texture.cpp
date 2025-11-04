@@ -20,7 +20,7 @@ namespace adria
 		allocation_desc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
 
 		D3D12_RESOURCE_DESC resource_desc{};
-		resource_desc.Format = ConvertGfxFormat(desc.format);
+		resource_desc.Format = ToDXGIFormat(desc.format);
 		resource_desc.Width = desc.width;
 		resource_desc.Height = desc.height;
 		resource_desc.MipLevels = desc.mip_levels;
@@ -85,7 +85,7 @@ namespace adria
 				clear_value.Format = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 				break;
 			default:
-				clear_value.Format = ConvertGfxFormat(desc.format);
+				clear_value.Format = ToDXGIFormat(desc.format);
 				break;
 			}
 			clear_value_ptr = &clear_value;
@@ -111,7 +111,7 @@ namespace adria
 				clear_value.Format = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 				break;
 			default:
-				clear_value.Format = ConvertGfxFormat(desc.format);
+				clear_value.Format = ToDXGIFormat(desc.format);
 				break;
 			}
 			clear_value_ptr = &clear_value;

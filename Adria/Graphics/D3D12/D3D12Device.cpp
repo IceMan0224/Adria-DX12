@@ -1218,7 +1218,7 @@ namespace adria
 			else
 			{
 				Uint32 stride = GetGfxFormatStride(format);
-				srv_desc.Format = ConvertGfxFormat(format);
+				srv_desc.Format = ToDXGIFormat(format);
 				srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 				srv_desc.Buffer.FirstElement = view_desc.offset / stride;
 				srv_desc.Buffer.NumElements = (Uint32)std::min<Uint64>(view_desc.size, desc.size - view_desc.offset) / stride;
@@ -1258,7 +1258,7 @@ namespace adria
 			else
 			{
 				Uint32 stride = GetGfxFormatStride(format);
-				uav_desc.Format = ConvertGfxFormat(format);
+				uav_desc.Format = ToDXGIFormat(format);
 				uav_desc.Buffer.FirstElement = (Uint32)view_desc.offset / stride;
 				uav_desc.Buffer.NumElements = (Uint32)std::min<Uint64>(view_desc.size, desc.size - view_desc.offset) / stride;
 			}
@@ -1299,7 +1299,7 @@ namespace adria
 				srv_desc.Format = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 				break;
 			default:
-				srv_desc.Format = ConvertGfxFormat(format);
+				srv_desc.Format = ToDXGIFormat(format);
 				break;
 			}
 
@@ -1417,7 +1417,7 @@ namespace adria
 				uav_desc.Format = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 				break;
 			default:
-				uav_desc.Format = ConvertGfxFormat(format);
+				uav_desc.Format = ToDXGIFormat(format);
 				break;
 			}
 
@@ -1482,7 +1482,7 @@ namespace adria
 				rtv_desc.Format = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 				break;
 			default:
-				rtv_desc.Format = ConvertGfxFormat(format);
+				rtv_desc.Format = ToDXGIFormat(format);
 				break;
 			}
 
@@ -1562,7 +1562,7 @@ namespace adria
 				dsv_desc.Format = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 				break;
 			default:
-				dsv_desc.Format = ConvertGfxFormat(format);
+				dsv_desc.Format = ToDXGIFormat(format);
 				break;
 			}
 			if (view_desc.flags & GfxTextureDescriptorFlag_DepthReadOnly) dsv_desc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;

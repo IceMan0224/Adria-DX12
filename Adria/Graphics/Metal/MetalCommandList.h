@@ -44,7 +44,7 @@ namespace adria
         virtual void DrawIndexedIndirect(GfxBuffer const& buffer, Uint32 offset) override {}
         virtual void DispatchIndirect(GfxBuffer const& buffer, Uint32 offset) override {}
         virtual void DispatchMeshIndirect(GfxBuffer const& buffer, Uint32 offset) override {}
-        virtual void DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth = 1) override {}
+        virtual void DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth = 1) override;
 
         virtual void TextureBarrier(GfxTexture const& texture, GfxResourceState flags_before, GfxResourceState flags_after, Uint32 subresource = 0) override {}
         virtual void BufferBarrier(GfxBuffer const& buffer, GfxResourceState flags_before, GfxResourceState flags_after) override {}
@@ -68,7 +68,7 @@ namespace adria
         virtual void EndRenderPass() override;
 
         virtual void SetPipelineState(GfxPipelineState const* state) override;
-        virtual GfxRayTracingShaderBindings* BeginRayTracingShaderBindings(GfxRayTracingPipeline const* pipeline) override { return nullptr; }
+        virtual GfxRayTracingShaderBindings* BeginRayTracingShaderBindings(GfxRayTracingPipeline const* pipeline) override;
         virtual void SetStencilReference(Uint8 stencil) override;
         virtual void SetBlendFactor(Float const* blend_factor) override {}
         virtual void SetPrimitiveTopology(GfxPrimitiveTopology topology) override;
@@ -92,11 +92,6 @@ namespace adria
         virtual void SetRootUAV(Uint32 slot, Uint64 gpu_address) override {}
         virtual void SetRootDescriptorTable(Uint32 slot, GfxDescriptor base_descriptor) override {}
 
-        virtual void BuildRayTracingTLAS(GfxRayTracingTLAS& tlas) override {}
-        virtual void BuildRayTracingBLAS(GfxRayTracingBLAS& blas) override {}
-        virtual void UpdateRayTracingTLAS(GfxRayTracingTLAS& tlas, std::span<GfxRayTracingInstance> instances) override {}
-        virtual void UpdateRayTracingBLAS(GfxRayTracingBLAS& blas, std::span<GfxRayTracingGeometry> geometries) override {}
-
         id<MTLCommandBuffer> GetCommandBuffer() const { return command_buffer; }
 
     private:
@@ -108,5 +103,7 @@ namespace adria
         id<MTLBlitCommandEncoder> blit_encoder;
         GfxPrimitiveTopology current_topology;
         GfxPipelineState const* current_pipeline_state;
+        GfxIndexBufferView* current_index_buffer_view;
+        std::unique_ptr<GfxRayTracingShaderBindings> current_rt_bindings;
     };
 }

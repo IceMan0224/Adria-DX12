@@ -301,7 +301,7 @@ namespace adria
 				GfxInputLayout::GfxInputElement const& element = input_layout.elements[i];
 				D3D12_INPUT_ELEMENT_DESC desc{};
 				desc.AlignedByteOffset = element.aligned_byte_offset;
-				desc.Format = ConvertGfxFormat(element.format);
+				desc.Format = ToDXGIFormat(element.format);
 				desc.InputSlot = element.input_slot;
 				switch (element.input_slot_class)
 				{
@@ -351,11 +351,11 @@ namespace adria
 		d3d12_desc.RasterizerState = ConvertRasterizerDesc(desc.rasterizer_state);
 		d3d12_desc.DepthStencilState = ConvertDepthStencilDesc(desc.depth_state);
 		d3d12_desc.SampleDesc = DXGI_SAMPLE_DESC{ .Count = 1, .Quality = 0 };
-		d3d12_desc.DSVFormat = ConvertGfxFormat(desc.dsv_format);
+		d3d12_desc.DSVFormat = ToDXGIFormat(desc.dsv_format);
 		d3d12_desc.NumRenderTargets = desc.num_render_targets;
 		for (Uint64 i = 0; i < ARRAYSIZE(d3d12_desc.RTVFormats); ++i)
 		{
-			d3d12_desc.RTVFormats[i] = ConvertGfxFormat(desc.rtv_formats[i]);
+			d3d12_desc.RTVFormats[i] = ToDXGIFormat(desc.rtv_formats[i]);
 		}
 		d3d12_desc.PrimitiveTopologyType = ConvertPrimitiveTopologyType(desc.topology_type);
 		d3d12_desc.SampleMask = desc.sample_mask;
@@ -397,11 +397,11 @@ namespace adria
 		d3d12_desc.RasterizerState = ConvertRasterizerDesc(desc.rasterizer_state);
 		d3d12_desc.DepthStencilState = ConvertDepthStencilDesc(desc.depth_state);
 		d3d12_desc.SampleDesc = DXGI_SAMPLE_DESC{ .Count = 1, .Quality = 0 };
-		d3d12_desc.DSVFormat = ConvertGfxFormat(desc.dsv_format);
+		d3d12_desc.DSVFormat = ToDXGIFormat(desc.dsv_format);
 		d3d12_desc.NumRenderTargets = desc.num_render_targets;
 		for (Uint32 i = 0; i < ARRAYSIZE(d3d12_desc.RTVFormats); ++i)
 		{
-			d3d12_desc.RTVFormats[i] = ConvertGfxFormat(desc.rtv_formats[i]);
+			d3d12_desc.RTVFormats[i] = ToDXGIFormat(desc.rtv_formats[i]);
 		}
 		d3d12_desc.PrimitiveTopologyType = ConvertPrimitiveTopologyType(desc.topology_type);
 		d3d12_desc.SampleMask = desc.sample_mask;
