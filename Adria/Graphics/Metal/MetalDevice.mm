@@ -2,6 +2,7 @@
 #import <MetalKit/MetalKit.h>
 #import <QuartzCore/CAMetalLayer.h>
 #include "MetalDevice.h"
+#include "MetalSwapchain.h"
 #include "Platform/Window.h"
 
 namespace adria

@@ -1,9 +1,19 @@
 #pragma once
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCapabilities.h"
+#include <memory>
+
+#ifdef __OBJC__
+    @protocol MTLDevice;
+    @protocol MTLCommandQueue;
+    @protocol MTLLibrary;
+#endif
 
 namespace adria
 {
+    class MetalSwapchain;
+    class MetalTexture;
+
     struct MetalCapabilities : GfxCapabilities
     {
         virtual Bool Initialize(GfxDevice* gfx) override {return true;}
@@ -15,7 +25,6 @@ namespace adria
         explicit MetalDevice(Window* window);
         ~MetalDevice() override;
 
-        // Pure virtual methods from GfxDevice that must be implemented
         void OnResize(Uint32 w, Uint32 h) override;
         GfxTexture* GetBackbuffer() const override;
         Uint32 GetBackbufferIndex() const override;
@@ -95,11 +104,30 @@ namespace adria
         void GetTimestampFrequency(Uint64& frequency) const override { frequency = 0; }
         GPUMemoryUsage GetMemoryUsage() const override { return {0, 0}; }
 
+#ifdef __OBJC__
+        // Metal-specific methods (only available in Objective-C++)
+        id<MTLDevice> GetMTLDevice() const { return device; }
+        id<MTLCommandQueue> GetMTLCommandQueue() const { return command_queue; }
+        id<MTLLibrary> GetMTLLibrary() const { return shader_library; }
+#endif
+
     private:
         void AddToReleaseQueue_Internal(ReleasableObject* _obj) override {}
 
         Window* window = nullptr;
+#ifdef __OBJC__
+        id<MTLDevice> device;
+        id<MTLCommandQueue> command_queue;
+        id<MTLLibrary> shader_library;
+#else
+        void* device;
+        void* command_queue;
+        void* shader_library;
+#endif
+        std::unique_ptr<MetalSwapchain> swapchain;
+        std::unique_ptr<MetalTexture> backbuffer_textures[3];
         Uint32 frame_index = 0;
+        Uint32 backbuffer_index = 0;
         MetalCapabilities capabilities;
         GfxShadingRateInfo shading_rate_info;
         GfxFence* dummy_fence = nullptr;

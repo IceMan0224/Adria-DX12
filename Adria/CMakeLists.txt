@@ -391,6 +391,16 @@ set(ADRIA_MACOS_SOURCES
 set(ADRIA_METAL_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDevice.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDevice.mm"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalBuffer.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalBuffer.mm"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalTexture.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalTexture.mm"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalCommandList.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalCommandList.mm"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalPipelineState.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalPipelineState.mm"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalSwapchain.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalSwapchain.mm"
 
 	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Metal/MetalImGuiManager.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Metal/MetalImGuiManager.mm"

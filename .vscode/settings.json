@@ -5,6 +5,8 @@
     "cmake.buildBeforeRun": true,
     "files.associations": {
         "*.h": "cpp",
-        "*.cpp": "cpp"
+        "*.cpp": "cpp",
+        "__locale": "cpp",
+        "locale": "cpp"
     }
 }
