@@ -9,7 +9,6 @@
 
 #include "Editor/GUICommand.h"
 #include "Editor/Editor.h"
-#include "Graphics/GfxBuffer.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxCommon.h"

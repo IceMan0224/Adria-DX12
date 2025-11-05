@@ -3,6 +3,8 @@
 #include "MetalDescriptor.h"
 
 @protocol MTLBuffer;
+@protocol MTLTexture;
+@protocol MTLSamplerState;
 @protocol MTLArgumentEncoder;
 
 namespace adria
@@ -13,7 +15,19 @@ namespace adria
     {
         Texture,
         Buffer,
+        Sampler,
         Unknown
+    };
+
+    struct MetalResourceEntry
+    {
+        id<MTLTexture> texture;
+        id<MTLBuffer> buffer;
+        id<MTLSamplerState> sampler;
+        Uint64 buffer_offset;
+        MetalResourceType type;
+
+        MetalResourceEntry() : texture(nil), buffer(nil), sampler(nil), buffer_offset(0), type(MetalResourceType::Unknown) {}
     };
 
     class MetalArgumentBuffer final
@@ -32,8 +46,15 @@ namespace adria
 
         void SetTexture(id<MTLTexture> texture, Uint32 index);
         void SetBuffer(id<MTLBuffer> buffer, Uint32 index, Uint64 offset = 0);
+        void SetSampler(id<MTLSamplerState> sampler, Uint32 index);
+
+        id<MTLTexture> GetTexture(Uint32 index) const;
+        id<MTLBuffer> GetBuffer(Uint32 index) const;
+        id<MTLSamplerState> GetSampler(Uint32 index) const;
+        Uint64 GetBufferOffset(Uint32 index) const;
 
         MetalResourceType GetResourceType(Uint32 index) const;
+        MetalResourceEntry const& GetResourceEntry(Uint32 index) const;
 
     private:
         MetalDevice* metal_gfx;
@@ -41,7 +62,7 @@ namespace adria
         id<MTLArgumentEncoder> argument_encoder;
         Uint32 capacity;
         Uint32 next_free_index;
-        std::vector<MetalResourceType> resource_types; 
+        std::vector<MetalResourceEntry> resource_entries; 
 
     private:
         void Grow();

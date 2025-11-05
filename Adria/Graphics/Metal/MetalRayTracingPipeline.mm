@@ -1,11 +1,12 @@
 #import <Metal/Metal.h>
 #include "MetalRayTracingPipeline.h"
 #include "MetalDevice.h"
-#include "MetalShader.h"
 #include "Utilities/StringConversions.h"
 
 namespace adria
 {
+    ADRIA_LOG_CHANNEL(Graphics);
+    
     MetalRayTracingPipeline::MetalRayTracingPipeline(GfxDevice* gfx, GfxRayTracingPipelineDesc const& desc)
         : raygen_pipeline(nil), intersection_table(nil)
     {

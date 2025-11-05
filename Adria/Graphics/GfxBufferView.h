@@ -1,27 +1,40 @@
 #pragma once
+#include "GfxBuffer.h"
 #include "GfxDefines.h"
 #include "GfxFormat.h"
 
 namespace adria
 {
-	class GfxBuffer;
-
 	struct GfxVertexBufferView
 	{
-		explicit GfxVertexBufferView(GfxBuffer* buffer, Uint64 offset = 0, Uint32 size = UINT32_MAX, Uint32 stride = 0);
+		explicit GfxVertexBufferView(GfxBuffer* buffer)
+			: buffer_location(buffer->GetGpuAddress()), size_in_bytes((Uint32)buffer->GetSize()), stride_in_bytes(buffer->GetStride())
+		{
+		}
 
-		GfxBuffer*				    buffer = nullptr;
-		Uint64					    buffer_location = 0;
+		GfxVertexBufferView(Uint64 buffer_location, Uint32 count, Uint32 stride_in_bytes)
+			: buffer_location(buffer_location), size_in_bytes(count * stride_in_bytes), stride_in_bytes(stride_in_bytes)
+		{
+		}
+
+		Uint64                      buffer_location = 0;
 		Uint32                      size_in_bytes = 0;
 		Uint32                      stride_in_bytes = 0;
 	};
 
 	struct GfxIndexBufferView
 	{
-		explicit GfxIndexBufferView(GfxBuffer* buffer, Uint64 offset = 0, Uint32 size = UINT32_MAX);
+		explicit GfxIndexBufferView(GfxBuffer* buffer)
+			: buffer_location(buffer->GetGpuAddress()), size_in_bytes((Uint32)buffer->GetSize()), format(buffer->GetFormat())
+		{
+		}
 
-		GfxBuffer*				    buffer = nullptr;
-		Uint64					    buffer_location = 0;
+		GfxIndexBufferView(Uint64 buffer_location, Uint32 count, GfxFormat format = GfxFormat::R32_UINT)
+			: buffer_location(buffer_location), size_in_bytes(count * GetGfxFormatStride(format)), format(format)
+		{
+		}
+
+		Uint64                      buffer_location = 0;
 		Uint32                      size_in_bytes;
 		GfxFormat                   format;
 	};

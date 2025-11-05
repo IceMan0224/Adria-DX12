@@ -7,10 +7,14 @@
 #include "MetalConversions.h"
 #include "MetalRayTracingPipeline.h"
 #include "MetalRayTracingShaderBindings.h"
+#include "MetalArgumentBuffer.h"
 #include "Graphics/GfxRenderPass.h"
+#include "Graphics/GfxBufferView.h"
 
 namespace adria
 {
+    constexpr Uint32 BINDLESS_ARGUMENT_BUFFER_SLOT = 30;
+
     static MTLLoadAction ConvertLoadAction(GfxLoadAccessOp op)
     {
         switch (op)
@@ -49,7 +53,7 @@ namespace adria
     }
 
     MetalCommandList::MetalCommandList(GfxDevice* gfx, GfxCommandListType type, Char const* name)
-        : gfx(gfx), type(type), command_buffer(nil), render_encoder(nil),
+        : metal_device(static_cast<MetalDevice*>(gfx)), type(type), command_buffer(nil), render_encoder(nil),
           compute_encoder(nil), blit_encoder(nil),
           current_topology(GfxPrimitiveTopology::TriangleList),
           current_pipeline_state(nullptr), current_index_buffer_view(nullptr)
@@ -69,7 +73,7 @@ namespace adria
 
     GfxDevice* MetalCommandList::GetDevice()
     {
-        return gfx;
+        return metal_device;
     }
 
     void* MetalCommandList::GetNative() const
@@ -79,7 +83,6 @@ namespace adria
 
     void MetalCommandList::Begin()
     {
-        MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
         id<MTLCommandQueue> queue = metal_device->GetMTLCommandQueue();
         command_buffer = [queue commandBuffer];
     }
@@ -147,20 +150,23 @@ namespace adria
 
     void MetalCommandList::DrawIndexed(Uint32 index_count, Uint32 instance_count, Uint32 index_offset, Uint32 base_vertex_location, Uint32 start_instance_location)
     {
-        if (render_encoder && current_index_buffer_view && current_index_buffer_view->buffer)
+        if (render_encoder && current_index_buffer_view)
         {
-            MetalBuffer* metal_buffer = static_cast<MetalBuffer*>(current_index_buffer_view->buffer);
-            MTLIndexType index_type = ConvertIndexFormat(current_index_buffer_view->format);
-            Uint32 index_size = (index_type == MTLIndexTypeUInt16) ? 2 : 4;
+            MetalDevice::BufferLookupResult lookup = metal_device->LookupBuffer(current_index_buffer_view->buffer_location);
+            if (lookup.buffer != nil)
+            {
+                MTLIndexType index_type = ConvertIndexFormat(current_index_buffer_view->format);
+                Uint32 index_size = (index_type == MTLIndexTypeUInt16) ? 2 : 4;
 
-            [render_encoder drawIndexedPrimitives:ConvertTopology(current_topology)
-                                       indexCount:index_count
-                                        indexType:index_type
-                                      indexBuffer:metal_buffer->GetMetalBuffer()
-                                indexBufferOffset:index_offset * index_size
-                                    instanceCount:instance_count
-                                       baseVertex:base_vertex_location
-                                     baseInstance:start_instance_location];
+                [render_encoder drawIndexedPrimitives:ConvertTopology(current_topology)
+                                           indexCount:index_count
+                                            indexType:index_type
+                                          indexBuffer:lookup.buffer
+                                    indexBufferOffset:lookup.offset + (index_offset * index_size)
+                                        instanceCount:instance_count
+                                           baseVertex:base_vertex_location
+                                         baseInstance:start_instance_location];
+            }
         }
     }
 
@@ -214,6 +220,14 @@ namespace adria
         ADRIA_TODO("Fill this later");
         MTLRenderPassDescriptor* pass_desc = [MTLRenderPassDescriptor new];
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:pass_desc];
+
+        MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
+        if (arg_buffer && render_encoder)
+        {
+            id<MTLBuffer> buffer = arg_buffer->GetBuffer();
+            [render_encoder setVertexBuffer:buffer offset:0 atIndex:BINDLESS_ARGUMENT_BUFFER_SLOT];
+            [render_encoder setFragmentBuffer:buffer offset:0 atIndex:BINDLESS_ARGUMENT_BUFFER_SLOT];
+        }
     }
 
     void MetalCommandList::EndRenderPass()
@@ -251,8 +265,31 @@ namespace adria
                 break;
             }
         }
-        else if (compute_encoder && state && state->GetType() == GfxPipelineStateType::Compute)
+        else if (state && state->GetType() == GfxPipelineStateType::Compute)
         {
+            if (!compute_encoder)
+            {
+                if (render_encoder)
+                {
+                    [render_encoder endEncoding];
+                    render_encoder = nil;
+                }
+                if (blit_encoder)
+                {
+                    [blit_encoder endEncoding];
+                    blit_encoder = nil;
+                }
+
+                compute_encoder = [command_buffer computeCommandEncoder];
+
+                MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
+                if (arg_buffer && compute_encoder)
+                {
+                    id<MTLBuffer> buffer = arg_buffer->GetBuffer();
+                    [compute_encoder setBuffer:buffer offset:0 atIndex:BINDLESS_ARGUMENT_BUFFER_SLOT];
+                }
+            }
+
             MetalComputePipelineState const* metal_pso = static_cast<MetalComputePipelineState const*>(state);
             [compute_encoder setComputePipelineState:metal_pso->GetPipelineState()];
         }
@@ -278,12 +315,15 @@ namespace adria
 
     void MetalCommandList::SetVertexBuffer(GfxVertexBufferView const& vertex_buffer_view, Uint32 start_slot)
     {
-        if (render_encoder && vertex_buffer_view.buffer)
+        if (render_encoder)
         {
-            MetalBuffer* metal_buffer = static_cast<MetalBuffer*>(vertex_buffer_view.buffer);
-            [render_encoder setVertexBuffer:metal_buffer->GetMetalBuffer()
-                                    offset:vertex_buffer_view.offset
-                                    atIndex:start_slot];
+            MetalDevice::BufferLookupResult lookup = metal_device->LookupBuffer(vertex_buffer_view.buffer_location);
+            if (lookup.buffer != nil)
+            {
+                [render_encoder setVertexBuffer:lookup.buffer
+                                        offset:lookup.offset
+                                        atIndex:start_slot];
+            }
         }
     }
 
@@ -330,7 +370,6 @@ namespace adria
 
         MetalRayTracingPipeline const* metal_pipeline = static_cast<MetalRayTracingPipeline const*>(pipeline);
 
-        // End any current encoder
         if (render_encoder)
         {
             [render_encoder endEncoding];
@@ -345,6 +384,13 @@ namespace adria
         if (!compute_encoder)
         {
             compute_encoder = [command_buffer computeCommandEncoder];
+
+            MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
+            if (arg_buffer && compute_encoder)
+            {
+                id<MTLBuffer> buffer = arg_buffer->GetBuffer();
+                [compute_encoder setBuffer:buffer offset:0 atIndex:BINDLESS_ARGUMENT_BUFFER_SLOT];
+            }
         }
 
         id<MTLComputePipelineState> raygen_pipeline = metal_pipeline->GetRayGenPipeline();

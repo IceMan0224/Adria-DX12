@@ -2,11 +2,13 @@
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCapabilities.h"
 #include <memory>
+#include <map>
 
 #ifdef __OBJC__
     @protocol MTLDevice;
     @protocol MTLCommandQueue;
     @protocol MTLLibrary;
+    @protocol MTLBuffer;
 #endif
 
 namespace adria
@@ -111,6 +113,16 @@ namespace adria
         id<MTLDevice> GetMTLDevice() const { return device; }
         id<MTLCommandQueue> GetMTLCommandQueue() const { return command_queue; }
         id<MTLLibrary> GetMTLLibrary() const { return shader_library; }
+
+        struct BufferLookupResult
+        {
+            id<MTLBuffer> buffer;
+            Uint64 offset;
+        };
+
+        void RegisterBuffer(id<MTLBuffer> buffer);
+        void UnregisterBuffer(id<MTLBuffer> buffer);
+        BufferLookupResult LookupBuffer(Uint64 gpu_address) const;
 #endif
 
     private:
@@ -134,5 +146,14 @@ namespace adria
         MetalCapabilities capabilities;
         GfxShadingRateInfo shading_rate_info;
         GfxFence* dummy_fence = nullptr;
+#ifdef __OBJC__
+        struct BufferEntry
+        {
+            id<MTLBuffer> buffer;
+            Uint64 base_address;
+            Uint64 size;
+        };
+        std::map<Uint64, BufferEntry> buffer_map; // Key is base_address, ordered for range queries
+#endif
     };
 }

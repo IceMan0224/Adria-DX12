@@ -34,12 +34,13 @@ namespace adria
         }
     }
 
-    void MetalSwapchain::Present()
+    Bool MetalSwapchain::Present(Bool vsync)
     {
         current_drawable = nil;
+        return true;
     }
 
-    void MetalSwapchain::Resize(Uint32 w, Uint32 h)
+    void MetalSwapchain::OnResize(Uint32 w, Uint32 h)
     {
         width = w;
         height = h;

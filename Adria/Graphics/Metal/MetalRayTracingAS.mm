@@ -4,19 +4,25 @@
 #include "MetalBuffer.h"
 #include "MetalConversions.h"
 #include "Utilities/Ref.h"
+#include "Utilities/Enum.h"
 
 namespace adria
 {
-    static MTLAccelerationStructureInstanceOptions ConvertGeometryFlags(GfxRayTracingGeometryFlags flags)
+    static MTLAccelerationStructureInstanceOptions ConvertInstanceFlags(GfxRayTracingInstanceFlags flags)
     {
         MTLAccelerationStructureInstanceOptions options = MTLAccelerationStructureInstanceOptionNone;
 
-        if (HasAnyFlag(flags, GfxRayTracingGeometryFlag::Opaque))
+        if (flags & GfxRayTracingInstanceFlag_ForceOpaque)
         {
             options |= MTLAccelerationStructureInstanceOptionOpaque;
         }
-        if (HasAnyFlag(flags, GfxRayTracingGeometryFlag::NoDuplicateAnyHitInvocation))
+        if (flags & GfxRayTracingInstanceFlag_ForceNoOpaque)
         {
+            options |= MTLAccelerationStructureInstanceOptionNonOpaque;
+        }
+        if (flags & GfxRayTracingInstanceFlag_CullDisable)
+        {
+            options |= MTLAccelerationStructureInstanceOptionDisableTriangleCulling;
         }
         return options;
     }
@@ -33,15 +39,15 @@ namespace adria
 
             MetalBuffer* vertex_buffer = static_cast<MetalBuffer*>(geom.vertex_buffer);
             triangleGeometry.vertexBuffer = vertex_buffer->GetMetalBuffer();
-            triangleGeometry.vertexBufferOffset = geom.vertex_offset;
+            triangleGeometry.vertexBufferOffset = geom.vertex_buffer_offset;
             triangleGeometry.vertexStride = geom.vertex_stride;
-            triangleGeometry.vertexFormat = MTLAttributeFormatFloat3; 
+            triangleGeometry.vertexFormat = MTLAttributeFormatFloat3;
 
             if (geom.index_buffer)
             {
                 MetalBuffer* index_buffer = static_cast<MetalBuffer*>(geom.index_buffer);
                 triangleGeometry.indexBuffer = index_buffer->GetMetalBuffer();
-                triangleGeometry.indexBufferOffset = geom.index_offset;
+                triangleGeometry.indexBufferOffset = geom.index_buffer_offset;
                 triangleGeometry.indexType = (geom.index_format == GfxFormat::R16_UINT) ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
                 triangleGeometry.triangleCount = geom.index_count / 3;
             }
@@ -50,14 +56,7 @@ namespace adria
                 triangleGeometry.triangleCount = geom.vertex_count / 3;
             }
 
-            if (HasAnyFlag(geom.flags, GfxRayTracingGeometryFlag::Opaque))
-            {
-                triangleGeometry.opaque = YES;
-            }
-            else
-            {
-                triangleGeometry.opaque = NO;
-            }
+            triangleGeometry.opaque = geom.opaque ? YES : NO;
 
             [geometryDescriptors addObject:triangleGeometry];
         }
@@ -70,7 +69,8 @@ namespace adria
         GfxBufferDesc result_buffer_desc{};
         result_buffer_desc.size = sizes.accelerationStructureSize;
         result_buffer_desc.resource_usage = GfxResourceUsage::Default;
-        result_buffer_desc.bind_flags = GfxBindFlag::AccelerationStructure;
+        result_buffer_desc.bind_flags = GfxBindFlag::None;
+        result_buffer_desc.misc_flags = GfxBufferMiscFlag::AccelStruct;
         result_buffer = gfx->CreateBuffer(result_buffer_desc);
 
         GfxBufferDesc scratch_buffer_desc{};
@@ -80,8 +80,7 @@ namespace adria
         scratch_buffer = gfx->CreateBuffer(scratch_buffer_desc);
 
         MetalBuffer* metal_result_buffer = static_cast<MetalBuffer*>(result_buffer.get());
-        acceleration_structure = [device newAccelerationStructureWithBuffer:metal_result_buffer->GetMetalBuffer()
-                                                                      offset:0];
+        acceleration_structure = [device newAccelerationStructureWithSize:sizes.accelerationStructureSize];
 
         id<MTLCommandQueue> commandQueue = metal_gfx->GetMTLCommandQueue();
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
@@ -122,6 +121,25 @@ namespace adria
         instance_buffer_desc.bind_flags = GfxBindFlag::None;
         instance_buffer = gfx->CreateBuffer(instance_buffer_desc);
 
+        MTLInstanceAccelerationStructureDescriptor* accelDescriptor = [MTLInstanceAccelerationStructureDescriptor descriptor];
+        accelDescriptor.instancedAccelerationStructures = [NSMutableArray array];
+
+        // First, build the array of unique BLAS objects
+        NSMutableDictionary* blasToIndexMap = [NSMutableDictionary dictionary];
+        for (auto const& inst : instances)
+        {
+            MetalRayTracingBLAS* blas = static_cast<MetalRayTracingBLAS*>(inst.blas);
+            id<MTLAccelerationStructure> blas_as = blas->GetAccelerationStructure();
+
+            if (![accelDescriptor.instancedAccelerationStructures containsObject:blas_as])
+            {
+                NSUInteger index = [accelDescriptor.instancedAccelerationStructures count];
+                [(NSMutableArray*)accelDescriptor.instancedAccelerationStructures addObject:blas_as];
+                [blasToIndexMap setObject:@(index) forKey:[NSValue valueWithPointer:blas]];
+            }
+        }
+
+        // Now fill in the instance descriptors
         MetalBuffer* metal_instance_buffer = static_cast<MetalBuffer*>(instance_buffer.get());
         MTLAccelerationStructureInstanceDescriptor* instanceData =
             (MTLAccelerationStructureInstanceDescriptor*)[metal_instance_buffer->GetMetalBuffer() contents];
@@ -139,45 +157,31 @@ namespace adria
                 }
             }
 
-            mtl_inst.instanceID = inst.instance_id;
             mtl_inst.mask = inst.instance_mask;
-            mtl_inst.intersectionFunctionTableOffset = inst.instance_contribution_to_hit_group_index;
+            mtl_inst.intersectionFunctionTableOffset = 0;
 
             mtl_inst.options = MTLAccelerationStructureInstanceOptionNone;
-            if (HasAnyFlag(inst.flags, GfxRayTracingInstanceFlag::TriangleFacingCullDisable))
+            if (inst.flags & GfxRayTracingInstanceFlag_CullDisable)
             {
                 mtl_inst.options |= MTLAccelerationStructureInstanceOptionDisableTriangleCulling;
             }
-            if (HasAnyFlag(inst.flags, GfxRayTracingInstanceFlag::TriangleFrontCounterClockwise))
+            if (inst.flags & GfxRayTracingInstanceFlag_FrontCCW)
             {
                 mtl_inst.options |= MTLAccelerationStructureInstanceOptionTriangleFrontFacingWindingCounterClockwise;
             }
-            if (HasAnyFlag(inst.flags, GfxRayTracingInstanceFlag::ForceOpaque))
+            if (inst.flags & GfxRayTracingInstanceFlag_ForceOpaque)
             {
                 mtl_inst.options |= MTLAccelerationStructureInstanceOptionOpaque;
             }
-            if (HasAnyFlag(inst.flags, GfxRayTracingInstanceFlag::ForceNonOpaque))
+            if (inst.flags & GfxRayTracingInstanceFlag_ForceNoOpaque)
             {
                 mtl_inst.options |= MTLAccelerationStructureInstanceOptionNonOpaque;
             }
-            mtl_inst.accelerationStructureIndex = 0; 
 
-            MetalRayTracingBLAS* blas = static_cast<MetalRayTracingBLAS*>(inst.bottom_level_as);
-            id<MTLAccelerationStructure> blas_as = blas->GetAccelerationStructure();
-        }
-
-        MTLInstanceAccelerationStructureDescriptor* accelDescriptor = [MTLInstanceAccelerationStructureDescriptor descriptor];
-        accelDescriptor.instancedAccelerationStructures = [NSMutableArray array];
-
-        for (auto const& inst : instances)
-        {
-            MetalRayTracingBLAS* blas = static_cast<MetalRayTracingBLAS*>(inst.bottom_level_as);
-            id<MTLAccelerationStructure> blas_as = blas->GetAccelerationStructure();
-
-            if (![accelDescriptor.instancedAccelerationStructures containsObject:blas_as])
-            {
-                [(NSMutableArray*)accelDescriptor.instancedAccelerationStructures addObject:blas_as];
-            }
+            // Set the correct accelerationStructureIndex
+            MetalRayTracingBLAS* blas = static_cast<MetalRayTracingBLAS*>(inst.blas);
+            NSNumber* index = [blasToIndexMap objectForKey:[NSValue valueWithPointer:blas]];
+            mtl_inst.accelerationStructureIndex = [index unsignedIntValue];
         }
 
         accelDescriptor.instanceCount = instances.size();
@@ -190,7 +194,8 @@ namespace adria
         GfxBufferDesc result_buffer_desc{};
         result_buffer_desc.size = sizes.accelerationStructureSize;
         result_buffer_desc.resource_usage = GfxResourceUsage::Default;
-        result_buffer_desc.bind_flags = GfxBindFlag::AccelerationStructure;
+        result_buffer_desc.bind_flags = GfxBindFlag::None;
+        result_buffer_desc.misc_flags = GfxBufferMiscFlag::AccelStruct;
         result_buffer = gfx->CreateBuffer(result_buffer_desc);
 
         GfxBufferDesc scratch_buffer_desc{};
@@ -200,8 +205,7 @@ namespace adria
         scratch_buffer = gfx->CreateBuffer(scratch_buffer_desc);
 
         MetalBuffer* metal_result_buffer = static_cast<MetalBuffer*>(result_buffer.get());
-        acceleration_structure = [device newAccelerationStructureWithBuffer:metal_result_buffer->GetMetalBuffer()
-                                                                      offset:0];
+        acceleration_structure = [device newAccelerationStructureWithSize:sizes.accelerationStructureSize];
 
         id<MTLCommandQueue> commandQueue = metal_gfx->GetMTLCommandQueue();
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];

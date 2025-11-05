@@ -1,43 +1,29 @@
 #import <Metal/Metal.h>
 #include "MetalTexture.h"
 #include "MetalDevice.h"
+#include "MetalConversions.h"
 #include "Graphics/GfxFormat.h"
+#include "Utilities/Enum.h"
 
 namespace adria
 {
-    static MTLPixelFormat ConvertFormat(GfxFormat format)
-    {
-        switch (format)
-        {
-        case GfxFormat::R8G8B8A8_UNORM: return MTLPixelFormatRGBA8Unorm;
-        case GfxFormat::B8G8R8A8_UNORM: return MTLPixelFormatBGRA8Unorm;
-        case GfxFormat::R16G16B16A16_FLOAT: return MTLPixelFormatRGBA16Float;
-        case GfxFormat::R32G32B32A32_FLOAT: return MTLPixelFormatRGBA32Float;
-        case GfxFormat::R32_FLOAT: return MTLPixelFormatR32Float;
-        case GfxFormat::D32_FLOAT: return MTLPixelFormatDepth32Float;
-        case GfxFormat::D24_UNORM_S8_UINT: return MTLPixelFormatDepth24Unorm_Stencil8;
-        case GfxFormat::R16_FLOAT: return MTLPixelFormatR16Float;
-        default: return MTLPixelFormatRGBA8Unorm;
-        }
-    }
-
     MetalTexture::MetalTexture(GfxDevice* gfx, GfxTextureDesc const& desc)
         : GfxTexture(gfx, desc), owns_texture(true)
     {
         MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
-        id<MTLDevice> device = (id<MTLDevice>)metal_device->GetNative();
+        id<MTLDevice> device = metal_device->GetMTLDevice();
 
         MTLTextureDescriptor* tex_desc = [MTLTextureDescriptor new];
         tex_desc.width = desc.width;
         tex_desc.height = desc.height;
-        tex_desc.pixelFormat = ConvertFormat(desc.format);
+        tex_desc.pixelFormat = ToMTLPixelFormat(desc.format);
         tex_desc.usage = MTLTextureUsageShaderRead;
 
-        if (desc.bind_flags & GfxBindFlag::RenderTarget)
+        if (HasFlag(desc.bind_flags, GfxBindFlag::RenderTarget))
             tex_desc.usage |= MTLTextureUsageRenderTarget;
-        if (desc.bind_flags & GfxBindFlag::DepthStencil)
+        if (HasFlag(desc.bind_flags, GfxBindFlag::DepthStencil))
             tex_desc.usage |= MTLTextureUsageRenderTarget;
-        if (desc.bind_flags & GfxBindFlag::UnorderedAccess)
+        if (HasFlag(desc.bind_flags, GfxBindFlag::UnorderedAccess))
             tex_desc.usage |= MTLTextureUsageShaderWrite;
 
         switch (desc.type)
@@ -52,9 +38,6 @@ namespace adria
             tex_desc.textureType = MTLTextureType3D;
             tex_desc.depth = desc.depth;
             break;
-        case GfxTextureType_Cube:
-            tex_desc.textureType = MTLTextureTypeCube;
-            break;
         }
 
         tex_desc.mipmapLevelCount = desc.mip_levels;
@@ -66,13 +49,14 @@ namespace adria
     MetalTexture::MetalTexture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data)
         : MetalTexture(gfx, desc)
     {
-        if (data.data && data.size > 0)
+        if (data.sub_data && data.sub_count > 0)
         {
+            // Upload first subresource for now (could be extended to handle all subresources)
             MTLRegion region = MTLRegionMake2D(0, 0, desc.width, desc.height);
             [metal_texture replaceRegion:region
                              mipmapLevel:0
-                               withBytes:data.data
-                             bytesPerRow:data.row_pitch];
+                               withBytes:data.sub_data[0].data
+                             bytesPerRow:data.sub_data[0].row_pitch];
         }
     }
 
@@ -95,9 +79,31 @@ namespace adria
         return (__bridge void*)metal_texture;
     }
 
+    Uint64 MetalTexture::GetGpuAddress() const
+    {
+        return 0; // Metal textures don't have GPU addresses like buffers do
+    }
+
+    void* MetalTexture::Map()
+    {
+        return nullptr; // Metal textures cannot be directly mapped
+    }
+
+    void MetalTexture::Unmap()
+    {
+        // No-op for Metal textures
+    }
+
     void* MetalTexture::GetSharedHandle() const
     {
         return nullptr;
+    }
+
+    Uint32 MetalTexture::GetRowPitch(Uint32 mip_level) const
+    {
+        // Calculate row pitch based on format and width
+        Uint32 mip_width = std::max(1u, desc.width >> mip_level);
+        return mip_width * GetGfxFormatStride(desc.format);
     }
 
     void MetalTexture::SetName(Char const* name)

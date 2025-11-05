@@ -14,7 +14,11 @@ namespace adria
         virtual ~MetalTexture() override;
 
         virtual void* GetNative() const override;
+        virtual Uint64 GetGpuAddress() const override;
+        virtual void* Map() override;
+        virtual void Unmap() override;
         virtual void* GetSharedHandle() const override;
+        virtual Uint32 GetRowPitch(Uint32 mip_level = 0) const override;
         virtual void SetName(Char const* name) override;
 
         id<MTLTexture> GetMetalTexture() const { return metal_texture; }

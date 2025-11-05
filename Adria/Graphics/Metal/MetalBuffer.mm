@@ -12,17 +12,22 @@ namespace adria
 
         MTLResourceOptions options = MTLResourceStorageModeShared;
         metal_buffer = [device newBufferWithLength:desc.size options:options];
-        if (initial_data.data && initial_data.size > 0)
+        if (initial_data)
         {
             void* mapped_data = [metal_buffer contents];
-            memcpy(mapped_data, initial_data.data, initial_data.size);
+            memcpy(mapped_data, initial_data, desc.size);
         }
+
+        // Register buffer in the device's lookup map
+        metal_device->RegisterBuffer(metal_buffer);
     }
 
     MetalBuffer::~MetalBuffer()
     {
         if (metal_buffer)
         {
+            MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
+            metal_device->UnregisterBuffer(metal_buffer);
             metal_buffer = nil;
         }
     }

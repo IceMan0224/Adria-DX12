@@ -8,6 +8,7 @@
 
 namespace adria
 {
+    class MetalDevice;
     class MetalCommandList final : public GfxCommandList
     {
     public:
@@ -95,7 +96,7 @@ namespace adria
         id<MTLCommandBuffer> GetCommandBuffer() const { return command_buffer; }
 
     private:
-        GfxDevice* gfx;
+        MetalDevice* metal_device;
         GfxCommandListType type;
         id<MTLCommandBuffer> command_buffer;
         id<MTLRenderCommandEncoder> render_encoder;

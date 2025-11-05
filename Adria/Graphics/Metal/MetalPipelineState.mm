@@ -31,7 +31,7 @@ namespace adria
 
         MTLRenderPipelineDescriptor* pso_desc = [MTLRenderPipelineDescriptor new];
 
-        id<MTLLibrary> library = metal_device->GetShaderLibrary();
+        id<MTLLibrary> library = metal_device->GetMTLLibrary();
         if (library)
         {
             id<MTLFunction> vertexFunction = [library newFunctionWithName:@"vertex_main"];
@@ -91,7 +91,7 @@ namespace adria
         MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
         id<MTLDevice> device = (id<MTLDevice>)metal_device->GetNative();
 
-        id<MTLLibrary> library = metal_device->GetShaderLibrary();
+        id<MTLLibrary> library = metal_device->GetMTLLibrary();
         if (library)
         {
             id<MTLFunction> computeFunction = [library newFunctionWithName:@"compute_main"];
@@ -104,7 +104,8 @@ namespace adria
                 NSLog(@"Failed to create compute pipeline state: %@", error);
             }
 
-            threads_per_threadgroup = computeFunction.threadGroupSize;
+            // Set default threadgroup size (can be queried from function if needed)
+            threads_per_threadgroup = MTLSizeMake(8, 8, 1);
         }
     }
 

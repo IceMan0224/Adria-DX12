@@ -7,19 +7,56 @@
 #include "MetalBuffer.h"
 #include "MetalArgumentBuffer.h"
 #include "MetalDescriptor.h"
+#include "MetalConversions.h"
 #include "MetalRayTracingAS.h"
 #include "MetalRayTracingPipeline.h"
 #include "Platform/Window.h"
 
 namespace adria
 {
+    namespace
+    {
+        id<MTLTexture> CreateTextureView(id<MTLTexture> base_texture, GfxTexture const* gfx_texture, GfxTextureDescriptorDesc const* desc)
+        {
+            if (!desc || !base_texture)
+            {
+                return base_texture;
+            }
+
+            GfxTextureDesc const& texture_desc = gfx_texture->GetDesc();
+
+            Uint32 first_mip = desc->first_mip;
+            Uint32 mip_count = desc->mip_count == static_cast<Uint32>(-1) ? (texture_desc.mip_levels - first_mip) : desc->mip_count;
+            Uint32 first_slice = desc->first_slice;
+            Uint32 slice_count = desc->slice_count == static_cast<Uint32>(-1) ? (texture_desc.array_size - first_slice) : desc->slice_count;
+
+            Bool needs_view = (first_mip != 0) ||
+                             (mip_count != texture_desc.mip_levels) ||
+                             (first_slice != 0) ||
+                             (slice_count != texture_desc.array_size);
+
+            if (!needs_view)
+            {
+                return base_texture;
+            }
+
+            NSRange mip_range = NSMakeRange(first_mip, mip_count);
+            NSRange slice_range = NSMakeRange(first_slice, slice_count);
+
+            id<MTLTexture> texture_view = [base_texture newTextureViewWithPixelFormat:base_texture.pixelFormat
+                                                                          textureType:base_texture.textureType
+                                                                               levels:mip_range
+                                                                               slices:slice_range];
+            return texture_view;
+        }
+    }
+
     MetalDevice::MetalDevice(Window* _window) : window(_window)
     {
         device = MTLCreateSystemDefaultDevice();
         if (!device)
         {
             ADRIA_TODO("Handle error");
-            // Handle error - no Metal device available
             return;
         }
         command_queue = [device newCommandQueue];
@@ -116,10 +153,33 @@ namespace adria
                 continue;
             }
 
-            MetalResourceType resource_type = src_desc.parent_buffer->GetResourceType(src_desc.index);
+            MetalResourceEntry const& src_entry = src_desc.parent_buffer->GetResourceEntry(src_desc.index);
             Uint32 dst_index = table.base + i;
 
-            ADRIA_TODO("How should this work?");
+            switch (src_entry.type)
+            {
+                case MetalResourceType::Texture:
+                    if (src_entry.texture != nil)
+                    {
+                        argument_buffer->SetTexture(src_entry.texture, dst_index);
+                    }
+                    break;
+                case MetalResourceType::Buffer:
+                    if (src_entry.buffer != nil)
+                    {
+                        argument_buffer->SetBuffer(src_entry.buffer, dst_index, src_entry.buffer_offset);
+                    }
+                    break;
+                case MetalResourceType::Sampler:
+                    if (src_entry.sampler != nil)
+                    {
+                        argument_buffer->SetSampler(src_entry.sampler, dst_index);
+                    }
+                    break;
+                case MetalResourceType::Unknown:
+                default:
+                    break;
+            }
         }
     }
 
@@ -141,13 +201,93 @@ namespace adria
             Uint32 src_index = src_desc.index + i;
             Uint32 dst_index = table.base + table_offset + i;
 
-            ADRIA_TODO("How should this work?");
+            MetalResourceEntry const& src_entry = src_desc.parent_buffer->GetResourceEntry(src_index);
+
+            switch (src_entry.type)
+            {
+                case MetalResourceType::Texture:
+                    if (src_entry.texture != nil)
+                    {
+                        argument_buffer->SetTexture(src_entry.texture, dst_index);
+                    }
+                    break;
+                case MetalResourceType::Buffer:
+                    if (src_entry.buffer != nil)
+                    {
+                        argument_buffer->SetBuffer(src_entry.buffer, dst_index, src_entry.buffer_offset);
+                    }
+                    break;
+                case MetalResourceType::Sampler:
+                    if (src_entry.sampler != nil)
+                    {
+                        argument_buffer->SetSampler(src_entry.sampler, dst_index);
+                    }
+                    break;
+                case MetalResourceType::Unknown:
+                default:
+                    break;
+            }
         }
     }
 
     void MetalDevice::UpdateBindlessTables(std::vector<GfxBindlessTable> const& tables, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size)
     {
-        ADRIA_TODO("How should this work?");
+        if (tables.empty() || src_range_starts_and_size.empty() || !argument_buffer)
+        {
+            return;
+        }
+
+        ADRIA_ASSERT_MSG(tables.size() == src_range_starts_and_size.size(), "Tables and source ranges must have the same size!");
+
+        for (Usize i = 0; i < tables.size(); ++i)
+        {
+            GfxBindlessTable const& table = tables[i];
+            auto const& [src_descriptor, count] = src_range_starts_and_size[i];
+
+            if (!table.IsValid())
+            {
+                continue;
+            }
+
+            MetalDescriptor src_desc = DecodeToMetalDescriptor(src_descriptor);
+            if (!src_desc.IsValid())
+            {
+                continue;
+            }
+
+            for (Uint32 j = 0; j < count; ++j)
+            {
+                Uint32 src_index = src_desc.index + j;
+                Uint32 dst_index = table.base + j;
+
+                MetalResourceEntry const& src_entry = src_desc.parent_buffer->GetResourceEntry(src_index);
+
+                switch (src_entry.type)
+                {
+                    case MetalResourceType::Texture:
+                        if (src_entry.texture != nil)
+                        {
+                            argument_buffer->SetTexture(src_entry.texture, dst_index);
+                        }
+                        break;
+                    case MetalResourceType::Buffer:
+                        if (src_entry.buffer != nil)
+                        {
+                            argument_buffer->SetBuffer(src_entry.buffer, dst_index, src_entry.buffer_offset);
+                        }
+                        break;
+                    case MetalResourceType::Sampler:
+                        if (src_entry.sampler != nil)
+                        {
+                            argument_buffer->SetSampler(src_entry.sampler, dst_index);
+                        }
+                        break;
+                    case MetalResourceType::Unknown:
+                    default:
+                        break;
+                }
+            }
+        }
     }
 
     GfxDescriptor MetalDevice::CreateBufferSRV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)
@@ -187,9 +327,11 @@ namespace adria
         }
 
         MetalTexture const* metal_texture = static_cast<MetalTexture const*>(texture);
-        Uint32 index = argument_buffer->AllocateRange(1);
+        id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
+        id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
 
-        argument_buffer->SetTexture(metal_texture->GetMetalTexture(), index);
+        Uint32 index = argument_buffer->AllocateRange(1);
+        argument_buffer->SetTexture(texture_view, index);
 
         MetalDescriptor metal_desc{};
         metal_desc.parent_buffer = argument_buffer.get();
@@ -200,19 +342,67 @@ namespace adria
 
     GfxDescriptor MetalDevice::CreateTextureUAV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
     {
-        return CreateTextureSRV(texture, desc);
+        if (!texture || !argument_buffer)
+        {
+            return {};
+        }
+
+        MetalTexture const* metal_texture = static_cast<MetalTexture const*>(texture);
+        id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
+        id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
+
+        Uint32 index = argument_buffer->AllocateRange(1);
+        argument_buffer->SetTexture(texture_view, index);
+
+        MetalDescriptor metal_desc{};
+        metal_desc.parent_buffer = argument_buffer.get();
+        metal_desc.index = index;
+
+        return EncodeFromMetalDescriptor(metal_desc);
     }
 
     GfxDescriptor MetalDevice::CreateTextureRTV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
     {
-        // RTVs in Metal are not stored in argument buffers
-        // They are set directly on MTLRenderPassDescriptor
+        if (!texture)
+        {
+            return {};
+        }
+
+        MetalTexture const* metal_texture = static_cast<MetalTexture const*>(texture);
+        id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
+
+        // For RTVs, create a view if needed (mip/slice selection)
+        id<MTLTexture> rtv_texture = CreateTextureView(base_texture, texture, desc);
+
+        // Encode the RTV descriptor
+        MetalRenderTargetDescriptor rt_desc{};
+        rt_desc.texture = rtv_texture;
+        rt_desc.mip_level = desc ? desc->first_mip : 0;
+        rt_desc.array_slice = desc ? desc->first_slice : 0;
+
+        return EncodeFromMetalRenderTargetDescriptor(rt_desc);
     }
 
     GfxDescriptor MetalDevice::CreateTextureDSV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
     {
-        // DSVs in Metal are not stored in argument buffers
-        // They are set directly on MTLRenderPassDescriptor
+        if (!texture)
+        {
+            return {};
+        }
+
+        MetalTexture const* metal_texture = static_cast<MetalTexture const*>(texture);
+        id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
+
+        // For DSVs, create a view if needed (mip/slice selection)
+        id<MTLTexture> dsv_texture = CreateTextureView(base_texture, texture, desc);
+
+        // Encode the DSV descriptor
+        MetalRenderTargetDescriptor rt_desc{};
+        rt_desc.texture = dsv_texture;
+        rt_desc.mip_level = desc ? desc->first_mip : 0;
+        rt_desc.array_slice = desc ? desc->first_slice : 0;
+
+        return EncodeFromMetalRenderTargetDescriptor(rt_desc);
     }
 
     std::unique_ptr<GfxRayTracingTLAS> MetalDevice::CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
@@ -228,5 +418,63 @@ namespace adria
     std::unique_ptr<GfxRayTracingPipeline> MetalDevice::CreateRayTracingPipeline(GfxRayTracingPipelineDesc const& desc)
     {
         return std::make_unique<MetalRayTracingPipeline>(this, desc);
+    }
+
+    void MetalDevice::RegisterBuffer(id<MTLBuffer> buffer)
+    {
+        if (!buffer) return;
+
+        Uint64 base_address = [buffer gpuAddress];
+        Uint64 size = [buffer length];
+
+        BufferEntry entry{};
+        entry.buffer = buffer;
+        entry.base_address = base_address;
+        entry.size = size;
+
+        buffer_map[base_address] = entry;
+    }
+
+    void MetalDevice::UnregisterBuffer(id<MTLBuffer> buffer)
+    {
+        if (!buffer) return;
+
+        Uint64 base_address = [buffer gpuAddress];
+        buffer_map.erase(base_address);
+    }
+
+    MetalDevice::BufferLookupResult MetalDevice::LookupBuffer(Uint64 gpu_address) const
+    {
+        BufferLookupResult result{};
+        result.buffer = nil;
+        result.offset = 0;
+
+        if (buffer_map.empty())
+        {
+            return result;
+        }
+
+        // Find the first buffer with base_address > gpu_address
+        auto it = buffer_map.upper_bound(gpu_address);
+
+        // If upper_bound returned begin(), the address is before any buffer
+        if (it == buffer_map.begin())
+        {
+            return result;
+        }
+
+        // Go back one to get the buffer that might contain our address
+        --it;
+
+        BufferEntry const& entry = it->second;
+
+        // Check if the address is within this buffer's range
+        if (gpu_address >= entry.base_address && gpu_address < entry.base_address + entry.size)
+        {
+            result.buffer = entry.buffer;
+            result.offset = gpu_address - entry.base_address;
+        }
+
+        return result;
     }
 }

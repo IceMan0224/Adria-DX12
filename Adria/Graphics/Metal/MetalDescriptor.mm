@@ -23,4 +23,21 @@ namespace adria
         internal_desc.index = static_cast<Uint32>(desc.opaque_data[1]);
         return internal_desc;
     }
+
+    GfxDescriptor EncodeFromMetalRenderTargetDescriptor(MetalRenderTargetDescriptor const& rt_desc)
+    {
+        GfxDescriptor desc{};
+        desc.opaque_data[0] = reinterpret_cast<Uint64>((__bridge void*)rt_desc.texture);
+        desc.opaque_data[1] = (static_cast<Uint64>(rt_desc.mip_level) << 32) | static_cast<Uint64>(rt_desc.array_slice);
+        return desc;
+    }
+
+    MetalRenderTargetDescriptor DecodeToMetalRenderTargetDescriptor(GfxDescriptor const& desc)
+    {
+        MetalRenderTargetDescriptor rt_desc{};
+        rt_desc.texture = (__bridge id<MTLTexture>)reinterpret_cast<void*>(desc.opaque_data[0]);
+        rt_desc.mip_level = static_cast<Uint32>(desc.opaque_data[1] >> 32);
+        rt_desc.array_slice = static_cast<Uint32>(desc.opaque_data[1] & 0xFFFFFFFF);
+        return rt_desc;
+    }
 }
