@@ -22,6 +22,7 @@ namespace adria
 	using Wchar		= wchar_t;
 	using Float		= float;
 	using Float64	= double;
+	using Usize		= std::size_t;
 	using Uintptr	= std::uintptr_t;
 	using Intptr	= std::intptr_t;
 }

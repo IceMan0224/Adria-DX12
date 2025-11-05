@@ -30,7 +30,7 @@ namespace adria
 
 	struct GfxDescriptorHash
 	{
-		Uint64 operator()(GfxDescriptor const& d) const
+		Usize operator()(GfxDescriptor const& d) const
 		{
 			return std::hash<Uint64>{}(d.opaque_data[0]) + std::hash<Uint64>{}(d.opaque_data[1]);
 		}
