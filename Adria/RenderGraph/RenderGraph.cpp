@@ -1578,7 +1578,7 @@ namespace adria
 		graphviz.defaults += std::format("graph [style=invis, rankdir=\"{}\", ordering=out, splines=spline]\n", style.rank_dir);
 		graphviz.defaults += std::format("node [shape=record, fontname=\"{}\", fontsize={}, margin=\"0.2,0.03\"]\n", style.font.name, style.font.size);
 
-		auto PairHash = [](std::pair<Uint64, Uint64> const& p)
+		auto PairHash = [](std::pair<Uint64, Uint64> const& p) -> Usize
 			{
 				return std::hash<Uint64>{}(p.first) + std::hash<Uint64>{}(p.second);
 			};
