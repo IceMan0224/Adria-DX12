@@ -194,6 +194,8 @@ private:
         pso_desc.num_render_targets = 1;
         pso_desc.rtv_formats[0] = GfxFormat::B8G8R8A8_UNORM;
         pso_desc.topology_type = GfxPrimitiveTopologyType::Triangle;
+        pso_desc.depth_state.depth_enable = false;
+        pso_desc.depth_state.depth_write_mask = GfxDepthWriteMask::Zero;
 
         pso_desc.input_layout.elements.push_back(GfxInputLayout::GfxInputElement{
             "POSITION", 0, GfxFormat::R32G32_FLOAT, 0, 0, GfxInputClassification::PerVertexData

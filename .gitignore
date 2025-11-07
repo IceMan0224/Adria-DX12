@@ -409,6 +409,7 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 /build
+/build-xcode
 
 # macOS
 .DS_Store
