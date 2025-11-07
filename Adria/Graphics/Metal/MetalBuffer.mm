@@ -18,7 +18,6 @@ namespace adria
             memcpy(mapped_data, initial_data, desc.size);
         }
 
-        // Register buffer in the device's lookup map
         metal_device->RegisterBuffer(metal_buffer);
     }
 

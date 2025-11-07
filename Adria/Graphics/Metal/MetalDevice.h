@@ -19,7 +19,7 @@ namespace adria
 
     struct MetalCapabilities : GfxCapabilities
     {
-        virtual Bool Initialize(GfxDevice* gfx) override {return true;}
+        virtual Bool Initialize(GfxDevice* gfx) override;
     };
 
     class MetalDevice : public GfxDevice

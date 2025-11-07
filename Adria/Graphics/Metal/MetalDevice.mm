@@ -51,16 +51,90 @@ namespace adria
         }
     }
 
+    Bool MetalCapabilities::Initialize(GfxDevice* gfx)
+    {
+        MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
+        id<MTLDevice> device = metal_device->GetMTLDevice();
+
+        Bool supports_apple6 = [device supportsFamily:MTLGPUFamilyApple6];
+        Bool supports_apple7 = [device supportsFamily:MTLGPUFamilyApple7];
+        Bool supports_apple8 = [device supportsFamily:MTLGPUFamilyApple8];
+        Bool supports_apple9 = [device supportsFamily:MTLGPUFamilyApple9];
+
+        if (!supports_apple7)
+        {
+            ADRIA_LOG(ERROR, "Device doesn't support Apple GPU Family 7 which is required (minimum A15/M2)!");
+            ADRIA_LOG(ERROR, "Shader Model 6.6 equivalent is required!");
+            return false;
+        }
+
+        if (supports_apple6)
+        {
+            ray_tracing_support = RayTracingSupport::Tier1_0;
+        }
+        if (supports_apple7)
+        {
+            mesh_shader_support = MeshShaderSupport::Tier1;
+        }
+
+        vrs_support = VRSSupport::TierNotSupported;
+        additional_shading_rates_supported = false;
+        shading_rate_image_tile_size = 0;
+        work_graph_support = WorkGraphSupport::TierNotSupported;
+
+        if (supports_apple9)
+        {
+            shader_model = SM_6_8;
+        }
+        else if (supports_apple8)
+        {
+            shader_model = SM_6_7;
+        }
+        else if (supports_apple7)
+        {
+            shader_model = SM_6_6;
+        }
+        else if (supports_apple6)
+        {
+            shader_model = SM_6_5;
+        }
+        else
+        {
+            shader_model = SM_6_0; 
+        }
+
+        enhanced_barriers_supported = true;
+        typed_uav_additional_formats_supported = true;
+
+        ADRIA_LOG(INFO, "Metal Capabilities:");
+        ADRIA_LOG(INFO, "  GPU: %s", [device.name UTF8String]);
+        ADRIA_LOG(INFO, "  Ray Tracing: %s", ray_tracing_support != RayTracingSupport::TierNotSupported ? "Supported" : "Not Supported");
+        ADRIA_LOG(INFO, "  Mesh Shaders: %s", mesh_shader_support != MeshShaderSupport::TierNotSupported ? "Supported" : "Not Supported");
+        ADRIA_LOG(INFO, "  Shader Model Equivalent: SM_%d_%d",
+            (shader_model - SM_6_0) / 10 + 6,
+            (shader_model - SM_6_0) % 10);
+
+        return true;
+    }
+
     MetalDevice::MetalDevice(Window* _window) : window(_window)
     {
         device = MTLCreateSystemDefaultDevice();
         if (!device)
         {
-            ADRIA_TODO("Handle error");
+            ADRIA_LOG(ERROR, "Failed to create Metal device!");
             return;
         }
         command_queue = [device newCommandQueue];
         argument_buffer = std::make_unique<MetalArgumentBuffer>(this, 4096);
+
+        if (!capabilities.Initialize(this))
+        {
+            ADRIA_LOG(ERROR, "Device doesn't meet minimum requirements!");
+            device = nil;
+            command_queue = nil;
+            return;
+        }
     }
 
     MetalDevice::~MetalDevice()
@@ -437,7 +511,10 @@ namespace adria
 
     void MetalDevice::UnregisterBuffer(id<MTLBuffer> buffer)
     {
-        if (!buffer) return;
+        if (!buffer) 
+        {
+            return;
+        }
 
         Uint64 base_address = [buffer gpuAddress];
         buffer_map.erase(base_address);
@@ -454,21 +531,14 @@ namespace adria
             return result;
         }
 
-        // Find the first buffer with base_address > gpu_address
         auto it = buffer_map.upper_bound(gpu_address);
-
-        // If upper_bound returned begin(), the address is before any buffer
         if (it == buffer_map.begin())
         {
             return result;
         }
-
-        // Go back one to get the buffer that might contain our address
         --it;
 
         BufferEntry const& entry = it->second;
-
-        // Check if the address is within this buffer's range
         if (gpu_address >= entry.base_address && gpu_address < entry.base_address + entry.size)
         {
             result.buffer = entry.buffer;

@@ -52,6 +52,17 @@ namespace adria
         }
     }
 
+    static MTLCullMode ConvertCullMode(GfxCullMode mode)
+    {
+        switch (mode)
+        {
+        case GfxCullMode::None: return MTLCullModeNone;
+        case GfxCullMode::Front: return MTLCullModeFront;
+        case GfxCullMode::Back: return MTLCullModeBack;
+        default: return MTLCullModeNone;
+        }
+    }
+
     MetalCommandList::MetalCommandList(GfxDevice* gfx, GfxCommandListType type, Char const* name)
         : metal_device(static_cast<MetalDevice*>(gfx)), type(type), command_buffer(nil), render_encoder(nil),
           compute_encoder(nil), blit_encoder(nil),
@@ -181,6 +192,22 @@ namespace adria
         }
     }
 
+    void MetalCommandList::DispatchMesh(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z)
+    {
+        if (render_encoder && current_pipeline_state && current_pipeline_state->GetType() == GfxPipelineStateType::MeshShader)
+        {
+            MetalMeshShadingPipelineState const* metal_pso = static_cast<MetalMeshShadingPipelineState const*>(current_pipeline_state);
+
+            MTLSize threadgroups = MTLSizeMake(group_count_x, group_count_y, group_count_z);
+            MTLSize threadsPerObjectThreadgroup = metal_pso->GetThreadsPerObjectThreadgroup();
+            MTLSize threadsPerMeshThreadgroup = metal_pso->GetThreadsPerMeshThreadgroup();
+
+            [render_encoder drawMeshThreadgroups:threadgroups
+                          threadsPerObjectThreadgroup:threadsPerObjectThreadgroup
+                           threadsPerMeshThreadgroup:threadsPerMeshThreadgroup];
+        }
+    }
+
     void MetalCommandList::CopyBuffer(GfxBuffer& dst, GfxBuffer const& src)
     {
         MetalBuffer* metal_dst = static_cast<MetalBuffer*>(&dst);
@@ -243,26 +270,49 @@ namespace adria
     {
         current_pipeline_state = state;
 
-        if (render_encoder && state && state->GetType() == GfxPipelineStateType::Graphics)
+        if (render_encoder && state)
         {
-            MetalGraphicsPipelineState const* metal_pso = static_cast<MetalGraphicsPipelineState const*>(state);
-            [render_encoder setRenderPipelineState:metal_pso->GetPipelineState()];
-            if (metal_pso->GetDepthStencilState())
+            if (state->GetType() == GfxPipelineStateType::Graphics)
             {
-                [render_encoder setDepthStencilState:metal_pso->GetDepthStencilState()];
-            }
+                MetalGraphicsPipelineState const* metal_pso = static_cast<MetalGraphicsPipelineState const*>(state);
+                [render_encoder setRenderPipelineState:metal_pso->GetPipelineState()];
 
-            switch (metal_pso->GetCullMode())
+                if (metal_pso->GetDepthStencilState())
+                {
+                    [render_encoder setDepthStencilState:metal_pso->GetDepthStencilState()];
+                }
+
+                [render_encoder setCullMode:ConvertCullMode(metal_pso->GetCullMode())];
+                [render_encoder setFrontFacingWinding:metal_pso->GetFrontCounterClockwise()
+                    ? MTLWindingCounterClockwise : MTLWindingClockwise];
+
+                if (metal_pso->GetDepthBias() != 0.0f || metal_pso->GetSlopeScaledDepthBias() != 0.0f)
+                {
+                    [render_encoder setDepthBias:metal_pso->GetDepthBias()
+                                       slopeScale:metal_pso->GetSlopeScaledDepthBias()
+                                            clamp:metal_pso->GetDepthBiasClamp()];
+                }
+            }
+            else if (state->GetType() == GfxPipelineStateType::MeshShader)
             {
-            case GfxCullMode::None:
-                [render_encoder setCullMode:MTLCullModeNone];
-                break;
-            case GfxCullMode::Front:
-                [render_encoder setCullMode:MTLCullModeFront];
-                break;
-            case GfxCullMode::Back:
-                [render_encoder setCullMode:MTLCullModeBack];
-                break;
+                MetalMeshShadingPipelineState const* metal_pso = static_cast<MetalMeshShadingPipelineState const*>(state);
+                [render_encoder setRenderPipelineState:metal_pso->GetPipelineState()];
+
+                if (metal_pso->GetDepthStencilState())
+                {
+                    [render_encoder setDepthStencilState:metal_pso->GetDepthStencilState()];
+                }
+
+                [render_encoder setCullMode:ConvertCullMode(metal_pso->GetCullMode())];
+                [render_encoder setFrontFacingWinding:metal_pso->GetFrontCounterClockwise()
+                    ? MTLWindingCounterClockwise : MTLWindingClockwise];
+
+                if (metal_pso->GetDepthBias() != 0.0f || metal_pso->GetSlopeScaledDepthBias() != 0.0f)
+                {
+                    [render_encoder setDepthBias:metal_pso->GetDepthBias()
+                                       slopeScale:metal_pso->GetSlopeScaledDepthBias()
+                                            clamp:metal_pso->GetDepthBiasClamp()];
+                }
             }
         }
         else if (state && state->GetType() == GfxPipelineStateType::Compute)
