@@ -84,10 +84,7 @@
                 "$msCompile",
                 "$gcc"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "group": "build",
             "dependsOn": "CMake: Configure (Debug)"
         },
         {
@@ -109,6 +106,7 @@
                 "$msCompile",
                 "$gcc"
             ],
+            "group": "build",
             "dependsOn": "CMake: Configure (Release)"
         },
         {
@@ -130,6 +128,7 @@
                 "$msCompile",
                 "$gcc"
             ],
+            "group": "build",
             "dependsOn": "CMake: Configure (Profile)"
         },
         {
@@ -151,6 +150,7 @@
                 "$msCompile",
                 "$gcc"
             ],
+            "group": "build",
             "dependsOn": "CMake: Configure (RelWithDebInfo)"
         },
         {
@@ -187,6 +187,99 @@
                 "$gcc"
             ],
             "dependsOn": "CMake: Configure (Debug)"
+        },
+        {
+            "label": "Xcode: Generate Project",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-S",
+                "${workspaceFolder}",
+                "-B",
+                "${workspaceFolder}/build-xcode",
+                "-G",
+                "Xcode"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Xcode: Build (Debug)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/build-xcode",
+                "--config",
+                "Debug",
+                "-j",
+                "8"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "dependsOn": "Xcode: Generate Project"
+        },
+        {
+            "label": "Xcode: Build (Release)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/build-xcode",
+                "--config",
+                "Release",
+                "-j",
+                "8"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "dependsOn": "Xcode: Generate Project"
+        },
+        {
+            "label": "Xcode: Build (Profile)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/build-xcode",
+                "--config",
+                "Profile",
+                "-j",
+                "8"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "dependsOn": "Xcode: Generate Project"
+        },
+        {
+            "label": "Xcode: Open Project",
+            "type": "shell",
+            "command": "open",
+            "args": [
+                "${workspaceFolder}/build-xcode/Adria.xcodeproj"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "dependsOn": "Xcode: Generate Project"
         }
     ]
 }
