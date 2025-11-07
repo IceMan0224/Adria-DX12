@@ -448,10 +448,7 @@ namespace adria
         MetalTexture const* metal_texture = static_cast<MetalTexture const*>(texture);
         id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
 
-        // For RTVs, create a view if needed (mip/slice selection)
         id<MTLTexture> rtv_texture = CreateTextureView(base_texture, texture, desc);
-
-        // Encode the RTV descriptor
         MetalRenderTargetDescriptor rt_desc{};
         rt_desc.texture = rtv_texture;
         rt_desc.mip_level = desc ? desc->first_mip : 0;
@@ -469,11 +466,8 @@ namespace adria
 
         MetalTexture const* metal_texture = static_cast<MetalTexture const*>(texture);
         id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
-
-        // For DSVs, create a view if needed (mip/slice selection)
         id<MTLTexture> dsv_texture = CreateTextureView(base_texture, texture, desc);
 
-        // Encode the DSV descriptor
         MetalRenderTargetDescriptor rt_desc{};
         rt_desc.texture = dsv_texture;
         rt_desc.mip_level = desc ? desc->first_mip : 0;

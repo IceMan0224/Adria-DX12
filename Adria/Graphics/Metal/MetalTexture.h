@@ -21,6 +21,8 @@ namespace adria
         virtual Uint32 GetRowPitch(Uint32 mip_level = 0) const override;
         virtual void SetName(Char const* name) override;
 
+        void UpdateHandle(void* metal_texture_handle); // For updating backbuffer texture each frame
+
         id<MTLTexture> GetMetalTexture() const { return metal_texture; }
 
     private:

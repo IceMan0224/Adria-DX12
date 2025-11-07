@@ -110,4 +110,10 @@ namespace adria
     {
         [metal_texture setLabel:[NSString stringWithUTF8String:name]];
     }
+
+    void MetalTexture::UpdateHandle(void* metal_texture_handle)
+    {
+        ADRIA_ASSERT(!owns_texture && "UpdateHandle should only be called on backbuffer textures!");
+        metal_texture = (__bridge id<MTLTexture>)metal_texture_handle;
+    }
 }
