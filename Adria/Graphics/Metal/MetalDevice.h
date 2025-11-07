@@ -9,6 +9,10 @@
     @protocol MTLCommandQueue;
     @protocol MTLLibrary;
     @protocol MTLBuffer;
+    @protocol CAMetalDrawable;
+    #define ID_POINTER(x) id<x>
+#else
+    #define ID_POINTER(x) void*
 #endif
 
 namespace adria
@@ -16,6 +20,7 @@ namespace adria
     class MetalSwapchain;
     class MetalTexture;
     class MetalArgumentBuffer;
+    class MetalCommandList;
 
     struct MetalCapabilities : GfxCapabilities
     {
@@ -38,9 +43,9 @@ namespace adria
         void InitGlobalResourceBindings(Uint32 max_resources) override {}
 
         void Update() override {}
-        void BeginFrame() override {}
-        void EndFrame() override {}
-        Bool IsFirstFrame() override { return false; }
+        void BeginFrame() override;
+        void EndFrame() override;
+        Bool IsFirstFrame() override { return first_frame; }
 
         void* GetNative() const override;
         void* GetWindowHandle() const override { return nullptr; }
@@ -113,6 +118,7 @@ namespace adria
         id<MTLDevice> GetMTLDevice() const { return device; }
         id<MTLCommandQueue> GetMTLCommandQueue() const { return command_queue; }
         id<MTLLibrary> GetMTLLibrary() const { return shader_library; }
+        id<CAMetalDrawable> GetCurrentDrawable();
 
         struct BufferLookupResult
         {
@@ -129,31 +135,25 @@ namespace adria
         void AddToReleaseQueue_Internal(ReleasableObject* _obj) override {}
 
         Window* window = nullptr;
-#ifdef __OBJC__
-        id<MTLDevice> device;
-        id<MTLCommandQueue> command_queue;
-        id<MTLLibrary> shader_library;
-#else
-        void* device;
-        void* command_queue;
-        void* shader_library;
-#endif
+        ID_POINTER(MTLDevice) device;
+        ID_POINTER(MTLCommandQueue) command_queue;
+        ID_POINTER(MTLLibrary) shader_library;
+
         std::unique_ptr<MetalSwapchain> swapchain;
-        std::unique_ptr<MetalTexture> backbuffer_textures[3];
         std::unique_ptr<MetalArgumentBuffer> argument_buffer;
         Uint32 frame_index = 0;
         Uint32 backbuffer_index = 0;
+        Bool first_frame = true;
         MetalCapabilities capabilities;
         GfxShadingRateInfo shading_rate_info;
         GfxFence* dummy_fence = nullptr;
-#ifdef __OBJC__
+
         struct BufferEntry
         {
-            id<MTLBuffer> buffer;
+            ID_POINTER(MTLBuffer) buffer;
             Uint64 base_address;
             Uint64 size;
         };
-        std::map<Uint64, BufferEntry> buffer_map; // Key is base_address, ordered for range queries
-#endif
+        std::map<Uint64, BufferEntry> buffer_map; 
     };
 }

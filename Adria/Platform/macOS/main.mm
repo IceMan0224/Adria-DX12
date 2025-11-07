@@ -7,11 +7,10 @@
 #include "Platform/Input.h"
 #include "Platform/Window.h"
 #include "Logging/FileSink.h"
+#include "Graphics/GfxDevice.h"
 #include "Graphics/Metal/MetalDevice.h"
 #include "Graphics/Metal/MetalBuffer.h"
-#include "Graphics/Metal/MetalCommandList.h"
 #include "Graphics/Metal/MetalPipelineState.h"
-#include "Graphics/Metal/MetalSwapchain.h"
 #include "Graphics/Metal/MetalDescriptor.h"
 #include "Graphics/GfxStates.h"
 #include "Graphics/GfxFormat.h"
@@ -29,23 +28,13 @@ class TriangleApp
 public:
     TriangleApp(Window* _window) : window(_window)
     {
-        device = std::make_unique<MetalDevice>(window);
-
-        id<MTLDevice> mtl_device = device->GetMTLDevice();
-        if (!mtl_device)
+        device = CreateGfxDevice(GfxBackend::Metal, window);
+        if (!device)
         {
-            ADRIA_LOG(ERROR, "Failed to get Metal device!");
+            ADRIA_LOG(ERROR, "Failed to create graphics device!");
             return;
         }
-
-        swapchain = std::make_unique<MetalSwapchain>(
-            device.get(),
-            window->Handle(),
-            window->Width(),
-            window->Height()
-        );
-
-        CreateShaders(mtl_device);
+        CreateShaders();
         CreateVertexBuffer();
         CreatePipelineState();
 
@@ -54,65 +43,56 @@ public:
 
     void Render()
     {
-        if (!vertex_buffer || !gfx_pipeline_state || !swapchain)
+        if (!vertex_buffer || !gfx_pipeline_state)
         {
             return;
         }
 
-        @autoreleasepool
+        device->BeginFrame();
+        GfxTexture* backbuffer = device->GetBackbuffer();
+        if (!backbuffer)
         {
-            id<CAMetalDrawable> drawable = swapchain->GetCurrentDrawable();
-            if (!drawable)
-            {
-                return;
-            }
-
-            auto cmd_list = std::make_unique<MetalCommandList>(device.get(), GfxCommandListType::Graphics, "TriangleRender");
-            cmd_list->Begin();
-
-            id<MTLTexture> drawable_texture = drawable.texture;
-            MetalRenderTargetDescriptor rtv_desc{};
-            rtv_desc.texture = drawable_texture;
-            rtv_desc.mip_level = 0;
-            rtv_desc.array_slice = 0;
-            GfxDescriptor rtv_descriptor = EncodeFromMetalRenderTargetDescriptor(rtv_desc);
-
-            GfxRenderPassDesc render_pass_desc{};
-            render_pass_desc.width = window->Width();
-            render_pass_desc.height = window->Height();
-
-            GfxColorAttachmentDesc color_attachment{};
-            color_attachment.cpu_handle = rtv_descriptor;
-            color_attachment.beginning_access = GfxLoadAccessOp::Clear;
-            color_attachment.ending_access = GfxStoreAccessOp::Preserve;
-            color_attachment.clear_value = GfxClearValue(0.2f, 0.3f, 0.4f, 1.0f);
-            render_pass_desc.rtv_attachments.push_back(color_attachment);
-
-            cmd_list->BeginRenderPass(render_pass_desc);
-
-            cmd_list->SetPipelineState(gfx_pipeline_state.get());
-
-            GfxVertexBufferView vbv(vertex_buffer.get());
-            cmd_list->SetVertexBuffer(vbv, 0);
-
-            cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
-            cmd_list->Draw(3, 1, 0, 0);
-
-            cmd_list->EndRenderPass();
-
-            id<MTLCommandBuffer> command_buffer = cmd_list->GetCommandBuffer();
-            [command_buffer presentDrawable:drawable];
-
-            cmd_list->End();
-            cmd_list->Submit();
-
-            swapchain->Present(true);
+            device->EndFrame();
+            return;
         }
+        auto cmd_list = device->CreateCommandList(GfxCommandListType::Graphics);
+        cmd_list->Begin();
+
+        GfxDescriptor rtv_descriptor = device->CreateTextureRTV(backbuffer);
+
+        GfxRenderPassDesc render_pass_desc{};
+        render_pass_desc.width = window->Width();
+        render_pass_desc.height = window->Height();
+
+        GfxColorAttachmentDesc color_attachment{};
+        color_attachment.cpu_handle = rtv_descriptor;
+        color_attachment.beginning_access = GfxLoadAccessOp::Clear;
+        color_attachment.ending_access = GfxStoreAccessOp::Preserve;
+        color_attachment.clear_value = GfxClearValue(0.2f, 0.3f, 0.4f, 1.0f);
+        render_pass_desc.rtv_attachments.push_back(color_attachment);
+
+        cmd_list->BeginRenderPass(render_pass_desc);
+
+        cmd_list->SetPipelineState(gfx_pipeline_state.get());
+
+        GfxVertexBufferView vbv(vertex_buffer.get());
+        cmd_list->SetVertexBuffer(vbv, 0);
+
+        cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
+        cmd_list->Draw(3, 1, 0, 0);
+
+        cmd_list->EndRenderPass();
+        cmd_list->End();
+        cmd_list->Submit();
+        device->EndFrame();
     }
 
 private:
-    void CreateShaders(id<MTLDevice> mtl_device)
+    void CreateShaders()
     {
+        MetalDevice* metal_device = static_cast<MetalDevice*>(device.get());
+        id<MTLDevice> mtl_device = metal_device->GetMTLDevice();
+
         NSString* shader_source = @R"(
             #include <metal_stdlib>
             using namespace metal;
@@ -177,19 +157,12 @@ private:
         buffer_desc.resource_usage = GfxResourceUsage::Default;
         buffer_desc.bind_flags = GfxBindFlag::None;  // Metal doesn't use bind flags for vertex buffers
 
-        vertex_buffer = std::make_unique<MetalBuffer>(
-            device.get(),
-            buffer_desc,
-            GfxBufferData(vertices)
-        );
-
+        vertex_buffer = device->CreateBuffer(buffer_desc, GfxBufferData(vertices));
         vertex_buffer->SetName("TriangleVertexBuffer");
     }
 
     void CreatePipelineState()
     {
-        CreateShaders(device->GetMTLDevice());
-
         GfxGraphicsPipelineStateDesc pso_desc{};
         pso_desc.num_render_targets = 1;
         pso_desc.rtv_formats[0] = GfxFormat::B8G8R8A8_UNORM;
@@ -204,8 +177,9 @@ private:
             "COLOR", 0, GfxFormat::R32G32B32_FLOAT, 0, 8, GfxInputClassification::PerVertexData
         });
 
+        MetalDevice* metal_device = static_cast<MetalDevice*>(device.get());
         gfx_pipeline_state = std::make_unique<MetalGraphicsPipelineState>(
-            device.get(), pso_desc, vertex_function, fragment_function
+            metal_device, pso_desc, vertex_function, fragment_function
         );
 
         if (!gfx_pipeline_state)
@@ -219,9 +193,8 @@ private:
     }
 
     Window* window;
-    std::unique_ptr<MetalDevice> device;
-    std::unique_ptr<MetalSwapchain> swapchain;
-    std::unique_ptr<MetalBuffer> vertex_buffer;
+    std::unique_ptr<GfxDevice> device;
+    std::unique_ptr<GfxBuffer> vertex_buffer;
     std::unique_ptr<GfxPipelineState> gfx_pipeline_state;
     id<MTLLibrary> shader_library = nil;
     id<MTLFunction> vertex_function = nil;

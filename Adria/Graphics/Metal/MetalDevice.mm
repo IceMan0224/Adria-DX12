@@ -138,12 +138,23 @@ namespace adria
             command_queue = nil;
             return;
         }
+
+        if (window)
+        {
+            swapchain = std::make_unique<MetalSwapchain>(
+                this,
+                window->Handle(),
+                window->Width(),
+                window->Height()
+            );
+        }
     }
 
     MetalDevice::~MetalDevice()
     {
         @autoreleasepool
         {
+            swapchain.reset();
             argument_buffer.reset();
             shader_library = nil;
             command_queue = nil;
@@ -158,16 +169,27 @@ namespace adria
 
     void MetalDevice::OnResize(Uint32 w, Uint32 h)
     {
-            ADRIA_TODO("Handle resizing");
+        if (swapchain)
+        {
+            swapchain->OnResize(w, h);
+        }
     }
 
     GfxTexture* MetalDevice::GetBackbuffer() const
     {
+        if (swapchain)
+        {
+            return swapchain->GetBackbuffer();
+        }
         return nullptr;
     }
 
     Uint32 MetalDevice::GetBackbufferIndex() const
     {
+        if (swapchain)
+        {
+            return swapchain->GetBackbufferIndex();
+        }
         return frame_index;
     }
 
@@ -588,5 +610,51 @@ namespace adria
         }
 
         return result;
+    }
+
+    void MetalDevice::BeginFrame()
+    {
+        if (!swapchain)
+        {
+            return;
+        }
+
+        // Acquire the drawable for this frame
+        id<CAMetalDrawable> drawable = GetCurrentDrawable();
+        if (!drawable)
+        {
+            return;
+        }
+
+        first_frame = false;
+    }
+
+    void MetalDevice::EndFrame()
+    {
+        if (!swapchain)
+        {
+            return;
+        }
+
+        // Create a dedicated command buffer for presentation
+        id<CAMetalDrawable> drawable = GetCurrentDrawable();
+        if (drawable)
+        {
+            id<MTLCommandBuffer> present_cmd_buffer = [command_queue commandBuffer];
+            [present_cmd_buffer presentDrawable:drawable];
+            [present_cmd_buffer commit];
+        }
+
+        swapchain->Present(true);
+        frame_index++;
+    }
+
+    id<CAMetalDrawable> MetalDevice::GetCurrentDrawable()
+    {
+        if (swapchain)
+        {
+            return swapchain->GetCurrentDrawable();
+        }
+        return nil;
     }
 }
