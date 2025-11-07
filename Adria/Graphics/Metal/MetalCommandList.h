@@ -37,10 +37,16 @@ namespace adria
         virtual void EndQuery(GfxQueryHeap& query_heap, Uint32 index) override {}
         virtual void ResolveQueryData(GfxQueryHeap const& query_heap, Uint32 start, Uint32 count, GfxBuffer& dst_buffer, Uint64 dst_offset) override {}
 
+        virtual GfxDynamicAllocation AllocateTransient(Uint32 size, Uint32 align = 0) override { return {}; }
+        virtual void ClearRenderTarget(GfxDescriptor rtv, Float const* clear_color) override {}
+        virtual void ClearDepth(GfxDescriptor dsv, Float depth = 1.0f, Uint8 stencil = 0, Bool clear_stencil = false) override {}
+        virtual void SetRenderTargets(std::span<GfxDescriptor const> rtvs, GfxDescriptor const* dsv = nullptr, Bool single_rt = false) override {}
+        virtual void SetContext(Context ctx) override {}
+
         virtual void Draw(Uint32 vertex_count, Uint32 instance_count = 1, Uint32 start_vertex_location = 0, Uint32 start_instance_location = 0) override;
         virtual void DrawIndexed(Uint32 index_count, Uint32 instance_count = 1, Uint32 index_offset = 0, Uint32 base_vertex_location = 0, Uint32 start_instance_location = 0) override;
         virtual void Dispatch(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z = 1) override;
-        virtual void DispatchMesh(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z = 1) override {}
+        virtual void DispatchMesh(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z = 1) override;
         virtual void DrawIndirect(GfxBuffer const& buffer, Uint32 offset) override {}
         virtual void DrawIndexedIndirect(GfxBuffer const& buffer, Uint32 offset) override {}
         virtual void DispatchIndirect(GfxBuffer const& buffer, Uint32 offset) override {}

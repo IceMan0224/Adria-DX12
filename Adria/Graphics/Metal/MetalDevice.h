@@ -71,19 +71,19 @@ namespace adria
         void UpdateBindlessTables(std::vector<GfxBindlessTable> const& table, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size) override;
         void FreeDescriptor(GfxDescriptor descriptor) override {}
 
-        std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) override { return nullptr; }
-        std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) override { return nullptr; }
-        std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc, GfxTextureData const& data) override { return nullptr; }
-        std::unique_ptr<GfxTexture> CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer) override { return nullptr; }
-        std::unique_ptr<GfxBuffer> CreateBuffer(GfxBufferDesc const& desc, GfxBufferData const& initial_data) override { return nullptr; }
-        std::unique_ptr<GfxBuffer> CreateBuffer(GfxBufferDesc const& desc) override { return nullptr; }
+        std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) override;
+        std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) override;
+        std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc, GfxTextureData const& data) override;
+        std::unique_ptr<GfxTexture> CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer) override;
+        std::unique_ptr<GfxBuffer> CreateBuffer(GfxBufferDesc const& desc, GfxBufferData const& initial_data) override;
+        std::unique_ptr<GfxBuffer> CreateBuffer(GfxBufferDesc const& desc) override;
 
         std::shared_ptr<GfxBuffer> CreateBufferShared(GfxBufferDesc const& desc, GfxBufferData const& initial_data) override { return nullptr; }
         std::shared_ptr<GfxBuffer> CreateBufferShared(GfxBufferDesc const& desc) override { return nullptr; }
 
-        std::unique_ptr<GfxPipelineState> CreateGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc) override { return nullptr; }
-        std::unique_ptr<GfxPipelineState> CreateComputePipelineState(GfxComputePipelineStateDesc const& desc) override { return nullptr; }
-        std::unique_ptr<GfxPipelineState> CreateMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc) override { return nullptr; }
+        std::unique_ptr<GfxPipelineState> CreateGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc) override;
+        std::unique_ptr<GfxPipelineState> CreateComputePipelineState(GfxComputePipelineStateDesc const& desc) override;
+        std::unique_ptr<GfxPipelineState> CreateMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc) override;
         std::unique_ptr<GfxFence> CreateFence(Char const* name) override { return nullptr; }
         std::unique_ptr<GfxQueryHeap> CreateQueryHeap(GfxQueryHeapDesc const& desc) override { return nullptr; }
         std::unique_ptr<GfxRayTracingTLAS> CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags) override;

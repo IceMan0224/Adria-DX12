@@ -5,6 +5,8 @@
 #include "MetalSwapchain.h"
 #include "MetalTexture.h"
 #include "MetalBuffer.h"
+#include "MetalCommandList.h"
+#include "MetalPipelineState.h"
 #include "MetalArgumentBuffer.h"
 #include "MetalDescriptor.h"
 #include "MetalConversions.h"
@@ -14,6 +16,7 @@
 
 namespace adria
 {
+    ADRIA_LOG_CHANNEL(Graphics);
     namespace
     {
         id<MTLTexture> CreateTextureView(id<MTLTexture> base_texture, GfxTexture const* gfx_texture, GfxTextureDescriptorDesc const* desc)
@@ -477,6 +480,51 @@ namespace adria
         rt_desc.array_slice = desc ? desc->first_slice : 0;
 
         return EncodeFromMetalRenderTargetDescriptor(rt_desc);
+    }
+
+    std::unique_ptr<GfxCommandList> MetalDevice::CreateCommandList(GfxCommandListType type)
+    {
+        return std::make_unique<MetalCommandList>(this, type);
+    }
+
+    std::unique_ptr<GfxTexture> MetalDevice::CreateTexture(GfxTextureDesc const& desc)
+    {
+        return std::make_unique<MetalTexture>(this, desc);
+    }
+
+    std::unique_ptr<GfxTexture> MetalDevice::CreateTexture(GfxTextureDesc const& desc, GfxTextureData const& data)
+    {
+        return std::make_unique<MetalTexture>(this, desc, data);
+    }
+
+    std::unique_ptr<GfxTexture> MetalDevice::CreateBackbufferTexture(GfxTextureDesc const& desc, void* backbuffer)
+    {
+        return std::make_unique<MetalTexture>(this, backbuffer, desc);
+    }
+
+    std::unique_ptr<GfxBuffer> MetalDevice::CreateBuffer(GfxBufferDesc const& desc, GfxBufferData const& initial_data)
+    {
+        return std::make_unique<MetalBuffer>(this, desc, initial_data);
+    }
+
+    std::unique_ptr<GfxBuffer> MetalDevice::CreateBuffer(GfxBufferDesc const& desc)
+    {
+        return std::make_unique<MetalBuffer>(this, desc);
+    }
+
+    std::unique_ptr<GfxPipelineState> MetalDevice::CreateGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc)
+    {
+        return std::make_unique<MetalGraphicsPipelineState>(this, desc);
+    }
+
+    std::unique_ptr<GfxPipelineState> MetalDevice::CreateComputePipelineState(GfxComputePipelineStateDesc const& desc)
+    {
+        return std::make_unique<MetalComputePipelineState>(this, desc);
+    }
+
+    std::unique_ptr<GfxPipelineState> MetalDevice::CreateMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc)
+    {
+        return std::make_unique<MetalMeshShadingPipelineState>(this, desc);
     }
 
     std::unique_ptr<GfxRayTracingTLAS> MetalDevice::CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)

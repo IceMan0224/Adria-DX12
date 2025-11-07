@@ -11,6 +11,12 @@ namespace adria
     {
     public:
         MetalGraphicsPipelineState(GfxDevice* gfx, GfxGraphicsPipelineStateDesc const& desc);
+
+#ifdef __OBJC__
+        MetalGraphicsPipelineState(GfxDevice* gfx, GfxGraphicsPipelineStateDesc const& desc,
+                                   id<MTLFunction> vs, id<MTLFunction> ps);
+#endif
+
         virtual ~MetalGraphicsPipelineState() override;
 
         virtual void* GetNative() const override;

@@ -8,11 +8,13 @@
 #include "MetalRayTracingPipeline.h"
 #include "MetalRayTracingShaderBindings.h"
 #include "MetalArgumentBuffer.h"
+#include "MetalDescriptor.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxBufferView.h"
 
 namespace adria
 {
+    ADRIA_LOG_CHANNEL(Graphics);
     constexpr Uint32 BINDLESS_ARGUMENT_BUFFER_SLOT = 30;
 
     static MTLLoadAction ConvertLoadAction(GfxLoadAccessOp op)
@@ -244,8 +246,81 @@ namespace adria
 
     void MetalCommandList::BeginRenderPass(GfxRenderPassDesc const& render_pass_desc)
     {
-        ADRIA_TODO("Fill this later");
         MTLRenderPassDescriptor* pass_desc = [MTLRenderPassDescriptor new];
+
+        for (Uint32 i = 0; i < render_pass_desc.rtv_attachments.size(); ++i)
+        {
+            GfxColorAttachmentDesc const& color_attachment = render_pass_desc.rtv_attachments[i];
+
+            MetalRenderTargetDescriptor rtv_desc = DecodeToMetalRenderTargetDescriptor(color_attachment.cpu_handle);
+            if (!rtv_desc.texture)
+            {
+                continue;
+            }
+
+            MTLRenderPassColorAttachmentDescriptor* mtl_color_attachment = pass_desc.colorAttachments[i];
+            mtl_color_attachment.texture = rtv_desc.texture;
+            mtl_color_attachment.level = rtv_desc.mip_level;
+            mtl_color_attachment.slice = rtv_desc.array_slice;
+            mtl_color_attachment.loadAction = ConvertLoadAction(color_attachment.beginning_access);
+            mtl_color_attachment.storeAction = ConvertStoreAction(color_attachment.ending_access);
+
+            // Set clear color if needed
+            if (color_attachment.beginning_access == GfxLoadAccessOp::Clear)
+            {
+                if (color_attachment.clear_value.active_member == GfxClearValue::GfxActiveMember::Color)
+                {
+                    Float const* clear_color = color_attachment.clear_value.color.color;
+                    mtl_color_attachment.clearColor = MTLClearColorMake(
+                        clear_color[0], clear_color[1], clear_color[2], clear_color[3]
+                    );
+                }
+            }
+        }
+
+        if (render_pass_desc.dsv_attachment.has_value())
+        {
+            GfxDepthAttachmentDesc const& depth_attachment = render_pass_desc.dsv_attachment.value();
+
+            MetalRenderTargetDescriptor dsv_desc = DecodeToMetalRenderTargetDescriptor(depth_attachment.cpu_handle);
+            if (dsv_desc.texture)
+            {
+                MTLRenderPassDepthAttachmentDescriptor* mtl_depth_attachment = pass_desc.depthAttachment;
+                mtl_depth_attachment.texture = dsv_desc.texture;
+                mtl_depth_attachment.level = dsv_desc.mip_level;
+                mtl_depth_attachment.slice = dsv_desc.array_slice;
+                mtl_depth_attachment.loadAction = ConvertLoadAction(depth_attachment.depth_beginning_access);
+                mtl_depth_attachment.storeAction = ConvertStoreAction(depth_attachment.depth_ending_access);
+
+                if (depth_attachment.depth_beginning_access == GfxLoadAccessOp::Clear)
+                {
+                    if (depth_attachment.clear_value.active_member == GfxClearValue::GfxActiveMember::DepthStencil)
+                    {
+                        mtl_depth_attachment.clearDepth = depth_attachment.clear_value.depth_stencil.depth;
+                    }
+                }
+
+                if (depth_attachment.stencil_beginning_access != GfxLoadAccessOp::NoAccess)
+                {
+                    MTLRenderPassStencilAttachmentDescriptor* mtl_stencil_attachment = pass_desc.stencilAttachment;
+                    mtl_stencil_attachment.texture = dsv_desc.texture;
+                    mtl_stencil_attachment.level = dsv_desc.mip_level;
+                    mtl_stencil_attachment.slice = dsv_desc.array_slice;
+                    mtl_stencil_attachment.loadAction = ConvertLoadAction(depth_attachment.stencil_beginning_access);
+                    mtl_stencil_attachment.storeAction = ConvertStoreAction(depth_attachment.stencil_ending_access);
+
+                    // Set clear stencil if needed
+                    if (depth_attachment.stencil_beginning_access == GfxLoadAccessOp::Clear)
+                    {
+                        if (depth_attachment.clear_value.active_member == GfxClearValue::GfxActiveMember::DepthStencil)
+                        {
+                            mtl_stencil_attachment.clearStencil = depth_attachment.clear_value.depth_stencil.stencil;
+                        }
+                    }
+                }
+            }
+        }
+
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:pass_desc];
 
         MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();

@@ -7,6 +7,7 @@
 
 namespace adria
 {
+    ADRIA_LOG_CHANNEL(Graphics);
     static MTLCompareFunction ConvertCompareFunc(GfxComparisonFunc func)
     {
         switch (func)
@@ -30,11 +31,11 @@ namespace adria
         case GfxStencilOp::Keep: return MTLStencilOperationKeep;
         case GfxStencilOp::Zero: return MTLStencilOperationZero;
         case GfxStencilOp::Replace: return MTLStencilOperationReplace;
-        case GfxStencilOp::IncrementSaturate: return MTLStencilOperationIncrementClamp;
-        case GfxStencilOp::DecrementSaturate: return MTLStencilOperationDecrementClamp;
+        case GfxStencilOp::IncrSat: return MTLStencilOperationIncrementClamp;
+        case GfxStencilOp::DecrSat: return MTLStencilOperationDecrementClamp;
         case GfxStencilOp::Invert: return MTLStencilOperationInvert;
-        case GfxStencilOp::Increment: return MTLStencilOperationIncrementWrap;
-        case GfxStencilOp::Decrement: return MTLStencilOperationDecrementWrap;
+        case GfxStencilOp::Incr: return MTLStencilOperationIncrementWrap;
+        case GfxStencilOp::Decr: return MTLStencilOperationDecrementWrap;
         default: return MTLStencilOperationKeep;
         }
     }
@@ -49,11 +50,11 @@ namespace adria
         case GfxBlend::InvSrcColor: return MTLBlendFactorOneMinusSourceColor;
         case GfxBlend::SrcAlpha: return MTLBlendFactorSourceAlpha;
         case GfxBlend::InvSrcAlpha: return MTLBlendFactorOneMinusSourceAlpha;
-        case GfxBlend::DestAlpha: return MTLBlendFactorDestinationAlpha;
-        case GfxBlend::InvDestAlpha: return MTLBlendFactorOneMinusDestinationAlpha;
-        case GfxBlend::DestColor: return MTLBlendFactorDestinationColor;
-        case GfxBlend::InvDestColor: return MTLBlendFactorOneMinusDestinationColor;
-        case GfxBlend::SrcAlphaSaturate: return MTLBlendFactorSourceAlphaSaturated;
+        case GfxBlend::DstAlpha: return MTLBlendFactorDestinationAlpha;
+        case GfxBlend::InvDstAlpha: return MTLBlendFactorOneMinusDestinationAlpha;
+        case GfxBlend::DstColor: return MTLBlendFactorDestinationColor;
+        case GfxBlend::InvDstColor: return MTLBlendFactorOneMinusDestinationColor;
+        case GfxBlend::SrcAlphaSat: return MTLBlendFactorSourceAlphaSaturated;
         case GfxBlend::BlendFactor: return MTLBlendFactorBlendColor;
         case GfxBlend::InvBlendFactor: return MTLBlendFactorOneMinusBlendColor;
         case GfxBlend::Src1Color: return MTLBlendFactorSource1Color;
@@ -80,13 +81,14 @@ namespace adria
     static MTLColorWriteMask ConvertColorWriteMask(GfxColorWrite mask)
     {
         MTLColorWriteMask result = MTLColorWriteMaskNone;
-        if ((mask & GfxColorWrite::Red) != GfxColorWrite::Disable)
+        Uint32 mask_value = static_cast<Uint32>(mask);
+        if (mask_value & static_cast<Uint32>(GfxColorWrite::EnableRed))
             result |= MTLColorWriteMaskRed;
-        if ((mask & GfxColorWrite::Green) != GfxColorWrite::Disable)
+        if (mask_value & static_cast<Uint32>(GfxColorWrite::EnableGreen))
             result |= MTLColorWriteMaskGreen;
-        if ((mask & GfxColorWrite::Blue) != GfxColorWrite::Disable)
+        if (mask_value & static_cast<Uint32>(GfxColorWrite::EnableBlue))
             result |= MTLColorWriteMaskBlue;
-        if ((mask & GfxColorWrite::Alpha) != GfxColorWrite::Disable)
+        if (mask_value & static_cast<Uint32>(GfxColorWrite::EnableAlpha))
             result |= MTLColorWriteMaskAlpha;
         return result;
     }
@@ -232,7 +234,7 @@ namespace adria
             MTLRenderPipelineColorAttachmentDescriptor* color_attachment = pso_desc.colorAttachments[i];
             color_attachment.pixelFormat = ToMTLPixelFormat(desc.rtv_formats[i]);
 
-            GfxRasterizerState::GfxRenderTargetBlendState const& blend_state =
+            GfxBlendState::GfxRenderTargetBlendState const& blend_state =
                 desc.blend_state.independent_blend_enable ? desc.blend_state.render_target[i] : desc.blend_state.render_target[0];
 
             color_attachment.blendingEnabled = blend_state.blend_enable;
@@ -259,6 +261,113 @@ namespace adria
         pso_desc.inputPrimitiveTopology = ConvertTopologyClass(desc.topology_type);
         pso_desc.alphaToCoverageEnabled = desc.blend_state.alpha_to_coverage_enable;
         pso_desc.rasterSampleCount = 1; 
+
+        NSError* error = nil;
+        pipeline_state = [device newRenderPipelineStateWithDescriptor:pso_desc error:&error];
+        if (error || !pipeline_state)
+        {
+            if (error)
+            {
+                ADRIA_LOG(ERROR, "Failed to create graphics pipeline state: %s", [[error localizedDescription] UTF8String]);
+            }
+            return;
+        }
+        depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
+    }
+
+    MetalGraphicsPipelineState::MetalGraphicsPipelineState(GfxDevice* gfx, GfxGraphicsPipelineStateDesc const& desc,
+                                                           id<MTLFunction> vs, id<MTLFunction> ps)
+        : topology_type(desc.topology_type)
+        , cull_mode(desc.rasterizer_state.cull_mode)
+        , front_counter_clockwise(desc.rasterizer_state.front_counter_clockwise)
+        , depth_bias(static_cast<Float>(desc.rasterizer_state.depth_bias))
+        , slope_scaled_depth_bias(desc.rasterizer_state.slope_scaled_depth_bias)
+        , depth_bias_clamp(desc.rasterizer_state.depth_bias_clamp)
+    {
+        MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
+        id<MTLDevice> device = metal_device->GetMTLDevice();
+
+        MTLRenderPipelineDescriptor* pso_desc = [MTLRenderPipelineDescriptor new];
+
+        pso_desc.vertexFunction = vs;
+        pso_desc.fragmentFunction = ps;
+
+        if (!desc.input_layout.elements.empty())
+        {
+            MTLVertexDescriptor* vertex_desc = [MTLVertexDescriptor new];
+
+            for (Uint32 i = 0; i < desc.input_layout.elements.size(); ++i)
+            {
+                auto const& element = desc.input_layout.elements[i];
+                vertex_desc.attributes[i].format = ToMTLVertexFormat(element.format);
+                vertex_desc.attributes[i].offset = element.aligned_byte_offset;
+                vertex_desc.attributes[i].bufferIndex = element.input_slot;
+            }
+
+            if (!desc.input_layout.elements.empty())
+            {
+                Uint32 max_slot = 0;
+                for (auto const& element : desc.input_layout.elements)
+                {
+                    max_slot = std::max(max_slot, element.input_slot);
+                }
+
+                for (Uint32 slot = 0; slot <= max_slot; ++slot)
+                {
+                    Uint32 stride = 0;
+                    for (auto const& element : desc.input_layout.elements)
+                    {
+                        if (element.input_slot == slot)
+                        {
+                            stride = element.aligned_byte_offset + GetGfxFormatStride(element.format);
+                        }
+                    }
+                    if (stride > 0)
+                    {
+                        vertex_desc.layouts[slot].stride = stride;
+                        vertex_desc.layouts[slot].stepFunction = MTLVertexStepFunctionPerVertex;
+                    }
+                }
+            }
+
+            pso_desc.vertexDescriptor = vertex_desc;
+        }
+
+        for (Uint32 i = 0; i < desc.num_render_targets; ++i)
+        {
+            if (desc.rtv_formats[i] == GfxFormat::UNKNOWN)
+                continue;
+
+            MTLRenderPipelineColorAttachmentDescriptor* color_attachment = pso_desc.colorAttachments[i];
+            color_attachment.pixelFormat = ToMTLPixelFormat(desc.rtv_formats[i]);
+
+            GfxBlendState::GfxRenderTargetBlendState const& blend_state =
+                desc.blend_state.independent_blend_enable ? desc.blend_state.render_target[i] : desc.blend_state.render_target[0];
+
+            color_attachment.blendingEnabled = blend_state.blend_enable;
+            color_attachment.sourceRGBBlendFactor = ConvertBlendFactor(blend_state.src_blend);
+            color_attachment.destinationRGBBlendFactor = ConvertBlendFactor(blend_state.dest_blend);
+            color_attachment.rgbBlendOperation = ConvertBlendOp(blend_state.blend_op);
+            color_attachment.sourceAlphaBlendFactor = ConvertBlendFactor(blend_state.src_blend_alpha);
+            color_attachment.destinationAlphaBlendFactor = ConvertBlendFactor(blend_state.dest_blend_alpha);
+            color_attachment.alphaBlendOperation = ConvertBlendOp(blend_state.blend_op_alpha);
+            color_attachment.writeMask = ConvertColorWriteMask(blend_state.render_target_write_mask);
+        }
+
+        if (desc.dsv_format != GfxFormat::UNKNOWN)
+        {
+            pso_desc.depthAttachmentPixelFormat = ToMTLPixelFormat(desc.dsv_format);
+
+            if (desc.dsv_format == GfxFormat::D24_UNORM_S8_UINT ||
+                desc.dsv_format == GfxFormat::D32_FLOAT_S8X24_UINT)
+            {
+                pso_desc.stencilAttachmentPixelFormat = ToMTLPixelFormat(desc.dsv_format);
+            }
+        }
+
+        pso_desc.inputPrimitiveTopology = ConvertTopologyClass(desc.topology_type);
+        pso_desc.alphaToCoverageEnabled = desc.blend_state.alpha_to_coverage_enable;
+        pso_desc.rasterSampleCount = 1;
 
         NSError* error = nil;
         pipeline_state = [device newRenderPipelineStateWithDescriptor:pso_desc error:&error];
@@ -321,20 +430,15 @@ namespace adria
 
         if (object_func)
         {
-            threads_per_object_threadgroup = MTLSizeMake(
-                object_func.maxTotalThreadsPerThreadgroup > 0 ? object_func.maxTotalThreadsPerThreadgroup : 32,
-                1, 1
-            );
+            // Default threadgroup size for object shaders
+            threads_per_object_threadgroup = MTLSizeMake(32, 1, 1);
         }
         else
         {
             threads_per_object_threadgroup = MTLSizeMake(0, 0, 0);
         }
 
-        threads_per_mesh_threadgroup = MTLSizeMake(
-            mesh_func.maxTotalThreadsPerThreadgroup > 0 ? mesh_func.maxTotalThreadsPerThreadgroup : 32,
-            1, 1
-        );
+        threads_per_mesh_threadgroup = MTLSizeMake(32, 1, 1);
 
         for (Uint32 i = 0; i < desc.num_render_targets; ++i)
         {
@@ -372,7 +476,7 @@ namespace adria
         pso_desc.rasterSampleCount = 1;
 
         NSError* error = nil;
-        pipeline_state = [device newRenderPipelineStateWithDescriptor:pso_desc error:&error];
+        pipeline_state = [device newRenderPipelineStateWithMeshDescriptor:pso_desc options:MTLPipelineOptionNone reflection:nil error:&error];
 
         if (error || !pipeline_state)
         {
@@ -423,24 +527,7 @@ namespace adria
             return;
         }
 
-        NSUInteger max_threads = compute_func.maxTotalThreadsPerThreadgroup;
-        NSUInteger thread_width = pipeline_state.threadExecutionWidth;
-        if (max_threads >= 1024)
-        {
-            threads_per_threadgroup = MTLSizeMake(32, 32, 1); 
-        }
-        else if (max_threads >= 512)
-        {
-            threads_per_threadgroup = MTLSizeMake(16, 32, 1); 
-        }
-        else if (max_threads >= 256)
-        {
-            threads_per_threadgroup = MTLSizeMake(16, 16, 1); 
-        }
-        else
-        {
-            threads_per_threadgroup = MTLSizeMake(8, 8, 1); 
-        }
+        threads_per_threadgroup = MTLSizeMake(16, 16, 1);
     }
 
     MetalComputePipelineState::~MetalComputePipelineState()

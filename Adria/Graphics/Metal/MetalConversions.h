@@ -158,4 +158,93 @@ namespace adria
             return MTLIndexTypeUInt32;
         }
     }
+
+    inline constexpr MTLVertexFormat ToMTLVertexFormat(GfxFormat format)
+    {
+        switch (format)
+        {
+        case GfxFormat::R32G32B32A32_FLOAT:
+            return MTLVertexFormatFloat4;
+        case GfxFormat::R32G32B32A32_UINT:
+            return MTLVertexFormatUInt4;
+        case GfxFormat::R32G32B32A32_SINT:
+            return MTLVertexFormatInt4;
+        case GfxFormat::R16G16B16A16_FLOAT:
+            return MTLVertexFormatHalf4;
+        case GfxFormat::R16G16B16A16_UNORM:
+            return MTLVertexFormatUShort4Normalized;
+        case GfxFormat::R16G16B16A16_UINT:
+            return MTLVertexFormatUShort4;
+        case GfxFormat::R16G16B16A16_SNORM:
+            return MTLVertexFormatShort4Normalized;
+        case GfxFormat::R16G16B16A16_SINT:
+            return MTLVertexFormatShort4;
+        case GfxFormat::R32G32B32_FLOAT:
+            return MTLVertexFormatFloat3;
+        case GfxFormat::R32G32B32_UINT:
+            return MTLVertexFormatUInt3;
+        case GfxFormat::R32G32B32_SINT:
+            return MTLVertexFormatInt3;
+        case GfxFormat::R32G32_FLOAT:
+            return MTLVertexFormatFloat2;
+        case GfxFormat::R32G32_UINT:
+            return MTLVertexFormatUInt2;
+        case GfxFormat::R32G32_SINT:
+            return MTLVertexFormatInt2;
+        case GfxFormat::R10G10B10A2_UNORM:
+            return MTLVertexFormatUInt1010102Normalized;
+        case GfxFormat::R8G8B8A8_UNORM:
+            return MTLVertexFormatUChar4Normalized;
+        case GfxFormat::R8G8B8A8_UINT:
+            return MTLVertexFormatUChar4;
+        case GfxFormat::R8G8B8A8_SNORM:
+            return MTLVertexFormatChar4Normalized;
+        case GfxFormat::R8G8B8A8_SINT:
+            return MTLVertexFormatChar4;
+        case GfxFormat::R16G16_FLOAT:
+            return MTLVertexFormatHalf2;
+        case GfxFormat::R16G16_UNORM:
+            return MTLVertexFormatUShort2Normalized;
+        case GfxFormat::R16G16_UINT:
+            return MTLVertexFormatUShort2;
+        case GfxFormat::R16G16_SNORM:
+            return MTLVertexFormatShort2Normalized;
+        case GfxFormat::R16G16_SINT:
+            return MTLVertexFormatShort2;
+        case GfxFormat::R32_FLOAT:
+            return MTLVertexFormatFloat;
+        case GfxFormat::R32_UINT:
+            return MTLVertexFormatUInt;
+        case GfxFormat::R32_SINT:
+            return MTLVertexFormatInt;
+        case GfxFormat::R8G8_UNORM:
+            return MTLVertexFormatUChar2Normalized;
+        case GfxFormat::R8G8_UINT:
+            return MTLVertexFormatUChar2;
+        case GfxFormat::R8G8_SNORM:
+            return MTLVertexFormatChar2Normalized;
+        case GfxFormat::R8G8_SINT:
+            return MTLVertexFormatChar2;
+        case GfxFormat::R16_FLOAT:
+            return MTLVertexFormatHalf;
+        case GfxFormat::R16_UNORM:
+            return MTLVertexFormatUShortNormalized;
+        case GfxFormat::R16_UINT:
+            return MTLVertexFormatUShort;
+        case GfxFormat::R16_SNORM:
+            return MTLVertexFormatShortNormalized;
+        case GfxFormat::R16_SINT:
+            return MTLVertexFormatShort;
+        case GfxFormat::R8_UNORM:
+            return MTLVertexFormatUCharNormalized;
+        case GfxFormat::R8_UINT:
+            return MTLVertexFormatUChar;
+        case GfxFormat::R8_SNORM:
+            return MTLVertexFormatCharNormalized;
+        case GfxFormat::R8_SINT:
+            return MTLVertexFormatChar;
+        default:
+            return MTLVertexFormatInvalid;
+        }
+    }
 }
