@@ -458,7 +458,8 @@ namespace adria
 	void OceanRenderer::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
-		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_Ocean), gfx_pso_desc.input_layout);
+		gfx_pso_desc.input_layout.elements.push_back({"POSITION", 0, GfxFormat::R32G32B32_FLOAT, 0, 0, GfxInputClassification::PerVertexData});
+		gfx_pso_desc.input_layout.elements.push_back({"TEX", 0, GfxFormat::R32G32_FLOAT, 0, 12, GfxInputClassification::PerVertexData});
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_Ocean;
 		gfx_pso_desc.PS = PS_Ocean;

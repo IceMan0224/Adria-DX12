@@ -82,7 +82,7 @@ namespace adria
 	void SunPass::CreatePSO()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
-		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_Sun), gfx_pso_desc.input_layout);
+		gfx_pso_desc.input_layout.elements.push_back({"POSITION", 0, GfxFormat::R32G32B32_FLOAT, 0, 0, GfxInputClassification::PerVertexData});
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_Sun;
 		gfx_pso_desc.PS = PS_Texture;

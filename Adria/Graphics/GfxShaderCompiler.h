@@ -20,6 +20,5 @@ namespace adria
 		void Destroy();
 		Bool CompileShader(GfxShaderCompileInput const& input, GfxShaderCompileOutput& output);
 		void ReadBlobFromFile(std::string const& filename, GfxShaderBlob& blob);
-		void FillInputLayoutDesc(GfxShader const& vertex_shader, GfxInputLayout& input_layout);
 	}
 }

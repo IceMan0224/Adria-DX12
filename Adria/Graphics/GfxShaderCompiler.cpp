@@ -1,9 +1,9 @@
-#if defined(ADRIA_PLATFORM_WINDOWS)
 #include "dxcapi.h"
-#include "d3d12shader.h"
+#if defined(ADRIA_PLATFORM_MACOS)
+#include "metal_irconverter/metal_irconverter.h"
+#endif
 #include "GfxShaderCompiler.h"
 #include "GfxDefines.h"
-#include "GfxInputLayout.h"
 #include "Core/Paths.h"
 #include "Core/FatalAssert.h"
 #include "Utilities/StringConversions.h"
@@ -14,7 +14,6 @@
 #include "cereal/archives/binary.hpp"
 #include "cereal/types/string.hpp"
 #include "cereal/types/vector.hpp"
-#include "D3D12/D3D12Defines.h"
 
 namespace adria
 {
@@ -30,6 +29,11 @@ namespace adria
 		Ref<IDxcUtils> utils = nullptr;
 		Ref<IDxcIncludeHandler> include_handler = nullptr;
 		DynamicLibrary dxcompiler;
+
+#if defined(ADRIA_PLATFORM_MACOS)
+		IRCompiler* metal_ir_compiler = nullptr;
+		IRRootSignature* metal_root_signature = nullptr;
+#endif
 	}
 
 	class GfxIncludeHandler : public IDxcIncludeHandler
@@ -107,7 +111,7 @@ namespace adria
 			{
 				*ppv = static_cast<IDxcBlob*>(this);
 			}
-			else if (riid == IID_IUnknown)
+			else if (riid == __uuidof(IUnknown))
 			{
 				*ppv = static_cast<IUnknown*>(this);
 			}
@@ -238,6 +242,7 @@ namespace adria
 			binary_archive.loadBinary(binary_data.get(), binary_size);
 			output.shader.SetShaderData(binary_data.get(), binary_size);
 			output.shader.SetDesc(input);
+
 			return true;
 		}
 		static Bool SaveToCache(Char const* cache_path, GfxShaderCompileOutput const& output)
@@ -259,20 +264,74 @@ namespace adria
 
 		void Initialize()
 		{
-			dxcompiler.Open("dxcompiler.dll");
-			ADRIA_FATAL_ASSERT(dxcompiler.IsOpen(), "Couldn't open dxcompiler.dll!");
-			Bool const success = dxcompiler.GetSymbol("DxcCreateInstance", &PFN_DxcCreateInstance);
-			ADRIA_FATAL_ASSERT(success && PFN_DxcCreateInstance != nullptr, "Couldn't get DxcCreateInstance symbol from dxcompiler.dll!");
+#if defined(ADRIA_PLATFORM_WINDOWS)
+			std::string dxcompiler_path = paths::MainDir + "dxcompiler.dll";
+#elif defined(ADRIA_PLATFORM_MACOS)
+			std::string dxcompiler_path = paths::MainDir + "dxcompiler.dylib";
+#endif
+			dxcompiler.Open(dxcompiler_path.c_str());
+			ADRIA_FATAL_ASSERT(dxcompiler.IsOpen(), "Couldn't open dxcompiler!");
 
-			D3D12_CHECK_CALL(PFN_DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(library.GetAddressOf())));
-			D3D12_CHECK_CALL(PFN_DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(compiler.GetAddressOf())));
-			D3D12_CHECK_CALL(library->CreateIncludeHandler(include_handler.GetAddressOf()));
-			D3D12_CHECK_CALL(PFN_DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(utils.GetAddressOf())));
+			Bool const success = dxcompiler.GetSymbol("DxcCreateInstance", &PFN_DxcCreateInstance);
+			ADRIA_FATAL_ASSERT(success && PFN_DxcCreateInstance != nullptr, "Couldn't get DxcCreateInstance symbol from dxcompiler!");
+
+			HRESULT hr = S_OK;
+			hr = PFN_DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(library.GetAddressOf()));
+			ADRIA_ASSERT(SUCCEEDED(hr));
+			hr = PFN_DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(compiler.GetAddressOf()));
+			ADRIA_ASSERT(SUCCEEDED(hr));
+			hr = library->CreateIncludeHandler(include_handler.GetAddressOf());
+			ADRIA_ASSERT(SUCCEEDED(hr));
+			hr = PFN_DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(utils.GetAddressOf()));
+			ADRIA_ASSERT(SUCCEEDED(hr));
 
 			std::filesystem::create_directory(paths::ShaderPDBDir);
+
+#if defined(ADRIA_PLATFORM_MACOS)
+			metal_ir_compiler = IRCompilerCreate();
+
+			IRRootParameter1 rootParameters[1] = {};
+			rootParameters[0].ParameterType = IRRootParameterTypeCBV;
+			rootParameters[0].ShaderVisibility = IRShaderVisibilityAll;
+			rootParameters[0].Descriptor.ShaderRegister = 0;
+
+			IRVersionedRootSignatureDescriptor desc = {};
+			desc.version = IRRootSignatureVersion_1_1;
+			desc.desc_1_1.NumParameters = 1;
+			desc.desc_1_1.pParameters = rootParameters;
+			desc.desc_1_1.Flags = IRRootSignatureFlags(
+				IRRootSignatureFlagDenyHullShaderRootAccess |
+				IRRootSignatureFlagDenyDomainShaderRootAccess |
+				IRRootSignatureFlagDenyGeometryShaderRootAccess |
+				IRRootSignatureFlagCBVSRVUAVHeapDirectlyIndexed |
+				IRRootSignatureFlagSamplerHeapDirectlyIndexed);
+
+			IRError* error = nullptr;
+			metal_root_signature = IRRootSignatureCreateFromDescriptor(&desc, &error);
+			if (!metal_root_signature)
+			{
+				ADRIA_LOG(ERROR, "Failed to create Metal root signature");
+				if (error)
+				{
+					IRErrorDestroy(error);
+				}
+			}
+
+			ADRIA_LOG(INFO, "Metal IR Converter initialized");
+#endif
 		}
 		void Destroy()
 		{
+#if defined(ADRIA_PLATFORM_MACOS)
+			if (metal_root_signature)
+			{
+				IRRootSignatureDestroy(metal_root_signature);
+			}
+			if (metal_ir_compiler)
+			{
+				IRCompilerDestroy(metal_ir_compiler);
+			}
+#endif
 			include_handler.Reset();
 			compiler.Reset();
 			library.Reset();
@@ -289,7 +348,7 @@ namespace adria
 			Uint64 define_hash = crc64(define_key.c_str(), define_key.size());
 			std::string build_string = input.flags & GfxShaderCompilerFlag_Debug ? "debug" : "release";
 			Char cache_path[256];
-			sprintf_s(cache_path, "%s%s_%s_%llx_%s", paths::ShaderCacheDir.c_str(), GetFilenameWithoutExtension(input.file).c_str(),
+			snprintf(cache_path, sizeof(cache_path), "%s%s_%s_%llx_%s", paths::ShaderCacheDir.c_str(), GetFilenameWithoutExtension(input.file).c_str(),
 												     input.entry_point.c_str(), define_hash, build_string.c_str());
 
 			if (CheckCache(cache_path, input, output))
@@ -304,7 +363,11 @@ namespace adria
 
 			std::wstring shader_source = ToWideString(input.file);
 			HRESULT hr = library->CreateBlobFromFile(shader_source.data(), &code_page, source_blob.GetAddressOf());
-			D3D12_CHECK_CALL(hr);
+			if (FAILED(hr))
+			{
+				ADRIA_LOG(ERROR, "Failed to load shader file: %s", input.file.c_str());
+				return false;
+			}
 
 			std::wstring name = ToWideString(GetFilenameWithoutExtension(input.file));
 			std::wstring dir  = ToWideString(paths::ShaderDir);
@@ -312,7 +375,10 @@ namespace adria
 
 			std::wstring target = GetTarget(input.stage, input.model);
 			std::wstring entry_point = ToWideString(input.entry_point);
-			if (entry_point.empty()) entry_point = L"main";
+			if (entry_point.empty())
+			{
+				entry_point = L"main";
+			}
 
 			std::vector<Wchar const*> compile_args{};
 			compile_args.push_back(name.c_str());
@@ -348,8 +414,14 @@ namespace adria
 				std::wstring define_name = ToWideString(define.name);
 				std::wstring define_value = ToWideString(define.value);
 				compile_args.push_back(L"-D");
-				if (define.value.empty()) defines.push_back(define_name + L"=1");
-				else defines.push_back(define_name + L"=" + define_value);
+				if (define.value.empty())
+				{
+					defines.push_back(define_name + L"=1");
+				}
+				else
+				{
+					defines.push_back(define_name + L"=" + define_value);
+				}
 				compile_args.push_back(defines.back().c_str());
 			}
 
@@ -373,10 +445,11 @@ namespace adria
 				{
 					Char const* err_msg = errors->GetStringPointer();
 					ADRIA_LOG(ERROR, "%s", err_msg);
+#if defined(ADRIA_PLATFORM_WINDOWS)
 					std::string msg = "Click OK after you fixed the following errors: \n";
 					msg += err_msg;
 					Int32 result = MessageBoxA(NULL, msg.c_str(), NULL, MB_OKCANCEL);
-					if (result == IDOK) 
+					if (result == IDOK)
 					{
 						goto compile;
 					}
@@ -384,25 +457,32 @@ namespace adria
 					{
 						return false;
 					}
+#else
+					return false;
+#endif
 				}
 			}
-			
+
 			Ref<IDxcBlob> blob;
-			D3D12_CHECK_CALL(result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(blob.GetAddressOf()), nullptr));
+			hr = result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(blob.GetAddressOf()), nullptr);
+			if (FAILED(hr))
+			{
+				ADRIA_LOG(ERROR, "Failed to get shader bytecode");
+				return false;
+			}
 			
 			if (input.flags & GfxShaderCompilerFlag_Debug)
 			{
 				Ref<IDxcBlob> pdb_blob;
-				Ref<IDxcBlobUtf16> pdb_path_utf16;
+				Ref<IDxcBlobWide> pdb_path_utf16;
 				if (SUCCEEDED(result->GetOutput(DXC_OUT_PDB, IID_PPV_ARGS(pdb_blob.GetAddressOf()), pdb_path_utf16.GetAddressOf())))
 				{
 					Ref<IDxcBlobUtf8> pdb_path_utf8;
 					if (SUCCEEDED(utils->GetBlobAsUtf8(pdb_path_utf16.Get(), pdb_path_utf8.GetAddressOf())))
 					{
 						Char pdb_path[256];
-						sprintf_s(pdb_path, "%s%s", paths::ShaderPDBDir.c_str(), pdb_path_utf8->GetStringPointer());
-						FILE* pdb_file = nullptr;
-						fopen_s(&pdb_file, pdb_path, "wb");
+						snprintf(pdb_path, sizeof(pdb_path), "%s%s", paths::ShaderPDBDir.c_str(), pdb_path_utf8->GetStringPointer());
+						FILE* pdb_file = fopen(pdb_path, "wb");
 						if (pdb_file)
 						{
 							fwrite(pdb_blob->GetBufferPointer(), pdb_blob->GetBufferSize(), 1, pdb_file);
@@ -418,8 +498,74 @@ namespace adria
 				memcpy(output.shader_hash, hash_buf->HashDigest, sizeof(Uint64) * 2);
 			}
 
+#if defined(ADRIA_PLATFORM_MACOS)
+			ADRIA_ASSERT(metal_ir_compiler && metal_root_signature);
+			IRCompilerSetGlobalRootSignature(metal_ir_compiler, metal_root_signature);
+			IRCompilerSetMinimumGPUFamily(metal_ir_compiler, IRGPUFamilyApple7);
+			IRCompilerSetMinimumDeploymentTarget(metal_ir_compiler, IROperatingSystem_macOS, "14.0.0");
+			IRCompilerSetEntryPointName(metal_ir_compiler, input.entry_point.empty() ? "main" : input.entry_point.c_str());
+
+			IRObject* dxil_obj = IRObjectCreateFromDXIL((uint8_t const*)blob->GetBufferPointer(), blob->GetBufferSize(), IRBytecodeOwnershipNone);
+			if (!dxil_obj)
+			{
+				ADRIA_LOG(ERROR, "Failed to create IR object from DXIL");
+				return false;
+			}
+
+			IRError* ir_error = nullptr;
+			IRObject* metal_ir_obj = IRCompilerAllocCompileAndLink(metal_ir_compiler, nullptr, dxil_obj, &ir_error);
+			IRObjectDestroy(dxil_obj);
+
+			if (!metal_ir_obj)
+			{
+				if (ir_error)
+				{
+					uint32_t error_code = IRErrorGetCode(ir_error);
+					const char* error_payload = (const char*)IRErrorGetPayload(ir_error);
+					if (error_payload)
+					{
+						ADRIA_LOG(ERROR, "Failed to convert DXIL to Metal IR: %s", error_payload);
+					}
+					else
+					{
+						ADRIA_LOG(ERROR, "Failed to convert DXIL to Metal IR: error code %d", error_code);
+					}
+					IRErrorDestroy(ir_error);
+				}
+				return false;
+			}
+
+			IRMetalLibBinary* metallib = IRMetalLibBinaryCreate();
+			IRShaderStage ir_stage = IRShaderStageVertex; 
+			switch (input.stage)
+			{
+			case GfxShaderStage::VS: ir_stage = IRShaderStageVertex; break;
+			case GfxShaderStage::PS: ir_stage = IRShaderStageFragment; break;
+			case GfxShaderStage::CS: ir_stage = IRShaderStageCompute; break;
+			case GfxShaderStage::MS: ir_stage = IRShaderStageMesh; break;
+			case GfxShaderStage::AS: ir_stage = IRShaderStageAmplification; break;
+			case GfxShaderStage::GS: ir_stage = IRShaderStageGeometry; break;
+			case GfxShaderStage::DS: ir_stage = IRShaderStageDomain; break;
+			case GfxShaderStage::HS: ir_stage = IRShaderStageHull; break;
+			//case GfxShaderStage::LIB: ir_stage = IRShaderStageRayGeneration; break;
+			default: break;
+			}
+
+			IRObjectGetMetalLibBinary(metal_ir_obj, ir_stage, metallib);
+			Usize metallib_size = IRMetalLibGetBytecodeSize(metallib);
+			std::vector<Uint8> metallib_data(metallib_size);
+			IRMetalLibGetBytecode(metallib, metallib_data.data());
+
+			IRMetalLibBinaryDestroy(metallib);
+			IRObjectDestroy(metal_ir_obj);
+
+			output.shader.SetDesc(input);
+			output.shader.SetShaderData(metallib_data.data(), metallib_data.size());
+			ADRIA_LOG(INFO, "Successfully converted DXIL to Metal IR for shader: %s", input.file.c_str());
+#else
 			output.shader.SetDesc(input);
 			output.shader.SetShaderData(blob->GetBufferPointer(), blob->GetBufferSize());
+#endif
 			output.includes = std::move(custom_include_handler.include_files);
 			output.includes.push_back(input.file);
 			SaveToCache(cache_path, output);
@@ -431,110 +577,14 @@ namespace adria
 			Uint32 code_page = CP_UTF8;
 			Ref<IDxcBlobEncoding> source_blob;
 			HRESULT hr = library->CreateBlobFromFile(wide_filename.data(), &code_page, source_blob.GetAddressOf());
-			D3D12_CHECK_CALL(hr);
+			if (FAILED(hr))
+			{
+				ADRIA_LOG(ERROR, "Failed to read blob from file: %s", filename.c_str());
+				return;
+			}
 			blob.resize(source_blob->GetBufferSize());
 			memcpy(blob.data(), source_blob->GetBufferPointer(), source_blob->GetBufferSize());
 		}
-		void FillInputLayoutDesc(GfxShader const& vertex_shader, GfxInputLayout& input_layout)
-		{
-			ADRIA_ASSERT_MSG(PFN_DxcCreateInstance != nullptr, "Cannot do dxc reflection without PFN_DxcCreateInstance!");
-			Ref<IDxcContainerReflection> reflection;
-			HRESULT hr = PFN_DxcCreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(reflection.GetAddressOf()));
-			GfxShaderCompilerBlob my_blob{ vertex_shader.GetData(), vertex_shader.GetSize() };
-			D3D12_CHECK_CALL(hr);
-			hr = reflection->Load(&my_blob);
-			D3D12_CHECK_CALL(hr);
-			Uint32 part_index;
-#ifndef MAKEFOURCC
-#define MAKEFOURCC(a, b, c, d) (Uint)((Uchar)(a) | (Uchar)(b) << 8 | (Uchar)(c) << 16 | (Uchar)(d) << 24)
-#endif
-			D3D12_CHECK_CALL(reflection->FindFirstPartKind(MAKEFOURCC('D', 'X', 'I', 'L'), &part_index));
-#undef MAKEFOURCC
-
-			Ref<ID3D12ShaderReflection> vertex_shader_reflection;
-			D3D12_CHECK_CALL(reflection->GetPartReflection(part_index, IID_PPV_ARGS(vertex_shader_reflection.GetAddressOf())));
-
-			D3D12_SHADER_DESC shader_desc;
-			D3D12_CHECK_CALL(vertex_shader_reflection->GetDesc(&shader_desc));
-
-			D3D12_SIGNATURE_PARAMETER_DESC signature_param_desc{};
-			input_layout.elements.clear();
-			input_layout.elements.resize(shader_desc.InputParameters);
-			for (Uint32 i = 0; i < shader_desc.InputParameters; i++)
-			{
-				vertex_shader_reflection->GetInputParameterDesc(i, &signature_param_desc);
-				input_layout.elements[i].semantic_name = std::string(signature_param_desc.SemanticName);
-				input_layout.elements[i].semantic_index = signature_param_desc.SemanticIndex;
-				input_layout.elements[i].aligned_byte_offset = GfxInputLayout::APPEND_ALIGNED_ELEMENT;
-				input_layout.elements[i].input_slot_class = GfxInputClassification::PerVertexData;
-				input_layout.elements[i].input_slot = 0;
-
-				if (input_layout.elements[i].semantic_name.starts_with("INSTANCE"))
-				{
-					input_layout.elements[i].input_slot_class = GfxInputClassification::PerInstanceData;
-					input_layout.elements[i].input_slot = 1;
-				}
-
-				if (signature_param_desc.Mask == 1)
-				{
-					if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)	   input_layout.elements[i].format = GfxFormat::R32_UINT;
-					else if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)  input_layout.elements[i].format = GfxFormat::R32_SINT;
-					else if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) input_layout.elements[i].format = GfxFormat::R32_FLOAT;
-				}
-				else if (signature_param_desc.Mask <= 3)
-				{
-					if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)	   input_layout.elements[i].format = GfxFormat::R32G32_UINT;
-					else if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)  input_layout.elements[i].format = GfxFormat::R32G32_SINT;
-					else if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) input_layout.elements[i].format = GfxFormat::R32G32_FLOAT;
-				}
-				else if (signature_param_desc.Mask <= 7)
-				{
-					if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)	   input_layout.elements[i].format = GfxFormat::R32G32B32_UINT;
-					else if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)  input_layout.elements[i].format = GfxFormat::R32G32B32_SINT;
-					else if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) input_layout.elements[i].format = GfxFormat::R32G32B32_FLOAT;
-				}
-				else if (signature_param_desc.Mask <= 15)
-				{
-					if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)	   input_layout.elements[i].format = GfxFormat::R32G32B32A32_UINT;
-					else if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)  input_layout.elements[i].format = GfxFormat::R32G32B32A32_SINT;
-					else if (signature_param_desc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) input_layout.elements[i].format = GfxFormat::R32G32B32A32_FLOAT;
-				}
-			}
-		}
-
 	}
 }
 
-#else 
-
-#include "GfxShaderCompiler.h"
-#include "GfxInputLayout.h"
-
-namespace adria
-{
-	namespace GfxShaderCompiler
-	{
-		void Initialize()
-		{
-		}
-
-		void Destroy()
-		{
-		}
-
-		Bool CompileShader(GfxShaderCompileInput const& input, GfxShaderCompileOutput& output)
-		{
-			return false;
-		}
-
-		void ReadBlobFromFile(std::string const& filename, GfxShaderBlob& blob)
-		{
-		}
-
-		void FillInputLayoutDesc(GfxShader const& vertex_shader, GfxInputLayout& input_layout)
-		{
-		}
-	}
-}
-
-#endif // _WIN32

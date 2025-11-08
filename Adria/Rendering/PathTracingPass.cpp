@@ -128,7 +128,7 @@ namespace adria
 	void PathTracingPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc pt_gbuffer_pso_desc{};
-		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_PT_GBuffer), pt_gbuffer_pso_desc.input_layout);
+		pt_gbuffer_pso_desc.input_layout.elements.clear();
 		pt_gbuffer_pso_desc.root_signature = GfxRootSignatureID::Common;
 		pt_gbuffer_pso_desc.VS = VS_PT_GBuffer;
 		pt_gbuffer_pso_desc.PS = PS_PT_GBuffer;

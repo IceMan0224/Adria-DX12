@@ -110,7 +110,7 @@ namespace adria
 	void RainBlockerMapPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
-		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_RainBlocker), gfx_pso_desc.input_layout);
+		gfx_pso_desc.input_layout.elements.clear();
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_RainBlocker;
 		gfx_pso_desc.PS = ShaderID_Invalid;

@@ -10,6 +10,8 @@ namespace adria
 	enum ShaderID : Uint8
 	{
 		ShaderID_Invalid,
+		VS_TriangleTest,
+		PS_TriangleTest,
 		VS_Sky,
 		PS_Sky,
 		CS_MinimalAtmosphereSky,

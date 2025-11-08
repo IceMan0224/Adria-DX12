@@ -160,7 +160,7 @@ namespace adria
 	void TransparentPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc transparent_pso_desc{};
-		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_Transparent), transparent_pso_desc.input_layout);
+		transparent_pso_desc.input_layout.elements.clear();
 		transparent_pso_desc.root_signature = GfxRootSignatureID::Common;
 		transparent_pso_desc.VS = VS_Transparent;
 		transparent_pso_desc.PS = PS_Transparent;

@@ -108,7 +108,7 @@ namespace adria
 	void GBufferPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc gbuffer_pso_desc{};
-		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_GBuffer), gbuffer_pso_desc.input_layout);
+		gbuffer_pso_desc.input_layout.elements.clear();
 		gbuffer_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gbuffer_pso_desc.VS = VS_GBuffer;
 		gbuffer_pso_desc.PS = PS_GBuffer;

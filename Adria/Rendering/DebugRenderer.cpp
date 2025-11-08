@@ -321,7 +321,8 @@ namespace adria
 	void DebugRenderer::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
-		GfxShaderCompiler::FillInputLayoutDesc(SM_GetGfxShader(VS_Debug), gfx_pso_desc.input_layout);
+		gfx_pso_desc.input_layout.elements.push_back({"POSITION", 0, GfxFormat::R32G32B32_FLOAT, 0, 0, GfxInputClassification::PerVertexData});
+		gfx_pso_desc.input_layout.elements.push_back({"COLOR", 0, GfxFormat::R32_UINT, 0, 12, GfxInputClassification::PerVertexData});
 		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
 		gfx_pso_desc.VS = VS_Debug;
 		gfx_pso_desc.PS = PS_Debug;
