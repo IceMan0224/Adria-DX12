@@ -44,16 +44,15 @@ namespace adria
 		std::string icon_path = paths::FontsDir + "FontAwesome/" FONT_ICON_FILE_NAME_FAS;
 		io.Fonts->AddFontFromFileTTF(icon_path.c_str(), 15.0f, &font_config, icon_ranges);
 
-		// Get NSWindow and content view from window handle
 		NSWindow* ns_window = (__bridge NSWindow*)gfx->GetWindowHandle();
 		NSView* content_view = [ns_window contentView];
 
 		ImGui_ImplOSX_Init(content_view);
 		ImGui_ImplMetal_Init(metal_gfx->GetMTLDevice());
 
-		// Set initial DisplaySize from window's current size to avoid assertion on first frame
 		NSRect contentRect = [content_view frame];
 		io.DisplaySize = ImVec2(contentRect.size.width, contentRect.size.height);
+		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);  // No retina scaling
 	}
 
 	MetalImGuiManager::~MetalImGuiManager()
@@ -77,8 +76,6 @@ namespace adria
 			GfxTextureDesc const& backbuffer_desc = backbuffer->GetDesc();
 			io.DisplaySize = ImVec2(static_cast<float>(backbuffer_desc.width), static_cast<float>(backbuffer_desc.height));
 		}
-		CGFloat framebufferScale = ns_window.screen.backingScaleFactor ?: NSScreen.mainScreen.backingScaleFactor;
-		io.DisplayFramebufferScale = ImVec2(framebufferScale, framebufferScale);
 
 		MTLRenderPassDescriptor* render_pass_desc = [MTLRenderPassDescriptor new];
 		if (backbuffer)
@@ -89,6 +86,9 @@ namespace adria
 
 		ImGui_ImplOSX_NewFrame(content_view);
 		ImGui_ImplMetal_NewFrame(render_pass_desc);
+
+		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+
 		ImGui::NewFrame();
 	}
 
