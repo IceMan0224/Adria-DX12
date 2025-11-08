@@ -161,16 +161,13 @@ namespace adria
                 [NSApp sendEvent:event];
             }
 
-            return true;
+            return !should_quit;
         }
     }
 
     void Window::Quit(Int32 exit_code)
     {
-        @autoreleasepool
-        {
-            [NSApp terminate:nil];
-        }
+        should_quit = true;
     }
 
     void* Window::Handle() const

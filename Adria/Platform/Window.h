@@ -48,5 +48,6 @@ namespace adria
 	private:
 		WindowHandle window_handle = nullptr;
 		WindowEvent window_event;
+		Bool should_quit = false;
 	};
 }

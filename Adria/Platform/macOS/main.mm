@@ -8,15 +8,14 @@
 #include "Platform/Window.h"
 #include "Logging/FileSink.h"
 #include "Graphics/GfxDevice.h"
-#include "Graphics/Metal/MetalDevice.h"
-#include "Graphics/Metal/MetalBuffer.h"
-#include "Graphics/Metal/MetalPipelineState.h"
-#include "Graphics/Metal/MetalDescriptor.h"
 #include "Graphics/GfxStates.h"
 #include "Graphics/GfxFormat.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxInputLayout.h"
+#include "Graphics/GfxPipelineState.h"
+#include "Graphics/GfxShaderCompiler.h"
+#include "Rendering/ShaderManager.h"
 #include "Utilities/CLIParser.h"
 
 using namespace adria;
@@ -34,11 +33,19 @@ public:
             ADRIA_LOG(ERROR, "Failed to create graphics device!");
             return;
         }
-        CreateShaders();
+
+        GfxShaderCompiler::Initialize();
+        ShaderManager::Initialize();
         CreateVertexBuffer();
         CreatePipelineState();
 
         ADRIA_LOG(INFO, "Triangle app initialized successfully");
+    }
+
+    ~TriangleApp()
+    {
+        ShaderManager::Destroy();
+        GfxShaderCompiler::Destroy();
     }
 
     void Render()
@@ -88,60 +95,11 @@ public:
     }
 
 private:
-    void CreateShaders()
-    {
-        MetalDevice* metal_device = static_cast<MetalDevice*>(device.get());
-        id<MTLDevice> mtl_device = metal_device->GetMTLDevice();
-
-        NSString* shader_source = @R"(
-            #include <metal_stdlib>
-            using namespace metal;
-
-            struct VertexIn {
-                float2 position [[attribute(0)]];
-                float3 color [[attribute(1)]];
-            };
-
-            struct VertexOut {
-                float4 position [[position]];
-                float3 color;
-            };
-
-            vertex VertexOut vertex_main(VertexIn in [[stage_in]]) {
-                VertexOut out;
-                out.position = float4(in.position, 0.0, 1.0);
-                out.color = in.color;
-                return out;
-            }
-
-            fragment float4 fragment_main(VertexOut in [[stage_in]]) {
-                return float4(in.color, 1.0);
-            }
-        )";
-
-        NSError* error = nil;
-        shader_library = [mtl_device newLibraryWithSource:shader_source options:nil error:&error];
-
-        if (error || !shader_library)
-        {
-            ADRIA_LOG(ERROR, "Failed to compile shaders: %s",
-                     error ? [[error localizedDescription] UTF8String] : "Unknown error");
-            return;
-        }
-
-        vertex_function = [shader_library newFunctionWithName:@"vertex_main"];
-        fragment_function = [shader_library newFunctionWithName:@"fragment_main"];
-
-        if (!vertex_function || !fragment_function)
-        {
-            ADRIA_LOG(ERROR, "Failed to get shader functions!");
-            return;
-        }
-    }
 
     void CreateVertexBuffer()
     {
-        struct Vertex {
+        struct Vertex 
+        {
             float pos[2];
             float color[3];
         };
@@ -155,7 +113,7 @@ private:
         GfxBufferDesc buffer_desc{};
         buffer_desc.size = sizeof(vertices);
         buffer_desc.resource_usage = GfxResourceUsage::Default;
-        buffer_desc.bind_flags = GfxBindFlag::None;  // Metal doesn't use bind flags for vertex buffers
+        buffer_desc.bind_flags = GfxBindFlag::None;  
 
         vertex_buffer = device->CreateBuffer(buffer_desc, GfxBufferData(vertices));
         vertex_buffer->SetName("TriangleVertexBuffer");
@@ -169,6 +127,8 @@ private:
         pso_desc.topology_type = GfxPrimitiveTopologyType::Triangle;
         pso_desc.depth_state.depth_enable = false;
         pso_desc.depth_state.depth_write_mask = GfxDepthWriteMask::Zero;
+        pso_desc.VS = VS_TriangleTest;
+        pso_desc.PS = PS_TriangleTest;
 
         pso_desc.input_layout.elements.push_back(GfxInputLayout::GfxInputElement{
             "POSITION", 0, GfxFormat::R32G32_FLOAT, 0, 0, GfxInputClassification::PerVertexData
@@ -177,10 +137,7 @@ private:
             "COLOR", 0, GfxFormat::R32G32B32_FLOAT, 0, 8, GfxInputClassification::PerVertexData
         });
 
-        MetalDevice* metal_device = static_cast<MetalDevice*>(device.get());
-        gfx_pipeline_state = std::make_unique<MetalGraphicsPipelineState>(
-            metal_device, pso_desc, vertex_function, fragment_function
-        );
+        gfx_pipeline_state = device->CreateGraphicsPipelineState(pso_desc);
 
         if (!gfx_pipeline_state)
         {
@@ -196,9 +153,6 @@ private:
     std::unique_ptr<GfxDevice> device;
     std::unique_ptr<GfxBuffer> vertex_buffer;
     std::unique_ptr<GfxPipelineState> gfx_pipeline_state;
-    id<MTLLibrary> shader_library = nil;
-    id<MTLFunction> vertex_function = nil;
-    id<MTLFunction> fragment_function = nil;
 };
 
 int main(int argc, char* argv[])

@@ -119,6 +119,13 @@ namespace adria
         }
     }
 
+    // Map HLSL semantics to Metal attribute indices
+    // Metal IR converter assigns attributes sequentially starting from index 11
+    static Uint32 GetMetalAttributeIndex(Uint32 input_element_index)
+    {
+        return 11 + input_element_index;
+    }
+
     static id<MTLFunction> GetMetalFunction(GfxDevice* gfx, GfxShaderKey const& shader_key)
     {
         if (!shader_key.IsValid())
@@ -224,7 +231,93 @@ namespace adria
         }
 
         pso_desc.vertexFunction = vertex_func;
-        pso_desc.fragmentFunction = fragment_func; 
+        pso_desc.fragmentFunction = fragment_func;
+
+        // Setup vertex descriptor if input layout is specified
+        if (!desc.input_layout.elements.empty())
+        {
+            MTLVertexDescriptor* vertex_desc = [MTLVertexDescriptor new];
+
+            for (Uint32 i = 0; i < desc.input_layout.elements.size(); ++i)
+            {
+                GfxInputLayout::GfxInputElement const& element = desc.input_layout.elements[i];
+
+                // Map to Metal attribute index (Metal IR converter uses sequential indices starting from 11)
+                Uint32 metal_attr_index = GetMetalAttributeIndex(i);
+
+                MTLVertexAttributeDescriptor* attr = vertex_desc.attributes[metal_attr_index];
+                attr.format = ToMTLVertexFormat(element.format);
+                attr.offset = element.aligned_byte_offset;
+                attr.bufferIndex = element.input_slot;
+            }
+
+            // Setup buffer layouts
+            // Collect unique buffer slots and calculate strides
+            std::map<Uint32, Uint32> buffer_strides;
+            for (auto const& element : desc.input_layout.elements)
+            {
+                Uint32 slot = element.input_slot;
+                Uint32 element_end = element.aligned_byte_offset;
+
+                switch (element.format)
+                {
+                case GfxFormat::R32G32B32A32_FLOAT:
+                case GfxFormat::R32G32B32A32_UINT:
+                case GfxFormat::R32G32B32A32_SINT:
+                    element_end += 16;
+                    break;
+                case GfxFormat::R32G32B32_FLOAT:
+                case GfxFormat::R32G32B32_UINT:
+                case GfxFormat::R32G32B32_SINT:
+                    element_end += 12;
+                    break;
+                case GfxFormat::R32G32_FLOAT:
+                case GfxFormat::R32G32_UINT:
+                case GfxFormat::R32G32_SINT:
+                    element_end += 8;
+                    break;
+                case GfxFormat::R32_FLOAT:
+                case GfxFormat::R32_UINT:
+                case GfxFormat::R32_SINT:
+                    element_end += 4;
+                    break;
+                case GfxFormat::R16G16B16A16_FLOAT:
+                case GfxFormat::R16G16B16A16_UNORM:
+                case GfxFormat::R16G16B16A16_UINT:
+                case GfxFormat::R16G16B16A16_SNORM:
+                case GfxFormat::R16G16B16A16_SINT:
+                    element_end += 8;
+                    break;
+                case GfxFormat::R16G16_FLOAT:
+                case GfxFormat::R16G16_UNORM:
+                case GfxFormat::R16G16_UINT:
+                case GfxFormat::R16G16_SNORM:
+                case GfxFormat::R16G16_SINT:
+                    element_end += 4;
+                    break;
+                case GfxFormat::R8G8B8A8_UNORM:
+                case GfxFormat::R8G8B8A8_UINT:
+                case GfxFormat::R8G8B8A8_SNORM:
+                case GfxFormat::R8G8B8A8_SINT:
+                    element_end += 4;
+                    break;
+                default:
+                    break;
+                }
+
+                buffer_strides[slot] = std::max(buffer_strides[slot], element_end);
+            }
+
+            for (auto const& [slot, stride] : buffer_strides)
+            {
+                MTLVertexBufferLayoutDescriptor* layout = vertex_desc.layouts[slot];
+                layout.stride = stride;
+                layout.stepRate = 1;
+                layout.stepFunction = MTLVertexStepFunctionPerVertex;
+            }
+
+            pso_desc.vertexDescriptor = vertex_desc;
+        }
 
         for (Uint32 i = 0; i < desc.num_render_targets; ++i)
         {
@@ -275,112 +368,6 @@ namespace adria
         depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
     }
 
-    MetalGraphicsPipelineState::MetalGraphicsPipelineState(GfxDevice* gfx, GfxGraphicsPipelineStateDesc const& desc,
-                                                           id<MTLFunction> vs, id<MTLFunction> ps)
-        : topology_type(desc.topology_type)
-        , cull_mode(desc.rasterizer_state.cull_mode)
-        , front_counter_clockwise(desc.rasterizer_state.front_counter_clockwise)
-        , depth_bias(static_cast<Float>(desc.rasterizer_state.depth_bias))
-        , slope_scaled_depth_bias(desc.rasterizer_state.slope_scaled_depth_bias)
-        , depth_bias_clamp(desc.rasterizer_state.depth_bias_clamp)
-    {
-        MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
-        id<MTLDevice> device = metal_device->GetMTLDevice();
-
-        MTLRenderPipelineDescriptor* pso_desc = [MTLRenderPipelineDescriptor new];
-
-        pso_desc.vertexFunction = vs;
-        pso_desc.fragmentFunction = ps;
-
-        if (!desc.input_layout.elements.empty())
-        {
-            MTLVertexDescriptor* vertex_desc = [MTLVertexDescriptor new];
-
-            for (Uint32 i = 0; i < desc.input_layout.elements.size(); ++i)
-            {
-                auto const& element = desc.input_layout.elements[i];
-                vertex_desc.attributes[i].format = ToMTLVertexFormat(element.format);
-                vertex_desc.attributes[i].offset = element.aligned_byte_offset;
-                vertex_desc.attributes[i].bufferIndex = element.input_slot;
-            }
-
-            if (!desc.input_layout.elements.empty())
-            {
-                Uint32 max_slot = 0;
-                for (auto const& element : desc.input_layout.elements)
-                {
-                    max_slot = std::max(max_slot, element.input_slot);
-                }
-
-                for (Uint32 slot = 0; slot <= max_slot; ++slot)
-                {
-                    Uint32 stride = 0;
-                    for (auto const& element : desc.input_layout.elements)
-                    {
-                        if (element.input_slot == slot)
-                        {
-                            stride = element.aligned_byte_offset + GetGfxFormatStride(element.format);
-                        }
-                    }
-                    if (stride > 0)
-                    {
-                        vertex_desc.layouts[slot].stride = stride;
-                        vertex_desc.layouts[slot].stepFunction = MTLVertexStepFunctionPerVertex;
-                    }
-                }
-            }
-
-            pso_desc.vertexDescriptor = vertex_desc;
-        }
-
-        for (Uint32 i = 0; i < desc.num_render_targets; ++i)
-        {
-            if (desc.rtv_formats[i] == GfxFormat::UNKNOWN)
-                continue;
-
-            MTLRenderPipelineColorAttachmentDescriptor* color_attachment = pso_desc.colorAttachments[i];
-            color_attachment.pixelFormat = ToMTLPixelFormat(desc.rtv_formats[i]);
-
-            GfxBlendState::GfxRenderTargetBlendState const& blend_state =
-                desc.blend_state.independent_blend_enable ? desc.blend_state.render_target[i] : desc.blend_state.render_target[0];
-
-            color_attachment.blendingEnabled = blend_state.blend_enable;
-            color_attachment.sourceRGBBlendFactor = ConvertBlendFactor(blend_state.src_blend);
-            color_attachment.destinationRGBBlendFactor = ConvertBlendFactor(blend_state.dest_blend);
-            color_attachment.rgbBlendOperation = ConvertBlendOp(blend_state.blend_op);
-            color_attachment.sourceAlphaBlendFactor = ConvertBlendFactor(blend_state.src_blend_alpha);
-            color_attachment.destinationAlphaBlendFactor = ConvertBlendFactor(blend_state.dest_blend_alpha);
-            color_attachment.alphaBlendOperation = ConvertBlendOp(blend_state.blend_op_alpha);
-            color_attachment.writeMask = ConvertColorWriteMask(blend_state.render_target_write_mask);
-        }
-
-        if (desc.dsv_format != GfxFormat::UNKNOWN)
-        {
-            pso_desc.depthAttachmentPixelFormat = ToMTLPixelFormat(desc.dsv_format);
-
-            if (desc.dsv_format == GfxFormat::D24_UNORM_S8_UINT ||
-                desc.dsv_format == GfxFormat::D32_FLOAT_S8X24_UINT)
-            {
-                pso_desc.stencilAttachmentPixelFormat = ToMTLPixelFormat(desc.dsv_format);
-            }
-        }
-
-        pso_desc.inputPrimitiveTopology = ConvertTopologyClass(desc.topology_type);
-        pso_desc.alphaToCoverageEnabled = desc.blend_state.alpha_to_coverage_enable;
-        pso_desc.rasterSampleCount = 1;
-
-        NSError* error = nil;
-        pipeline_state = [device newRenderPipelineStateWithDescriptor:pso_desc error:&error];
-        if (error || !pipeline_state)
-        {
-            if (error)
-            {
-                ADRIA_LOG(ERROR, "Failed to create graphics pipeline state: %s", [[error localizedDescription] UTF8String]);
-            }
-            return;
-        }
-        depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
-    }
 
     MetalGraphicsPipelineState::~MetalGraphicsPipelineState()
     {

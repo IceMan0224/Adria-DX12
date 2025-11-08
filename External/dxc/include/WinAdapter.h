@@ -246,37 +246,89 @@
 //                         Begin: Disable SAL Annotations
 //
 //===----------------------------------------------------------------------===//
+#ifndef _In_
 #define _In_
+#endif
+#ifndef _In_z_
 #define _In_z_
+#endif
+#ifndef _In_opt_
 #define _In_opt_
+#endif
+#ifndef _In_opt_count_
 #define _In_opt_count_(size)
+#endif
+#ifndef _In_opt_z_
 #define _In_opt_z_
+#endif
+#ifndef _In_count_
 #define _In_count_(size)
+#endif
+#ifndef _In_bytecount_
 #define _In_bytecount_(size)
+#endif
 
+#ifndef _Out_
 #define _Out_
+#endif
+#ifndef _Out_opt_
 #define _Out_opt_
+#endif
+#ifndef _Outptr_
 #define _Outptr_
+#endif
+#ifndef _Outptr_opt_
 #define _Outptr_opt_
+#endif
+#ifndef _Outptr_result_z_
 #define _Outptr_result_z_
+#endif
+#ifndef _Outptr_opt_result_z_
 #define _Outptr_opt_result_z_
+#endif
+#ifndef _Outptr_result_maybenull_
 #define _Outptr_result_maybenull_
+#endif
+#ifndef _Outptr_result_nullonfailure_
 #define _Outptr_result_nullonfailure_
+#endif
+#ifndef _Outptr_result_buffer_maybenull_
 #define _Outptr_result_buffer_maybenull_(ptr)
+#endif
+#ifndef _Outptr_result_buffer_
 #define _Outptr_result_buffer_(ptr)
+#endif
 
+#ifndef _COM_Outptr_
 #define _COM_Outptr_
+#endif
+#ifndef _COM_Outptr_opt_
 #define _COM_Outptr_opt_
+#endif
+#ifndef _COM_Outptr_result_maybenull_
 #define _COM_Outptr_result_maybenull_
+#endif
+#ifndef _COM_Outptr_opt_result_maybenull_
 #define _COM_Outptr_opt_result_maybenull_
+#endif
 
+#ifndef THIS_
 #define THIS_
+#endif
+#ifndef THIS
 #define THIS
+#endif
+#ifndef PURE
 #define PURE = 0
+#endif
 
+#ifndef _Maybenull_
 #define _Maybenull_
+#endif
 
+#ifndef __debugbreak
 #define __debugbreak()
+#endif
 
 // GCC produces erros on calling convention attributes.
 #ifdef __GNUC__

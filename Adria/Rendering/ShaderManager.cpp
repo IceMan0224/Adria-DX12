@@ -58,6 +58,7 @@ namespace adria
 			case VS_RainBlocker:
 			case VS_Transparent:
 			case VS_PT_GBuffer:
+			case VS_TriangleTest:
 				return GfxShaderStage::VS;
 			case PS_Sky:
 			case PS_Texture:
@@ -78,6 +79,7 @@ namespace adria
 			case PS_VolumetricFog_CombineFog:
 			case PS_VRSOverlay:
 			case PS_PT_GBuffer:
+			case PS_TriangleTest:
 				return GfxShaderStage::PS;
 			case GS_LensFlare:
 				return GfxShaderStage::GS;
@@ -176,6 +178,9 @@ namespace adria
 		{
 			switch (shader)
 			{
+			case VS_TriangleTest:
+			case PS_TriangleTest:
+				return "triangle.hlsl";
 			case VS_Sky:
 			case PS_Sky:
 			case CS_HosekWilkieSky:
@@ -380,6 +385,10 @@ namespace adria
 		{
 			switch (shader)
 			{
+			case VS_TriangleTest:
+				return "VSMain";
+			case PS_TriangleTest:
+				return "PSMain";
 			case CS_ClearCounters:
 				return "ClearCountersCS";
 			case CS_CullMeshlets:
