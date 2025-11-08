@@ -516,6 +516,12 @@ target_include_directories(Adria PRIVATE
     "${EXTERNAL_DIR}/dxc/include"
 )
 
+if(APPLE)
+    target_include_directories(Adria PRIVATE
+        "${CMAKE_SOURCE_DIR}/3rdParty/MetalShaderConverter/include"
+    )
+endif()
+
 if(WIN32)
     target_include_directories(Adria PRIVATE
         "${EXTERNAL_DIR}/d3dx12"
@@ -593,6 +599,7 @@ elseif(APPLE)
 		"-framework MetalKit"
 		"-framework QuartzCore"
 		"-framework GameController"
+		"${CMAKE_SOURCE_DIR}/3rdParty/MetalShaderConverter/lib/libmetalirconverter.dylib"
 
 		$<$<CONFIG:Debug>:
 			"${EXTERNAL_DIR}/nfd/lib/libnfd_d_arm64.a"
@@ -601,6 +608,14 @@ elseif(APPLE)
 		$<$<CONFIG:Profile,Release,RelWithDebInfo>:
 			"${EXTERNAL_DIR}/nfd/lib/libnfd_arm64.a"
 		>
+	)
+
+	# Copy libmetalirconverter.dylib to the app bundle
+	add_custom_command(TARGET Adria POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		"${CMAKE_SOURCE_DIR}/3rdParty/MetalShaderConverter/lib/libmetalirconverter.dylib"
+		$<TARGET_FILE_DIR:Adria>
+		COMMENT "Copying libmetalirconverter.dylib to output directory"
 	)
 endif()
 

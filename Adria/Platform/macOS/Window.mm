@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 #include "Platform/Window.h"
+#include "Core/Paths.h"
 
 @interface AdriaWindowDelegate : NSObject <NSWindowDelegate>
 {
@@ -73,7 +74,16 @@ namespace adria
 
             [nsWindow makeKeyAndOrderFront:nil];
 
-            window_handle = (__bridge_retained void*)nsWindow;
+            // Set app icon
+            std::string iconPath = paths::IconsDir + "adria_logo.icns";
+            NSString* iconPathNS = [NSString stringWithUTF8String:iconPath.c_str()];
+            NSImage* appIcon = [[NSImage alloc] initWithContentsOfFile:iconPathNS];
+            if (appIcon)
+            {
+                [[NSApplication sharedApplication] setApplicationIconImage:appIcon];
+            }
+
+            window_handle = (__bridge void*)nsWindow;
         }
     }
 
@@ -83,7 +93,7 @@ namespace adria
         {
             @autoreleasepool
             {
-                NSWindow* nsWindow = (__bridge_transfer NSWindow*)window_handle;
+                NSWindow* nsWindow = (__bridge NSWindow*)window_handle;
                 [nsWindow close];
                 window_handle = nullptr;
             }
