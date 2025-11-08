@@ -48,7 +48,7 @@ namespace adria
         Bool IsFirstFrame() override { return first_frame; }
 
         void* GetNative() const override;
-        void* GetWindowHandle() const override { return nullptr; }
+        void* GetWindowHandle() const override;
 
         GfxCapabilities const& GetCapabilities() const override;
         GfxVendor GetVendor() const override { return GfxVendor::Apple; }

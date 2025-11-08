@@ -167,6 +167,11 @@ namespace adria
         return (__bridge void*)device;
     }
 
+    void* MetalDevice::GetWindowHandle() const
+    {
+        return window ? window->Handle() : nullptr;
+    }
+
     void MetalDevice::OnResize(Uint32 w, Uint32 h)
     {
         if (swapchain)

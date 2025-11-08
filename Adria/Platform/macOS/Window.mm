@@ -62,6 +62,10 @@ namespace adria
                                                                   defer:NO];
 
             [nsWindow setTitle:@(init.title)];
+
+            NSView* contentView = [[NSView alloc] initWithFrame:frame];
+            [nsWindow setContentView:contentView];
+
             [nsWindow center];
 
             AdriaWindowDelegate* delegate = [[AdriaWindowDelegate alloc] initWithWindow:this];
@@ -74,7 +78,6 @@ namespace adria
 
             [nsWindow makeKeyAndOrderFront:nil];
 
-            // Set app icon
             std::string iconPath = paths::IconsDir + "adria_logo.icns";
             NSString* iconPathNS = [NSString stringWithUTF8String:iconPath.c_str()];
             NSImage* appIcon = [[NSImage alloc] initWithContentsOfFile:iconPathNS];

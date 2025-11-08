@@ -1,3 +1,6 @@
+#import <Cocoa/Cocoa.h>
+#import <Metal/Metal.h>
+#import <QuartzCore/CAMetalLayer.h>
 #include "MetalImGuiManager.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
@@ -6,15 +9,19 @@
 #include "implot.h"
 #include "Core/Paths.h"
 #include "Platform/Window.h"
+#include "Graphics/GfxTexture.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/Metal/MetalDevice.h"
+#include "Graphics/Metal/MetalCommandList.h"
 #include "IconsFontAwesome6.h"
+#include "Logging/Log.h"
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(Editor);
+
 	MetalImGuiManager::MetalImGuiManager(GfxDevice* gfx) : metal_gfx((MetalDevice*)gfx)
 	{
-		/*
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImPlot::CreateContext();
@@ -26,7 +33,6 @@ namespace adria
 
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		io.ConfigWindowsResizeFromEdges = true;
 		io.ConfigViewportsNoTaskBarIcon = true;
 
@@ -37,48 +43,70 @@ namespace adria
 		ImWchar const icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 		std::string icon_path = paths::FontsDir + "FontAwesome/" FONT_ICON_FILE_NAME_FAS;
 		io.Fonts->AddFontFromFileTTF(icon_path.c_str(), 15.0f, &font_config, icon_ranges);
-		io.Fonts->Build();
 
-		ImGui_ImplOSX_Init(gfx->GetWindowHandle());
-		ImGui_ImplMetal_Init(metal_gfx->GetMetalDevice());
-		*/
+		// Get NSWindow and content view from window handle
+		NSWindow* ns_window = (__bridge NSWindow*)gfx->GetWindowHandle();
+		NSView* content_view = [ns_window contentView];
+
+		ImGui_ImplOSX_Init(content_view);
+		ImGui_ImplMetal_Init(metal_gfx->GetMTLDevice());
+
+		// Set initial DisplaySize from window's current size to avoid assertion on first frame
+		NSRect contentRect = [content_view frame];
+		io.DisplaySize = ImVec2(contentRect.size.width, contentRect.size.height);
 	}
 
 	MetalImGuiManager::~MetalImGuiManager()
 	{
-		/*
 		metal_gfx->WaitForGPU();
 		ImGui_ImplMetal_Shutdown();
 		ImGui_ImplOSX_Shutdown();
 		ImPlot::DestroyContext();
 		ImGui::DestroyContext();
-		*/
 	}
 
 	void MetalImGuiManager::Begin() const
 	{
-		/*
-		ImGui_ImplMetal_NewFrame(metal_gfx->GetMetalRenderPassDescriptor());
-		ImGui_ImplOSX_NewFrame(metal_gfx->GetMetalView());
+		NSWindow* ns_window = (__bridge NSWindow*)metal_gfx->GetWindowHandle();
+		NSView* content_view = [ns_window contentView];
+
+		ImGuiIO& io = ImGui::GetIO();
+		GfxTexture* backbuffer = metal_gfx->GetBackbuffer();
+		if (backbuffer)
+		{
+			GfxTextureDesc const& backbuffer_desc = backbuffer->GetDesc();
+			io.DisplaySize = ImVec2(static_cast<float>(backbuffer_desc.width), static_cast<float>(backbuffer_desc.height));
+		}
+		CGFloat framebufferScale = ns_window.screen.backingScaleFactor ?: NSScreen.mainScreen.backingScaleFactor;
+		io.DisplayFramebufferScale = ImVec2(framebufferScale, framebufferScale);
+
+		MTLRenderPassDescriptor* render_pass_desc = [MTLRenderPassDescriptor new];
+		if (backbuffer)
+		{
+			id<MTLTexture> metal_texture = (__bridge id<MTLTexture>)backbuffer->GetNative();
+			render_pass_desc.colorAttachments[0].texture = metal_texture;
+		}
+
+		ImGui_ImplOSX_NewFrame(content_view);
+		ImGui_ImplMetal_NewFrame(render_pass_desc);
 		ImGui::NewFrame();
-		*/
 	}
 
 	void MetalImGuiManager::End(GfxCommandList* cmd_list) const
 	{
-		/*
+		if (visible && show_demo)
+		{
+			ImGui::ShowDemoWindow(&show_demo);
+		}
+
 		ImGui::Render();
 
 		if (visible)
 		{
-			if (show_demo)
-			{
-				ImGui::ShowDemoWindow(&show_demo);
-			}
-
-			ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(),
-				(id<MTLCommandBuffer>)cmd_list->GetNative(),
-				(id<MTLRenderCommandEncoder>)metal_gfx->GetMetalRenderEncoder());
+			MetalCommandList* metal_cmd_list = static_cast<MetalCommandList*>(cmd_list);
+			id<MTLCommandBuffer> command_buffer = metal_cmd_list->GetCommandBuffer();
+			id<MTLRenderCommandEncoder> render_encoder = metal_cmd_list->GetRenderEncoder();
+			ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), command_buffer, render_encoder);
 		}
 
 		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -86,7 +114,6 @@ namespace adria
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
 		}
-		*/
 	}
 
 	void MetalImGuiManager::ToggleVisibility()
@@ -101,11 +128,16 @@ namespace adria
 
 	void MetalImGuiManager::ShowImage(GfxDescriptor image_descriptor, ImVec2 image_size)
 	{
-		// ImGui::Image((ImTextureID)metal_texture, image_size);
+		// ImGui::Image((ImTextureID)(__bridge void*)texture, image_size);
 	}
 
 	void MetalImGuiManager::OnWindowEvent(WindowEventInfo const& msg_data) const
 	{
-		// ImGui_ImplOSX_HandleEvent(msg_data.event, msg_data.view);
+		// ImGui_ImplOSX automatically handles input events through the NSView,
+		ImGuiIO& io = ImGui::GetIO();
+		if (msg_data.width > 0 && msg_data.height > 0)
+		{
+			io.DisplaySize = ImVec2(msg_data.width, msg_data.height);
+		}
 	}
 }

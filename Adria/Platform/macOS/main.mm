@@ -16,6 +16,7 @@
 #include "Graphics/GfxPipelineState.h"
 #include "Graphics/GfxShaderCompiler.h"
 #include "Rendering/ShaderManager.h"
+#include "Editor/ImGuiManager.h"
 #include "Utilities/CLIParser.h"
 
 using namespace adria;
@@ -36,6 +37,16 @@ public:
 
         GfxShaderCompiler::Initialize();
         ShaderManager::Initialize();
+
+        imgui_manager = CreateImguiManager(device.get());
+
+        window->GetWindowEvent().AddLambda([this](WindowEventInfo const& msg_data) {
+            if (imgui_manager)
+            {
+                imgui_manager->OnWindowEvent(msg_data);
+            }
+        });
+
         CreateVertexBuffer();
         CreatePipelineState();
 
@@ -62,6 +73,9 @@ public:
             device->EndFrame();
             return;
         }
+
+        imgui_manager->Begin();
+
         auto cmd_list = device->CreateCommandList(GfxCommandListType::Graphics);
         cmd_list->Begin();
 
@@ -87,6 +101,8 @@ public:
 
         cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
         cmd_list->Draw(3, 1, 0, 0);
+
+        imgui_manager->End(cmd_list.get());
 
         cmd_list->EndRenderPass();
         cmd_list->End();
@@ -151,6 +167,7 @@ private:
 
     Window* window;
     std::unique_ptr<GfxDevice> device;
+    std::unique_ptr<ImGuiManager> imgui_manager;
     std::unique_ptr<GfxBuffer> vertex_buffer;
     std::unique_ptr<GfxPipelineState> gfx_pipeline_state;
 };
@@ -183,7 +200,10 @@ int main(int argc, char* argv[])
         [NSApp activateIgnoringOtherApps:YES];
         while (window.Loop())
         {
-            triangle_app.Render();
+            @autoreleasepool
+            {
+                triangle_app.Render();
+            }
         }
     }
 

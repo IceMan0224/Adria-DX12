@@ -445,6 +445,7 @@ set(EXTERNAL_SOURCES
     "${EXTERNAL_DIR}/ImGui/imgui_draw.cpp"
     "${EXTERNAL_DIR}/ImGui/imgui_tables.cpp"
     "${EXTERNAL_DIR}/ImGui/imgui_widgets.cpp"
+    "${EXTERNAL_DIR}/ImGui/imgui_demo.cpp"
 
 	"${EXTERNAL_DIR}/SimpleMath/SimpleMath.cpp"
 
@@ -518,7 +519,7 @@ target_include_directories(Adria PRIVATE
 
 if(APPLE)
     target_include_directories(Adria PRIVATE
-        "${CMAKE_SOURCE_DIR}/3rdParty/MetalShaderConverter/include"
+        "${EXTERNAL_DIR}/MetalShaderConverter/include"
     )
 endif()
 
@@ -599,7 +600,7 @@ elseif(APPLE)
 		"-framework MetalKit"
 		"-framework QuartzCore"
 		"-framework GameController"
-		"${CMAKE_SOURCE_DIR}/3rdParty/MetalShaderConverter/lib/libmetalirconverter.dylib"
+		"${EXTERNAL_DIR}/MetalShaderConverter/lib/libmetalirconverter.dylib"
 
 		$<$<CONFIG:Debug>:
 			"${EXTERNAL_DIR}/nfd/lib/libnfd_d_arm64.a"
@@ -613,7 +614,7 @@ elseif(APPLE)
 	# Copy libmetalirconverter.dylib to the app bundle
 	add_custom_command(TARGET Adria POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-		"${CMAKE_SOURCE_DIR}/3rdParty/MetalShaderConverter/lib/libmetalirconverter.dylib"
+		"${EXTERNAL_DIR}/MetalShaderConverter/lib/libmetalirconverter.dylib"
 		$<TARGET_FILE_DIR:Adria>
 		COMMENT "Copying libmetalirconverter.dylib to output directory"
 	)

@@ -100,6 +100,7 @@ namespace adria
         virtual void SetRootDescriptorTable(Uint32 slot, GfxDescriptor base_descriptor) override {}
 
         id<MTLCommandBuffer> GetCommandBuffer() const { return command_buffer; }
+        id<MTLRenderCommandEncoder> GetRenderEncoder() const { return render_encoder; }
 
     private:
         MetalDevice* metal_device;

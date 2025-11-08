@@ -26,6 +26,6 @@ namespace adria
 		MetalDevice* metal_gfx;
 		std::string ini_file;
 		Bool visible = true;
-		Bool show_demo = true;
+		mutable Bool show_demo = true;
 	};
 }
