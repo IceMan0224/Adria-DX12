@@ -49,10 +49,6 @@ namespace adria
 
 		ImGui_ImplOSX_Init(content_view);
 		ImGui_ImplMetal_Init(metal_gfx->GetMTLDevice());
-
-		NSRect contentRect = [content_view frame];
-		io.DisplaySize = ImVec2(contentRect.size.width, contentRect.size.height);
-		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);  // No retina scaling
 	}
 
 	MetalImGuiManager::~MetalImGuiManager()
@@ -69,13 +65,7 @@ namespace adria
 		NSWindow* ns_window = (__bridge NSWindow*)metal_gfx->GetWindowHandle();
 		NSView* content_view = [ns_window contentView];
 
-		ImGuiIO& io = ImGui::GetIO();
 		GfxTexture* backbuffer = metal_gfx->GetBackbuffer();
-		if (backbuffer)
-		{
-			GfxTextureDesc const& backbuffer_desc = backbuffer->GetDesc();
-			io.DisplaySize = ImVec2(static_cast<float>(backbuffer_desc.width), static_cast<float>(backbuffer_desc.height));
-		}
 
 		MTLRenderPassDescriptor* render_pass_desc = [MTLRenderPassDescriptor new];
 		if (backbuffer)
@@ -86,8 +76,6 @@ namespace adria
 
 		ImGui_ImplOSX_NewFrame(content_view);
 		ImGui_ImplMetal_NewFrame(render_pass_desc);
-
-		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
 		ImGui::NewFrame();
 	}
@@ -133,11 +121,7 @@ namespace adria
 
 	void MetalImGuiManager::OnWindowEvent(WindowEventInfo const& msg_data) const
 	{
-		// ImGui_ImplOSX automatically handles input events through the NSView,
-		ImGuiIO& io = ImGui::GetIO();
-		if (msg_data.width > 0 && msg_data.height > 0)
-		{
-			io.DisplaySize = ImVec2(msg_data.width, msg_data.height);
-		}
+		// ImGui_ImplOSX_NewFrame automatically handles display size from the view
+		// No manual intervention needed
 	}
 }

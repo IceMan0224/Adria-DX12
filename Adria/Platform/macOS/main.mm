@@ -8,6 +8,7 @@
 #include "Platform/Window.h"
 #include "Logging/FileSink.h"
 #include "Graphics/GfxDevice.h"
+#include "Graphics/GfxTexture.h"
 #include "Graphics/GfxStates.h"
 #include "Graphics/GfxFormat.h"
 #include "Graphics/GfxRenderPass.h"
@@ -81,9 +82,12 @@ public:
 
         GfxDescriptor rtv_descriptor = device->CreateTextureRTV(backbuffer);
 
+        // Use backbuffer's physical dimensions (includes Retina scaling)
+        GfxTextureDesc const& backbuffer_desc = backbuffer->GetDesc();
+
         GfxRenderPassDesc render_pass_desc{};
-        render_pass_desc.width = window->Width();
-        render_pass_desc.height = window->Height();
+        render_pass_desc.width = backbuffer_desc.width;
+        render_pass_desc.height = backbuffer_desc.height;
 
         GfxColorAttachmentDesc color_attachment{};
         color_attachment.cpu_handle = rtv_descriptor;

@@ -15,18 +15,21 @@ namespace adria
             NSWindow* nsWindow = (__bridge NSWindow*)window_handle;
             NSView* contentView = [nsWindow contentView];
 
+            CGFloat scale = [nsWindow backingScaleFactor];
+
             metal_layer = [CAMetalLayer layer];
             metal_layer.device = (id<MTLDevice>)gfx->GetNative();
             metal_layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
             metal_layer.framebufferOnly = NO;
-            metal_layer.drawableSize = CGSizeMake(w, h);
+
+            metal_layer.drawableSize = CGSizeMake(w * scale, h * scale);
 
             [contentView setLayer:metal_layer];
             [contentView setWantsLayer:YES];
 
             GfxTextureDesc texture_desc{};
-            texture_desc.width = w;
-            texture_desc.height = h;
+            texture_desc.width = static_cast<Uint32>(w * scale);
+            texture_desc.height = static_cast<Uint32>(h * scale);
             texture_desc.format = GfxFormat::B8G8R8A8_UNORM;
             texture_desc.bind_flags = GfxBindFlag::RenderTarget;
 
@@ -56,9 +59,31 @@ namespace adria
 
     void MetalSwapchain::OnResize(Uint32 w, Uint32 h)
     {
-        width = w;
-        height = h;
-        metal_layer.drawableSize = CGSizeMake(w, h);
+        @autoreleasepool
+        {
+            width = w;
+            height = h;
+
+            NSWindow* nsWindow = (__bridge NSWindow*)gfx->GetWindowHandle();
+            CGFloat scale = nsWindow ? [nsWindow backingScaleFactor] : 1.0;
+
+            NSView* contentView = [nsWindow contentView];
+            metal_layer.frame = [contentView bounds];
+
+            metal_layer.drawableSize = CGSizeMake(w * scale, h * scale);
+
+            GfxTextureDesc texture_desc{};
+            texture_desc.width = static_cast<Uint32>(w * scale);
+            texture_desc.height = static_cast<Uint32>(h * scale);
+            texture_desc.format = GfxFormat::B8G8R8A8_UNORM;
+            texture_desc.bind_flags = GfxBindFlag::RenderTarget;
+
+            for (Uint32 i = 0; i < BACKBUFFER_COUNT; ++i)
+            {
+                back_buffers[i] = std::make_unique<MetalTexture>(gfx, nullptr, texture_desc);
+                back_buffers[i]->SetName("Backbuffer");
+            }
+        }
     }
 
     GfxTexture* MetalSwapchain::GetBackbuffer() const
