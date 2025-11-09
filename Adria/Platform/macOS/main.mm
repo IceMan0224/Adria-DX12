@@ -42,6 +42,11 @@ public:
         imgui_manager = CreateImguiManager(device.get());
 
         window->GetWindowEvent().AddLambda([this](WindowEventInfo const& msg_data) {
+            if (msg_data.width > 0 && msg_data.height > 0)
+            {
+                device->OnResize(static_cast<Uint32>(msg_data.width), static_cast<Uint32>(msg_data.height));
+            }
+
             if (imgui_manager)
             {
                 imgui_manager->OnWindowEvent(msg_data);
@@ -82,9 +87,7 @@ public:
 
         GfxDescriptor rtv_descriptor = device->CreateTextureRTV(backbuffer);
 
-        // Use backbuffer's physical dimensions (includes Retina scaling)
         GfxTextureDesc const& backbuffer_desc = backbuffer->GetDesc();
-
         GfxRenderPassDesc render_pass_desc{};
         render_pass_desc.width = backbuffer_desc.width;
         render_pass_desc.height = backbuffer_desc.height;
@@ -206,6 +209,7 @@ int main(int argc, char* argv[])
         {
             @autoreleasepool
             {
+                g_Input.Tick();
                 triangle_app.Render();
             }
         }

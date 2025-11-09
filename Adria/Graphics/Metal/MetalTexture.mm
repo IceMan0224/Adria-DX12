@@ -81,17 +81,17 @@ namespace adria
 
     Uint64 MetalTexture::GetGpuAddress() const
     {
-        return 0; // Metal textures don't have GPU addresses like buffers do
+        return 0; 
     }
 
     void* MetalTexture::Map()
     {
-        return nullptr; // Metal textures cannot be directly mapped
+        return nullptr; 
     }
 
     void MetalTexture::Unmap()
     {
-        // No-op for Metal textures
+        
     }
 
     void* MetalTexture::GetSharedHandle() const
@@ -101,7 +101,6 @@ namespace adria
 
     Uint32 MetalTexture::GetRowPitch(Uint32 mip_level) const
     {
-        // Calculate row pitch based on format and width
         Uint32 mip_width = std::max(1u, desc.width >> mip_level);
         return mip_width * GetGfxFormatStride(desc.format);
     }
@@ -115,5 +114,11 @@ namespace adria
     {
         ADRIA_ASSERT(!owns_texture && "UpdateHandle should only be called on backbuffer textures!");
         metal_texture = (__bridge id<MTLTexture>)metal_texture_handle;
+
+        if (metal_texture)
+        {
+            desc.width = [metal_texture width];
+            desc.height = [metal_texture height];
+        }
     }
 }
