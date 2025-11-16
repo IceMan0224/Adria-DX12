@@ -103,4 +103,3 @@ namespace adria
 		return rg.GetReadWriteBuffer(res_id);
 	}
 }
-

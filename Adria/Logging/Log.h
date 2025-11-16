@@ -57,7 +57,9 @@ namespace adria
 		void Register(ILogSink* logger);
 		ILogSink* GetLastSink();
 	};
-	inline LogManager g_Log{};
+
+	LogManager& GetLogManager();
+	#define g_Log GetLogManager()
 
 	#define ADRIA_LOG_CHANNEL(name) ADRIA_MAYBE_UNUSED static constexpr LogChannel ___LogChannel___ = LogChannel::name
 

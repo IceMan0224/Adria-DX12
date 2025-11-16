@@ -163,4 +163,9 @@ namespace adria
 		pimpl->Flush();
 	}
 
+	LogManager& GetLogManager()
+	{
+		static LogManager log_manager;
+		return log_manager;
+	}
 }
