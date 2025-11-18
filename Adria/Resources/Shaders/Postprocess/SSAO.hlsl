@@ -45,11 +45,11 @@ void SSAO_CS(CSInput input)
     
     uint2 resolution = uint2(FrameCB.renderResolution) >> SSAOPassCB.resolutionFactor;
     float2 uv = ((float2)input.DispatchThreadId.xy + 0.5f) * 1.0f / resolution;
-    float3 viewNormal = DecodeNormalOctahedron(normalRT.Sample(LinearBorderSampler, uv).xy * 2.0f - 1.0f);
-    
-    float depth = depthTexture.Sample(LinearBorderSampler, uv);
+    float3 viewNormal = DecodeNormalOctahedron(normalRT.SampleLevel(LinearBorderSampler, uv, 0).xy * 2.0f - 1.0f);
+
+    float depth = depthTexture.SampleLevel(LinearBorderSampler, uv, 0);
     float3 viewPosition = GetViewPosition(uv, depth);
-    float3 randomVector = normalize(2 * noiseTexture.Sample(PointWrapSampler, uv * SSAOPassCB.noiseScale).xyz - 1);
+    float3 randomVector = normalize(2 * noiseTexture.SampleLevel(PointWrapSampler, uv * SSAOPassCB.noiseScale, 0).xyz - 1);
 
     float3 tangent = normalize(randomVector - viewNormal * dot(randomVector, viewNormal));
     float3 bitangent = cross(viewNormal, tangent);
@@ -64,7 +64,7 @@ void SSAO_CS(CSInput input)
         float4 offset = float4(samplePos, 1.0);
         offset = mul(offset, FrameCB.projection);
         offset.xy = ((offset.xy / offset.w) * float2(1.0f, -1.0f)) * 0.5f + 0.5f;
-        float sampleDepth = depthTexture.Sample(LinearBorderSampler, offset.xy);
+        float sampleDepth = depthTexture.SampleLevel(LinearBorderSampler, offset.xy, 0);
         sampleDepth = GetViewPosition(offset.xy, sampleDepth).z;
         float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(viewPosition.z - sampleDepth));
         occlusion += rangeCheck * step(sampleDepth, samplePos.z);

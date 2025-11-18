@@ -45,7 +45,7 @@ void SSR_CS(CSInput input)
         return;
     }
 
-    float2 encodedNormal = normalRT.Sample(LinearBorderSampler, uv).xy;
+    float2 encodedNormal = normalRT.SampleLevel(LinearBorderSampler, uv, 0).xy;
     if (all(encodedNormal == 0.0f))
     {
         outputTexture[input.DispatchThreadId.xy] = sceneColor;
@@ -53,7 +53,7 @@ void SSR_CS(CSInput input)
     }
 
     float3 viewNormal = DecodeNormalOctahedron(encodedNormal * 2.0f - 1.0f);
-    float roughness = diffuseRT.Sample(LinearBorderSampler, uv).a;
+    float roughness = diffuseRT.SampleLevel(LinearBorderSampler, uv, 0).a;
 
     if (roughness >= ROUGHNESS_CUTOFF)
     {

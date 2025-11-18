@@ -33,8 +33,8 @@ void TonemapCS(CSInput input)
     RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[TonemapPassCB.outputIdx];
 
     float2 uv = ((float2) input.DispatchThreadId.xy + 0.5f) * 1.0f / (FrameCB.displayResolution);
-    
-    float4 color = hdrTexture.Sample(LinearWrapSampler, uv);
+
+    float4 color = hdrTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	if (TonemapPassCB.bloomIdx > 0)
 	{
         Texture2D<float4> bloomTx = ResourceDescriptorHeap[TonemapPassCB.bloomIdx];

@@ -129,7 +129,7 @@ void TiledDeferredLightingCS(CSInput input)
 	float3 viewNormal;
 	float metallic;
 	uint  shadingExtension;
-	float4 normalRTData = normalRT.Sample(LinearWrapSampler, uv);
+	float4 normalRTData = normalRT.Load(int3(input.DispatchThreadId.xy, 0));
 	DecodeGBufferNormalRT(normalRTData, viewNormal, metallic, shadingExtension);
 
 	float3 viewPosition = GetViewPosition(uv, depth);
@@ -138,7 +138,7 @@ void TiledDeferredLightingCS(CSInput input)
 	float4 albedoRoughness = diffuseRT.Load(int3(input.DispatchThreadId.xy, 0));
 	float3 albedo = albedoRoughness.rgb;
 	float  roughness = albedoRoughness.a;
-	float4 customData = customRT.Sample(LinearWrapSampler, uv);
+	float4 customData = customRT.Load(int3(input.DispatchThreadId.xy, 0));
 
 	BrdfData brdfData = GetBrdfData(albedo, metallic, roughness);
 	float3 directLighting = 0.0f;
@@ -153,10 +153,10 @@ void TiledDeferredLightingCS(CSInput input)
 	}
 
 	Texture2D<float> ambientOcclusionTexture = ResourceDescriptorHeap[TiledLightingPassCB.aoIdx];
-	float ambientOcclusion = ambientOcclusionTexture.Sample(LinearWrapSampler, uv);
+	float ambientOcclusion = ambientOcclusionTexture.Load(int3(input.DispatchThreadId.xy, 0));
 	float3 indirectLighting = GetIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion);
 
-	float4 emissiveData = emissiveRT.Sample(LinearWrapSampler, uv);
+	float4 emissiveData = emissiveRT.Load(int3(input.DispatchThreadId.xy, 0));
 	float3 emissiveColor = emissiveData.rgb * emissiveData.a * 256;
 	
 	RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[TiledLightingPassCB.outputIdx];

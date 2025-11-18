@@ -41,7 +41,7 @@ namespace adria
 			
 		}
 #endif
-		ADRIA_ASSERT_MSG(false, "Requested Graphics Backend is not supported!");
+		ADRIA_ASSERT_MSG(false, "Requested graphics backend is not supported!");
 		return nullptr;
 	}
 

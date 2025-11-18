@@ -297,7 +297,7 @@ void CloudsCS(CSInput input)
 	prevUv.y = 1.0f - prevUv.y;
 
 	Texture2D<float4> prevOutputTexture = ResourceDescriptorHeap[VolumetricCloudsPassCB.prevOutputIdx];
-	float4 prevColor = prevOutputTexture.Sample(LinearClampSampler, prevUv);
+	float4 prevColor = prevOutputTexture.SampleLevel(LinearClampSampler, prevUv, 0);
 
 	uint index = FrameCB.frameCount % 16;
 	bool shouldUpdate = (((threadId.x + 4 * threadId.y) % 16) == BayerFilter[index]);
@@ -309,7 +309,7 @@ void CloudsCS(CSInput input)
 	}
 #else 
 	Texture2D<float> depthTexture = ResourceDescriptorHeap[VolumetricCloudsPassCB.depthOutputIdx];
-	float depth = depthTexture.Sample(LinearClampSampler, uv);
+	float depth = depthTexture.SampleLevel(LinearClampSampler, uv, 0);
 	if (depth >= CLOUDS_DEPTH)
 	{
 		outputTexture[threadId.xy] = 0.0f;

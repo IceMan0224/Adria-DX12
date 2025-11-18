@@ -290,19 +290,190 @@ namespace adria
 #if defined(ADRIA_PLATFORM_MACOS)
 			metal_ir_compiler = IRCompilerCreate();
 
-			IRRootParameter1 rootParameters[1] = {};
+			// Match D3D12 common root signature: CB0, 8 constants at register 1, CB2, CB3
+			IRRootParameter1 rootParameters[4] = {};
+
+			// Root parameter 0: CBV at register 0
 			rootParameters[0].ParameterType = IRRootParameterTypeCBV;
 			rootParameters[0].ShaderVisibility = IRShaderVisibilityAll;
 			rootParameters[0].Descriptor.ShaderRegister = 0;
 
+			// Root parameter 1: 8 root constants at register 1
+			rootParameters[1].ParameterType = IRRootParameterType32BitConstants;
+			rootParameters[1].ShaderVisibility = IRShaderVisibilityAll;
+			rootParameters[1].Constants.ShaderRegister = 1;
+			rootParameters[1].Constants.Num32BitValues = 8;
+
+			// Root parameter 2: CBV at register 2
+			rootParameters[2].ParameterType = IRRootParameterTypeCBV;
+			rootParameters[2].ShaderVisibility = IRShaderVisibilityAll;
+			rootParameters[2].Descriptor.ShaderRegister = 2;
+
+			// Root parameter 3: CBV at register 3
+			rootParameters[3].ParameterType = IRRootParameterTypeCBV;
+			rootParameters[3].ShaderVisibility = IRShaderVisibilityAll;
+			rootParameters[3].Descriptor.ShaderRegister = 3;
+
+			// Static samplers matching D3D12 (registers 0-9)
+			IRStaticSamplerDescriptor staticSamplers[10] = {};
+
+			// Sampler 0: Linear, Wrap
+			staticSamplers[0].Filter = IRFilterMinMagMipLinear;
+			staticSamplers[0].AddressU = IRTextureAddressModeWrap;
+			staticSamplers[0].AddressV = IRTextureAddressModeWrap;
+			staticSamplers[0].AddressW = IRTextureAddressModeWrap;
+			staticSamplers[0].MipLODBias = 0.0f;
+			staticSamplers[0].MaxAnisotropy = 1;
+			staticSamplers[0].ComparisonFunc = IRComparisonFunctionNever;
+			staticSamplers[0].BorderColor = IRStaticBorderColorOpaqueBlack;
+			staticSamplers[0].MinLOD = 0.0f;
+			staticSamplers[0].MaxLOD = 3.402823466e+38f; // FLT_MAX
+			staticSamplers[0].ShaderRegister = 0;
+			staticSamplers[0].RegisterSpace = 0;
+			staticSamplers[0].ShaderVisibility = IRShaderVisibilityAll;
+
+			// Sampler 1: Linear, Clamp
+			staticSamplers[1].Filter = IRFilterMinMagMipLinear;
+			staticSamplers[1].AddressU = IRTextureAddressModeClamp;
+			staticSamplers[1].AddressV = IRTextureAddressModeClamp;
+			staticSamplers[1].AddressW = IRTextureAddressModeClamp;
+			staticSamplers[1].MipLODBias = 0.0f;
+			staticSamplers[1].MaxAnisotropy = 1;
+			staticSamplers[1].ComparisonFunc = IRComparisonFunctionNever;
+			staticSamplers[1].BorderColor = IRStaticBorderColorOpaqueBlack;
+			staticSamplers[1].MinLOD = 0.0f;
+			staticSamplers[1].MaxLOD = 3.402823466e+38f;
+			staticSamplers[1].ShaderRegister = 1;
+			staticSamplers[1].RegisterSpace = 0;
+			staticSamplers[1].ShaderVisibility = IRShaderVisibilityAll;
+
+			// Sampler 2: Linear, Border (black)
+			staticSamplers[2].Filter = IRFilterMinMagMipLinear;
+			staticSamplers[2].AddressU = IRTextureAddressModeBorder;
+			staticSamplers[2].AddressV = IRTextureAddressModeBorder;
+			staticSamplers[2].AddressW = IRTextureAddressModeBorder;
+			staticSamplers[2].MipLODBias = 0.0f;
+			staticSamplers[2].MaxAnisotropy = 1;
+			staticSamplers[2].ComparisonFunc = IRComparisonFunctionNever;
+			staticSamplers[2].BorderColor = IRStaticBorderColorOpaqueBlack;
+			staticSamplers[2].MinLOD = 0.0f;
+			staticSamplers[2].MaxLOD = 3.402823466e+38f;
+			staticSamplers[2].ShaderRegister = 2;
+			staticSamplers[2].RegisterSpace = 0;
+			staticSamplers[2].ShaderVisibility = IRShaderVisibilityAll;
+
+			// Sampler 3: Point, Wrap
+			staticSamplers[3].Filter = IRFilterMinMagMipPoint;
+			staticSamplers[3].AddressU = IRTextureAddressModeWrap;
+			staticSamplers[3].AddressV = IRTextureAddressModeWrap;
+			staticSamplers[3].AddressW = IRTextureAddressModeWrap;
+			staticSamplers[3].MipLODBias = 0.0f;
+			staticSamplers[3].MaxAnisotropy = 1;
+			staticSamplers[3].ComparisonFunc = IRComparisonFunctionNever;
+			staticSamplers[3].BorderColor = IRStaticBorderColorOpaqueBlack;
+			staticSamplers[3].MinLOD = 0.0f;
+			staticSamplers[3].MaxLOD = 3.402823466e+38f;
+			staticSamplers[3].ShaderRegister = 3;
+			staticSamplers[3].RegisterSpace = 0;
+			staticSamplers[3].ShaderVisibility = IRShaderVisibilityAll;
+
+			// Sampler 4: Point, Clamp
+			staticSamplers[4].Filter = IRFilterMinMagMipPoint;
+			staticSamplers[4].AddressU = IRTextureAddressModeClamp;
+			staticSamplers[4].AddressV = IRTextureAddressModeClamp;
+			staticSamplers[4].AddressW = IRTextureAddressModeClamp;
+			staticSamplers[4].MipLODBias = 0.0f;
+			staticSamplers[4].MaxAnisotropy = 1;
+			staticSamplers[4].ComparisonFunc = IRComparisonFunctionNever;
+			staticSamplers[4].BorderColor = IRStaticBorderColorOpaqueBlack;
+			staticSamplers[4].MinLOD = 0.0f;
+			staticSamplers[4].MaxLOD = 3.402823466e+38f;
+			staticSamplers[4].ShaderRegister = 4;
+			staticSamplers[4].RegisterSpace = 0;
+			staticSamplers[4].ShaderVisibility = IRShaderVisibilityAll;
+
+			// Sampler 5: Point, Border (black)
+			staticSamplers[5].Filter = IRFilterMinMagMipPoint;
+			staticSamplers[5].AddressU = IRTextureAddressModeBorder;
+			staticSamplers[5].AddressV = IRTextureAddressModeBorder;
+			staticSamplers[5].AddressW = IRTextureAddressModeBorder;
+			staticSamplers[5].MipLODBias = 0.0f;
+			staticSamplers[5].MaxAnisotropy = 1;
+			staticSamplers[5].ComparisonFunc = IRComparisonFunctionNever;
+			staticSamplers[5].BorderColor = IRStaticBorderColorOpaqueBlack;
+			staticSamplers[5].MinLOD = 0.0f;
+			staticSamplers[5].MaxLOD = 3.402823466e+38f;
+			staticSamplers[5].ShaderRegister = 5;
+			staticSamplers[5].RegisterSpace = 0;
+			staticSamplers[5].ShaderVisibility = IRShaderVisibilityAll;
+
+			// Sampler 6: Comparison Linear, Clamp
+			staticSamplers[6].Filter = IRFilterComparisonMinMagMipLinear;
+			staticSamplers[6].AddressU = IRTextureAddressModeClamp;
+			staticSamplers[6].AddressV = IRTextureAddressModeClamp;
+			staticSamplers[6].AddressW = IRTextureAddressModeClamp;
+			staticSamplers[6].MipLODBias = 0.0f;
+			staticSamplers[6].MaxAnisotropy = 16;
+			staticSamplers[6].ComparisonFunc = IRComparisonFunctionLessEqual;
+			staticSamplers[6].BorderColor = IRStaticBorderColorOpaqueWhite;
+			staticSamplers[6].MinLOD = 0.0f;
+			staticSamplers[6].MaxLOD = 3.402823466e+38f;
+			staticSamplers[6].ShaderRegister = 6;
+			staticSamplers[6].RegisterSpace = 0;
+			staticSamplers[6].ShaderVisibility = IRShaderVisibilityAll;
+
+			// Sampler 7: Comparison Linear, Wrap
+			staticSamplers[7].Filter = IRFilterComparisonMinMagMipLinear;
+			staticSamplers[7].AddressU = IRTextureAddressModeWrap;
+			staticSamplers[7].AddressV = IRTextureAddressModeWrap;
+			staticSamplers[7].AddressW = IRTextureAddressModeWrap;
+			staticSamplers[7].MipLODBias = 0.0f;
+			staticSamplers[7].MaxAnisotropy = 16;
+			staticSamplers[7].ComparisonFunc = IRComparisonFunctionLessEqual;
+			staticSamplers[7].BorderColor = IRStaticBorderColorOpaqueWhite;
+			staticSamplers[7].MinLOD = 0.0f;
+			staticSamplers[7].MaxLOD = 3.402823466e+38f;
+			staticSamplers[7].ShaderRegister = 7;
+			staticSamplers[7].RegisterSpace = 0;
+			staticSamplers[7].ShaderVisibility = IRShaderVisibilityAll;
+
+			// Sampler 8: Linear, Mirror
+			staticSamplers[8].Filter = IRFilterMinMagMipLinear;
+			staticSamplers[8].AddressU = IRTextureAddressModeMirror;
+			staticSamplers[8].AddressV = IRTextureAddressModeMirror;
+			staticSamplers[8].AddressW = IRTextureAddressModeWrap;
+			staticSamplers[8].MipLODBias = 0.0f;
+			staticSamplers[8].MaxAnisotropy = 1;
+			staticSamplers[8].ComparisonFunc = IRComparisonFunctionNever;
+			staticSamplers[8].BorderColor = IRStaticBorderColorOpaqueBlack;
+			staticSamplers[8].MinLOD = 0.0f;
+			staticSamplers[8].MaxLOD = 3.402823466e+38f;
+			staticSamplers[8].ShaderRegister = 8;
+			staticSamplers[8].RegisterSpace = 0;
+			staticSamplers[8].ShaderVisibility = IRShaderVisibilityAll;
+
+			// Sampler 9: Point, Mirror
+			staticSamplers[9].Filter = IRFilterMinMagMipPoint;
+			staticSamplers[9].AddressU = IRTextureAddressModeMirror;
+			staticSamplers[9].AddressV = IRTextureAddressModeMirror;
+			staticSamplers[9].AddressW = IRTextureAddressModeWrap;
+			staticSamplers[9].MipLODBias = 0.0f;
+			staticSamplers[9].MaxAnisotropy = 1;
+			staticSamplers[9].ComparisonFunc = IRComparisonFunctionNever;
+			staticSamplers[9].BorderColor = IRStaticBorderColorOpaqueBlack;
+			staticSamplers[9].MinLOD = 0.0f;
+			staticSamplers[9].MaxLOD = 3.402823466e+38f;
+			staticSamplers[9].ShaderRegister = 9;
+			staticSamplers[9].RegisterSpace = 0;
+			staticSamplers[9].ShaderVisibility = IRShaderVisibilityAll;
+
 			IRVersionedRootSignatureDescriptor desc = {};
 			desc.version = IRRootSignatureVersion_1_1;
-			desc.desc_1_1.NumParameters = 1;
+			desc.desc_1_1.NumParameters = 4;
 			desc.desc_1_1.pParameters = rootParameters;
+			desc.desc_1_1.NumStaticSamplers = 10;
+			desc.desc_1_1.pStaticSamplers = staticSamplers;
 			desc.desc_1_1.Flags = IRRootSignatureFlags(
-				IRRootSignatureFlagDenyHullShaderRootAccess |
-				IRRootSignatureFlagDenyDomainShaderRootAccess |
-				IRRootSignatureFlagDenyGeometryShaderRootAccess |
 				IRRootSignatureFlagCBVSRVUAVHeapDirectlyIndexed |
 				IRRootSignatureFlagSamplerHeapDirectlyIndexed);
 
@@ -502,7 +673,7 @@ namespace adria
 			ADRIA_ASSERT(metal_ir_compiler && metal_root_signature);
 			IRCompilerSetGlobalRootSignature(metal_ir_compiler, metal_root_signature);
 			IRCompilerSetMinimumGPUFamily(metal_ir_compiler, IRGPUFamilyApple7);
-			IRCompilerSetMinimumDeploymentTarget(metal_ir_compiler, IROperatingSystem_macOS, "14.0.0");
+			IRCompilerSetMinimumDeploymentTarget(metal_ir_compiler, IROperatingSystem_macOS, "15.0.0");
 			IRCompilerSetEntryPointName(metal_ir_compiler, input.entry_point.empty() ? "main" : input.entry_point.c_str());
 
 			IRObject* dxil_obj = IRObjectCreateFromDXIL((uint8_t const*)blob->GetBufferPointer(), blob->GetBufferSize(), IRBytecodeOwnershipNone);

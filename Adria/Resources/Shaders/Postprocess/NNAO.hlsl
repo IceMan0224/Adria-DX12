@@ -114,9 +114,9 @@ void NNAO_CS(CSInput input)
 
     uint2 resolution = uint2(FrameCB.renderResolution);
     float2 uv = ((float2)input.DispatchThreadId.xy + 0.5f) * 1.0f / resolution;
-    float3 viewNormal = DecodeNormalOctahedron(normalRT.Sample(LinearBorderSampler, uv).xy * 2.0f - 1.0f);
+    float3 viewNormal = DecodeNormalOctahedron(normalRT.SampleLevel(LinearBorderSampler, uv, 0).xy * 2.0f - 1.0f);
 
-    float depth = depthTexture.Sample(LinearBorderSampler, uv);
+    float depth = depthTexture.SampleLevel(LinearBorderSampler, uv, 0);
     float3 viewPosition = GetViewPosition(uv, depth);
     float3 seed = Rand(viewPosition);
 

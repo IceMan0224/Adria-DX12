@@ -12,9 +12,9 @@ namespace adria
 
         MTLResourceOptions options = MTLResourceStorageModeShared;
         metal_buffer = [device newBufferWithLength:desc.size options:options];
+        mapped_data = [metal_buffer contents];
         if (initial_data)
         {
-            void* mapped_data = [metal_buffer contents];
             memcpy(mapped_data, initial_data, desc.size);
         }
 

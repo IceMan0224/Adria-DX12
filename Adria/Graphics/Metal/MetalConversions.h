@@ -132,15 +132,19 @@ namespace adria
             return MTLPixelFormatBC7_RGBAUnorm_sRGB;
         case GfxFormat::R9G9B9E5_SHAREDEXP:
             return MTLPixelFormatRGB9E5Float;
-        // Unsupported formats (Metal doesn't support RGB32 or typeless formats)
+        // Typeless formats - convert to concrete Metal formats
         case GfxFormat::R32G32B32_FLOAT:
         case GfxFormat::R32G32B32_UINT:
         case GfxFormat::R32G32B32_SINT:
-        case GfxFormat::R32G8X24_TYPELESS:
+            return MTLPixelFormatInvalid; // Metal doesn't support RGB32 formats
         case GfxFormat::R32_TYPELESS:
+            return MTLPixelFormatDepth32Float; // Use D32_FLOAT for depth buffers
+        case GfxFormat::R32G8X24_TYPELESS:
+            return MTLPixelFormatDepth32Float_Stencil8;
         case GfxFormat::R24G8_TYPELESS:
+            return MTLPixelFormatDepth24Unorm_Stencil8;
         case GfxFormat::R16_TYPELESS:
-            return MTLPixelFormatInvalid;
+            return MTLPixelFormatDepth16Unorm;
         default:
             return MTLPixelFormatInvalid;
         }
