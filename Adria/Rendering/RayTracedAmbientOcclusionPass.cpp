@@ -215,11 +215,16 @@ namespace adria
 
 		GfxRayTracingPipelineDesc rtao_pipeline_desc{};
 		rtao_pipeline_desc.max_payload_size = 4;  
-		rtao_pipeline_desc.max_attribute_size = 8; 
+		rtao_pipeline_desc.max_attribute_size = 8;
 		rtao_pipeline_desc.max_recursion_depth = 1;
 		rtao_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-		GfxRayTracingShaderLibrary rtao_library(&rtao_shader);
+		GfxRayTracingShaderLibrary rtao_library(&rtao_shader,
+		{
+			"RTAO_RayGen",
+			"RTAO_Miss",
+			"RTAO_AnyHit"
+		});
 		rtao_pipeline_desc.libraries.push_back(rtao_library);
 
 		GfxRayTracingHitGroup rtao_hit_group = GfxRayTracingHitGroup::Triangle(

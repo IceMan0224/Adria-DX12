@@ -674,12 +674,27 @@ namespace adria
 			IRCompilerSetGlobalRootSignature(metal_ir_compiler, metal_root_signature);
 			IRCompilerSetMinimumGPUFamily(metal_ir_compiler, IRGPUFamilyApple7);
 			IRCompilerSetMinimumDeploymentTarget(metal_ir_compiler, IROperatingSystem_macOS, "15.0.0");
-			IRCompilerSetEntryPointName(metal_ir_compiler, input.entry_point.empty() ? "main" : input.entry_point.c_str());
+
+			// Don't set entry point name for library shaders, they have multiple entry points
+			if (input.stage != GfxShaderStage::LIB)
+			{
+				IRCompilerSetEntryPointName(metal_ir_compiler, input.entry_point.empty() ? "main" : input.entry_point.c_str());
+			}
+
+			IRRayTracingPipelineConfiguration* rt_config = nullptr;
+			if (input.stage == GfxShaderStage::LIB)
+			{
+				ADRIA_LOG_SYNC(INFO, "Configuring raytracing pipeline for library shader");
+				rt_config = IRRayTracingPipelineConfigurationCreate();
+				IRRayTracingPipelineConfigurationSetMaxAttributeSizeInBytes(rt_config, 8);
+				IRRayTracingPipelineConfigurationSetMaxRecursiveDepth(rt_config, 1);
+				IRRayTracingPipelineConfigurationSetRayGenerationCompilationMode(rt_config, IRRayGenerationCompilationKernel);
+				IRCompilerSetRayTracingPipelineConfiguration(metal_ir_compiler, rt_config);
+			}
 
 			IRObject* dxil_obj = IRObjectCreateFromDXIL((uint8_t const*)blob->GetBufferPointer(), blob->GetBufferSize(), IRBytecodeOwnershipNone);
 			if (!dxil_obj)
 			{
-				ADRIA_LOG(ERROR, "Failed to create IR object from DXIL");
 				return false;
 			}
 
@@ -695,11 +710,11 @@ namespace adria
 					const char* error_payload = (const char*)IRErrorGetPayload(ir_error);
 					if (error_payload)
 					{
-						ADRIA_LOG(ERROR, "Failed to convert DXIL to Metal IR: %s", error_payload);
+						ADRIA_LOG_SYNC(ERROR, "Failed to convert DXIL to Metal IR: %s", error_payload);
 					}
 					else
 					{
-						ADRIA_LOG(ERROR, "Failed to convert DXIL to Metal IR: error code %d", error_code);
+						ADRIA_LOG_SYNC(ERROR, "Failed to convert DXIL to Metal IR: error code %d", error_code);
 					}
 					IRErrorDestroy(ir_error);
 				}
@@ -707,28 +722,44 @@ namespace adria
 			}
 
 			IRMetalLibBinary* metallib = IRMetalLibBinaryCreate();
-			IRShaderStage ir_stage = IRShaderStageVertex; 
-			switch (input.stage)
+			IRShaderStage ir_stage = IRObjectGetMetalIRShaderStage(metal_ir_obj);
+			Bool extraction_success = IRObjectGetMetalLibBinary(metal_ir_obj, ir_stage, metallib);
+
+			if (!extraction_success)
 			{
-			case GfxShaderStage::VS: ir_stage = IRShaderStageVertex; break;
-			case GfxShaderStage::PS: ir_stage = IRShaderStageFragment; break;
-			case GfxShaderStage::CS: ir_stage = IRShaderStageCompute; break;
-			case GfxShaderStage::MS: ir_stage = IRShaderStageMesh; break;
-			case GfxShaderStage::AS: ir_stage = IRShaderStageAmplification; break;
-			case GfxShaderStage::GS: ir_stage = IRShaderStageGeometry; break;
-			case GfxShaderStage::DS: ir_stage = IRShaderStageDomain; break;
-			case GfxShaderStage::HS: ir_stage = IRShaderStageHull; break;
-			//case GfxShaderStage::LIB: ir_stage = IRShaderStageRayGeneration; break;
-			default: break;
+				ADRIA_LOG_SYNC(ERROR, "Failed to extract Metal library binary for shader stage %d", ir_stage);
+				IRMetalLibBinaryDestroy(metallib);
+				IRObjectDestroy(metal_ir_obj);
+				if (rt_config)
+				{
+					IRRayTracingPipelineConfigurationDestroy(rt_config);
+				}
+				return false;
 			}
 
-			IRObjectGetMetalLibBinary(metal_ir_obj, ir_stage, metallib);
 			Usize metallib_size = IRMetalLibGetBytecodeSize(metallib);
+			if (metallib_size == 0)
+			{
+				ADRIA_LOG_SYNC(ERROR, "Metal library binary has zero size for shader stage %d", ir_stage);
+				IRMetalLibBinaryDestroy(metallib);
+				IRObjectDestroy(metal_ir_obj);
+				if (rt_config)
+				{
+					IRRayTracingPipelineConfigurationDestroy(rt_config);
+				}
+				return false;
+			}
+
 			std::vector<Uint8> metallib_data(metallib_size);
 			IRMetalLibGetBytecode(metallib, metallib_data.data());
 
 			IRMetalLibBinaryDestroy(metallib);
 			IRObjectDestroy(metal_ir_obj);
+
+			if (rt_config)
+			{
+				IRRayTracingPipelineConfigurationDestroy(rt_config);
+			}
 
 			output.shader.SetDesc(input);
 			output.shader.SetShaderData(metallib_data.data(), metallib_data.size());

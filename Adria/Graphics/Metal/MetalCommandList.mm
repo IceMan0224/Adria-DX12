@@ -11,6 +11,7 @@
 #include "MetalDescriptor.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxBufferView.h"
+#include "Graphics/GfxFence.h"
 
 namespace adria
 {
@@ -102,29 +103,48 @@ namespace adria
 
     void MetalCommandList::End()
     {
-        if (render_encoder)
-        {
-            [render_encoder endEncoding];
-            render_encoder = nil;
-        }
-        if (compute_encoder)
-        {
-            [compute_encoder endEncoding];
-            compute_encoder = nil;
-        }
-        if (blit_encoder)
-        {
-            [blit_encoder endEncoding];
-            blit_encoder = nil;
-        }
+        EndBlitEncoder();
+        EndComputeEncoder();
+        EndRenderPass();
     }
 
     void MetalCommandList::Submit()
     {
         if (command_buffer)
         {
+            SignalAll();
             [command_buffer commit];
         }
+    }
+
+    void MetalCommandList::Wait(GfxFence& fence, Uint64 value)
+    {
+        if (command_buffer)
+        {
+            id<MTLSharedEvent> shared_event = (__bridge id<MTLSharedEvent>)fence.GetHandle();
+            if (shared_event)
+            {
+                [command_buffer encodeWaitForEvent:shared_event value:value];
+            }
+        }
+    }
+
+    void MetalCommandList::Signal(GfxFence& fence, Uint64 value)
+    {
+        pending_signals.emplace_back(fence, value);
+    }
+
+    void MetalCommandList::SignalAll()
+    {
+        for (Uint64 i = 0; i < pending_signals.size(); ++i)
+        {
+            id<MTLSharedEvent> shared_event = (__bridge id<MTLSharedEvent>)pending_signals[i].first.GetHandle();
+            if (shared_event && command_buffer)
+            {
+                [command_buffer encodeSignalEvent:shared_event value:pending_signals[i].second];
+            }
+        }
+        pending_signals.clear();
     }
 
     void MetalCommandList::ResetState()
@@ -215,10 +235,7 @@ namespace adria
         MetalBuffer* metal_dst = static_cast<MetalBuffer*>(&dst);
         MetalBuffer const* metal_src = static_cast<MetalBuffer const*>(&src);
 
-        if (!blit_encoder)
-        {
-            blit_encoder = [command_buffer blitCommandEncoder];
-        }
+        BeginBlitEncoder();
 
         [blit_encoder copyFromBuffer:metal_src->GetMetalBuffer()
                         sourceOffset:0
@@ -232,10 +249,7 @@ namespace adria
         MetalBuffer* metal_dst = static_cast<MetalBuffer*>(&dst);
         MetalBuffer const* metal_src = static_cast<MetalBuffer const*>(&src);
 
-        if (!blit_encoder)
-        {
-            blit_encoder = [command_buffer blitCommandEncoder];
-        }
+        BeginBlitEncoder();
 
         [blit_encoder copyFromBuffer:metal_src->GetMetalBuffer()
                         sourceOffset:src_offset
@@ -246,6 +260,9 @@ namespace adria
 
     void MetalCommandList::BeginRenderPass(GfxRenderPassDesc const& render_pass_desc)
     {
+        EndBlitEncoder();
+        EndComputeEncoder();
+
         MTLRenderPassDescriptor* pass_desc = [MTLRenderPassDescriptor new];
 
         for (Uint32 i = 0; i < render_pass_desc.rtv_attachments.size(); ++i)
@@ -392,28 +409,7 @@ namespace adria
         }
         else if (state && state->GetType() == GfxPipelineStateType::Compute)
         {
-            if (!compute_encoder)
-            {
-                if (render_encoder)
-                {
-                    [render_encoder endEncoding];
-                    render_encoder = nil;
-                }
-                if (blit_encoder)
-                {
-                    [blit_encoder endEncoding];
-                    blit_encoder = nil;
-                }
-
-                compute_encoder = [command_buffer computeCommandEncoder];
-
-                MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
-                if (arg_buffer && compute_encoder)
-                {
-                    id<MTLBuffer> buffer = arg_buffer->GetBuffer();
-                    [compute_encoder setBuffer:buffer offset:0 atIndex:BINDLESS_ARGUMENT_BUFFER_SLOT];
-                }
-            }
+            BeginComputeEncoder();
 
             MetalComputePipelineState const* metal_pso = static_cast<MetalComputePipelineState const*>(state);
             [compute_encoder setComputePipelineState:metal_pso->GetPipelineState()];
@@ -495,28 +491,7 @@ namespace adria
 
         MetalRayTracingPipeline const* metal_pipeline = static_cast<MetalRayTracingPipeline const*>(pipeline);
 
-        if (render_encoder)
-        {
-            [render_encoder endEncoding];
-            render_encoder = nil;
-        }
-        if (blit_encoder)
-        {
-            [blit_encoder endEncoding];
-            blit_encoder = nil;
-        }
-
-        if (!compute_encoder)
-        {
-            compute_encoder = [command_buffer computeCommandEncoder];
-
-            MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
-            if (arg_buffer && compute_encoder)
-            {
-                id<MTLBuffer> buffer = arg_buffer->GetBuffer();
-                [compute_encoder setBuffer:buffer offset:0 atIndex:BINDLESS_ARGUMENT_BUFFER_SLOT];
-            }
-        }
+        BeginComputeEncoder();
 
         id<MTLComputePipelineState> raygen_pipeline = metal_pipeline->GetRayGenPipeline();
         [compute_encoder setComputePipelineState:raygen_pipeline];
@@ -553,5 +528,56 @@ namespace adria
                         threadsPerThreadgroup:threadsPerThreadgroup];
 
         current_rt_bindings.reset();
+    }
+
+    void MetalCommandList::BeginBlitEncoder()
+    {
+        EndRenderPass();
+        EndComputeEncoder();
+
+        if (!blit_encoder)
+        {
+            blit_encoder = [command_buffer blitCommandEncoder];
+        }
+    }
+
+    void MetalCommandList::EndBlitEncoder()
+    {
+        if (blit_encoder)
+        {
+            [blit_encoder endEncoding];
+            blit_encoder = nil;
+        }
+    }
+
+    void MetalCommandList::BeginComputeEncoder()
+    {
+        if (render_encoder)
+        {
+            [render_encoder endEncoding];
+            render_encoder = nil;
+        }
+        EndBlitEncoder();
+
+        if (!compute_encoder)
+        {
+            compute_encoder = [command_buffer computeCommandEncoder];
+
+            MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
+            if (arg_buffer && compute_encoder)
+            {
+                id<MTLBuffer> buffer = arg_buffer->GetBuffer();
+                [compute_encoder setBuffer:buffer offset:0 atIndex:BINDLESS_ARGUMENT_BUFFER_SLOT];
+            }
+        }
+    }
+
+    void MetalCommandList::EndComputeEncoder()
+    {
+        if (compute_encoder)
+        {
+            [compute_encoder endEncoding];
+            compute_encoder = nil;
+        }
     }
 }

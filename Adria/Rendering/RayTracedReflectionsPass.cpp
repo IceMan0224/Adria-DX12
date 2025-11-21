@@ -139,7 +139,12 @@ namespace adria
 		rtr_pipeline_desc.max_recursion_depth = 2;
 		rtr_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-		GfxRayTracingShaderLibrary rtr_library(&rtr_shader);
+		GfxRayTracingShaderLibrary rtr_library(&rtr_shader,
+		{
+			"RTR_RayGen",
+			"RTR_Miss",
+			"RTR_ClosestHitPrimaryRay"
+		});
 		rtr_pipeline_desc.libraries.push_back(rtr_library);
 
 		GfxRayTracingHitGroup rtr_primary_hit_group = GfxRayTracingHitGroup::Triangle(

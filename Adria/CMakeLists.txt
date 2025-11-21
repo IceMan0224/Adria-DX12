@@ -401,6 +401,8 @@ set(ADRIA_METAL_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalPipelineState.mm"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalSwapchain.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalSwapchain.mm"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalFence.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalFence.mm"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalConversions.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDescriptor.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDescriptor.mm"

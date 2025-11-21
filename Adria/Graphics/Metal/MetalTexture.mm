@@ -29,10 +29,35 @@ namespace adria
         switch (desc.type)
         {
         case GfxTextureType_1D:
-            tex_desc.textureType = MTLTextureType1D;
+            if (desc.array_size > 1)
+            {
+                tex_desc.textureType = MTLTextureType1DArray;
+            }
+            else
+            {
+                tex_desc.textureType = MTLTextureType1D;
+            }
             break;
         case GfxTextureType_2D:
-            tex_desc.textureType = MTLTextureType2D;
+            if (HasFlag(desc.misc_flags, GfxTextureMiscFlag::TextureCube))
+            {
+                if (desc.array_size == 6)
+                {
+                    tex_desc.textureType = MTLTextureTypeCube;
+                }
+                else
+                {
+                    tex_desc.textureType = MTLTextureTypeCubeArray;
+                }
+            }
+            else if (desc.array_size > 1)
+            {
+                tex_desc.textureType = MTLTextureType2DArray;
+            }
+            else
+            {
+                tex_desc.textureType = MTLTextureType2D;
+            }
             break;
         case GfxTextureType_3D:
             tex_desc.textureType = MTLTextureType3D;
@@ -41,7 +66,15 @@ namespace adria
         }
 
         tex_desc.mipmapLevelCount = desc.mip_levels;
-        tex_desc.arrayLength = desc.array_size;
+        // For cubemaps, Metal expects arrayLength to be the number of cubemaps, not faces
+        if (HasFlag(desc.misc_flags, GfxTextureMiscFlag::TextureCube))
+        {
+            tex_desc.arrayLength = desc.array_size / 6;
+        }
+        else
+        {
+            tex_desc.arrayLength = desc.array_size;
+        }
 
         metal_texture = [device newTextureWithDescriptor:tex_desc];
     }
@@ -51,7 +84,6 @@ namespace adria
     {
         if (data.sub_data && data.sub_count > 0)
         {
-            // Upload first subresource for now (could be extended to handle all subresources)
             MTLRegion region = MTLRegionMake2D(0, 0, desc.width, desc.height);
             [metal_texture replaceRegion:region
                              mipmapLevel:0

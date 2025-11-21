@@ -5,6 +5,7 @@
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxShaderCompiler.h"
 #include "Utilities/Image.h"
+#include "Utilities/PathHelpers.h"
 
 
 namespace adria
@@ -39,12 +40,12 @@ namespace adria
 
     TextureHandle TextureManager::LoadTexture(std::string_view path, Bool srgb)
     {
-        std::string texture_name(path);
+        std::string texture_name = NormalizePath(path);
         if (auto it = loaded_textures.find(texture_name); it == loaded_textures.end())
         {
 			TextureHandle texture_handle = handle++;
             loaded_textures.insert({ texture_name, texture_handle });
-            Image img(path);
+            Image img(texture_name);
 
 			GfxTextureDesc desc{};
 			desc.type = img.Depth() > 1 ? GfxTextureType_3D : GfxTextureType_2D;
@@ -103,7 +104,8 @@ namespace adria
 		std::vector<GfxTextureSubData> subresources;
 		for (Uint32 i = 0; i < cubemap_textures.size(); ++i)
 		{
-			images.emplace_back(cubemap_textures[i]);
+			std::string normalized_path = NormalizePath(cubemap_textures[i]);
+			images.emplace_back(normalized_path);
 			GfxTextureSubData subresource_data{};
 			subresource_data.data = images.back().Data<void>();
 			subresource_data.row_pitch = GetRowPitch(images.back().Format(), desc.width, 0);

@@ -29,11 +29,11 @@ void FXAA_CS(CSInput input)
 	const float FXAA_REDUCE_MUL = 1.0 / 8.0;
 	const float FXAA_REDUCE_MIN = 1.0 / 128.0;
 
-	float3 rgbNW = ldrTexture.Sample(LinearWrapSampler, uv + float2(-1.0, -1.0) / FrameCB.displayResolution, 0).rgb;
-	float3 rgbNE = ldrTexture.Sample(LinearWrapSampler, uv + float2(1.0, -1.0)  / FrameCB.displayResolution, 0).rgb;
-	float3 rgbSW = ldrTexture.Sample(LinearWrapSampler, uv + float2(-1.0, 1.0)  / FrameCB.displayResolution, 0).rgb;
-	float3 rgbSE = ldrTexture.Sample(LinearWrapSampler, uv + float2(1.0, 1.0)   / FrameCB.displayResolution, 0).rgb;
-	float3 rgbM  = ldrTexture.Sample(LinearWrapSampler, uv, 0).rgb;
+	float3 rgbNW = ldrTexture.SampleLevel(LinearWrapSampler, uv + float2(-1.0, -1.0) / FrameCB.displayResolution, 0, 0).rgb;
+	float3 rgbNE = ldrTexture.SampleLevel(LinearWrapSampler, uv + float2(1.0, -1.0)  / FrameCB.displayResolution, 0, 0).rgb;
+	float3 rgbSW = ldrTexture.SampleLevel(LinearWrapSampler, uv + float2(-1.0, 1.0)  / FrameCB.displayResolution, 0, 0).rgb;
+	float3 rgbSE = ldrTexture.SampleLevel(LinearWrapSampler, uv + float2(1.0, 1.0)   / FrameCB.displayResolution, 0, 0).rgb;
+	float3 rgbM  = ldrTexture.SampleLevel(LinearWrapSampler, uv, 0).rgb;
 
 	float3 luma = float3(0.299, 0.587, 0.114);
 	float lumaNW = dot(rgbNW, luma);
@@ -61,14 +61,14 @@ void FXAA_CS(CSInput input)
 
 	float3 rgbA = (1.0 / 2.0) *
 		(
-			ldrTexture.Sample(LinearWrapSampler, uv + dir * (1.0 / 3.0 - 0.5), 0).rgb +
-			ldrTexture.Sample(LinearWrapSampler, uv + dir * (2.0 / 3.0 - 0.5), 0).rgb
+			ldrTexture.SampleLevel(LinearWrapSampler, uv + dir * (1.0 / 3.0 - 0.5), 0, 0).rgb +
+			ldrTexture.SampleLevel(LinearWrapSampler, uv + dir * (2.0 / 3.0 - 0.5), 0, 0).rgb
 			);
 
 	float3 rgbB = rgbA * (1.0 / 2.0) + (1.0 / 4.0) *
 		(
-			ldrTexture.Sample(LinearWrapSampler, uv + dir * (0.0 / 3.0 - 0.5), 0).rgb +
-			ldrTexture.Sample(LinearWrapSampler, uv + dir * (3.0 / 3.0 - 0.5), 0).rgb
+			ldrTexture.SampleLevel(LinearWrapSampler, uv + dir * (0.0 / 3.0 - 0.5), 0, 0).rgb +
+			ldrTexture.SampleLevel(LinearWrapSampler, uv + dir * (3.0 / 3.0 - 0.5), 0, 0).rgb
 			);
 
 	float lumaB = dot(rgbB, luma);

@@ -165,7 +165,10 @@ namespace adria
 		pt_pipeline_desc.max_recursion_depth = 3;
 		pt_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-		GfxRayTracingShaderLibrary pt_library(&pt_shader);
+		GfxRayTracingShaderLibrary pt_library(&pt_shader,
+		{
+			"PT_RayGen"
+		});
 		pt_pipeline_desc.libraries.push_back(pt_library);
 
 		std::unique_ptr<GfxRayTracingPipeline> pipeline = gfx->CreateRayTracingPipeline(pt_pipeline_desc);

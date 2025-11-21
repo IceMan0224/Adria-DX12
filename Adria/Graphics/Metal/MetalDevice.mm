@@ -12,6 +12,8 @@
 #include "MetalConversions.h"
 #include "MetalRayTracingAS.h"
 #include "MetalRayTracingPipeline.h"
+#include "MetalFence.h"
+#include "Graphics/GfxLinearDynamicAllocator.h"
 #include "Platform/Window.h"
 
 namespace adria
@@ -148,12 +150,26 @@ namespace adria
                 window->Height()
             );
         }
+
+        for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
+        {
+            graphics_cmd_list_pool[i] = std::make_unique<GfxGraphicsCommandListPool>(this);
+            compute_cmd_list_pool[i] = std::make_unique<GfxComputeCommandListPool>(this);
+            copy_cmd_list_pool[i] = std::make_unique<GfxCopyCommandListPool>(this);
+        }
+
+        for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
+        {
+            dynamic_allocators.emplace_back(new GfxLinearDynamicAllocator(this, 1 << 20));
+        }
+        dynamic_allocator_on_init.reset(new GfxLinearDynamicAllocator(this, 1 << 30));
     }
 
     MetalDevice::~MetalDevice()
     {
         @autoreleasepool
         {
+            buffer_map.clear();
             swapchain.reset();
             argument_buffer.reset();
             shader_library = nil;
@@ -203,6 +219,12 @@ namespace adria
         return frame_index;
     }
 
+    void MetalDevice::SetRenderingNotStarted()
+    {
+        rendering_not_started = true;
+        dynamic_allocator_on_init.reset(new GfxLinearDynamicAllocator(this, 1 << 30));
+    }
+
     GfxCapabilities const& MetalDevice::GetCapabilities() const
     {
         return capabilities;
@@ -212,7 +234,77 @@ namespace adria
     {
         ADRIA_TODO("Revisit this");
         static GfxFence* static_dummy_fence = nullptr;
-        return *static_dummy_fence; 
+        return *static_dummy_fence;
+    }
+
+    GfxCommandList* MetalDevice::GetCommandList(GfxCommandListType type) const
+    {
+        Uint32 backbuffer_index = swapchain ? swapchain->GetBackbufferIndex() : 0;
+        switch (type)
+        {
+        case GfxCommandListType::Graphics:
+            return graphics_cmd_list_pool[backbuffer_index]->GetMainCmdList();
+        case GfxCommandListType::Compute:
+            return compute_cmd_list_pool[backbuffer_index]->GetMainCmdList();
+        case GfxCommandListType::Copy:
+            return copy_cmd_list_pool[backbuffer_index]->GetMainCmdList();
+        default:
+            return nullptr;
+        }
+    }
+
+    GfxCommandList* MetalDevice::GetLatestCommandList(GfxCommandListType type) const
+    {
+        Uint32 backbuffer_index = swapchain ? swapchain->GetBackbufferIndex() : 0;
+        switch (type)
+        {
+        case GfxCommandListType::Graphics:
+            return graphics_cmd_list_pool[backbuffer_index]->GetLatestCmdList();
+        case GfxCommandListType::Compute:
+            return compute_cmd_list_pool[backbuffer_index]->GetLatestCmdList();
+        case GfxCommandListType::Copy:
+            return copy_cmd_list_pool[backbuffer_index]->GetLatestCmdList();
+        default:
+            return nullptr;
+        }
+    }
+
+    GfxCommandList* MetalDevice::AllocateCommandList(GfxCommandListType type) const
+    {
+        Uint32 backbuffer_index = swapchain ? swapchain->GetBackbufferIndex() : 0;
+        switch (type)
+        {
+        case GfxCommandListType::Graphics:
+            return graphics_cmd_list_pool[backbuffer_index]->AllocateCmdList();
+        case GfxCommandListType::Compute:
+            return compute_cmd_list_pool[backbuffer_index]->AllocateCmdList();
+        case GfxCommandListType::Copy:
+            return copy_cmd_list_pool[backbuffer_index]->AllocateCmdList();
+        default:
+            return nullptr;
+        }
+    }
+
+    void MetalDevice::FreeCommandList(GfxCommandList* cmd_list, GfxCommandListType type)
+    {
+        Uint32 backbuffer_index = swapchain ? swapchain->GetBackbufferIndex() : 0;
+        switch (type)
+        {
+        case GfxCommandListType::Graphics:
+            graphics_cmd_list_pool[backbuffer_index]->FreeCmdList(cmd_list);
+            break;
+        case GfxCommandListType::Compute:
+            compute_cmd_list_pool[backbuffer_index]->FreeCmdList(cmd_list);
+            break;
+        case GfxCommandListType::Copy:
+            copy_cmd_list_pool[backbuffer_index]->FreeCmdList(cmd_list);
+            break;
+        }
+    }
+
+    GfxLinearDynamicAllocator* MetalDevice::GetDynamicAllocator() const
+    {
+        return rendering_not_started ? dynamic_allocator_on_init.get() : dynamic_allocators[swapchain ? swapchain->GetBackbufferIndex() : 0].get();
     }
 
     GfxShadingRateInfo const& MetalDevice::GetShadingRateInfo() const
@@ -533,6 +625,16 @@ namespace adria
         return std::make_unique<MetalBuffer>(this, desc);
     }
 
+    std::shared_ptr<GfxBuffer> MetalDevice::CreateBufferShared(GfxBufferDesc const& desc, GfxBufferData const& initial_data)
+    {
+        return std::make_shared<MetalBuffer>(this, desc, initial_data);
+    }
+
+    std::shared_ptr<GfxBuffer> MetalDevice::CreateBufferShared(GfxBufferDesc const& desc)
+    {
+        return std::make_shared<MetalBuffer>(this, desc);
+    }
+
     std::unique_ptr<GfxPipelineState> MetalDevice::CreateGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc)
     {
         return std::make_unique<MetalGraphicsPipelineState>(this, desc);
@@ -546,6 +648,16 @@ namespace adria
     std::unique_ptr<GfxPipelineState> MetalDevice::CreateMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc)
     {
         return std::make_unique<MetalMeshShadingPipelineState>(this, desc);
+    }
+
+    std::unique_ptr<GfxFence> MetalDevice::CreateFence(Char const* name)
+    {
+        std::unique_ptr<MetalFence> fence = std::make_unique<MetalFence>();
+        if (!fence->Create(this, name))
+        {
+            return nullptr;
+        }
+        return fence;
     }
 
     std::unique_ptr<GfxRayTracingTLAS> MetalDevice::CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
@@ -624,12 +736,25 @@ namespace adria
             return;
         }
 
+        if (rendering_not_started)
+        {
+            dynamic_allocator_on_init.reset();
+            first_frame = true;
+            rendering_not_started = false;
+        }
+
         // Acquire the drawable for this frame
         id<CAMetalDrawable> drawable = GetCurrentDrawable();
         if (!drawable)
         {
             return;
         }
+
+        Uint32 backbuffer_index = swapchain->GetBackbufferIndex();
+        graphics_cmd_list_pool[backbuffer_index]->BeginCmdLists();
+        compute_cmd_list_pool[backbuffer_index]->BeginCmdLists();
+        copy_cmd_list_pool[backbuffer_index]->BeginCmdLists();
+        dynamic_allocators[backbuffer_index]->Clear();
 
         first_frame = false;
     }
@@ -640,6 +765,11 @@ namespace adria
         {
             return;
         }
+
+        Uint32 backbuffer_index = swapchain->GetBackbufferIndex();
+        graphics_cmd_list_pool[backbuffer_index]->EndCmdLists();
+        compute_cmd_list_pool[backbuffer_index]->EndCmdLists();
+        copy_cmd_list_pool[backbuffer_index]->EndCmdLists();
 
         // Create a dedicated command buffer for presentation
         id<CAMetalDrawable> drawable = GetCurrentDrawable();

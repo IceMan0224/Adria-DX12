@@ -22,11 +22,11 @@ namespace adria
         virtual void ResetAllocator() override {}
         virtual void Begin() override;
         virtual void End() override;
-        virtual void Wait(GfxFence& fence, Uint64 value) override {}
-        virtual void Signal(GfxFence& fence, Uint64 value) override {}
+        virtual void Wait(GfxFence& fence, Uint64 value) override;
+        virtual void Signal(GfxFence& fence, Uint64 value) override;
         virtual void WaitAll() override {}
         virtual void Submit() override;
-        virtual void SignalAll() override {}
+        virtual void SignalAll() override;
         virtual void ResetState() override;
 
         virtual void BeginEvent(Char const* event_name) override;
@@ -103,6 +103,11 @@ namespace adria
         id<MTLRenderCommandEncoder> GetRenderEncoder() const { return render_encoder; }
 
     private:
+        void BeginBlitEncoder();
+        void EndBlitEncoder();
+        void BeginComputeEncoder();
+        void EndComputeEncoder();
+
         MetalDevice* metal_device;
         GfxCommandListType type;
         id<MTLCommandBuffer> command_buffer;
@@ -113,5 +118,6 @@ namespace adria
         GfxPipelineState const* current_pipeline_state;
         GfxIndexBufferView* current_index_buffer_view;
         std::unique_ptr<GfxRayTracingShaderBindings> current_rt_bindings;
+        std::vector<std::pair<GfxFence&, Uint64>> pending_signals;
     };
 }

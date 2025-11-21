@@ -84,23 +84,19 @@ namespace adria
 		GfxShader const* rt_shader = &SM_GetGfxShader(LIB_Shadows);
 
 		GfxRayTracingPipelineDesc rt_pipeline_desc{};
-		rt_pipeline_desc.max_payload_size = sizeof(Bool32); 
+		rt_pipeline_desc.max_payload_size = sizeof(Bool32);
 		rt_pipeline_desc.max_attribute_size = 8;
 		rt_pipeline_desc.max_recursion_depth = 1;
 		rt_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-		GfxRayTracingShaderLibrary library(rt_shader);
-		rt_pipeline_desc.libraries.push_back(library);
-
-		/*
 		GfxRayTracingShaderLibrary library(rt_shader,
 		{
-			"RTS_RayGen",    // Changed from "RTS_RayGen_Hard"
+			"RTS_RayGen",
 			"RTS_Miss",
-			"RTS_AnyHit"     // Changed from "ShadowAnyHit"
+			"RTS_AnyHit"
 		});
 		rt_pipeline_desc.libraries.push_back(library);
-		*/
+
 		GfxRayTracingHitGroup shadow_hit_group = GfxRayTracingHitGroup::Triangle(
 			"ShadowAnyHitGroup",
 			"",

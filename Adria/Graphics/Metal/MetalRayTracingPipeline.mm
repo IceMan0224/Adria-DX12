@@ -16,12 +16,51 @@ namespace adria
 
         MetalDevice* metal_gfx = static_cast<MetalDevice*>(gfx);
         id<MTLDevice> device = metal_gfx->GetMTLDevice();
-        id<MTLLibrary> library = metal_gfx->GetMTLLibrary();
 
+        id<MTLLibrary> library = nil;
+        NSError* error = nil;
+
+        for (auto const& lib : desc.libraries)
+        {
+            if (lib.shader == nullptr) 
+            {
+                continue;
+            }
+
+            void* shader_data = lib.shader->GetData();
+            Usize shader_size = lib.shader->GetSize();
+            if (shader_data && shader_size > 0)
+            {
+                dispatch_data_t data = dispatch_data_create(shader_data, shader_size, NULL, DISPATCH_DATA_DESTRUCTOR_DEFAULT);
+                library = [device newLibraryWithData:data error:&error];
+
+                if (error || !library)
+                {
+                    if (error)
+                    {
+                        ADRIA_LOG(ERROR, "Failed to create Metal library from raytracing shader: %s",
+                                 [[error localizedDescription] UTF8String]);
+                    }
+                    continue;
+                }
+                break;
+            }
+        }
+
+        if (!library)
+        {
+            ADRIA_LOG(ERROR, "Failed to create any Metal library from raytracing shaders");
+            return;
+        }
+
+        NSArray<NSString*>* functionNames = [library functionNames];
         id<MTLFunction> raygenFunction = nil;
         for (auto const& lib : desc.libraries)
         {
-            if (lib.shader == nullptr) continue;
+            if (lib.shader == nullptr) 
+            {
+                continue;
+            }
 
             for (auto const& export_name : lib.exports)
             {
@@ -44,8 +83,6 @@ namespace adria
             return;
         }
 
-        NSError* error = nil;
-
         MTLLinkedFunctions* linkedFunctions = nil;
 
         if (!desc.hit_groups.empty() || desc.libraries.size() > 1)
@@ -53,7 +90,6 @@ namespace adria
             linkedFunctions = [[MTLLinkedFunctions alloc] init];
             NSMutableArray<id<MTLFunction>>* functions = [NSMutableArray array];
 
-            // Add all hit group shaders
             for (auto const& hit_group : desc.hit_groups)
             {
                 if (!hit_group.closest_hit_shader.empty())
@@ -96,9 +132,10 @@ namespace adria
             {
                 for (auto const& export_name : lib.exports)
                 {
-                    // Skip if already added
                     if (shader_names.find(export_name) != shader_names.end())
+                    {
                         continue;
+                    }
 
                     NSString* functionName = [NSString stringWithUTF8String:export_name.c_str()];
                     id<MTLFunction> func = [library newFunctionWithName:functionName];
@@ -109,7 +146,6 @@ namespace adria
                     }
                 }
             }
-
             linkedFunctions.functions = functions;
         }
 
@@ -119,8 +155,9 @@ namespace adria
         pipelineDescriptor.maxCallStackDepth = desc.max_recursion_depth;
         pipelineDescriptor.threadGroupSizeIsMultipleOfThreadExecutionWidth = YES;
 
+        error = nil;
         raygen_pipeline = [device newComputePipelineStateWithDescriptor:pipelineDescriptor
-                                                                 options:MTLPipelineOptionNone
+                                                                 options:MTLPipelineOptionArgumentInfo | MTLPipelineOptionBufferTypeInfo
                                                               reflection:nil
                                                                    error:&error];
 

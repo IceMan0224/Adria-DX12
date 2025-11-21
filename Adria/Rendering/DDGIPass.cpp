@@ -467,7 +467,12 @@ namespace adria
 		ddgi_pipeline_desc.max_recursion_depth = 1;
 		ddgi_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-		GfxRayTracingShaderLibrary ddgi_library(&ddgi_shader);
+		GfxRayTracingShaderLibrary ddgi_library(&ddgi_shader,
+		{
+			"DDGI_RayGen",
+			"DDGI_Miss",
+			"DDGI_ClosestHit"
+		});
 		ddgi_pipeline_desc.libraries.push_back(ddgi_library);
 
 		GfxRayTracingHitGroup ddgi_hit_group = GfxRayTracingHitGroup::Triangle(

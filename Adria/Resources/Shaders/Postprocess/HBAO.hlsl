@@ -60,7 +60,7 @@ float ComputeCoarseAO(Texture2D<float> depthTexture, float2 UV, float radiusInPi
         for (float stepIndex = 0; stepIndex < HBAO_NUM_STEPS; ++stepIndex)
         {
             float2 SnappedUV = round(rayT * direction) / FrameCB.renderResolution + UV;
-            float depth = depthTexture.Sample(LinearBorderSampler, SnappedUV);
+            float depth = depthTexture.SampleLevel(LinearBorderSampler, SnappedUV, 0);
             float3 S = GetViewPosition(SnappedUV, depth);
             rayT += stepSizeInPixels;
             AO += ComputeAO(viewPosition, viewNormal, S);
@@ -77,15 +77,15 @@ void HBAO_CS(CSInput input)
     Texture2D<float> depthTexture = ResourceDescriptorHeap[HBAOPassCB.depthIdx];
     Texture2D noiseTexture = ResourceDescriptorHeap[HBAOPassCB.noiseIdx];
     RWTexture2D<float> outputTexture = ResourceDescriptorHeap[HBAOPassCB.outputIdx];
-    
+
     float2 uv = ((float2) input.DispatchThreadId.xy + 0.5f) * 1.0f / (FrameCB.renderResolution);
-    float depth = depthTexture.Sample(LinearBorderSampler, uv);
+    float depth = depthTexture.SampleLevel(LinearBorderSampler, uv, 0);
     float3 viewPosition = GetViewPosition(uv, depth);
 
-    float3 viewNormal = DecodeNormalOctahedron(normalRT.Sample(LinearBorderSampler, uv).xy * 2.0f - 1.0f);
+    float3 viewNormal = DecodeNormalOctahedron(normalRT.SampleLevel(LinearBorderSampler, uv, 0).xy * 2.0f - 1.0f);
     viewNormal = normalize(viewNormal);
     float radiusInPixels = HBAOPassCB.radiusToScreen / viewPosition.z;
-    float3 rand = noiseTexture.Sample(PointWrapSampler, uv * HBAOPassCB.noiseScale).xyz;
+    float3 rand = noiseTexture.SampleLevel(PointWrapSampler, uv * HBAOPassCB.noiseScale, 0).xyz;
 
     float AO = ComputeCoarseAO(depthTexture, uv, radiusInPixels, rand, viewPosition, viewNormal);
     outputTexture[input.DispatchThreadId.xy] = pow(AO, HBAOPassCB.power);

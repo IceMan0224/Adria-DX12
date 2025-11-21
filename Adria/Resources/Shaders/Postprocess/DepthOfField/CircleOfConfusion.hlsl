@@ -29,8 +29,8 @@ void ComputeCircleOfConfusionCS(CSInput input)
     Texture2D<float>   depthTexture = ResourceDescriptorHeap[ComputeCoCPassCB.depthIdx];
 	RWTexture2D<float> outputTexture = ResourceDescriptorHeap[ComputeCoCPassCB.outputIdx];
 	float2 uv = ((float2)input.DispatchThreadId.xy + 0.5f) * 1.0f / (FrameCB.renderResolution);
-	
-    float depth = depthTexture.Sample(LinearBorderSampler, uv);
+
+    float depth = depthTexture.SampleLevel(LinearBorderSampler, uv, 0);
 	float linearDepth = LinearizeDepth(depth);
 	
     const float f = ComputeCoCPassCB.cameraFocalLength / 1000.0f;

@@ -28,12 +28,12 @@ void MotionBlurCS(CSInput input)
 
 	float2 uv = ((float2) input.DispatchThreadId.xy + 0.5f) * 1.0f / (FrameCB.displayResolution);
 
-	float2 velocity = velocityTexture.Sample(LinearWrapSampler, uv) / SAMPLE_COUNT;
-	float4 color = sceneTexture.Sample(LinearWrapSampler, uv);
+	float2 velocity = velocityTexture.SampleLevel(LinearWrapSampler, uv, 0) / SAMPLE_COUNT;
+	float4 color = sceneTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	uv += velocity;
 	for (int i = 1; i < SAMPLE_COUNT; ++i, uv += velocity)
 	{
-		float4 currentColor = sceneTexture.Sample(LinearClampSampler, uv);
+		float4 currentColor = sceneTexture.SampleLevel(LinearClampSampler, uv, 0);
 		color += currentColor;
 	}
 	float4 finalColor = color / SAMPLE_COUNT;

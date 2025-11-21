@@ -5,6 +5,7 @@
 #include "Platform/Input.h"
 #include "Platform/Window.h"
 #include "Logging/FileSink.h"
+#include "Logging/ConsoleSink.h"
 #include "Editor/Editor.h"
 #include "Utilities/CLIParser.h"
 
@@ -22,7 +23,8 @@ int main(int argc, char* argv[])
         std::string log_file = CommandLineOptions::GetLogFile();
         LogLevel log_level = static_cast<LogLevel>(CommandLineOptions::GetLogLevel());
         ADRIA_SINK(FileSink, log_file.c_str(), log_level);
-
+        ADRIA_SINK(ConsoleSink, false, log_level); 
+        
         WindowCreationParams window_params{};
         window_params.width = CommandLineOptions::GetWindowWidth();
         window_params.height = CommandLineOptions::GetWindowHeight();

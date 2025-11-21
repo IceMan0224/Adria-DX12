@@ -81,13 +81,13 @@ void ExponentialHeightFogCS(CSInput input)
     RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[ExponentialHeightFogPassCB.outputIdx];
     
     float2 uv = ((float2) input.DispatchThreadId.xy + 0.5f) * 1.0f / (FrameCB.renderResolution);
-    
-    float depth = depthTexture.Sample(LinearWrapSampler, uv);
+
+    float depth = depthTexture.SampleLevel(LinearWrapSampler, uv, 0);
     float3 viewPosition = GetViewPosition(uv, depth);
 
     float4 fog = CalculateExponentialHeightFog(float4(viewPosition, 1.0f));
 
-	float4 mainColor = sceneTexture.Sample(LinearWrapSampler, uv);
+	float4 mainColor = sceneTexture.SampleLevel(LinearWrapSampler, uv, 0);
     float4 result = mainColor;
     result.rgb += fog.a * fog.rgb;
     outputTexture[input.DispatchThreadId.xy] = result;
