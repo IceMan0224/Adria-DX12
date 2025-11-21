@@ -4,6 +4,7 @@
 
 namespace adria
 {
+	class GfxDevice;
 	struct GfxInputLayout;
 
 	struct GfxShaderCompileOutput
@@ -16,7 +17,7 @@ namespace adria
 
 	namespace GfxShaderCompiler
 	{
-		void Initialize();
+		void Initialize(GfxDevice* gfx);
 		void Destroy();
 		Bool CompileShader(GfxShaderCompileInput const& input, GfxShaderCompileOutput& output);
 		void ReadBlobFromFile(std::string const& filename, GfxShaderBlob& blob);

@@ -3,6 +3,7 @@
 #include "metal_irconverter/metal_irconverter.h"
 #endif
 #include "GfxShaderCompiler.h"
+#include "GfxDevice.h"
 #include "GfxDefines.h"
 #include "Core/Paths.h"
 #include "Core/FatalAssert.h"
@@ -29,6 +30,7 @@ namespace adria
 		Ref<IDxcUtils> utils = nullptr;
 		Ref<IDxcIncludeHandler> include_handler = nullptr;
 		DynamicLibrary dxcompiler;
+		GfxBackend current_backend = GfxBackend::Unknown;
 
 #if defined(ADRIA_PLATFORM_MACOS)
 		IRCompiler* metal_ir_compiler = nullptr;
@@ -262,8 +264,11 @@ namespace adria
 			return true;
 		}
 
-		void Initialize()
+		void Initialize(GfxDevice* gfx)
 		{
+			ADRIA_ASSERT(gfx != nullptr);
+			current_backend = gfx->GetBackend();
+
 #if defined(ADRIA_PLATFORM_WINDOWS)
 			std::string dxcompiler_path = paths::MainDir + "dxcompiler.dll";
 #elif defined(ADRIA_PLATFORM_MACOS)
@@ -579,7 +584,27 @@ namespace adria
 			compile_args.push_back(path.c_str());
 
 			std::vector<std::wstring> defines;
-			defines.reserve(input.defines.size());
+			defines.reserve(input.defines.size() + 1);
+
+			// Add backend-specific define
+			if (current_backend == GfxBackend::Metal)
+			{
+				compile_args.push_back(L"-D");
+				defines.push_back(L"GFX_METAL=1");
+				compile_args.push_back(defines.back().c_str());
+			}
+			else if (current_backend == GfxBackend::D3D12)
+			{
+				compile_args.push_back(L"-D");
+				defines.push_back(L"GFX_D3D12=1");
+				compile_args.push_back(defines.back().c_str());
+			}
+			else if (current_backend == GfxBackend::Vulkan)
+			{
+				compile_args.push_back(L"-D");
+				defines.push_back(L"GFX_VULKAN=1");
+				compile_args.push_back(defines.back().c_str());
+			}
 			for (GfxShaderDefine const& define : input.defines)
 			{
 				std::wstring define_name = ToWideString(define.name);
