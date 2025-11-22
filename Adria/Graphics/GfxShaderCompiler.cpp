@@ -229,6 +229,12 @@ namespace adria
 			Uint64 binary_size = 0;
 			metadata_archive(binary_size);
 
+#if defined(ADRIA_PLATFORM_MACOS)
+			// Load reflection data size
+			Uint64 reflection_size = 0;
+			metadata_archive(reflection_size);
+#endif
+
 			//check if the one of the includes was modified after the cache binary was generated
 			for (std::string const& include : output.includes)
 			{
@@ -246,6 +252,16 @@ namespace adria
 			output.shader.SetShaderData(binary_data.get(), binary_size);
 			output.shader.SetDesc(input);
 
+#if defined(ADRIA_PLATFORM_MACOS)
+			// Load reflection data
+			if (reflection_size > 0)
+			{
+				std::unique_ptr<Char[]> reflection_data(new Char[reflection_size]);
+				binary_archive.loadBinary(reflection_data.get(), reflection_size);
+				output.shader.SetReflectionData(reflection_data.get(), reflection_size);
+			}
+#endif
+
 			return true;
 		}
 		static Bool SaveToCache(Char const* cache_path, GfxShaderCompileOutput const& output)
@@ -257,10 +273,24 @@ namespace adria
 			metadata_archive(output.includes);
 			metadata_archive(output.shader.GetSize());
 
+#if defined(ADRIA_PLATFORM_MACOS)
+			// Save reflection data size
+			Uint64 reflection_size = output.shader.GetReflectionSize();
+			metadata_archive(reflection_size);
+#endif
+
 			std::string cache_binary(cache_path); cache_binary += ".bin";
 			std::ofstream os2(cache_binary, std::ios::binary);
 			cereal::BinaryOutputArchive binary_archive(os2);
 			binary_archive.saveBinary(output.shader.GetData(), output.shader.GetSize());
+
+#if defined(ADRIA_PLATFORM_MACOS)
+			// Save reflection data
+			if (reflection_size > 0)
+			{
+				binary_archive.saveBinary(output.shader.GetReflectionData(), reflection_size);
+			}
+#endif
 
 			return true;
 		}

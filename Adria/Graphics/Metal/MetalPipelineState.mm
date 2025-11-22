@@ -380,7 +380,12 @@ namespace adria
                 }
                 return;
             }
-            depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
+
+            // Only create depth stencil state if we have a depth attachment
+            if (desc.dsv_format != GfxFormat::UNKNOWN)
+            {
+                depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
+            }
         }
     }
 
@@ -491,7 +496,12 @@ namespace adria
             }
             return;
         }
-            depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
+
+            // Only create depth stencil state if we have a depth attachment
+            if (desc.dsv_format != GfxFormat::UNKNOWN)
+            {
+                depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
+            }
         }
     }
 

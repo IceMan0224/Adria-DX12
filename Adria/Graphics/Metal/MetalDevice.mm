@@ -771,6 +771,28 @@ namespace adria
         compute_cmd_list_pool[backbuffer_index]->EndCmdLists();
         copy_cmd_list_pool[backbuffer_index]->EndCmdLists();
 
+        // Submit all command lists from the pools (matching D3D12's ExecuteCommandListPool behavior)
+        for (auto& cmd_list : *graphics_cmd_list_pool[backbuffer_index])
+        {
+            cmd_list->End();
+            cmd_list->Submit();
+            cmd_list->Begin();
+        }
+
+        for (auto& cmd_list : *compute_cmd_list_pool[backbuffer_index])
+        {
+            cmd_list->End();
+            cmd_list->Submit();
+            cmd_list->Begin();
+        }
+
+        for (auto& cmd_list : *copy_cmd_list_pool[backbuffer_index])
+        {
+            cmd_list->End();
+            cmd_list->Submit();
+            cmd_list->Begin();
+        }
+
         // Create a dedicated command buffer for presentation
         id<CAMetalDrawable> drawable = GetCurrentDrawable();
         if (drawable)

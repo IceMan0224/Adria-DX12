@@ -99,6 +99,7 @@ namespace adria
     {
         id<MTLCommandQueue> queue = metal_device->GetMTLCommandQueue();
         command_buffer = [queue commandBuffer];
+        ADRIA_LOG(INFO, "MetalCommandList::Begin() - command_buffer=%p", command_buffer);
     }
 
     void MetalCommandList::End()
@@ -110,10 +111,16 @@ namespace adria
 
     void MetalCommandList::Submit()
     {
+        ADRIA_LOG(INFO, "MetalCommandList::Submit() - command_buffer=%p", command_buffer);
         if (command_buffer)
         {
             SignalAll();
             [command_buffer commit];
+            ADRIA_LOG(INFO, "MetalCommandList::Submit() - command buffer committed");
+        }
+        else
+        {
+            ADRIA_LOG(ERROR, "MetalCommandList::Submit() - command_buffer is nil!");
         }
     }
 
@@ -343,6 +350,7 @@ namespace adria
         }
 
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:pass_desc];
+        ADRIA_LOG(INFO, "MetalCommandList::BeginRenderPass() - render_encoder=%p, command_buffer=%p", render_encoder, command_buffer);
 
         MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
         if (arg_buffer && render_encoder)
@@ -700,6 +708,7 @@ namespace adria
         if (!compute_encoder)
         {
             compute_encoder = [command_buffer computeCommandEncoder];
+            ADRIA_LOG(INFO, "MetalCommandList::BeginComputeEncoder() - compute_encoder=%p, command_buffer=%p", compute_encoder, command_buffer);
 
             MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
             if (arg_buffer && compute_encoder)
