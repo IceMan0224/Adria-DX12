@@ -27,11 +27,9 @@ namespace adria
 	LensFlarePass::LensFlarePass(GfxDevice* gfx, Uint32 w, Uint32 h)
 		: gfx(gfx), width(w), height(h)
 	{
-		CreatePSOs();
 		is_procedural_supported = gfx->GetCapabilities().SupportsTypedUAVLoadAdditionalFormats();
-
-		// Texture-based lens flare uses geometry shaders which are only supported on D3D12
 		is_texture_based_supported = gfx->GetBackend() == GfxBackend::D3D12;
+		CreatePSOs();
 	}
 
 	Bool LensFlarePass::IsEnabled(PostProcessor const* postprocessor) const
@@ -134,23 +132,29 @@ namespace adria
 
 	void LensFlarePass::CreatePSOs()
 	{
-		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
-		gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
-		gfx_pso_desc.VS = VS_LensFlare;
-		gfx_pso_desc.GS = GS_LensFlare;
-		gfx_pso_desc.PS = PS_LensFlare;
-		gfx_pso_desc.blend_state.render_target[0].blend_enable = true;
-		gfx_pso_desc.blend_state.render_target[0].src_blend = GfxBlend::One;
-		gfx_pso_desc.blend_state.render_target[0].dest_blend = GfxBlend::One;
-		gfx_pso_desc.blend_state.render_target[0].blend_op = GfxBlendOp::Add;
-		gfx_pso_desc.topology_type = GfxPrimitiveTopologyType::Point;
-		gfx_pso_desc.num_render_targets = 1;
-		gfx_pso_desc.rtv_formats[0] = GfxFormat::R16G16B16A16_FLOAT;
-		lens_flare_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
+		if (is_texture_based_supported)
+		{
+			GfxGraphicsPipelineStateDesc gfx_pso_desc{};
+			gfx_pso_desc.root_signature = GfxRootSignatureID::Common;
+			gfx_pso_desc.VS = VS_LensFlare;
+			gfx_pso_desc.GS = GS_LensFlare;
+			gfx_pso_desc.PS = PS_LensFlare;
+			gfx_pso_desc.blend_state.render_target[0].blend_enable = true;
+			gfx_pso_desc.blend_state.render_target[0].src_blend = GfxBlend::One;
+			gfx_pso_desc.blend_state.render_target[0].dest_blend = GfxBlend::One;
+			gfx_pso_desc.blend_state.render_target[0].blend_op = GfxBlendOp::Add;
+			gfx_pso_desc.topology_type = GfxPrimitiveTopologyType::Point;
+			gfx_pso_desc.num_render_targets = 1;
+			gfx_pso_desc.rtv_formats[0] = GfxFormat::R16G16B16A16_FLOAT;
+			lens_flare_pso = gfx->CreateManagedGraphicsPipelineState(gfx_pso_desc);
+		}
 
-		GfxComputePipelineStateDesc compute_pso_desc{};
-		compute_pso_desc.CS = CS_LensFlare2;
-		procedural_lens_flare_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
+		if (is_procedural_supported)
+		{
+			GfxComputePipelineStateDesc compute_pso_desc{};
+			compute_pso_desc.CS = CS_LensFlare2;
+			procedural_lens_flare_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
+		}
 	}
 
 	void LensFlarePass::AddTextureBasedLensFlare(RenderGraph& rg, PostProcessor* postprocessor, Light const& light)
