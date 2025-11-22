@@ -219,6 +219,14 @@ namespace adria
         MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
         id<MTLDevice> device = metal_device->GetMTLDevice();
 
+        // Geometry shaders are not supported on Metal
+        // (Emulation via Metal Shader Converter requires complex runtime linking)
+        if (desc.GS.IsValid())
+        {
+            ADRIA_LOG(ERROR, "Geometry shaders are not supported on Metal backend");
+            return;
+        }
+
         MTLRenderPipelineDescriptor* pso_desc = [MTLRenderPipelineDescriptor new];
 
         id<MTLFunction> vertex_func = GetMetalFunction(gfx, desc.VS);

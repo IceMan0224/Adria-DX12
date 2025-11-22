@@ -29,6 +29,9 @@ namespace adria
 	{
 		CreatePSOs();
 		is_procedural_supported = gfx->GetCapabilities().SupportsTypedUAVLoadAdditionalFormats();
+
+		// Texture-based lens flare uses geometry shaders which are only supported on D3D12
+		is_texture_based_supported = gfx->GetBackend() == GfxBackend::D3D12;
 	}
 
 	Bool LensFlarePass::IsEnabled(PostProcessor const* postprocessor) const
@@ -45,6 +48,12 @@ namespace adria
 		return false;
 	}
 
+	Bool LensFlarePass::IsSupported() const
+	{
+		// At least one lens flare implementation must be supported
+		return is_procedural_supported || is_texture_based_supported;
+	}
+
 	void LensFlarePass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		auto lights = postprocessor->GetRegistry().view<Light>();
@@ -55,6 +64,9 @@ namespace adria
 			{
 				continue;
 			}
+
+			// Assert that at least one implementation is supported
+			ADRIA_ASSERT(is_procedural_supported || is_texture_based_supported);
 
 			switch (LensFlare.Get())
 			{
@@ -94,7 +106,21 @@ namespace adria
 			{
 				if (ImGui::TreeNodeEx("Lens Flare", ImGuiTreeNodeFlags_None))
 				{
-					ImGui::Combo("Lens Flare Type", LensFlare.GetPtr(), "Procedural\0Texture-based\0", 2);
+					std::string combo_items;
+					if (is_procedural_supported)
+					{
+						combo_items += "Procedural\0";
+					}
+					if (is_texture_based_supported)
+					{
+						combo_items += "Texture-based\0";
+					}
+					combo_items += '\0';
+
+					if (!combo_items.empty())
+					{
+						ImGui::Combo("Lens Flare Type", LensFlare.GetPtr(), combo_items.c_str());
+					}
 					ImGui::TreePop();
 				}
 			}, GUICommandGroup_PostProcessing

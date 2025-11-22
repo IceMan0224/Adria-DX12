@@ -14,6 +14,7 @@ namespace adria
 	public:
 		LensFlarePass(GfxDevice* gfx, Uint32 w, Uint32 h);
 		virtual Bool IsEnabled(PostProcessor const*) const override;
+		virtual Bool IsSupported() const override;
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual void OnResize(Uint32 w, Uint32 h) override;
 		virtual void OnSceneInitialized() override;
@@ -24,6 +25,7 @@ namespace adria
 		GfxDevice* gfx;
 		Uint32 width, height;
 		Bool is_procedural_supported = false;
+		Bool is_texture_based_supported = false;
 		std::vector<TextureHandle> lens_flare_textures;
 		std::unique_ptr<GfxGraphicsPipelineState> lens_flare_pso;
 		std::unique_ptr<GfxComputePipelineState> procedural_lens_flare_pso;
