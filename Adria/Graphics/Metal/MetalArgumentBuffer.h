@@ -5,7 +5,8 @@
 @protocol MTLBuffer;
 @protocol MTLTexture;
 @protocol MTLSamplerState;
-@protocol MTLArgumentEncoder;
+
+struct IRDescriptorTableEntry;
 
 namespace adria
 {
@@ -39,8 +40,7 @@ namespace adria
         ADRIA_FORCEINLINE Uint32 GetCapacity() const { return capacity; }
         ADRIA_FORCEINLINE Uint32 GetNextFreeIndex() const { return next_free_index; }
 
-        id<MTLBuffer> GetBuffer() const { return argument_buffer; }
-        id<MTLArgumentEncoder> GetEncoder() const { return argument_encoder; }
+        id<MTLBuffer> GetBuffer() const { return descriptor_table_buffer; }
 
         Uint32 AllocateRange(Uint32 count);
 
@@ -58,8 +58,8 @@ namespace adria
 
     private:
         MetalDevice* metal_gfx;
-        id<MTLBuffer> argument_buffer;
-        id<MTLArgumentEncoder> argument_encoder;
+        id<MTLBuffer> descriptor_table_buffer;
+        IRDescriptorTableEntry* descriptor_table_cpu_address;
         Uint32 capacity;
         Uint32 next_free_index;
         std::vector<MetalResourceEntry> resource_entries; 

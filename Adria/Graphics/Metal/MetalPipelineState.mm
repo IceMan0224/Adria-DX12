@@ -2,6 +2,7 @@
 #include "MetalPipelineState.h"
 #include "MetalDevice.h"
 #include "MetalConversions.h"
+#include "MetalShaderReflection.h"
 #include "Graphics/GfxShader.h"
 #include "Rendering/ShaderManager.h"
 
@@ -145,7 +146,11 @@ namespace adria
         MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
         id<MTLDevice> device = metal_device->GetMTLDevice();
 
-        dispatch_data_t data = dispatch_data_create(shader_data, shader_size, NULL, DISPATCH_DATA_DESTRUCTOR_DEFAULT);
+        // Shader data is pure metallib (no header to skip)
+        Uint8 const* metallib_data = (Uint8 const*)shader_data;
+        Uint64 metallib_size = shader_size;
+
+        dispatch_data_t data = dispatch_data_create(metallib_data, metallib_size, NULL, DISPATCH_DATA_DESTRUCTOR_DEFAULT);
         NSError* error = nil;
         id<MTLLibrary> library = [device newLibraryWithData:data error:&error];
 
@@ -216,18 +221,20 @@ namespace adria
         , slope_scaled_depth_bias(desc.rasterizer_state.slope_scaled_depth_bias)
         , depth_bias_clamp(desc.rasterizer_state.depth_bias_clamp)
     {
-        MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
-        id<MTLDevice> device = metal_device->GetMTLDevice();
-
-        // Geometry shaders are not supported on Metal
-        // (Emulation via Metal Shader Converter requires complex runtime linking)
-        if (desc.GS.IsValid())
+        @autoreleasepool
         {
-            ADRIA_LOG(ERROR, "Geometry shaders are not supported on Metal backend");
-            return;
-        }
+            MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
+            id<MTLDevice> device = metal_device->GetMTLDevice();
 
-        MTLRenderPipelineDescriptor* pso_desc = [MTLRenderPipelineDescriptor new];
+            // Geometry shaders are not supported on Metal
+            // (Emulation via Metal Shader Converter requires complex runtime linking)
+            if (desc.GS.IsValid())
+            {
+                ADRIA_LOG(ERROR, "Geometry shaders are not supported on Metal backend");
+                return;
+            }
+
+            MTLRenderPipelineDescriptor* pso_desc = [MTLRenderPipelineDescriptor new];
 
         id<MTLFunction> vertex_func = GetMetalFunction(gfx, desc.VS);
         id<MTLFunction> fragment_func = GetMetalFunction(gfx, desc.PS);
@@ -365,15 +372,16 @@ namespace adria
 
         NSError* error = nil;
         pipeline_state = [device newRenderPipelineStateWithDescriptor:pso_desc error:&error];
-        if (error || !pipeline_state)
-        {
-            if (error)
+            if (error || !pipeline_state)
             {
-                ADRIA_LOG(ERROR, "Failed to create graphics pipeline state: %s", [[error localizedDescription] UTF8String]);
+                if (error)
+                {
+                    ADRIA_LOG(ERROR, "Failed to create graphics pipeline state: %s", [[error localizedDescription] UTF8String]);
+                }
+                return;
             }
-            return;
+            depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
         }
-        depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
     }
 
 
@@ -398,8 +406,10 @@ namespace adria
         , slope_scaled_depth_bias(desc.rasterizer_state.slope_scaled_depth_bias)
         , depth_bias_clamp(desc.rasterizer_state.depth_bias_clamp)
     {
-        MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
-        id<MTLDevice> device = metal_device->GetMTLDevice();
+        @autoreleasepool
+        {
+            MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
+            id<MTLDevice> device = metal_device->GetMTLDevice();
 
         if (![device supportsFamily:MTLGPUFamilyApple7])
         {
@@ -481,7 +491,8 @@ namespace adria
             }
             return;
         }
-        depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
+            depth_stencil_state = CreateDepthStencilState(device, desc.depth_state);
+        }
     }
 
     MetalMeshShadingPipelineState::~MetalMeshShadingPipelineState()
@@ -500,29 +511,54 @@ namespace adria
 
     MetalComputePipelineState::MetalComputePipelineState(GfxDevice* gfx, GfxComputePipelineStateDesc const& desc)
     {
-        MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
-        id<MTLDevice> device = metal_device->GetMTLDevice();
-        id<MTLFunction> compute_func = GetMetalFunction(gfx, desc.CS);
-
-        if (!compute_func)
+        @autoreleasepool
         {
-            ADRIA_LOG(ERROR, "Failed to create compute function for compute pipeline");
-            return;
-        }
+            MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
+            id<MTLDevice> device = metal_device->GetMTLDevice();
+            id<MTLFunction> compute_func = GetMetalFunction(gfx, desc.CS);
 
-        NSError* error = nil;
-        pipeline_state = [device newComputePipelineStateWithFunction:compute_func error:&error];
-
-        if (error || !pipeline_state)
-        {
-            if (error)
+            if (!compute_func)
             {
-                ADRIA_LOG(ERROR, "Failed to create compute pipeline state: %s", [[error localizedDescription] UTF8String]);
+                ADRIA_LOG(ERROR, "Failed to create compute function for compute pipeline");
+                return;
             }
-            return;
-        }
 
-        threads_per_threadgroup = MTLSizeMake(16, 16, 1);
+            NSError* error = nil;
+            pipeline_state = [device newComputePipelineStateWithFunction:compute_func error:&error];
+
+            if (error || !pipeline_state)
+            {
+                if (error)
+                {
+                    ADRIA_LOG(ERROR, "Failed to create compute pipeline state: %s", [[error localizedDescription] UTF8String]);
+                }
+                return;
+            }
+
+            // Read threadgroup size from reflection data stored separately
+            GfxShader const& shader = SM_GetGfxShader(desc.CS);
+            void const* reflection_data = shader.GetReflectionData();
+
+            if (reflection_data && shader.GetReflectionSize() >= sizeof(MetalShaderReflection))
+            {
+                MetalShaderReflection const* reflection = (MetalShaderReflection const*)reflection_data;
+                threads_per_threadgroup = MTLSizeMake(
+                    reflection->threadsPerThreadgroup[0],
+                    reflection->threadsPerThreadgroup[1],
+                    reflection->threadsPerThreadgroup[2]
+                );
+
+                ADRIA_LOG(INFO, "Compute shader threadgroup: %lux%lux%lu",
+                          threads_per_threadgroup.width,
+                          threads_per_threadgroup.height,
+                          threads_per_threadgroup.depth);
+            }
+            else
+            {
+                ADRIA_LOG(WARNING, "Shader missing reflection data, using default threadgroup size");
+                threads_per_threadgroup = MTLSizeMake(8, 8, 1);
+            }
+        }
     }
 
     MetalComputePipelineState::~MetalComputePipelineState()

@@ -1,6 +1,7 @@
 #include "dxcapi.h"
 #if defined(ADRIA_PLATFORM_MACOS)
 #include "metal_irconverter/metal_irconverter.h"
+#include "Metal/MetalShaderReflection.h"
 #endif
 #include "GfxShaderCompiler.h"
 #include "GfxDevice.h"
@@ -747,12 +748,21 @@ namespace adria
 			}
 
 			IRMetalLibBinary* metallib = IRMetalLibBinaryCreate();
+
+			// Get the shader stage from the compiled object
 			IRShaderStage ir_stage = IRObjectGetMetalIRShaderStage(metal_ir_obj);
+
+			// Log the detected stage for debugging
+			if (input.stage == GfxShaderStage::LIB)
+			{
+				ADRIA_LOG_SYNC(INFO, "Ray tracing library shader detected as stage: %d", (int)ir_stage);
+			}
+
 			Bool extraction_success = IRObjectGetMetalLibBinary(metal_ir_obj, ir_stage, metallib);
 
 			if (!extraction_success)
 			{
-				ADRIA_LOG_SYNC(ERROR, "Failed to extract Metal library binary for shader stage %d", ir_stage);
+				ADRIA_LOG_SYNC(ERROR, "Failed to extract Metal library binary for shader");
 				IRMetalLibBinaryDestroy(metallib);
 				IRObjectDestroy(metal_ir_obj);
 				if (rt_config)
@@ -765,7 +775,7 @@ namespace adria
 			Usize metallib_size = IRMetalLibGetBytecodeSize(metallib);
 			if (metallib_size == 0)
 			{
-				ADRIA_LOG_SYNC(ERROR, "Metal library binary has zero size for shader stage %d", ir_stage);
+				ADRIA_LOG_SYNC(ERROR, "Metal library binary has zero size");
 				IRMetalLibBinaryDestroy(metallib);
 				IRObjectDestroy(metal_ir_obj);
 				if (rt_config)
@@ -775,8 +785,62 @@ namespace adria
 				return false;
 			}
 
-			std::vector<Uint8> metallib_data(metallib_size);
-			IRMetalLibGetBytecode(metallib, metallib_data.data());
+			// Extract shader reflection to get threadgroup size (only for compute/mesh/amplification shaders)
+			MetalShaderReflection reflection{};
+			Bool has_threadgroup_info = false;
+
+			// Get reflection info for compute, mesh, or amplification shaders
+			IRShaderReflection* ir_reflection = IRShaderReflectionCreate();
+			if (ir_reflection && IRObjectGetReflection(metal_ir_obj, ir_stage, ir_reflection))
+			{
+				if (ir_stage == IRShaderStageCompute)
+				{
+					IRVersionedCSInfo cs_info;
+					if (IRShaderReflectionCopyComputeInfo(ir_reflection, IRReflectionVersion_1_0, &cs_info))
+					{
+						reflection.threadsPerThreadgroup[0] = cs_info.info_1_0.tg_size[0];
+						reflection.threadsPerThreadgroup[1] = cs_info.info_1_0.tg_size[1];
+						reflection.threadsPerThreadgroup[2] = cs_info.info_1_0.tg_size[2];
+						IRShaderReflectionReleaseComputeInfo(&cs_info);
+						has_threadgroup_info = true;
+						ADRIA_LOG(INFO, "Compute shader threadgroup: [%u, %u, %u]",
+							reflection.threadsPerThreadgroup[0],
+							reflection.threadsPerThreadgroup[1],
+							reflection.threadsPerThreadgroup[2]);
+					}
+				}
+				else if (ir_stage == IRShaderStageMesh)
+				{
+					IRVersionedMSInfo ms_info;
+					if (IRShaderReflectionCopyMeshInfo(ir_reflection, IRReflectionVersion_1_0, &ms_info))
+					{
+						reflection.threadsPerThreadgroup[0] = ms_info.info_1_0.num_threads[0];
+						reflection.threadsPerThreadgroup[1] = ms_info.info_1_0.num_threads[1];
+						reflection.threadsPerThreadgroup[2] = ms_info.info_1_0.num_threads[2];
+						IRShaderReflectionReleaseMeshInfo(&ms_info);
+						has_threadgroup_info = true;
+					}
+				}
+				else if (ir_stage == IRShaderStageAmplification)
+				{
+					IRVersionedASInfo as_info;
+					if (IRShaderReflectionCopyAmplificationInfo(ir_reflection, IRReflectionVersion_1_0, &as_info))
+					{
+						reflection.threadsPerThreadgroup[0] = as_info.info_1_0.num_threads[0];
+						reflection.threadsPerThreadgroup[1] = as_info.info_1_0.num_threads[1];
+						reflection.threadsPerThreadgroup[2] = as_info.info_1_0.num_threads[2];
+						IRShaderReflectionReleaseAmplificationInfo(&as_info);
+						has_threadgroup_info = true;
+					}
+				}
+
+				IRShaderReflectionDestroy(ir_reflection);
+			}
+
+			// Prepare shader data: Store metallib and reflection separately
+			std::vector<Uint8> shader_data;
+			shader_data.resize(metallib_size);
+			IRMetalLibGetBytecode(metallib, shader_data.data());
 
 			IRMetalLibBinaryDestroy(metallib);
 			IRObjectDestroy(metal_ir_obj);
@@ -787,7 +851,8 @@ namespace adria
 			}
 
 			output.shader.SetDesc(input);
-			output.shader.SetShaderData(metallib_data.data(), metallib_data.size());
+			output.shader.SetShaderData(shader_data.data(), shader_data.size());
+			output.shader.SetReflectionData(&reflection, sizeof(MetalShaderReflection));  // Store reflection separately
 			ADRIA_LOG(INFO, "Successfully converted DXIL to Metal IR for shader: %s", input.file.c_str());
 #else
 			output.shader.SetDesc(input);

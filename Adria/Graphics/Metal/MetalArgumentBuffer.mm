@@ -4,8 +4,17 @@
 
 namespace adria
 {
+    // Simple descriptor structure for Objective-C + Metal Shader Converter
+    // The shader converter expects a buffer of GPU addresses for bindless access
+    struct SimpleDescriptorEntry
+    {
+        uint64_t gpuAddress;      // GPU address for buffers, or resource ID for textures
+        uint32_t metadata;         // Additional metadata if needed
+        uint32_t padding;          // Alignment
+    };
+
     MetalArgumentBuffer::MetalArgumentBuffer(MetalDevice* metal_gfx, Uint32 initial_capacity)
-        : metal_gfx(metal_gfx), capacity(initial_capacity), next_free_index(0)
+        : metal_gfx(metal_gfx), capacity(initial_capacity), next_free_index(0), descriptor_table_cpu_address(nullptr)
     {
         resource_entries.resize(capacity);
         CreateArgumentBuffer();
@@ -15,8 +24,8 @@ namespace adria
     {
         @autoreleasepool
         {
-            argument_buffer = nil;
-            argument_encoder = nil;
+            descriptor_table_buffer = nil;
+            descriptor_table_cpu_address = nullptr;
         }
     }
 
@@ -40,8 +49,17 @@ namespace adria
             return;
         }
 
-        [argument_encoder setArgumentBuffer:argument_buffer offset:0];
-        [argument_encoder setTexture:texture atIndex:index];
+        if (!descriptor_table_cpu_address)
+        {
+            ADRIA_ASSERT(false && "Descriptor table not initialized");
+            return;
+        }
+
+        // For textures with shader converter, we store the GPU resource ID
+        // Cast texture to void* to store in descriptor entry - Metal shader converter handles the rest
+        SimpleDescriptorEntry* entry = &((SimpleDescriptorEntry*)descriptor_table_cpu_address)[index];
+        entry->gpuAddress = (uint64_t)texture;  // Store texture handle
+        entry->metadata = 0;  // Texture type marker
 
         if (index < resource_entries.size())
         {
@@ -58,8 +76,16 @@ namespace adria
             return;
         }
 
-        [argument_encoder setArgumentBuffer:argument_buffer offset:0];
-        [argument_encoder setBuffer:buffer offset:offset atIndex:index];
+        if (!descriptor_table_cpu_address)
+        {
+            ADRIA_ASSERT(false && "Descriptor table not initialized");
+            return;
+        }
+
+        // For buffers, we store the GPU address (not gpuResourceID - that's only for acceleration structures)
+        SimpleDescriptorEntry* entry = &((SimpleDescriptorEntry*)descriptor_table_cpu_address)[index];
+        entry->gpuAddress = [buffer gpuAddress] + offset;
+        entry->metadata = 1;  // Buffer type marker
 
         if (index < resource_entries.size())
         {
@@ -77,8 +103,16 @@ namespace adria
             return;
         }
 
-        [argument_encoder setArgumentBuffer:argument_buffer offset:0];
-        [argument_encoder setSamplerState:sampler atIndex:index];
+        if (!descriptor_table_cpu_address)
+        {
+            ADRIA_ASSERT(false && "Descriptor table not initialized");
+            return;
+        }
+
+        // For samplers, store the handle
+        SimpleDescriptorEntry* entry = &((SimpleDescriptorEntry*)descriptor_table_cpu_address)[index];
+        entry->gpuAddress = (uint64_t)sampler;
+        entry->metadata = 2;  // Sampler type marker
 
         if (index < resource_entries.size())
         {
@@ -149,82 +183,78 @@ namespace adria
 
         id<MTLDevice> device = metal_gfx->GetMTLDevice();
 
-        NSMutableArray<MTLArgumentDescriptor*>* arguments = [NSMutableArray array];
-        for (Uint32 i = 0; i < new_capacity; ++i)
+        // Create new descriptor table buffer
+        size_t new_buffer_size = sizeof(SimpleDescriptorEntry) * new_capacity;
+        id<MTLBuffer> new_buffer = [device newBufferWithLength:new_buffer_size
+                                                        options:MTLResourceStorageModeShared |
+                                                                MTLResourceCPUCacheModeWriteCombined |
+                                                                MTLResourceHazardTrackingModeTracked];
+
+        SimpleDescriptorEntry* new_cpu_address = (SimpleDescriptorEntry*)[new_buffer contents];
+
+        // Copy existing descriptors to the new buffer
+        if (descriptor_table_cpu_address)
         {
-            MTLArgumentDescriptor* arg = [MTLArgumentDescriptor argumentDescriptor];
-            arg.index = i;
-            arg.dataType = MTLDataTypePointer;
-            arg.access = MTLArgumentAccessReadWrite;
-            [arguments addObject:arg];
-        }
-
-        // Create new encoder and buffer
-        id<MTLArgumentEncoder> new_encoder = [device newArgumentEncoderWithArguments:arguments];
-        NSUInteger encoded_length = new_encoder.encodedLength;
-        id<MTLBuffer> new_buffer = [device newBufferWithLength:encoded_length
-                                                        options:MTLResourceStorageModeShared];
-
-        // Set the new encoder to use the new buffer
-        [new_encoder setArgumentBuffer:new_buffer offset:0];
-
-        // Copy existing resources to the new buffer
-        for (Uint32 i = 0; i < old_capacity; ++i)
-        {
-            MetalResourceEntry const& entry = resource_entries[i];
-            switch (entry.type)
+            SimpleDescriptorEntry* old_entries = (SimpleDescriptorEntry*)descriptor_table_cpu_address;
+            for (Uint32 i = 0; i < old_capacity; ++i)
             {
-                case MetalResourceType::Texture:
-                    if (entry.texture != nil)
-                    {
-                        [new_encoder setTexture:entry.texture atIndex:i];
-                    }
-                    break;
-                case MetalResourceType::Buffer:
-                    if (entry.buffer != nil)
-                    {
-                        [new_encoder setBuffer:entry.buffer offset:entry.buffer_offset atIndex:i];
-                    }
-                    break;
-                case MetalResourceType::Sampler:
-                    if (entry.sampler != nil)
-                    {
-                        [new_encoder setSamplerState:entry.sampler atIndex:i];
-                    }
-                    break;
-                case MetalResourceType::Unknown:
-                default:
-                    break;
+                MetalResourceEntry const& entry = resource_entries[i];
+                switch (entry.type)
+                {
+                    case MetalResourceType::Texture:
+                        if (entry.texture != nil)
+                        {
+                            new_cpu_address[i].gpuAddress = (uint64_t)entry.texture;
+                            new_cpu_address[i].metadata = 0;
+                        }
+                        break;
+                    case MetalResourceType::Buffer:
+                        if (entry.buffer != nil)
+                        {
+                            new_cpu_address[i].gpuAddress = [entry.buffer gpuAddress] + entry.buffer_offset;
+                            new_cpu_address[i].metadata = 1;
+                        }
+                        break;
+                    case MetalResourceType::Sampler:
+                        if (entry.sampler != nil)
+                        {
+                            new_cpu_address[i].gpuAddress = (uint64_t)entry.sampler;
+                            new_cpu_address[i].metadata = 2;
+                        }
+                        break;
+                    case MetalResourceType::Unknown:
+                    default:
+                        break;
+                }
             }
         }
 
-        // Update to use the new buffer and encoder
-        argument_buffer = new_buffer;
-        argument_encoder = new_encoder;
+        // Update to use the new buffer
+        descriptor_table_buffer = new_buffer;
+        descriptor_table_cpu_address = (IRDescriptorTableEntry*)new_cpu_address;
         capacity = new_capacity;
         resource_entries.resize(new_capacity);
 
-        [new_buffer setLabel:@"BindlessArgumentBuffer"];
+        [new_buffer setLabel:@"BindlessDescriptorTable"];
     }
 
     void MetalArgumentBuffer::CreateArgumentBuffer()
     {
         id<MTLDevice> device = (id<MTLDevice>)metal_gfx->GetNative();
 
-        NSMutableArray<MTLArgumentDescriptor*>* arguments = [NSMutableArray array];
-        for (Uint32 i = 0; i < capacity; ++i)
-        {
-            MTLArgumentDescriptor* arg = [MTLArgumentDescriptor argumentDescriptor];
-            arg.index = i;
-            arg.dataType = MTLDataTypePointer; 
-            arg.access = MTLArgumentAccessReadWrite; 
-            [arguments addObject:arg];
-        }
-        argument_encoder = [device newArgumentEncoderWithArguments:arguments];
-        NSUInteger encoded_length = argument_encoder.encodedLength;
-        argument_buffer = [device newBufferWithLength:encoded_length
-                                              options:MTLResourceStorageModeShared];
+        // Allocate buffer of simple descriptor entries for Metal Shader Converter
+        // This works with Objective-C without needing the Metal-C++ runtime
+        size_t buffer_size = sizeof(SimpleDescriptorEntry) * capacity;
+        descriptor_table_buffer = [device newBufferWithLength:buffer_size
+                                                       options:MTLResourceStorageModeShared |
+                                                               MTLResourceCPUCacheModeWriteCombined |
+                                                               MTLResourceHazardTrackingModeTracked];
 
-        [argument_buffer setLabel:@"BindlessArgumentBuffer"];
+        descriptor_table_cpu_address = (IRDescriptorTableEntry*)[descriptor_table_buffer contents];
+
+        // Initialize all entries to zero
+        memset(descriptor_table_cpu_address, 0, buffer_size);
+
+        [descriptor_table_buffer setLabel:@"BindlessDescriptorTable"];
     }
 }

@@ -173,6 +173,7 @@ namespace adria
     {
         if (render_encoder)
         {
+            UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before drawing
             [render_encoder drawPrimitives:ConvertTopology(current_topology)
                                 vertexStart:start_vertex_location
                                 vertexCount:vertex_count
@@ -185,6 +186,7 @@ namespace adria
     {
         if (render_encoder && current_index_buffer_view)
         {
+            UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before drawing
             MetalDevice::BufferLookupResult lookup = metal_device->LookupBuffer(current_index_buffer_view->buffer_location);
             if (lookup.buffer != nil)
             {
@@ -207,6 +209,7 @@ namespace adria
     {
         if (compute_encoder && current_pipeline_state && current_pipeline_state->GetType() == GfxPipelineStateType::Compute)
         {
+            UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before dispatch
             MetalComputePipelineState const* metal_pso = static_cast<MetalComputePipelineState const*>(current_pipeline_state);
             MTLSize threadgroups = MTLSizeMake(group_count_x, group_count_y, group_count_z);
             MTLSize threadsPerThreadgroup = metal_pso->GetThreadsPerThreadgroup();
@@ -218,6 +221,7 @@ namespace adria
     {
         if (render_encoder && current_pipeline_state && current_pipeline_state->GetType() == GfxPipelineStateType::MeshShader)
         {
+            UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before dispatch mesh
             MetalMeshShadingPipelineState const* metal_pso = static_cast<MetalMeshShadingPipelineState const*>(current_pipeline_state);
 
             MTLSize threadgroups = MTLSizeMake(group_count_x, group_count_y, group_count_z);
@@ -344,8 +348,9 @@ namespace adria
         if (arg_buffer && render_encoder)
         {
             id<MTLBuffer> buffer = arg_buffer->GetBuffer();
-            [render_encoder setVertexBuffer:buffer offset:0 atIndex:BINDLESS_ARGUMENT_BUFFER_SLOT];
-            [render_encoder setFragmentBuffer:buffer offset:0 atIndex:BINDLESS_ARGUMENT_BUFFER_SLOT];
+            // Metal Shader Converter expects the resource descriptor heap at index 0
+            [render_encoder setVertexBuffer:buffer offset:0 atIndex:0];
+            [render_encoder setFragmentBuffer:buffer offset:0 atIndex:0];
         }
     }
 
@@ -471,6 +476,104 @@ namespace adria
         }
     }
 
+    void MetalCommandList::SetRootConstant(Uint32 slot, Uint32 data, Uint32 offset)
+    {
+        if (slot == 1 && offset < 8)  // Root constants are at slot 1 with 8x 32-bit values
+        {
+            top_level_ab.root_constants[offset] = data;
+            top_level_ab_dirty = true;
+        }
+    }
+
+    void MetalCommandList::SetRootConstants(Uint32 slot, void const* data, Uint32 data_size, Uint32 offset)
+    {
+        if (slot == 1 && data && data_size > 0)  // Root constants are at slot 1
+        {
+            Uint32 num_constants = data_size / sizeof(Uint32);
+            if (offset + num_constants <= 8)  // Maximum 8 root constants
+            {
+                memcpy(&top_level_ab.root_constants[offset], data, data_size);
+                top_level_ab_dirty = true;
+            }
+        }
+    }
+
+    void MetalCommandList::SetRootCBV(Uint32 slot, void const* data, Uint64 data_size)
+    {
+        // Allocate from dynamic allocator and get GPU address
+        // For now, this needs to be implemented when we have a dynamic allocator
+        // Placeholder: just set address to 0
+        if (slot == 0)
+        {
+            top_level_ab.cbv0_address = 0;  // TODO: Allocate from dynamic allocator
+            top_level_ab_dirty = true;
+        }
+        else if (slot == 2)
+        {
+            top_level_ab.cbv2_address = 0;  // TODO: Allocate from dynamic allocator
+            top_level_ab_dirty = true;
+        }
+        else if (slot == 3)
+        {
+            top_level_ab.cbv3_address = 0;  // TODO: Allocate from dynamic allocator
+            top_level_ab_dirty = true;
+        }
+    }
+
+    void MetalCommandList::SetRootCBV(Uint32 slot, Uint64 gpu_address)
+    {
+        if (slot == 0)
+        {
+            top_level_ab.cbv0_address = gpu_address;
+            top_level_ab_dirty = true;
+        }
+        else if (slot == 2)
+        {
+            top_level_ab.cbv2_address = gpu_address;
+            top_level_ab_dirty = true;
+        }
+        else if (slot == 3)
+        {
+            top_level_ab.cbv3_address = gpu_address;
+            top_level_ab_dirty = true;
+        }
+    }
+
+    void MetalCommandList::SetRootDescriptorTable(Uint32 slot, GfxDescriptor base_descriptor)
+    {
+        // For ray tracing, the TLAS is usually passed as a descriptor
+        // We need to extract the MTLAccelerationStructure from the descriptor
+        // This is accessed from the argument buffer
+        MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
+        if (arg_buffer && base_descriptor.IsValid())
+        {
+            // Try to get the acceleration structure from the descriptor
+            // For now, we'll handle this when we encounter specific ray tracing descriptors
+            // The TLAS will be accessed via ResourceDescriptorHeap[index] in shaders
+        }
+    }
+
+    void MetalCommandList::UpdateTopLevelArgumentBuffer()
+    {
+        if (!top_level_ab_dirty)
+        {
+            return;
+        }
+
+        // Bind the top-level argument buffer to both vertex and fragment shaders at index 2
+        if (render_encoder)
+        {
+            [render_encoder setVertexBytes:&top_level_ab length:sizeof(TopLevelArgumentBuffer) atIndex:2];
+            [render_encoder setFragmentBytes:&top_level_ab length:sizeof(TopLevelArgumentBuffer) atIndex:2];
+        }
+        else if (compute_encoder)
+        {
+            [compute_encoder setBytes:&top_level_ab length:sizeof(TopLevelArgumentBuffer) atIndex:2];
+        }
+
+        top_level_ab_dirty = false;
+    }
+
     void MetalCommandList::SetScissorRect(Uint32 x, Uint32 y, Uint32 width, Uint32 height)
     {
         if (render_encoder)
@@ -515,6 +618,41 @@ namespace adria
 
         ADRIA_ASSERT(current_rt_bindings != nullptr);
         ADRIA_ASSERT(compute_encoder != nullptr);
+
+        UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before dispatch
+
+        // Metal Shader Converter expects IRDispatchRaysArgument structure at index 3 (152 bytes total)
+        // For now, we bind a zero-initialized structure - proper ray tracing will be implemented later
+        struct IRDispatchRaysArgument
+        {
+            // IRDispatchRaysDescriptor (12 bytes)
+            uint32_t width;
+            uint32_t height;
+            uint32_t depth;
+            uint32_t pad_align;  // Padding to 16-byte alignment
+
+            // Pointers/handles (8 bytes each)
+            uint64_t grs_ptr;                         // Global root signature pointer
+            uint64_t res_desc_heap_ptr;               // Resource descriptor heap pointer
+            uint64_t smp_desc_heap_ptr;               // Sampler descriptor heap pointer
+            uint64_t visible_function_table;          // Visible function table ID
+            uint64_t intersection_function_table;     // Intersection function table ID
+            uint64_t intersection_function_tables_ptr; // Intersection function tables pointer
+
+            // Additional data to reach 152 bytes total
+            uint8_t  additional_data[152 - 16 - 48];  // Fill remaining bytes (88 bytes)
+        };
+        static_assert(sizeof(IRDispatchRaysArgument) == 152, "IRDispatchRaysArgument must be 152 bytes");
+
+        IRDispatchRaysArgument rt_args = {};
+        rt_args.width = dispatch_width;
+        rt_args.height = dispatch_height;
+        rt_args.depth = dispatch_depth;
+        // TODO: Fill in proper pointers when ray tracing is fully implemented
+
+        // Bind the ray tracing dispatch argument at index 3 for Metal Shader Converter
+        [compute_encoder setBytes:&rt_args length:sizeof(IRDispatchRaysArgument) atIndex:3];
+
         current_rt_bindings->Commit();
 
         MTLSize threadgroupsPerGrid = MTLSizeMake(
@@ -567,7 +705,8 @@ namespace adria
             if (arg_buffer && compute_encoder)
             {
                 id<MTLBuffer> buffer = arg_buffer->GetBuffer();
-                [compute_encoder setBuffer:buffer offset:0 atIndex:BINDLESS_ARGUMENT_BUFFER_SLOT];
+                // Metal Shader Converter expects the resource descriptor heap at index 0
+                [compute_encoder setBuffer:buffer offset:0 atIndex:0];
             }
         }
     }

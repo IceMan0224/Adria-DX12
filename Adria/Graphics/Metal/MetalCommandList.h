@@ -91,13 +91,13 @@ namespace adria
         virtual void BeginVRS(GfxShadingRateInfo const& info) override {}
         virtual void EndVRS(GfxShadingRateInfo const& info) override {}
 
-        virtual void SetRootConstant(Uint32 slot, Uint32 data, Uint32 offset = 0) override {}
-        virtual void SetRootConstants(Uint32 slot, void const* data, Uint32 data_size, Uint32 offset = 0) override {}
-        virtual void SetRootCBV(Uint32 slot, void const* data, Uint64 data_size) override {}
-        virtual void SetRootCBV(Uint32 slot, Uint64 gpu_address) override {}
+        virtual void SetRootConstant(Uint32 slot, Uint32 data, Uint32 offset = 0) override;
+        virtual void SetRootConstants(Uint32 slot, void const* data, Uint32 data_size, Uint32 offset = 0) override;
+        virtual void SetRootCBV(Uint32 slot, void const* data, Uint64 data_size) override;
+        virtual void SetRootCBV(Uint32 slot, Uint64 gpu_address) override;
         virtual void SetRootSRV(Uint32 slot, Uint64 gpu_address) override {}
         virtual void SetRootUAV(Uint32 slot, Uint64 gpu_address) override {}
-        virtual void SetRootDescriptorTable(Uint32 slot, GfxDescriptor base_descriptor) override {}
+        virtual void SetRootDescriptorTable(Uint32 slot, GfxDescriptor base_descriptor) override;
 
         id<MTLCommandBuffer> GetCommandBuffer() const { return command_buffer; }
         id<MTLRenderCommandEncoder> GetRenderEncoder() const { return render_encoder; }
@@ -107,6 +107,16 @@ namespace adria
         void EndBlitEncoder();
         void BeginComputeEncoder();
         void EndComputeEncoder();
+        void UpdateTopLevelArgumentBuffer();
+
+        // Top-level argument buffer structure matching root signature in GfxShaderCompiler.cpp
+        struct TopLevelArgumentBuffer
+        {
+            uint64_t cbv0_address;       // CBV at register 0
+            uint32_t root_constants[8];  // Root constants at register 1 (8x 32-bit values)
+            uint64_t cbv2_address;       // CBV at register 2
+            uint64_t cbv3_address;       // CBV at register 3
+        };
 
         MetalDevice* metal_device;
         GfxCommandListType type;
@@ -119,5 +129,10 @@ namespace adria
         GfxIndexBufferView* current_index_buffer_view;
         std::unique_ptr<GfxRayTracingShaderBindings> current_rt_bindings;
         std::vector<std::pair<GfxFence&, Uint64>> pending_signals;
+
+        TopLevelArgumentBuffer top_level_ab;  // CPU-side copy of top-level argument buffer
+        Bool top_level_ab_dirty = true;       // Track if we need to update GPU-side buffer
+
+        id<MTLAccelerationStructure> current_tlas = nil;  // Current TLAS for ray tracing
     };
 }
