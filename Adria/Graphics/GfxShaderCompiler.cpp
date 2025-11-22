@@ -539,6 +539,7 @@ namespace adria
 			Ref<IDxcBlobEncoding> source_blob;
 
 			std::wstring shader_source = ToWideString(input.file);
+			ADRIA_LOG_SYNC(INFO, "Compiling shader: %s, entry: %s, stage: %d", input.file.c_str(), input.entry_point.c_str(), (int)input.stage);
 			HRESULT hr = library->CreateBlobFromFile(shader_source.data(), &code_page, source_blob.GetAddressOf());
 			if (FAILED(hr))
 			{
@@ -702,9 +703,15 @@ namespace adria
 			IRCompilerSetMinimumDeploymentTarget(metal_ir_compiler, IROperatingSystem_macOS, "15.0.0");
 
 			// Don't set entry point name for library shaders, they have multiple entry points
+			// For library shaders, we need to clear/reset the entry point to avoid using stale data
 			if (input.stage != GfxShaderStage::LIB)
 			{
 				IRCompilerSetEntryPointName(metal_ir_compiler, input.entry_point.empty() ? "main" : input.entry_point.c_str());
+			}
+			else
+			{
+				// Clear entry point for library shaders using empty string
+				IRCompilerSetEntryPointName(metal_ir_compiler, "");
 			}
 
 			IRRayTracingPipelineConfiguration* rt_config = nullptr;
@@ -751,12 +758,6 @@ namespace adria
 
 			// Get the shader stage from the compiled object
 			IRShaderStage ir_stage = IRObjectGetMetalIRShaderStage(metal_ir_obj);
-
-			// Log the detected stage for debugging
-			if (input.stage == GfxShaderStage::LIB)
-			{
-				ADRIA_LOG_SYNC(INFO, "Ray tracing library shader detected as stage: %d", (int)ir_stage);
-			}
 
 			Bool extraction_success = IRObjectGetMetalLibBinary(metal_ir_obj, ir_stage, metallib);
 

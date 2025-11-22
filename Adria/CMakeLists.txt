@@ -404,6 +404,7 @@ set(ADRIA_METAL_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalFence.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalFence.mm"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalConversions.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalShaderReflection.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDescriptor.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalDescriptor.mm"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalArgumentBuffer.h"
