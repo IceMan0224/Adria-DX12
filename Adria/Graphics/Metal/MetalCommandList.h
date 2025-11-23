@@ -37,7 +37,7 @@ namespace adria
         virtual void EndQuery(GfxQueryHeap& query_heap, Uint32 index) override {}
         virtual void ResolveQueryData(GfxQueryHeap const& query_heap, Uint32 start, Uint32 count, GfxBuffer& dst_buffer, Uint64 dst_offset) override {}
 
-        virtual GfxDynamicAllocation AllocateTransient(Uint32 size, Uint32 align = 0) override { return {}; }
+        virtual GfxDynamicAllocation AllocateTransient(Uint32 size, Uint32 align = 0) override;
         virtual void ClearRenderTarget(GfxDescriptor rtv, Float const* clear_color) override {}
         virtual void ClearDepth(GfxDescriptor dsv, Float depth = 1.0f, Uint8 stencil = 0, Bool clear_stencil = false) override {}
         virtual void SetRenderTargets(std::span<GfxDescriptor const> rtvs, GfxDescriptor const* dsv = nullptr, Bool single_rt = false) override {}
@@ -103,19 +103,12 @@ namespace adria
         id<MTLRenderCommandEncoder> GetRenderEncoder() const { return render_encoder; }
 
     private:
-        void BeginBlitEncoder();
-        void EndBlitEncoder();
-        void BeginComputeEncoder();
-        void EndComputeEncoder();
-        void UpdateTopLevelArgumentBuffer();
-
-        // Top-level argument buffer structure matching root signature in GfxShaderCompiler.cpp
         struct TopLevelArgumentBuffer
         {
-            uint64_t cbv0_address;       // CBV at register 0
-            uint32_t root_constants[8];  // Root constants at register 1 (8x 32-bit values)
-            uint64_t cbv2_address;       // CBV at register 2
-            uint64_t cbv3_address;       // CBV at register 3
+            Uint64 cbv0_address;       
+            Uint32 root_constants[8];  
+            Uint64 cbv2_address;       
+            Uint64 cbv3_address;       
         };
 
         MetalDevice* metal_device;
@@ -127,12 +120,19 @@ namespace adria
         GfxPrimitiveTopology current_topology;
         GfxPipelineState const* current_pipeline_state;
         GfxIndexBufferView* current_index_buffer_view;
+        
         std::unique_ptr<GfxRayTracingShaderBindings> current_rt_bindings;
         std::vector<std::pair<GfxFence&, Uint64>> pending_signals;
 
-        TopLevelArgumentBuffer top_level_ab;  // CPU-side copy of top-level argument buffer
-        Bool top_level_ab_dirty = true;       // Track if we need to update GPU-side buffer
+        TopLevelArgumentBuffer top_level_ab;  
+        Bool top_level_ab_dirty = true;       
+        id<MTLAccelerationStructure> current_tlas = nil;  
 
-        id<MTLAccelerationStructure> current_tlas = nil;  // Current TLAS for ray tracing
+    private:
+        void BeginBlitEncoder();
+        void EndBlitEncoder();
+        void BeginComputeEncoder();
+        void EndComputeEncoder();
+        void UpdateTopLevelArgumentBuffer();
     };
 }

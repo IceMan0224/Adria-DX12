@@ -23,8 +23,6 @@ namespace adria
             id<MTLLibrary> library = nil;
             NSError* error = nil;
 
-            ADRIA_LOG(INFO, "Ray tracing pipeline has %zu libraries", desc.libraries.size());
-
             for (auto const& lib : desc.libraries)
             {
                 if (lib.shader == nullptr)
@@ -36,22 +34,16 @@ namespace adria
                 void* shader_data = lib.shader->GetData();
                 Usize shader_size = lib.shader->GetSize();
                 GfxShaderDesc const& shader_desc = lib.shader->GetDesc();
-                ADRIA_LOG(INFO, "Processing library shader: file=%s, entry=%s, data=%p, size=%llu",
-                         shader_desc.file.c_str(), shader_desc.entry_point.c_str(), shader_data, shader_size);
 
                 if (shader_data && shader_size > 0)
                 {
                     // Shader data is pure metallib (no header to skip)
-                    ADRIA_LOG(INFO, "Creating dispatch_data_t...");
                     // Use DISPATCH_DATA_DESTRUCTOR_FREE with NULL to avoid freeing memory we don't own
                     dispatch_data_t data = dispatch_data_create(shader_data, shader_size, dispatch_get_main_queue(), ^{
                         // Empty destructor - we don't own this memory
                     });
-                    ADRIA_LOG(INFO, "dispatch_data_t created: %p", data);
 
-                    ADRIA_LOG(INFO, "Creating Metal library from data...");
                     library = [device newLibraryWithData:data error:&error];
-                    ADRIA_LOG(INFO, "Metal library creation returned: library=%p, error=%p", library, error);
 
                     if (error || !library)
                     {
@@ -68,16 +60,7 @@ namespace adria
                     }
 
                     NSArray<NSString*>* functionNames = [library functionNames];
-                    ADRIA_LOG(INFO, "Successfully created Metal library with %lu functions", [functionNames count]);
-                    ADRIA_LOG(INFO, "functionNames pointer: %p", functionNames);
-                    if (functionNames)
-                    {
-                        for (NSString* name in functionNames)
-                        {
-                            ADRIA_LOG(INFO, "  - Function: %s", [name UTF8String]);
-                        }
-                    }
-                    else
+                    if (!functionNames)
                     {
                         ADRIA_LOG(ERROR, "functionNames is nil!");
                     }
@@ -97,13 +80,6 @@ namespace adria
 
             NSArray<NSString*>* functionNames = [library functionNames];
 
-            // Log available functions in the library for debugging
-            ADRIA_LOG(INFO, "Metal library contains %lu functions:", [functionNames count]);
-            for (NSString* name in functionNames)
-            {
-                ADRIA_LOG(INFO, "  Available function: %s", [name UTF8String]);
-            }
-
             id<MTLFunction> raygenFunction = nil;
             for (auto const& lib : desc.libraries)
             {
@@ -116,12 +92,10 @@ namespace adria
                 {
                     if (raygenFunction == nil)
                     {
-                        ADRIA_LOG(INFO, "Searching for export: %s", export_name.c_str());
                         NSString* functionName = [NSString stringWithUTF8String:export_name.c_str()];
                         raygenFunction = [library newFunctionWithName:functionName];
                         if (raygenFunction)
                         {
-                            ADRIA_LOG(INFO, "Successfully found function: %s", export_name.c_str());
                             shader_names.insert(export_name);
                             break;
                         }
