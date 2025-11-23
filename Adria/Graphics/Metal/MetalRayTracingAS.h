@@ -36,11 +36,14 @@ namespace adria
         virtual GfxBuffer const& GetBuffer() const override { return *result_buffer; }
 
         id<MTLAccelerationStructure> GetAccelerationStructure() const { return acceleration_structure; }
+        GfxBuffer const* GetGpuHeaderBuffer() const { return gpu_header_buffer.get(); }
 
     private:
         std::unique_ptr<GfxBuffer> result_buffer;
         std::unique_ptr<GfxBuffer> scratch_buffer;
         std::unique_ptr<GfxBuffer> instance_buffer;
+        std::unique_ptr<GfxBuffer> gpu_header_buffer;  
         id<MTLAccelerationStructure> acceleration_structure;
+        Uint32 instance_count;
     };
 }

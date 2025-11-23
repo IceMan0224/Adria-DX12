@@ -18,7 +18,7 @@ namespace adria
             CGFloat scale = [nsWindow backingScaleFactor];
 
             metal_layer = [CAMetalLayer layer];
-            metal_layer.device = (id<MTLDevice>)gfx->GetNative();
+            metal_layer.device = (__bridge id<MTLDevice>)gfx->GetNative();
             metal_layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
             metal_layer.framebufferOnly = NO;
 

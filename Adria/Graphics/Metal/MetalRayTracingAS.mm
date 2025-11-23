@@ -1,4 +1,5 @@
 #import <Metal/Metal.h>
+#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 #include "MetalRayTracingAS.h"
 #include "MetalDevice.h"
 #include "MetalBuffer.h"
@@ -111,6 +112,7 @@ namespace adria
     }
 
     MetalRayTracingTLAS::MetalRayTracingTLAS(GfxDevice* gfx, std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)
+        : instance_count(static_cast<Uint32>(instances.size()))
     {
         MetalDevice* metal_gfx = static_cast<MetalDevice*>(gfx);
         id<MTLDevice> device = metal_gfx->GetMTLDevice();
@@ -220,6 +222,31 @@ namespace adria
         [accelEncoder endEncoding];
         [commandBuffer commit];
         [commandBuffer waitUntilCompleted];
+
+        Usize header_size = sizeof(IRRaytracingAccelerationStructureGPUHeader);
+        Usize instance_contributions_size = sizeof(Uint32) * instance_count;
+        Usize total_size = header_size + instance_contributions_size;
+
+        GfxBufferDesc gpu_header_desc{};
+        gpu_header_desc.size = total_size;
+        gpu_header_desc.resource_usage = GfxResourceUsage::Upload;  
+        gpu_header_desc.bind_flags = GfxBindFlag::None;
+        gpu_header_buffer = gfx->CreateBuffer(gpu_header_desc);
+        MetalBuffer* metal_gpu_header = static_cast<MetalBuffer*>(gpu_header_buffer.get());
+        Uint8* header_data = static_cast<Uint8*>([metal_gpu_header->GetMetalBuffer() contents]);
+        std::vector<Uint32> instance_contributions(instance_count, 0);
+
+        Uint8* instance_contributions_buffer = header_data + header_size;
+        Uint64 instance_contributions_gpu_address = metal_gpu_header->GetMetalBuffer().gpuAddress + header_size;
+
+        IRRaytracingSetAccelerationStructure(
+            header_data,                              
+            acceleration_structure.gpuResourceID,     
+            instance_contributions_buffer,            
+            instance_contributions_gpu_address,       
+            instance_contributions.data(),
+            instance_count                            
+        );
     }
 
     MetalRayTracingTLAS::~MetalRayTracingTLAS()

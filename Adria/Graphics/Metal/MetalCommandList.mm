@@ -1,4 +1,6 @@
 #import <Metal/Metal.h>
+#define IR_PRIVATE_IMPLEMENTATION 
+#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 #include "MetalCommandList.h"
 #include "MetalDevice.h"
 #include "MetalBuffer.h"
@@ -13,10 +15,10 @@
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxFence.h"
 
+
 namespace adria
 {
     ADRIA_LOG_CHANNEL(Graphics);
-    constexpr Uint32 BINDLESS_ARGUMENT_BUFFER_SLOT = 30;
 
     static MTLLoadAction ConvertLoadAction(GfxLoadAccessOp op)
     {
@@ -72,6 +74,7 @@ namespace adria
           current_topology(GfxPrimitiveTopology::TriangleList),
           current_pipeline_state(nullptr), current_index_buffer_view(nullptr)
     {
+        std::memset(&top_level_ab, 0, sizeof(TopLevelArgumentBuffer));
     }
 
     MetalCommandList::~MetalCommandList()
@@ -99,7 +102,6 @@ namespace adria
     {
         id<MTLCommandQueue> queue = metal_device->GetMTLCommandQueue();
         command_buffer = [queue commandBuffer];
-        ADRIA_LOG(INFO, "MetalCommandList::Begin() - command_buffer=%p", command_buffer);
     }
 
     void MetalCommandList::End()
@@ -111,12 +113,10 @@ namespace adria
 
     void MetalCommandList::Submit()
     {
-        ADRIA_LOG(INFO, "MetalCommandList::Submit() - command_buffer=%p", command_buffer);
         if (command_buffer)
         {
             SignalAll();
             [command_buffer commit];
-            ADRIA_LOG(INFO, "MetalCommandList::Submit() - command buffer committed");
         }
         else
         {
@@ -180,8 +180,21 @@ namespace adria
     {
         if (render_encoder)
         {
-            UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before drawing
-            ADRIA_LOG(INFO, "Draw: vertices=%u, instances=%u", vertex_count, instance_count);
+            if (top_level_ab.cbv0_address != 0)
+            {
+                MetalDevice::BufferLookupResult cbv0 = metal_device->LookupBuffer(top_level_ab.cbv0_address);
+                if (cbv0.buffer != nil)
+                {
+                    [render_encoder useResource:cbv0.buffer usage:MTLResourceUsageRead stages:MTLRenderStageVertex | MTLRenderStageFragment];
+                }
+            }
+            [render_encoder setVertexBytes:&top_level_ab
+                                    length:sizeof(TopLevelArgumentBuffer)
+                                   atIndex:kIRArgumentBufferBindPoint];
+            [render_encoder setFragmentBytes:&top_level_ab
+                                      length:sizeof(TopLevelArgumentBuffer)
+                                     atIndex:kIRArgumentBufferBindPoint];
+
             [render_encoder drawPrimitives:ConvertTopology(current_topology)
                                 vertexStart:start_vertex_location
                                 vertexCount:vertex_count
@@ -194,14 +207,28 @@ namespace adria
     {
         if (render_encoder && current_index_buffer_view)
         {
-            UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before drawing
+            if (top_level_ab.cbv0_address != 0)
+            {
+                MetalDevice::BufferLookupResult cbv0 = metal_device->LookupBuffer(top_level_ab.cbv0_address);
+                if (cbv0.buffer != nil)
+                {
+                    [render_encoder useResource:cbv0.buffer usage:MTLResourceUsageRead stages:MTLRenderStageVertex | MTLRenderStageFragment];
+                }
+            }
+
+            [render_encoder setVertexBytes:&top_level_ab
+                                    length:sizeof(TopLevelArgumentBuffer)
+                                   atIndex:kIRArgumentBufferBindPoint];
+            [render_encoder setFragmentBytes:&top_level_ab
+                                      length:sizeof(TopLevelArgumentBuffer)
+                                     atIndex:kIRArgumentBufferBindPoint];
+
             MetalDevice::BufferLookupResult lookup = metal_device->LookupBuffer(current_index_buffer_view->buffer_location);
             if (lookup.buffer != nil)
             {
                 MTLIndexType index_type = ConvertIndexFormat(current_index_buffer_view->format);
                 Uint32 index_size = (index_type == MTLIndexTypeUInt16) ? 2 : 4;
 
-                ADRIA_LOG(INFO, "DrawIndexed: indices=%u, instances=%u", index_count, instance_count);
                 [render_encoder drawIndexedPrimitives:ConvertTopology(current_topology)
                                            indexCount:index_count
                                             indexType:index_type
@@ -218,7 +245,19 @@ namespace adria
     {
         if (compute_encoder && current_pipeline_state && current_pipeline_state->GetType() == GfxPipelineStateType::Compute)
         {
-            UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before dispatch
+            if (top_level_ab.cbv0_address != 0)
+            {
+                MetalDevice::BufferLookupResult cbv0 = metal_device->LookupBuffer(top_level_ab.cbv0_address);
+                if (cbv0.buffer != nil)
+                {
+                    [compute_encoder useResource:cbv0.buffer usage:MTLResourceUsageRead];
+                }
+            }
+
+            [compute_encoder setBytes:&top_level_ab
+                               length:sizeof(TopLevelArgumentBuffer)
+                              atIndex:kIRArgumentBufferBindPoint];
+
             MetalComputePipelineState const* metal_pso = static_cast<MetalComputePipelineState const*>(current_pipeline_state);
             MTLSize threadgroups = MTLSizeMake(group_count_x, group_count_y, group_count_z);
             MTLSize threadsPerThreadgroup = metal_pso->GetThreadsPerThreadgroup();
@@ -230,7 +269,26 @@ namespace adria
     {
         if (render_encoder && current_pipeline_state && current_pipeline_state->GetType() == GfxPipelineStateType::MeshShader)
         {
-            UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before dispatch mesh
+            // Make frame onstant buffer resident (passed via cbv0_address)
+            if (top_level_ab.cbv0_address != 0)
+            {
+                MetalDevice::BufferLookupResult cbv0 = metal_device->LookupBuffer(top_level_ab.cbv0_address);
+                if (cbv0.buffer != nil)
+                {
+                    [render_encoder useResource:cbv0.buffer usage:MTLResourceUsageRead stages:MTLRenderStageObject | MTLRenderStageMesh | MTLRenderStageFragment];
+                }
+            }
+
+            [render_encoder setObjectBytes:&top_level_ab
+                                    length:sizeof(TopLevelArgumentBuffer)
+                                   atIndex:kIRArgumentBufferBindPoint];
+            [render_encoder setMeshBytes:&top_level_ab
+                                  length:sizeof(TopLevelArgumentBuffer)
+                                 atIndex:kIRArgumentBufferBindPoint];
+            [render_encoder setFragmentBytes:&top_level_ab
+                                      length:sizeof(TopLevelArgumentBuffer)
+                                     atIndex:kIRArgumentBufferBindPoint];
+
             MetalMeshShadingPipelineState const* metal_pso = static_cast<MetalMeshShadingPipelineState const*>(current_pipeline_state);
 
             MTLSize threadgroups = MTLSizeMake(group_count_x, group_count_y, group_count_z);
@@ -352,21 +410,18 @@ namespace adria
         }
 
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:pass_desc];
-        ADRIA_LOG(INFO, "MetalCommandList::BeginRenderPass() - render_encoder=%p, command_buffer=%p", render_encoder, command_buffer);
 
         MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
         if (arg_buffer && render_encoder)
         {
             id<MTLBuffer> buffer = arg_buffer->GetBuffer();
-            // Metal Shader Converter expects the resource descriptor heap at index 0
-            [render_encoder setVertexBuffer:buffer offset:0 atIndex:0];
-            [render_encoder setFragmentBuffer:buffer offset:0 atIndex:0];
+            [render_encoder setVertexBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
+            [render_encoder setFragmentBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
 
-            // Make all resources in the argument buffer accessible to the encoder
+            [render_encoder setObjectBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
+            [render_encoder setMeshBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
             arg_buffer->MakeResourcesResident(render_encoder);
         }
-
-        // Automatically set viewport to match render pass dimensions (matches D3D12 behavior)
         SetViewport(0, 0, render_pass_desc.width, render_pass_desc.height);
     }
 
@@ -383,15 +438,12 @@ namespace adria
     {
         current_pipeline_state = state;
 
-        ADRIA_LOG(INFO, "SetPipelineState: state=%p, render_encoder=%p", state, render_encoder);
-
         if (render_encoder && state)
         {
             if (state->GetType() == GfxPipelineStateType::Graphics)
             {
                 MetalGraphicsPipelineState const* metal_pso = static_cast<MetalGraphicsPipelineState const*>(state);
                 id<MTLRenderPipelineState> pipeline = metal_pso->GetPipelineState();
-                ADRIA_LOG(INFO, "SetPipelineState: Graphics pipeline=%p", pipeline);
                 [render_encoder setRenderPipelineState:pipeline];
 
                 if (metal_pso->GetDepthStencilState())
@@ -493,7 +545,6 @@ namespace adria
             viewport.znear = 0.0;
             viewport.zfar = 1.0;
             [render_encoder setViewport:viewport];
-            ADRIA_LOG(INFO, "SetViewport: x=%u, y=%u, w=%u, h=%u", x, y, width, height);
 
             // Automatically set scissor rect to match viewport (matches D3D12 behavior)
             SetScissorRect(x, y, width, height);
@@ -579,27 +630,6 @@ namespace adria
 
     void MetalCommandList::UpdateTopLevelArgumentBuffer()
     {
-        if (!top_level_ab_dirty)
-        {
-            return;
-        }
-
-        // Bind root constants at Metal buffer index 1 (maps to HLSL register b1)
-        if (render_encoder)
-        {
-            [render_encoder setVertexBytes:top_level_ab.root_constants 
-                                    length:sizeof(uint32_t) * 8 
-                                atIndex:1];  // Changed from 2 to 1
-            [render_encoder setFragmentBytes:top_level_ab.root_constants 
-                                    length:sizeof(uint32_t) * 8 
-                                    atIndex:1];  // Changed from 2 to 1
-        }
-        else if (compute_encoder)
-        {
-            [compute_encoder setBytes:top_level_ab.root_constants 
-                                length:sizeof(uint32_t) * 8 
-                            atIndex:1];  // Changed from 2 to 1
-        }
 
         top_level_ab_dirty = false;
     }
@@ -649,7 +679,10 @@ namespace adria
         ADRIA_ASSERT(current_rt_bindings != nullptr);
         ADRIA_ASSERT(compute_encoder != nullptr);
 
-        UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before dispatch
+        // Bind TopLevelArgumentBuffer at MSC-defined binding point (per-dispatch)
+        [compute_encoder setBytes:&top_level_ab
+                           length:sizeof(TopLevelArgumentBuffer)
+                          atIndex:kIRArgumentBufferBindPoint];
 
         // Metal Shader Converter expects IRDispatchRaysArgument structure at index 3 (152 bytes total)
         // For now, we bind a zero-initialized structure - proper ray tracing will be implemented later
@@ -730,16 +763,12 @@ namespace adria
         if (!compute_encoder)
         {
             compute_encoder = [command_buffer computeCommandEncoder];
-            ADRIA_LOG(INFO, "MetalCommandList::BeginComputeEncoder() - compute_encoder=%p, command_buffer=%p", compute_encoder, command_buffer);
 
             MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
             if (arg_buffer && compute_encoder)
             {
                 id<MTLBuffer> buffer = arg_buffer->GetBuffer();
-                // Metal Shader Converter expects the resource descriptor heap at index 0
-                [compute_encoder setBuffer:buffer offset:0 atIndex:0];
-
-                // Make all resources in the argument buffer accessible to the encoder
+                [compute_encoder setBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
                 arg_buffer->MakeResourcesResident(compute_encoder);
             }
         }

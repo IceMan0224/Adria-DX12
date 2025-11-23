@@ -8,7 +8,7 @@ namespace adria
         : GfxBuffer(gfx, desc)
     {
         MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
-        id<MTLDevice> device = (id<MTLDevice>)metal_device->GetNative();
+        id<MTLDevice> device = (__bridge id<MTLDevice>)metal_device->GetNative();
 
         MTLResourceOptions options = MTLResourceStorageModeShared;
         metal_buffer = [device newBufferWithLength:desc.size options:options];

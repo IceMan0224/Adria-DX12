@@ -1,23 +1,14 @@
 #import <Metal/Metal.h>
 #import <Metal/MTLResource.h>
+#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 #include "MetalArgumentBuffer.h"
 #include "MetalDevice.h"
 
 namespace adria
 {
-    struct DescriptorEntry
-    {
-        uint64_t resourceID;    // gpuResourceID for textures/buffers, handle for samplers
-        uint32_t offset;       
-        uint32_t flags;        
-        
-        static constexpr uint32_t TYPE_MASK = 0x3;
-        static constexpr uint32_t TYPE_TEXTURE = 0;
-        static constexpr uint32_t TYPE_BUFFER = 1;
-        static constexpr uint32_t TYPE_SAMPLER = 2;
-    };
-    
-    static_assert(sizeof(DescriptorEntry) == 16, "DescriptorEntry must be 16 bytes for GPU alignment");
+    ADRIA_LOG_CHANNEL(Graphics);
+    //official IR runtime descriptor structure (24 bytes: 3x uint64_t)
+    using DescriptorEntry = IRDescriptorTableEntry;
 
     MetalArgumentBuffer::MetalArgumentBuffer(MetalDevice* metal_gfx, Uint32 initial_capacity)
         : metal_gfx(metal_gfx)
@@ -59,15 +50,11 @@ namespace adria
     void MetalArgumentBuffer::SetTexture(id<MTLTexture> texture, Uint32 index)
     {
         if (!ValidateIndex(index)) return;
-        
-        DescriptorEntry* entry = GetDescriptorEntry(index);
+
+        DescriptorEntry* entry = static_cast<DescriptorEntry*>(GetDescriptorEntry(index));
         if (texture != nil)
         {
-            // Store the texture pointer directly
-            entry->resourceID = reinterpret_cast<uint64_t>((__bridge void*)texture);
-            entry->offset = 0;
-            entry->flags = DescriptorEntry::TYPE_TEXTURE;
-            
+            IRDescriptorTableSetTexture(entry, texture, 0.0f /* minLODClamp */, 0 /* metadata */);
             resource_entries[index].texture = texture;
             resource_entries[index].type = MetalResourceType::Texture;
         }
@@ -80,15 +67,13 @@ namespace adria
     void MetalArgumentBuffer::SetBuffer(id<MTLBuffer> buffer, Uint32 index, Uint64 offset)
     {
         if (!ValidateIndex(index)) return;
-        
-        DescriptorEntry* entry = GetDescriptorEntry(index);
+
+        DescriptorEntry* entry = static_cast<DescriptorEntry*>(GetDescriptorEntry(index));
         if (buffer != nil)
         {
-            // Use GPU address for buffers - this is the actual GPU memory address
-            entry->resourceID = buffer.gpuAddress + offset;
-            entry->offset = static_cast<uint32_t>(offset);
-            entry->flags = DescriptorEntry::TYPE_BUFFER;
-            
+            Uint64 gpu_va = buffer.gpuAddress + offset;
+            IRDescriptorTableSetBuffer(entry, gpu_va, 0 /* metadata */);
+
             resource_entries[index].buffer = buffer;
             resource_entries[index].buffer_offset = offset;
             resource_entries[index].type = MetalResourceType::Buffer;
@@ -102,15 +87,12 @@ namespace adria
     void MetalArgumentBuffer::SetSampler(id<MTLSamplerState> sampler, Uint32 index)
     {
         if (!ValidateIndex(index)) return;
-        
-        DescriptorEntry* entry = GetDescriptorEntry(index);
+
+        DescriptorEntry* entry = static_cast<DescriptorEntry*>(GetDescriptorEntry(index));
         if (sampler != nil)
         {
-            // Store the sampler pointer directly
-            entry->resourceID = reinterpret_cast<uint64_t>((__bridge void*)sampler);
-            entry->offset = 0;
-            entry->flags = DescriptorEntry::TYPE_SAMPLER;
-            
+            IRDescriptorTableSetSampler(entry, sampler, 0.0f /* lodBias */);
+
             resource_entries[index].sampler = sampler;
             resource_entries[index].type = MetalResourceType::Sampler;
         }
@@ -230,18 +212,18 @@ namespace adria
         @autoreleasepool
         {
             id<MTLDevice> device = metal_gfx->GetMTLDevice();
-            
+
             const size_t buffer_size = sizeof(DescriptorEntry) * capacity;
             descriptor_buffer = [device newBufferWithLength:buffer_size
                                                      options:MTLResourceStorageModeShared |
                                                              MTLResourceCPUCacheModeWriteCombined |
                                                              MTLResourceHazardTrackingModeTracked];
-            
+
             ADRIA_ASSERT(descriptor_buffer != nil);
-            
-            descriptor_cpu_ptr = static_cast<DescriptorEntry*>([descriptor_buffer contents]);
+
+            descriptor_cpu_ptr = [descriptor_buffer contents];
             std::memset(descriptor_cpu_ptr, 0, buffer_size);
-            
+
             [descriptor_buffer setLabel:@"BindlessDescriptorTable"];
         }
     }
@@ -254,34 +236,34 @@ namespace adria
         {
             new_capacity *= 2;
         }
-        
+
         @autoreleasepool
         {
             id<MTLDevice> device = metal_gfx->GetMTLDevice();
-            
+
             const size_t new_buffer_size = sizeof(DescriptorEntry) * new_capacity;
             id<MTLBuffer> new_buffer = [device newBufferWithLength:new_buffer_size
                                                            options:MTLResourceStorageModeShared |
                                                                    MTLResourceCPUCacheModeWriteCombined |
                                                                    MTLResourceHazardTrackingModeTracked];
-            
-            DescriptorEntry* new_cpu_ptr = static_cast<DescriptorEntry*>([new_buffer contents]);
-            
+
+            void* new_cpu_ptr = [new_buffer contents];
+
             // Copy existing descriptors
             if (descriptor_cpu_ptr)
             {
                 std::memcpy(new_cpu_ptr, descriptor_cpu_ptr, sizeof(DescriptorEntry) * capacity);
             }
-            
-            // Zero new entries
-            std::memset(new_cpu_ptr + capacity, 0, sizeof(DescriptorEntry) * (new_capacity - capacity));
-            
+
+            DescriptorEntry* new_entries = static_cast<DescriptorEntry*>(new_cpu_ptr);
+            std::memset(new_entries + capacity, 0, sizeof(DescriptorEntry) * (new_capacity - capacity));
+
             // Update state
             descriptor_buffer = new_buffer;
             descriptor_cpu_ptr = new_cpu_ptr;
             capacity = new_capacity;
             resource_entries.resize(new_capacity);
-            
+
             [new_buffer setLabel:@"BindlessDescriptorTable"];
         }
     }
@@ -303,9 +285,9 @@ namespace adria
         return true;
     }
 
-    DescriptorEntry* MetalArgumentBuffer::GetDescriptorEntry(Uint32 index)
+    void* MetalArgumentBuffer::GetDescriptorEntry(Uint32 index)
     {
-        return &descriptor_cpu_ptr[index];
+        return static_cast<DescriptorEntry*>(descriptor_cpu_ptr) + index;
     }
 
     void MetalArgumentBuffer::ClearEntry(Uint32 index)
@@ -314,10 +296,11 @@ namespace adria
         {
             resource_entries[index] = MetalResourceEntry{};
         }
-        
+
         if (descriptor_cpu_ptr)
         {
-            descriptor_cpu_ptr[index] = DescriptorEntry{};
+            DescriptorEntry* entries = static_cast<DescriptorEntry*>(descriptor_cpu_ptr);
+            entries[index] = DescriptorEntry{};
         }
     }
 }

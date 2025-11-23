@@ -557,15 +557,9 @@ namespace adria
                     reflection->threadsPerThreadgroup[1],
                     reflection->threadsPerThreadgroup[2]
                 );
-
-                ADRIA_LOG(INFO, "Compute shader threadgroup: %lux%lux%lu",
-                          threads_per_threadgroup.width,
-                          threads_per_threadgroup.height,
-                          threads_per_threadgroup.depth);
             }
             else
             {
-                ADRIA_LOG(WARNING, "Shader missing reflection data, using default threadgroup size");
                 threads_per_threadgroup = MTLSizeMake(8, 8, 1);
             }
         }

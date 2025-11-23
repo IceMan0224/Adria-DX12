@@ -426,6 +426,22 @@ if(WIN32)
 elseif(APPLE)
 	set(ADRIA_PLATFORM_SOURCES ${ADRIA_MACOS_SOURCES})
 	set(ADRIA_BACKEND_SOURCES ${ADRIA_METAL_SOURCES})
+
+	find_path(METAL_IR_RUNTIME_INCLUDE_DIR
+		NAMES metal_irconverter_runtime/metal_irconverter_runtime.h
+		PATHS /usr/local/include
+	)
+
+	if(NOT METAL_IR_RUNTIME_INCLUDE_DIR)
+		message(FATAL_ERROR
+			"Metal Shader Converter Runtime is required but not found.\n"
+			"Please install Metal Shader Converter from:\n"
+			"https://developer.apple.com/metal/shader-converter/\n"
+			"Expected location: /usr/local/include/metal_irconverter_runtime/metal_irconverter_runtime.h"
+		)
+	else()
+		message(STATUS "Found Metal Shader Converter Runtime: ${METAL_IR_RUNTIME_INCLUDE_DIR}")
+	endif()
 endif()
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_PLATFORM_SOURCES} ${ADRIA_BACKEND_SOURCES})
@@ -523,6 +539,7 @@ target_include_directories(Adria PRIVATE
 if(APPLE)
     target_include_directories(Adria PRIVATE
         "${EXTERNAL_DIR}/MetalShaderConverter/include"
+        "/usr/local/include"  
     )
 endif()
 
@@ -548,6 +565,18 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	target_compile_options(Adria PRIVATE -Wno-switch -Wno-format-security -Wno-deprecated-declarations)
+endif()
+
+# Enable ARC (Automatic Reference Counting) for all Objective-C++ files on Apple (required by metal_irconverter_runtime)
+if(APPLE)
+	set_source_files_properties(
+		${ADRIA_METAL_SOURCES}
+		${ADRIA_MACOS_SOURCES}
+		"${EXTERNAL_DIR}/ImGui/imgui_impl_metal.mm"
+		"${EXTERNAL_DIR}/ImGui/imgui_impl_osx.mm"
+		PROPERTIES COMPILE_FLAGS "-fobjc-arc"
+	)
+	set(CMAKE_OBJCXX_FLAGS "${CMAKE_OBJCXX_FLAGS} -fobjc-arc")
 endif()
 
 target_compile_definitions(Adria PRIVATE

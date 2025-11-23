@@ -30,9 +30,6 @@ namespace adria
         MetalResourceType type = MetalResourceType::Unknown;
     };
 
-    // Forward declare internal descriptor structure
-    struct DescriptorEntry;
-
     class MetalArgumentBuffer final
     {
     public:
@@ -71,7 +68,7 @@ namespace adria
     private:
         MetalDevice* metal_gfx;
         id<MTLBuffer> descriptor_buffer;
-        DescriptorEntry* descriptor_cpu_ptr;
+        void* descriptor_cpu_ptr;  
         Uint32 capacity;
         Uint32 next_free_index;
         std::vector<MetalResourceEntry> resource_entries;
@@ -80,7 +77,7 @@ namespace adria
         void CreateDescriptorBuffer();
         void GrowCapacity(Uint32 min_capacity);
         Bool ValidateIndex(Uint32 index) const;
-        DescriptorEntry* GetDescriptorEntry(Uint32 index);
+        void* GetDescriptorEntry(Uint32 index);
         void ClearEntry(Uint32 index);
     };
 }

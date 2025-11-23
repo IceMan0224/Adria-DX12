@@ -1,6 +1,6 @@
 #include "CommonResources.hlsli"
 
-#define BLOCK_SIZE 1024
+#define BLOCK_SIZE 512
 
 struct BlurConstants
 {
