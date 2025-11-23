@@ -181,6 +181,7 @@ namespace adria
         if (render_encoder)
         {
             UpdateTopLevelArgumentBuffer();  // Update top-level argument buffer before drawing
+            ADRIA_LOG(INFO, "Draw: vertices=%u, instances=%u", vertex_count, instance_count);
             [render_encoder drawPrimitives:ConvertTopology(current_topology)
                                 vertexStart:start_vertex_location
                                 vertexCount:vertex_count
@@ -200,6 +201,7 @@ namespace adria
                 MTLIndexType index_type = ConvertIndexFormat(current_index_buffer_view->format);
                 Uint32 index_size = (index_type == MTLIndexTypeUInt16) ? 2 : 4;
 
+                ADRIA_LOG(INFO, "DrawIndexed: indices=%u, instances=%u", index_count, instance_count);
                 [render_encoder drawIndexedPrimitives:ConvertTopology(current_topology)
                                            indexCount:index_count
                                             indexType:index_type
@@ -359,7 +361,13 @@ namespace adria
             // Metal Shader Converter expects the resource descriptor heap at index 0
             [render_encoder setVertexBuffer:buffer offset:0 atIndex:0];
             [render_encoder setFragmentBuffer:buffer offset:0 atIndex:0];
+
+            // Make all resources in the argument buffer accessible to the encoder
+            arg_buffer->MakeResourcesResident(render_encoder);
         }
+
+        // Automatically set viewport to match render pass dimensions (matches D3D12 behavior)
+        SetViewport(0, 0, render_pass_desc.width, render_pass_desc.height);
     }
 
     void MetalCommandList::EndRenderPass()
@@ -375,12 +383,16 @@ namespace adria
     {
         current_pipeline_state = state;
 
+        ADRIA_LOG(INFO, "SetPipelineState: state=%p, render_encoder=%p", state, render_encoder);
+
         if (render_encoder && state)
         {
             if (state->GetType() == GfxPipelineStateType::Graphics)
             {
                 MetalGraphicsPipelineState const* metal_pso = static_cast<MetalGraphicsPipelineState const*>(state);
-                [render_encoder setRenderPipelineState:metal_pso->GetPipelineState()];
+                id<MTLRenderPipelineState> pipeline = metal_pso->GetPipelineState();
+                ADRIA_LOG(INFO, "SetPipelineState: Graphics pipeline=%p", pipeline);
+                [render_encoder setRenderPipelineState:pipeline];
 
                 if (metal_pso->GetDepthStencilState())
                 {
@@ -481,6 +493,10 @@ namespace adria
             viewport.znear = 0.0;
             viewport.zfar = 1.0;
             [render_encoder setViewport:viewport];
+            ADRIA_LOG(INFO, "SetViewport: x=%u, y=%u, w=%u, h=%u", x, y, width, height);
+
+            // Automatically set scissor rect to match viewport (matches D3D12 behavior)
+            SetScissorRect(x, y, width, height);
         }
     }
 
@@ -568,15 +584,21 @@ namespace adria
             return;
         }
 
-        // Bind the top-level argument buffer to both vertex and fragment shaders at index 2
+        // Bind root constants at Metal buffer index 1 (maps to HLSL register b1)
         if (render_encoder)
         {
-            [render_encoder setVertexBytes:&top_level_ab length:sizeof(TopLevelArgumentBuffer) atIndex:2];
-            [render_encoder setFragmentBytes:&top_level_ab length:sizeof(TopLevelArgumentBuffer) atIndex:2];
+            [render_encoder setVertexBytes:top_level_ab.root_constants 
+                                    length:sizeof(uint32_t) * 8 
+                                atIndex:1];  // Changed from 2 to 1
+            [render_encoder setFragmentBytes:top_level_ab.root_constants 
+                                    length:sizeof(uint32_t) * 8 
+                                    atIndex:1];  // Changed from 2 to 1
         }
         else if (compute_encoder)
         {
-            [compute_encoder setBytes:&top_level_ab length:sizeof(TopLevelArgumentBuffer) atIndex:2];
+            [compute_encoder setBytes:top_level_ab.root_constants 
+                                length:sizeof(uint32_t) * 8 
+                            atIndex:1];  // Changed from 2 to 1
         }
 
         top_level_ab_dirty = false;
@@ -716,6 +738,9 @@ namespace adria
                 id<MTLBuffer> buffer = arg_buffer->GetBuffer();
                 // Metal Shader Converter expects the resource descriptor heap at index 0
                 [compute_encoder setBuffer:buffer offset:0 atIndex:0];
+
+                // Make all resources in the argument buffer accessible to the encoder
+                arg_buffer->MakeResourcesResident(compute_encoder);
             }
         }
     }

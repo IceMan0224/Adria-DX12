@@ -1,12 +1,13 @@
 #pragma once
 #import <Metal/Metal.h>
 #include "MetalDescriptor.h"
+#include <vector>
 
 @protocol MTLBuffer;
 @protocol MTLTexture;
 @protocol MTLSamplerState;
-
-struct IRDescriptorTableEntry;
+@protocol MTLRenderCommandEncoder;
+@protocol MTLComputeCommandEncoder;
 
 namespace adria
 {
@@ -22,14 +23,15 @@ namespace adria
 
     struct MetalResourceEntry
     {
-        id<MTLTexture> texture;
-        id<MTLBuffer> buffer;
-        id<MTLSamplerState> sampler;
-        Uint64 buffer_offset;
-        MetalResourceType type;
-
-        MetalResourceEntry() : texture(nil), buffer(nil), sampler(nil), buffer_offset(0), type(MetalResourceType::Unknown) {}
+        id<MTLTexture> texture = nil;
+        id<MTLBuffer> buffer = nil;
+        id<MTLSamplerState> sampler = nil;
+        Uint64 buffer_offset = 0;
+        MetalResourceType type = MetalResourceType::Unknown;
     };
+
+    // Forward declare internal descriptor structure
+    struct DescriptorEntry;
 
     class MetalArgumentBuffer final
     {
@@ -37,13 +39,20 @@ namespace adria
         MetalArgumentBuffer(MetalDevice* metal_gfx, Uint32 initial_capacity);
         ~MetalArgumentBuffer();
 
+        // Non-copyable, non-movable
+        MetalArgumentBuffer(const MetalArgumentBuffer&) = delete;
+        MetalArgumentBuffer& operator=(const MetalArgumentBuffer&) = delete;
+        MetalArgumentBuffer(MetalArgumentBuffer&&) = delete;
+        MetalArgumentBuffer& operator=(MetalArgumentBuffer&&) = delete;
+
+        // Capacity and allocation
         ADRIA_FORCEINLINE Uint32 GetCapacity() const { return capacity; }
         ADRIA_FORCEINLINE Uint32 GetNextFreeIndex() const { return next_free_index; }
-
-        id<MTLBuffer> GetBuffer() const { return descriptor_table_buffer; }
+        ADRIA_FORCEINLINE id<MTLBuffer> GetBuffer() const { return descriptor_buffer; }
 
         Uint32 AllocateRange(Uint32 count);
 
+        // Resource setters
         void SetTexture(id<MTLTexture> texture, Uint32 index);
         void SetBuffer(id<MTLBuffer> buffer, Uint32 index, Uint64 offset = 0);
         void SetSampler(id<MTLSamplerState> sampler, Uint32 index);
@@ -52,20 +61,26 @@ namespace adria
         id<MTLBuffer> GetBuffer(Uint32 index) const;
         id<MTLSamplerState> GetSampler(Uint32 index) const;
         Uint64 GetBufferOffset(Uint32 index) const;
-
         MetalResourceType GetResourceType(Uint32 index) const;
         MetalResourceEntry const& GetResourceEntry(Uint32 index) const;
 
-    private:
-        MetalDevice* metal_gfx;
-        id<MTLBuffer> descriptor_table_buffer;
-        IRDescriptorTableEntry* descriptor_table_cpu_address;
-        Uint32 capacity;
-        Uint32 next_free_index;
-        std::vector<MetalResourceEntry> resource_entries; 
+        void MakeResourcesResident(id<MTLRenderCommandEncoder> encoder, 
+                                   MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment);
+        void MakeResourcesResident(id<MTLComputeCommandEncoder> encoder);
 
     private:
-        void Grow();
-        void CreateArgumentBuffer();
+        MetalDevice* metal_gfx;
+        id<MTLBuffer> descriptor_buffer;
+        DescriptorEntry* descriptor_cpu_ptr;
+        Uint32 capacity;
+        Uint32 next_free_index;
+        std::vector<MetalResourceEntry> resource_entries;
+
+    private:
+        void CreateDescriptorBuffer();
+        void GrowCapacity(Uint32 min_capacity);
+        Bool ValidateIndex(Uint32 index) const;
+        DescriptorEntry* GetDescriptorEntry(Uint32 index);
+        void ClearEntry(Uint32 index);
     };
 }
