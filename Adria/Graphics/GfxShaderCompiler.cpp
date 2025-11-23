@@ -230,12 +230,10 @@ namespace adria
 			metadata_archive(binary_size);
 
 #if defined(ADRIA_PLATFORM_MACOS)
-			// Load reflection data size
 			Uint64 reflection_size = 0;
 			metadata_archive(reflection_size);
 #endif
 
-			//check if the one of the includes was modified after the cache binary was generated
 			for (std::string const& include : output.includes)
 			{
 				if (GetFileLastWriteTime(cache_binary) < GetFileLastWriteTime(include))
@@ -253,7 +251,6 @@ namespace adria
 			output.shader.SetDesc(input);
 
 #if defined(ADRIA_PLATFORM_MACOS)
-			// Load reflection data
 			if (reflection_size > 0)
 			{
 				std::unique_ptr<Char[]> reflection_data(new Char[reflection_size]);
@@ -274,7 +271,6 @@ namespace adria
 			metadata_archive(output.shader.GetSize());
 
 #if defined(ADRIA_PLATFORM_MACOS)
-			// Save reflection data size
 			Uint64 reflection_size = output.shader.GetReflectionSize();
 			metadata_archive(reflection_size);
 #endif
@@ -285,7 +281,6 @@ namespace adria
 			binary_archive.saveBinary(output.shader.GetData(), output.shader.GetSize());
 
 #if defined(ADRIA_PLATFORM_MACOS)
-			// Save reflection data
 			if (reflection_size > 0)
 			{
 				binary_archive.saveBinary(output.shader.GetReflectionData(), reflection_size);
@@ -329,31 +324,25 @@ namespace adria
 			// Match D3D12 common root signature: CB0, 8 constants at register 1, CB2, CB3
 			IRRootParameter1 rootParameters[4] = {};
 
-			// Root parameter 0: CBV at register 0
 			rootParameters[0].ParameterType = IRRootParameterTypeCBV;
 			rootParameters[0].ShaderVisibility = IRShaderVisibilityAll;
 			rootParameters[0].Descriptor.ShaderRegister = 0;
 
-			// Root parameter 1: 8 root constants at register 1
 			rootParameters[1].ParameterType = IRRootParameterType32BitConstants;
 			rootParameters[1].ShaderVisibility = IRShaderVisibilityAll;
 			rootParameters[1].Constants.ShaderRegister = 1;
 			rootParameters[1].Constants.Num32BitValues = 8;
 
-			// Root parameter 2: CBV at register 2
 			rootParameters[2].ParameterType = IRRootParameterTypeCBV;
 			rootParameters[2].ShaderVisibility = IRShaderVisibilityAll;
 			rootParameters[2].Descriptor.ShaderRegister = 2;
 
-			// Root parameter 3: CBV at register 3
 			rootParameters[3].ParameterType = IRRootParameterTypeCBV;
 			rootParameters[3].ShaderVisibility = IRShaderVisibilityAll;
 			rootParameters[3].Descriptor.ShaderRegister = 3;
 
-			// Static samplers matching D3D12 (registers 0-9)
 			IRStaticSamplerDescriptor staticSamplers[10] = {};
 
-			// Sampler 0: Linear, Wrap
 			staticSamplers[0].Filter = IRFilterMinMagMipLinear;
 			staticSamplers[0].AddressU = IRTextureAddressModeWrap;
 			staticSamplers[0].AddressV = IRTextureAddressModeWrap;
@@ -368,7 +357,6 @@ namespace adria
 			staticSamplers[0].RegisterSpace = 0;
 			staticSamplers[0].ShaderVisibility = IRShaderVisibilityAll;
 
-			// Sampler 1: Linear, Clamp
 			staticSamplers[1].Filter = IRFilterMinMagMipLinear;
 			staticSamplers[1].AddressU = IRTextureAddressModeClamp;
 			staticSamplers[1].AddressV = IRTextureAddressModeClamp;
@@ -383,7 +371,6 @@ namespace adria
 			staticSamplers[1].RegisterSpace = 0;
 			staticSamplers[1].ShaderVisibility = IRShaderVisibilityAll;
 
-			// Sampler 2: Linear, Border (black)
 			staticSamplers[2].Filter = IRFilterMinMagMipLinear;
 			staticSamplers[2].AddressU = IRTextureAddressModeBorder;
 			staticSamplers[2].AddressV = IRTextureAddressModeBorder;
@@ -398,7 +385,6 @@ namespace adria
 			staticSamplers[2].RegisterSpace = 0;
 			staticSamplers[2].ShaderVisibility = IRShaderVisibilityAll;
 
-			// Sampler 3: Point, Wrap
 			staticSamplers[3].Filter = IRFilterMinMagMipPoint;
 			staticSamplers[3].AddressU = IRTextureAddressModeWrap;
 			staticSamplers[3].AddressV = IRTextureAddressModeWrap;
@@ -413,7 +399,6 @@ namespace adria
 			staticSamplers[3].RegisterSpace = 0;
 			staticSamplers[3].ShaderVisibility = IRShaderVisibilityAll;
 
-			// Sampler 4: Point, Clamp
 			staticSamplers[4].Filter = IRFilterMinMagMipPoint;
 			staticSamplers[4].AddressU = IRTextureAddressModeClamp;
 			staticSamplers[4].AddressV = IRTextureAddressModeClamp;
@@ -428,7 +413,6 @@ namespace adria
 			staticSamplers[4].RegisterSpace = 0;
 			staticSamplers[4].ShaderVisibility = IRShaderVisibilityAll;
 
-			// Sampler 5: Point, Border (black)
 			staticSamplers[5].Filter = IRFilterMinMagMipPoint;
 			staticSamplers[5].AddressU = IRTextureAddressModeBorder;
 			staticSamplers[5].AddressV = IRTextureAddressModeBorder;
@@ -443,7 +427,6 @@ namespace adria
 			staticSamplers[5].RegisterSpace = 0;
 			staticSamplers[5].ShaderVisibility = IRShaderVisibilityAll;
 
-			// Sampler 6: Comparison Linear, Clamp
 			staticSamplers[6].Filter = IRFilterComparisonMinMagMipLinear;
 			staticSamplers[6].AddressU = IRTextureAddressModeClamp;
 			staticSamplers[6].AddressV = IRTextureAddressModeClamp;
@@ -458,7 +441,6 @@ namespace adria
 			staticSamplers[6].RegisterSpace = 0;
 			staticSamplers[6].ShaderVisibility = IRShaderVisibilityAll;
 
-			// Sampler 7: Comparison Linear, Wrap
 			staticSamplers[7].Filter = IRFilterComparisonMinMagMipLinear;
 			staticSamplers[7].AddressU = IRTextureAddressModeWrap;
 			staticSamplers[7].AddressV = IRTextureAddressModeWrap;
@@ -473,7 +455,6 @@ namespace adria
 			staticSamplers[7].RegisterSpace = 0;
 			staticSamplers[7].ShaderVisibility = IRShaderVisibilityAll;
 
-			// Sampler 8: Linear, Mirror
 			staticSamplers[8].Filter = IRFilterMinMagMipLinear;
 			staticSamplers[8].AddressU = IRTextureAddressModeMirror;
 			staticSamplers[8].AddressV = IRTextureAddressModeMirror;
@@ -488,7 +469,6 @@ namespace adria
 			staticSamplers[8].RegisterSpace = 0;
 			staticSamplers[8].ShaderVisibility = IRShaderVisibilityAll;
 
-			// Sampler 9: Point, Mirror
 			staticSamplers[9].Filter = IRFilterMinMagMipPoint;
 			staticSamplers[9].AddressU = IRTextureAddressModeMirror;
 			staticSamplers[9].AddressV = IRTextureAddressModeMirror;
@@ -527,6 +507,7 @@ namespace adria
 			ADRIA_LOG(INFO, "Metal IR Converter initialized");
 #endif
 		}
+
 		void Destroy()
 		{
 #if defined(ADRIA_PLATFORM_MACOS)
@@ -544,6 +525,7 @@ namespace adria
 			library.Reset();
 			utils.Reset();
 		}
+
 		Bool CompileShader(GfxShaderCompileInput const& input, GfxShaderCompileOutput& output)
 		{
 			std::string define_key;
@@ -618,7 +600,6 @@ namespace adria
 			std::vector<std::wstring> defines;
 			defines.reserve(input.defines.size() + 1);
 
-			// Add backend-specific define
 			if (current_backend == GfxBackend::Metal)
 			{
 				compile_args.push_back(L"-D");
@@ -732,15 +713,12 @@ namespace adria
 			IRCompilerSetMinimumGPUFamily(metal_ir_compiler, IRGPUFamilyApple7);
 			IRCompilerSetMinimumDeploymentTarget(metal_ir_compiler, IROperatingSystem_macOS, "15.0.0");
 
-			// Don't set entry point name for library shaders, they have multiple entry points
-			// For library shaders, we need to clear/reset the entry point to avoid using stale data
 			if (input.stage != GfxShaderStage::LIB)
 			{
 				IRCompilerSetEntryPointName(metal_ir_compiler, input.entry_point.empty() ? "main" : input.entry_point.c_str());
 			}
 			else
 			{
-				// Clear entry point for library shaders using empty string
 				IRCompilerSetEntryPointName(metal_ir_compiler, "");
 			}
 
@@ -786,11 +764,8 @@ namespace adria
 
 			IRMetalLibBinary* metallib = IRMetalLibBinaryCreate();
 
-			// Get the shader stage from the compiled object
 			IRShaderStage ir_stage = IRObjectGetMetalIRShaderStage(metal_ir_obj);
-
 			Bool extraction_success = IRObjectGetMetalLibBinary(metal_ir_obj, ir_stage, metallib);
-
 			if (!extraction_success)
 			{
 				ADRIA_LOG_SYNC(ERROR, "Failed to extract Metal library binary for shader");
@@ -816,11 +791,8 @@ namespace adria
 				return false;
 			}
 
-			// Extract shader reflection to get threadgroup size (only for compute/mesh/amplification shaders)
 			MetalShaderReflection reflection{};
 			Bool has_threadgroup_info = false;
-
-			// Get reflection info for compute, mesh, or amplification shaders
 			IRShaderReflection* ir_reflection = IRShaderReflectionCreate();
 			if (ir_reflection && IRObjectGetReflection(metal_ir_obj, ir_stage, ir_reflection))
 			{
@@ -868,7 +840,6 @@ namespace adria
 				IRShaderReflectionDestroy(ir_reflection);
 			}
 
-			// Prepare shader data: Store metallib and reflection separately
 			std::vector<Uint8> shader_data;
 			shader_data.resize(metallib_size);
 			IRMetalLibGetBytecode(metallib, shader_data.data());
@@ -883,7 +854,7 @@ namespace adria
 
 			output.shader.SetDesc(input);
 			output.shader.SetShaderData(shader_data.data(), shader_data.size());
-			output.shader.SetReflectionData(&reflection, sizeof(MetalShaderReflection));  // Store reflection separately
+			output.shader.SetReflectionData(&reflection, sizeof(MetalShaderReflection));  
 			ADRIA_LOG(INFO, "Successfully converted DXIL to Metal IR for shader: %s", input.file.c_str());
 #else
 			output.shader.SetDesc(input);
@@ -894,6 +865,7 @@ namespace adria
 			SaveToCache(cache_path, output);
 			return true;
 		}
+
 		void ReadBlobFromFile(std::string const& filename, GfxShaderBlob& blob)
 		{
 			std::wstring wide_filename = ToWideString(filename);

@@ -66,7 +66,6 @@ namespace adria
 			memcpy(shader_blob.data(), data, size);
 		}
 
-#if defined(ADRIA_PLATFORM_MACOS)
 		void SetReflectionData(void const* reflection, Uint64 size)
 		{
 			if (reflection && size > 0)
@@ -85,7 +84,6 @@ namespace adria
 		{
 			return reflection_data.size();
 		}
-#endif
 
 		GfxShaderDesc const& GetDesc() const { return desc; }
 
@@ -101,9 +99,6 @@ namespace adria
 	private:
 		GfxShaderBlob shader_blob;
 		GfxShaderDesc desc;
-
-#if defined(ADRIA_PLATFORM_MACOS)
 		std::vector<Uint8> reflection_data;
-#endif
 	};
 }
