@@ -34,22 +34,15 @@ namespace adria
     {
     public:
         MetalArgumentBuffer(MetalDevice* metal_gfx, Uint32 initial_capacity);
+        ADRIA_NONCOPYABLE_NONMOVABLE(MetalArgumentBuffer)
         ~MetalArgumentBuffer();
 
-        // Non-copyable, non-movable
-        MetalArgumentBuffer(const MetalArgumentBuffer&) = delete;
-        MetalArgumentBuffer& operator=(const MetalArgumentBuffer&) = delete;
-        MetalArgumentBuffer(MetalArgumentBuffer&&) = delete;
-        MetalArgumentBuffer& operator=(MetalArgumentBuffer&&) = delete;
-
-        // Capacity and allocation
         ADRIA_FORCEINLINE Uint32 GetCapacity() const { return capacity; }
         ADRIA_FORCEINLINE Uint32 GetNextFreeIndex() const { return next_free_index; }
         ADRIA_FORCEINLINE id<MTLBuffer> GetBuffer() const { return descriptor_buffer; }
 
         Uint32 AllocateRange(Uint32 count);
 
-        // Resource setters
         void SetTexture(id<MTLTexture> texture, Uint32 index);
         void SetBuffer(id<MTLBuffer> buffer, Uint32 index, Uint64 offset = 0);
         void SetSampler(id<MTLSamplerState> sampler, Uint32 index);

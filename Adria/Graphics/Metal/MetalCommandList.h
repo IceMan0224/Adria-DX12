@@ -105,10 +105,11 @@ namespace adria
     private:
         struct TopLevelArgumentBuffer
         {
-            Uint64 cbv0_address;       
-            Uint32 root_constants[8];  
-            Uint64 cbv2_address;       
-            Uint64 cbv3_address;       
+            Uint64 cbv0_address;
+            Uint32 root_constants[8];
+            Uint64 cbv2_address;
+            Uint64 cbv3_address;
+            Uint64 _padding;  
         };
 
         MetalDevice* metal_device;
@@ -124,8 +125,8 @@ namespace adria
         std::unique_ptr<GfxRayTracingShaderBindings> current_rt_bindings;
         std::vector<std::pair<GfxFence&, Uint64>> pending_signals;
 
-        TopLevelArgumentBuffer top_level_ab;  
-        Bool top_level_ab_dirty = true;       
+        TopLevelArgumentBuffer top_level_ab;
+        Bool top_level_ab_dirty = true;
         id<MTLAccelerationStructure> current_tlas = nil;  
 
     private:
