@@ -377,7 +377,6 @@ namespace adria
 
             [render_encoder setObjectBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
             [render_encoder setMeshBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
-            arg_buffer->MakeResourcesResident(render_encoder);
         }
         SetViewport(0, 0, render_pass_desc.width, render_pass_desc.height);
         SetScissorRect(0, 0, render_pass_desc.width, render_pass_desc.height);
@@ -712,7 +711,6 @@ namespace adria
             {
                 id<MTLBuffer> buffer = arg_buffer->GetBuffer();
                 [compute_encoder setBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
-                arg_buffer->MakeResourcesResident(compute_encoder);
             }
         }
     }

@@ -130,7 +130,23 @@ namespace adria
             ADRIA_LOG(ERROR, "Failed to create Metal device!");
             return;
         }
+
+        // Create residency set for managing resource residency
+        MTLResidencySetDescriptor* residency_desc = [MTLResidencySetDescriptor new];
+        residency_desc.initialCapacity = 4096; // Start with reasonable capacity
+        residency_set = [device newResidencySetWithDescriptor:residency_desc error:nil];
+        residency_desc = nil;
+
+        if (!residency_set)
+        {
+            ADRIA_LOG(ERROR, "Failed to create residency set!");
+            device = nil;
+            return;
+        }
+
         command_queue = [device newCommandQueue];
+        [command_queue addResidencySet:residency_set]; // Attach residency set to queue
+
         argument_buffer = std::make_unique<MetalArgumentBuffer>(this, 4096);
 
         if (!capabilities.Initialize(this))
@@ -173,6 +189,9 @@ namespace adria
             swapchain.reset();
             argument_buffer.reset();
             shader_library = nil;
+
+            residency_set = nil;
+
             command_queue = nil;
             device = nil;
         }
@@ -736,6 +755,26 @@ namespace adria
             return;
         }
 
+        // Process eviction queue - remove allocations that are old enough
+        while (!eviction_queue.empty())
+        {
+            EvictionEntry const& entry = eviction_queue.front();
+            if (entry.frame_id + GFX_BACKBUFFER_COUNT > frame_index)
+            {
+                break; // Too recent, keep in queue
+            }
+
+            [residency_set removeAllocation:entry.buffer_or_texture];
+            residency_dirty = true;
+            eviction_queue.pop();
+        }
+
+        if (residency_dirty)
+        {
+            [residency_set commit];
+            residency_dirty = false;
+        }
+
         if (rendering_not_started)
         {
             dynamic_allocator_on_init.reset();
@@ -813,5 +852,49 @@ namespace adria
             return swapchain->GetCurrentDrawable();
         }
         return nil;
+    }
+
+    void MetalDevice::MakeResident(id<MTLBuffer> buffer)
+    {
+        if (buffer && residency_set)
+        {
+            [residency_set addAllocation:buffer];
+            residency_dirty = true;
+            [residency_set commit];
+            residency_dirty = false;
+        }
+    }
+
+    void MetalDevice::MakeResident(id<MTLTexture> texture)
+    {
+        if (texture && residency_set)
+        {
+            [residency_set addAllocation:texture];
+            residency_dirty = true;
+            [residency_set commit];
+            residency_dirty = false;
+        }
+    }
+
+    void MetalDevice::Evict(id<MTLBuffer> buffer)
+    {
+        if (buffer && residency_set)
+        {
+            EvictionEntry entry;
+            entry.buffer_or_texture = buffer;
+            entry.frame_id = frame_index;
+            eviction_queue.push(entry);
+        }
+    }
+
+    void MetalDevice::Evict(id<MTLTexture> texture)
+    {
+        if (texture && residency_set)
+        {
+            EvictionEntry entry;
+            entry.buffer_or_texture = texture;
+            entry.frame_id = frame_index;
+            eviction_queue.push(entry);
+        }
     }
 }

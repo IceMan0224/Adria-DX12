@@ -77,6 +77,11 @@ namespace adria
         }
 
         metal_texture = [device newTextureWithDescriptor:tex_desc];
+
+        if (metal_texture)
+        {
+            metal_device->MakeResident(metal_texture);
+        }
     }
 
     MetalTexture::MetalTexture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data)
@@ -102,6 +107,8 @@ namespace adria
     {
         if (owns_texture && metal_texture)
         {
+            MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
+            metal_device->Evict(metal_texture);
             metal_texture = nil;
         }
     }

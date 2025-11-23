@@ -7,7 +7,6 @@
 namespace adria
 {
     ADRIA_LOG_CHANNEL(Graphics);
-    //official IR runtime descriptor structure (24 bytes: 3x uint64_t)
     using DescriptorEntry = IRDescriptorTableEntry;
 
     MetalArgumentBuffer::MetalArgumentBuffer(MetalDevice* metal_gfx, Uint32 initial_capacity)
@@ -134,77 +133,6 @@ namespace adria
         return (index < resource_entries.size()) ? resource_entries[index] : empty_entry;
     }
 
-    void MetalArgumentBuffer::MakeResourcesResident(id<MTLRenderCommandEncoder> encoder, MTLRenderStages stages)
-    {
-        if (!encoder) 
-        {
-            return;
-        }
-
-        for (Uint32 i = 0; i < next_free_index; ++i)
-        {
-            const MetalResourceEntry& entry = resource_entries[i];
-            
-            switch (entry.type)
-            {
-                case MetalResourceType::Texture:
-                    if (entry.texture)
-                    {
-                        [encoder useResource:entry.texture 
-                                        usage:MTLResourceUsageRead 
-                                        stages:stages];
-                    }
-                    break;
-                    
-                case MetalResourceType::Buffer:
-                    if (entry.buffer)
-                    {
-                        [encoder useResource:entry.buffer 
-                                        usage:MTLResourceUsageRead 
-                                        stages:stages];
-                    }
-                    break;
-                    
-                case MetalResourceType::Sampler:
-                case MetalResourceType::Unknown:
-                default:
-                    break;
-            }
-        }
-    }
-
-    void MetalArgumentBuffer::MakeResourcesResident(id<MTLComputeCommandEncoder> encoder)
-    {
-        if (!encoder) return;
-
-        for (Uint32 i = 0; i < next_free_index; ++i)
-        {
-            const MetalResourceEntry& entry = resource_entries[i];
-            
-            switch (entry.type)
-            {
-                case MetalResourceType::Texture:
-                    if (entry.texture)
-                    {
-                        [encoder useResource:entry.texture usage:MTLResourceUsageRead];
-                    }
-                    break;
-                    
-                case MetalResourceType::Buffer:
-                    if (entry.buffer)
-                    {
-                        [encoder useResource:entry.buffer usage:MTLResourceUsageRead];
-                    }
-                    break;
-                    
-                case MetalResourceType::Sampler:
-                case MetalResourceType::Unknown:
-                default:
-                    break;
-            }
-        }
-    }
-
     // Private methods
 
     void MetalArgumentBuffer::CreateDescriptorBuffer()
@@ -225,12 +153,12 @@ namespace adria
             std::memset(descriptor_cpu_ptr, 0, buffer_size);
 
             [descriptor_buffer setLabel:@"BindlessDescriptorTable"];
+            metal_gfx->MakeResident(descriptor_buffer);
         }
     }
 
     void MetalArgumentBuffer::GrowCapacity(Uint32 min_capacity)
     {
-        // Grow to next power of 2 or min_capacity, whichever is larger
         Uint32 new_capacity = capacity;
         while (new_capacity < min_capacity)
         {
@@ -249,7 +177,6 @@ namespace adria
 
             void* new_cpu_ptr = [new_buffer contents];
 
-            // Copy existing descriptors
             if (descriptor_cpu_ptr)
             {
                 std::memcpy(new_cpu_ptr, descriptor_cpu_ptr, sizeof(DescriptorEntry) * capacity);
@@ -258,13 +185,18 @@ namespace adria
             DescriptorEntry* new_entries = static_cast<DescriptorEntry*>(new_cpu_ptr);
             std::memset(new_entries + capacity, 0, sizeof(DescriptorEntry) * (new_capacity - capacity));
 
-            // Update state
+            id<MTLBuffer> old_buffer = descriptor_buffer;
             descriptor_buffer = new_buffer;
             descriptor_cpu_ptr = new_cpu_ptr;
             capacity = new_capacity;
             resource_entries.resize(new_capacity);
 
             [new_buffer setLabel:@"BindlessDescriptorTable"];
+            metal_gfx->MakeResident(new_buffer);
+            if (old_buffer)
+            {
+                metal_gfx->Evict(old_buffer);
+            }
         }
     }
 

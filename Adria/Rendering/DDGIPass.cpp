@@ -33,7 +33,11 @@ namespace adria
 	DDGIPass::DDGIPass(GfxDevice* gfx, entt::registry& reg, Uint32 w, Uint32 h) : gfx(gfx), reg(reg), width(w), height(h)
 	{
 		is_supported = gfx->GetCapabilities().SupportsRayTracing();
+#if defined(ADRIA_PLATFORM_MACOS)
+		DDGI->Set(false);
+#else
 		DDGI->Set(is_supported);
+#endif
 		if (is_supported)
 		{
 			CreatePSOs();

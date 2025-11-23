@@ -9,9 +9,12 @@
     @protocol MTLLibrary;
     @protocol MTLBuffer;
     @protocol CAMetalDrawable;
+    @protocol MTLResidencySet;
     #define ID_POINTER(x) id<x>
+    #define ID_TYPE id
 #else
     #define ID_POINTER(x) void*
+    #define ID_TYPE void*
 #endif
 
 namespace adria
@@ -120,6 +123,11 @@ namespace adria
         id<MTLLibrary> GetMTLLibrary() const { return shader_library; }
         id<CAMetalDrawable> GetCurrentDrawable();
 
+        void MakeResident(id<MTLBuffer> buffer);
+        void MakeResident(id<MTLTexture> texture);
+        void Evict(id<MTLBuffer> buffer);
+        void Evict(id<MTLTexture> texture);
+
         struct BufferLookupResult
         {
             id<MTLBuffer> buffer;
@@ -138,6 +146,8 @@ namespace adria
         ID_POINTER(MTLDevice) device;
         ID_POINTER(MTLCommandQueue) command_queue;
         ID_POINTER(MTLLibrary) shader_library;
+        ID_POINTER(MTLResidencySet) residency_set;
+        Bool residency_dirty = false;
 
         std::unique_ptr<MetalSwapchain> swapchain;
         std::unique_ptr<MetalArgumentBuffer> argument_buffer;
@@ -153,6 +163,13 @@ namespace adria
         MetalCapabilities capabilities;
         GfxShadingRateInfo shading_rate_info;
         GfxFence* dummy_fence = nullptr;
+
+        struct EvictionEntry
+        {
+            ID_TYPE buffer_or_texture;
+            Uint64 frame_id;
+        };
+        std::queue<EvictionEntry> eviction_queue;
 
         struct BufferEntry
         {

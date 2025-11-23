@@ -61,10 +61,6 @@ namespace adria
         MetalResourceType GetResourceType(Uint32 index) const;
         MetalResourceEntry const& GetResourceEntry(Uint32 index) const;
 
-        void MakeResourcesResident(id<MTLRenderCommandEncoder> encoder, 
-                                   MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment);
-        void MakeResourcesResident(id<MTLComputeCommandEncoder> encoder);
-
     private:
         MetalDevice* metal_gfx;
         id<MTLBuffer> descriptor_buffer;
