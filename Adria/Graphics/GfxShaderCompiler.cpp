@@ -719,6 +719,11 @@ namespace adria
 			IRCompilerSetMinimumGPUFamily(metal_ir_compiler, IRGPUFamilyApple7);
 			IRCompilerSetMinimumDeploymentTarget(metal_ir_compiler, IROperatingSystem_macOS, "15.0.0");
 
+			if (input.flags & GfxShaderCompilerFlag_Debug)
+			{
+				IRCompilerIgnoreDebugInformation(metal_ir_compiler, false);
+			}
+
 			if (input.stage != GfxShaderStage::LIB)
 			{
 				IRCompilerSetEntryPointName(metal_ir_compiler, input.entry_point.empty() ? "main" : input.entry_point.c_str());
