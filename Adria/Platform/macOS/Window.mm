@@ -2,6 +2,32 @@
 #include "Platform/Window.h"
 #include "Core/Paths.h"
 
+@interface AdriaWindow : NSWindow
+{
+    adria::Window* adriaWindow;
+}
+- (instancetype)initWithContentRect:(NSRect)contentRect styleMask:(NSWindowStyleMask)style backing:(NSBackingStoreType)backingStoreType defer:(BOOL)flag adriaWindow:(adria::Window*)window;
+@end
+
+@implementation AdriaWindow
+
+- (instancetype)initWithContentRect:(NSRect)contentRect styleMask:(NSWindowStyleMask)style backing:(NSBackingStoreType)backingStoreType defer:(BOOL)flag adriaWindow:(adria::Window*)window
+{
+    self = [super initWithContentRect:contentRect styleMask:style backing:backingStoreType defer:flag];
+    if (self) {
+        adriaWindow = window;
+    }
+    return self;
+}
+
+- (void)close
+{
+    ADRIA_HACK("Closing window doesnt terminate the app for now, this is a hacky bypass");
+    _exit(0);  
+}
+
+@end
+
 @interface AdriaWindowDelegate : NSObject <NSWindowDelegate>
 {
     adria::Window* window;
@@ -23,6 +49,7 @@
 
 - (void)windowWillClose:(NSNotification*)notification
 {
+    NSLog(@"Window is closing - setting quit flag");
     window->Quit(0);
 }
 
@@ -56,10 +83,11 @@ namespace adria
                                           NSWindowStyleMaskClosable |
                                           NSWindowStyleMaskResizable;
 
-            NSWindow* nsWindow = [[NSWindow alloc] initWithContentRect:frame
-                                                              styleMask:styleMask
-                                                                backing:NSBackingStoreBuffered
-                                                                  defer:NO];
+            AdriaWindow* nsWindow = [[AdriaWindow alloc] initWithContentRect:frame
+                                                                    styleMask:styleMask
+                                                                      backing:NSBackingStoreBuffered
+                                                                        defer:NO
+                                                                  adriaWindow:this];
 
             [nsWindow setTitle:@(init.title)];
 
@@ -163,7 +191,6 @@ namespace adria
             {
                 [NSApp sendEvent:event];
             }
-
             return !should_quit;
         }
     }

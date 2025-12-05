@@ -510,20 +510,26 @@ namespace adria
 
 		void Destroy()
 		{
+			static bool destroyed = false;
+			if (destroyed) return;
+			destroyed = true;
+
 #if defined(ADRIA_PLATFORM_MACOS)
 			if (metal_root_signature)
 			{
 				IRRootSignatureDestroy(metal_root_signature);
+				metal_root_signature = nullptr;
 			}
 			if (metal_ir_compiler)
 			{
 				IRCompilerDestroy(metal_ir_compiler);
+				metal_ir_compiler = nullptr;
 			}
 #endif
-			include_handler.Reset();
-			compiler.Reset();
-			library.Reset();
-			utils.Reset();
+			if (include_handler) include_handler.Reset();
+			if (utils) utils.Reset();
+			if (compiler) compiler.Reset();
+			if (library) library.Reset();
 		}
 
 		Bool CompileShader(GfxShaderCompileInput const& input, GfxShaderCompileOutput& output)

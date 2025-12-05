@@ -650,6 +650,13 @@ elseif(APPLE)
 		$<TARGET_FILE_DIR:Adria>
 		COMMENT "Copying libmetalirconverter.dylib to output directory"
 	)
+
+	add_custom_command(TARGET Adria POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		"${CMAKE_CURRENT_SOURCE_DIR}/dxcompiler.dylib"
+		$<TARGET_FILE_DIR:Adria>
+		COMMENT "Copying dxcompiler.dylib to output directory"
+	)
 endif()
 
 if(WIN32)

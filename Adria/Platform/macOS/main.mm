@@ -11,11 +11,26 @@
 
 using namespace adria;
 
+@interface AdriaAppDelegate : NSObject <NSApplicationDelegate>
+@end
+
+@implementation AdriaAppDelegate
+
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)theApplication
+{
+    return YES;
+}
+
+@end
+
 int main(int argc, char* argv[])
 {
     @autoreleasepool
     {
         [NSApplication sharedApplication];
+
+        AdriaAppDelegate* appDelegate = [[AdriaAppDelegate alloc] init];
+        [NSApp setDelegate:appDelegate];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
         CommandLineOptions::Initialize(argc, argv);
@@ -50,6 +65,8 @@ int main(int argc, char* argv[])
         }
 
         g_Editor.Shutdown();
+        [NSApp terminate:nil];
+        exit(0);
     }
 
     return 0;
