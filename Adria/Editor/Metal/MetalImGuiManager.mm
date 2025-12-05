@@ -82,11 +82,6 @@ namespace adria
 
 	void MetalImGuiManager::End(GfxCommandList* cmd_list) const
 	{
-		if (visible && show_demo)
-		{
-			ImGui::ShowDemoWindow(&show_demo);
-		}
-
 		ImGui::Render();
 
 		if (visible)
