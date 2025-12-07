@@ -7,8 +7,10 @@
 #include "Utilities/Image.h"
 #include "Utilities/PathHelpers.h"
 
+
 namespace adria
 {
+
     TextureManager::TextureManager() {}
     TextureManager::~TextureManager() = default;
 
@@ -81,7 +83,6 @@ namespace adria
 			init_data.sub_data = tex_data.data();
 			init_data.sub_count = (Uint32)tex_data.size();
             std::unique_ptr<GfxTexture> tex = gfx->CreateTexture(desc, init_data);
-            tex->SetPersistent(true);
 
             texture_map[texture_handle] = std::move(tex);
 			CreateViewForTexture(texture_handle);
@@ -117,7 +118,6 @@ namespace adria
 		GfxTextureData init_data{};
 		init_data.sub_data = subresources.data();
 		std::unique_ptr<GfxTexture> cubemap = gfx->CreateTexture(desc, init_data);
-		cubemap->SetPersistent(true);
 
 		TextureHandle texture_handle = handle++;
 		texture_map.insert({ texture_handle, std::move(cubemap) });
@@ -150,11 +150,17 @@ namespace adria
 
 	void TextureManager::OnSceneInitialized()
 	{
-		const Uint32 max_textures = 1024; 
-		const Uint32 total_reserved = 2048; 
+		gfx->InitGlobalResourceBindings(1024);
 
-		gfx->InitGlobalResourceBindings(total_reserved);
-		for (Uint64 i = TEXTURE_MANAGER_START_HANDLE; i < handle; ++i)
+		GfxBindlessTable persistent_table = gfx->AllocatePersistentBindlessTable(std::min(TEXTURE_MANAGER_START_HANDLE, handle));
+		std::vector<GfxDescriptor> src_descriptors(persistent_table.count);
+		src_descriptors[(Uint32)DEFAULT_BLACK_TEXTURE_HANDLE] = gfxcommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV);
+		src_descriptors[(Uint32)DEFAULT_WHITE_TEXTURE_HANDLE] = gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV);
+		src_descriptors[(Uint32)DEFAULT_NORMAL_TEXTURE_HANDLE] = gfxcommon::GetCommonView(GfxCommonViewType::DefaultNormal2D_SRV);
+		src_descriptors[(Uint32)DEFAULT_METALLIC_ROUGHNESS_TEXTURE_HANDLE] = gfxcommon::GetCommonView(GfxCommonViewType::MetallicRoughness2D_SRV);
+		gfx->UpdateBindlessTable(persistent_table, src_descriptors);
+
+		for (Uint64 i = TEXTURE_MANAGER_START_HANDLE; i <= handle; ++i)
         {
             GfxTexture* texture = texture_map[TextureHandle(i)].get();
             if (texture)
@@ -174,6 +180,8 @@ namespace adria
 
 		GfxTexture* texture = texture_map[handle].get();
 		ADRIA_ASSERT(texture);
-		texture_srv_map[handle] = gfx->CreateTextureSRV(texture);
-	}
+        texture_srv_map[handle] = gfx->CreateTextureSRV(texture);
+		GfxBindlessTable persistent_table = gfx->AllocatePersistentBindlessTable(1);
+		gfx->UpdateBindlessTable(persistent_table, 0, texture_srv_map[handle]);
+ 	}
 }
