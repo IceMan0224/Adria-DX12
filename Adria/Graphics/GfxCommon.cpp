@@ -33,13 +33,11 @@ namespace adria
 				init_data.row_pitch = sizeof(white);
 				init_data.slice_pitch = 0;
 				common_textures[(Uint64)WhiteTexture2D] = gfx->CreateTexture(desc, data);
-				common_textures[(Uint64)WhiteTexture2D]->SetPersistent(true);
 
 				Uint8 black[] = { 0x00, 0x00, 0x00, 0xff };
 				init_data.data = black;
 				init_data.row_pitch = sizeof(black);
 				common_textures[(Uint64)BlackTexture2D] = gfx->CreateTexture(desc, data);
-				common_textures[(Uint64)BlackTexture2D]->SetPersistent(true);
 
 				GfxTextureDesc default_normal_desc{};
 				default_normal_desc.width = 1;
@@ -53,7 +51,6 @@ namespace adria
 				init_data.row_pitch = sizeof(default_normal);
 				init_data.slice_pitch = 0;
 				common_textures[(Uint64)DefaultNormal2D] = gfx->CreateTexture(default_normal_desc, data);
-				common_textures[(Uint64)DefaultNormal2D]->SetPersistent(true);
 
 				GfxTextureDesc metallic_roughness_desc{};
 				metallic_roughness_desc.width = 1;
@@ -67,7 +64,6 @@ namespace adria
 				init_data.row_pitch = sizeof(metallic_roughness);
 				init_data.slice_pitch = 0;
 				common_textures[(Uint64)MetallicRoughness2D] = gfx->CreateTexture(metallic_roughness_desc, data);
-				common_textures[(Uint64)MetallicRoughness2D]->SetPersistent(true);
 			}
 
 			void CreateCommonViews(GfxDevice* gfx)
@@ -90,6 +86,8 @@ namespace adria
 			gfx = _gfx;
 			CreateCommonTextures(gfx);
 			CreateCommonViews(gfx);
+			GfxBindlessTable table = gfx->AllocatePersistentBindlessTable((Uint32)GfxCommonViewType::Count);
+			gfx->UpdateBindlessTable(table, common_views);
 			initialized = true;
 		}
 

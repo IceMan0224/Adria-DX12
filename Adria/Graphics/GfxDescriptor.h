@@ -15,8 +15,7 @@ namespace adria
 	struct GfxDescriptor
 	{
 		static constexpr Uint64 INVALID_OPAQUE_DATA = UINT64_MAX;
-
-		Uint64 opaque_data[2] = { 0 };
+		Uint64 opaque_data[2] = { INVALID_OPAQUE_DATA, INVALID_OPAQUE_DATA };
 
 		Bool operator==(GfxDescriptor const& other) const
 		{

@@ -524,6 +524,7 @@ namespace adria
 		GfxBindlessTable table;
 		table.base = next_persistent_index;
 		table.count = count;
+		table.type = type;
 		next_persistent_index += count;
 		return table;
 	}
@@ -663,7 +664,14 @@ namespace adria
 		FreeDescriptorImpl(internal_desc, descriptor_type);
 	}
 
-	std::unique_ptr<GfxCommandList> D3D12Device::CreateCommandList(GfxCommandListType type)
+    Uint32 D3D12Device::GetBindlessDescriptorIndex(GfxDescriptor descriptor) const
+    {
+		D3D12Descriptor internal_desc = DecodeToD3D12Descriptor(descriptor);
+		ADRIA_ASSERT(internal_desc.parent_heap == gpu_descriptor_allocator->GetHeap() && "Descriptor is not from the bindless descriptor heap!");
+		return internal_desc.index;
+    }
+
+    std::unique_ptr<GfxCommandList> D3D12Device::CreateCommandList(GfxCommandListType type)
 	{
 		return std::make_unique<D3D12CommandList>(this, type);
 	}
@@ -1184,7 +1192,7 @@ namespace adria
 		D3D12Descriptor heap_descriptor{};
 		if(buffer->IsPersistent())
 		{
-			GfxBindlessTable bindless_table = AllocateBindlessTable(1, GfxDescriptorType::CBV_SRV_UAV);
+			GfxBindlessTable bindless_table = AllocatePersistentBindlessTable(1, GfxDescriptorType::CBV_SRV_UAV);
 			Uint32 bindless_index = bindless_table.base;
 			heap_descriptor = gpu_descriptor_allocator->GetDescriptor(bindless_index);
 		}

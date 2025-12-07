@@ -142,6 +142,7 @@ namespace adria
 
 	void Renderer::OnSceneInitialized()
 	{
+		gfxcommon::Initialize(gfx);
 		sheenE_texture = g_TextureManager.LoadTexture(paths::TexturesDir + "SheenE.dds");
 		sky_pass.OnSceneInitialized();
 		decals_pass.OnSceneInitialized();
@@ -152,8 +153,8 @@ namespace adria
 		volumetric_fog_manager.OnSceneInitialized();
 		CreateAS();
 
-		gfxcommon::Initialize(gfx);
 		g_TextureManager.OnSceneInitialized();
+		g_GeometryBufferCache.OnSceneInitialized();
 	}
 	void Renderer::OnRightMouseClicked(Int32 x, Int32 y)
 	{
@@ -276,8 +277,6 @@ namespace adria
 
 			GfxBuffer* mesh_buffer = g_GeometryBufferCache.GetGeometryBuffer(mesh.geometry_buffer_handle);
 			GfxDescriptor mesh_buffer_srv = g_GeometryBufferCache.GetGeometryBufferSRV(mesh.geometry_buffer_handle);
-
-			GfxBindlessTable mesh_buffer_table = gfx->AllocateAndUpdateBindlessTable(mesh_buffer_srv);
 			for (SubMeshInstance const& instance : mesh.instances)
 			{
 				SubMeshGPU& submesh = mesh.submeshes[instance.submesh_index];
@@ -312,7 +311,7 @@ namespace adria
 			for (SubMeshGPU const& submesh : mesh.submeshes)
 			{
 				MeshGPU& mesh_gpu = meshes.emplace_back();
-				mesh_gpu.buffer_idx = mesh_buffer_table;
+				mesh_gpu.buffer_idx = gfx->GetBindlessDescriptorIndex(mesh_buffer_srv);
 				mesh_gpu.indices_offset = submesh.indices_offset;
 				mesh_gpu.positions_offset = submesh.positions_offset;
 				mesh_gpu.normals_offset = submesh.normals_offset;

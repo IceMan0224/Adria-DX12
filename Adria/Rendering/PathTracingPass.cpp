@@ -81,7 +81,10 @@ namespace adria
 		}
 
 		width = w, height = h;
-		svgf_denoiser_pass->OnResize(w, h);
+		if (svgf_denoiser_pass)
+		{
+			svgf_denoiser_pass->OnResize(w, h);
+		}
 		CreateAccumulationTexture();
 	}
 
@@ -93,7 +96,10 @@ namespace adria
 	void PathTracingPass::Reset()
 	{
 		accumulated_frames = 0;
-		svgf_denoiser_pass->Reset();
+		if (svgf_denoiser_pass)
+		{
+			svgf_denoiser_pass->Reset();
+		}
 	}
 
 	void PathTracingPass::GUI()
@@ -114,7 +120,7 @@ namespace adria
 				}
 			}, GUICommandGroup_Renderer);
 
-		if (denoiser_active)
+		if (denoiser_active && svgf_denoiser_pass)
 		{
 			svgf_denoiser_pass->GUI();
 		}

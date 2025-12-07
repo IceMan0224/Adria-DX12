@@ -7,6 +7,7 @@
 #include "Platform/Input.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
+#include "Graphics/GfxCommon.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/SceneConfig.h"
 #include "Rendering/ShaderManager.h"

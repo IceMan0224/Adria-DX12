@@ -10,7 +10,16 @@ namespace adria
 		gfx = _gfx;
 	}
 
-	void GeometryBufferCache::Shutdown()
+    void GeometryBufferCache::OnSceneInitialized()
+    {
+		for(auto& [handle, buffer] : buffer_map)
+		{
+			buffer->SetPersistent(true);
+			buffer_srv_map[handle] = gfx->CreateBufferSRV(buffer.get());
+		}
+    }
+
+    void GeometryBufferCache::Shutdown()
 	{
 		buffer_map.clear();
 		gfx = nullptr;
@@ -26,8 +35,10 @@ namespace adria
 
 		++current_handle;
 		buffer_map[current_handle] = gfx->CreateBuffer(desc);
-		if(staging_buffer) gfx->GetGraphicsCommandList()->CopyBuffer(*buffer_map[current_handle], 0, *staging_buffer, src_offset, total_buffer_size);
-		buffer_srv_map[current_handle] = gfx->CreateBufferSRV(buffer_map[current_handle].get());
+		if(staging_buffer) 
+		{
+			gfx->GetGraphicsCommandList()->CopyBuffer(*buffer_map[current_handle], 0, *staging_buffer, src_offset, total_buffer_size);
+		}
 		return current_handle;
 	}
 
