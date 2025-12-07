@@ -66,77 +66,77 @@ void RendererDebugViewCS(CSInput input)
 	float2 uv = ((float2) input.DispatchThreadId.xy + 0.5f) * 1.0f / (FrameCB.displayResolution);
 	
 #if OUTPUT_DIFFUSE || OUTPUT_MIPMAPS  || OUTPUT_MATERIAL_ID || OUTPUT_MESHLET_ID
-	float4 albedoRoughness	= diffuseRT.Sample(LinearWrapSampler, uv);
+	float4 albedoRoughness	= diffuseRT.SampleLevel(LinearWrapSampler, uv, 0);
 	float3 albedo = albedoRoughness.rgb;
 	outputTexture[input.DispatchThreadId.xy] = float4(albedo, 1.0f);
 
 #elif OUTPUT_NORMALS
-	float3 viewNormal = DecodeNormalOctahedron(normalRT.Sample(LinearWrapSampler, uv).xy * 2.0f - 1.0f);
+	float3 viewNormal = DecodeNormalOctahedron(normalRT.SampleLevel(LinearWrapSampler, uv, 0).xy * 2.0f - 1.0f);
 	float3 worldNormal = mul(viewNormal, (float3x3)transpose(FrameCB.view));
 	worldNormal = normalize(0.5f * worldNormal + 0.5f);
 	outputTexture[input.DispatchThreadId.xy] = float4(worldNormal, 1.0f);
 
-#elif OUTPUT_DEPTH 
-	float  depth = depthTexture.Sample(LinearWrapSampler, uv);
+#elif OUTPUT_DEPTH
+	float  depth = depthTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	float linearDepth = LinearizeDepth(depth);
 	float normalizedLinearDepth = linearDepth / FrameCB.cameraNear;
 	outputTexture[input.DispatchThreadId.xy] = float4(normalizedLinearDepth, normalizedLinearDepth, normalizedLinearDepth, 1.0f);
 
 #elif OUTPUT_ROUGHNESS
-	float4 albedoRoughness	= diffuseRT.Sample(LinearWrapSampler, uv);
+	float4 albedoRoughness	= diffuseRT.SampleLevel(LinearWrapSampler, uv, 0);
 	float roughness = albedoRoughness.a;
 	outputTexture[input.DispatchThreadId.xy] = float4(roughness, roughness, roughness, 1.0f);
 
 #elif OUTPUT_METALLIC
-	float metallic = normalRT.Sample(LinearWrapSampler, uv).z;
+	float metallic = normalRT.SampleLevel(LinearWrapSampler, uv, 0).z;
 	outputTexture[input.DispatchThreadId.xy] = float4(metallic, metallic, metallic, 1.0f);
 
 #elif OUTPUT_EMISSIVE
 	Texture2D emissiveTexture = ResourceDescriptorHeap[RendererDebugViewPassCB.emissiveIdx];
-	float4 emissiveData = emissiveTexture.Sample(LinearWrapSampler, uv);
+	float4 emissiveData = emissiveTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	float3 emissiveColor = emissiveData.rgb * emissiveData.a * 256;
 	outputTexture[input.DispatchThreadId.xy] = float4(emissiveColor, 1.0f);
 
 #elif OUTPUT_AO
 	Texture2D<float> ambientOcclusionTexture = ResourceDescriptorHeap[RendererDebugViewPassCB.aoIdx];
-	float ambientOcclusion = ambientOcclusionTexture.Sample(LinearWrapSampler, uv);
+	float ambientOcclusion = ambientOcclusionTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	outputTexture[input.DispatchThreadId.xy] = float4(ambientOcclusion, ambientOcclusion, ambientOcclusion, 1.0f);
 
 #elif OUTPUT_INDIRECT
-	float4 albedoRoughness	= diffuseRT.Sample(LinearWrapSampler, uv);
+	float4 albedoRoughness	= diffuseRT.SampleLevel(LinearWrapSampler, uv, 0);
 	float3 albedo		    = albedoRoughness.rgb;
 	float roughness		    = albedoRoughness.a;
-	float4 normalMetallic   = normalRT.Sample(LinearWrapSampler, uv);
+	float4 normalMetallic   = normalRT.SampleLevel(LinearWrapSampler, uv, 0);
 	float3 viewNormal	    = 2.0f * normalMetallic.rgb - 1.0f;
 	float metallic		    = normalMetallic.a;
 	BrdfData brdfData	    = GetBrdfData(albedo, metallic, roughness);
-	float  depth		    = depthTexture.Sample(LinearWrapSampler, uv);
+	float  depth		    = depthTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	float3 viewPosition		= GetViewPosition(uv, depth);
 
 	Texture2D<float> ambientOcclusionTexture = ResourceDescriptorHeap[RendererDebugViewPassCB.aoIdx];
-	float ambientOcclusion = ambientOcclusionTexture.Sample(LinearWrapSampler, uv);
+	float ambientOcclusion = ambientOcclusionTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	outputTexture[input.DispatchThreadId.xy] = float4(ambientOcclusion, ambientOcclusion, ambientOcclusion, 1.0f);
 	float3 indirectLighting = GetIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion);
-	outputTexture[input.DispatchThreadId.xy] = float4(indirectLighting * M_PI / brdfData.Diffuse, 1.0f); 
+	outputTexture[input.DispatchThreadId.xy] = float4(indirectLighting * M_PI / brdfData.Diffuse, 1.0f);
 
 #elif OUTPUT_CUSTOM
 	Texture2D customTexture = ResourceDescriptorHeap[RendererDebugViewPassCB.customIdx];
-	float4    customData	= customTexture.Sample(LinearWrapSampler, uv);
+	float4    customData	= customTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	outputTexture[input.DispatchThreadId.xy] = customData;
 
 #elif OUTPUT_SHADING_EXTENSION
 	//#todo
-	uint shadingExtension = uint(normalRT.Sample(LinearWrapSampler, uv).w * 255.0f);
-	static float3 Colors[] = 
+	uint shadingExtension = uint(normalRT.SampleLevel(LinearWrapSampler, uv, 0).w * 255.0f);
+	static float3 Colors[] =
     {
-        float3(1.0, 0.0, 0.0),  
-        float3(0.0, 1.0, 0.0),  
-        float3(0.0, 0.0, 1.0),  
-        float3(1.0, 1.0, 0.0),  
-        float3(1.0, 0.0, 1.0),  
-        float3(0.0, 1.0, 1.0),  
-        float3(0.5, 0.0, 0.5),  
-        float3(0.5, 0.5, 0.5)   
+        float3(1.0, 0.0, 0.0),
+        float3(0.0, 1.0, 0.0),
+        float3(0.0, 0.0, 1.0),
+        float3(1.0, 1.0, 0.0),
+        float3(1.0, 0.0, 1.0),
+        float3(0.0, 1.0, 1.0),
+        float3(0.5, 0.0, 0.5),
+        float3(0.5, 0.5, 0.5)
     };
 	outputTexture[input.DispatchThreadId.xy] = float4(Colors[shadingExtension], 1.0f);
 #elif OUTPUT_OVERDRAW
@@ -147,7 +147,7 @@ void RendererDebugViewCS(CSInput input)
     outputTexture[input.DispatchThreadId.xy] = float4(TurboColormap(overdrawRatio), 1.0f);
 #elif OUTPUT_MOTION_VECTORS
 	Texture2D motionVectorsTexture = ResourceDescriptorHeap[RendererDebugViewPassCB.motionVectorsIdx];
-	float4    motionVectors	= motionVectorsTexture.Sample(LinearWrapSampler, uv);
+	float4    motionVectors	= motionVectorsTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	outputTexture[input.DispatchThreadId.xy] = float4(motionVectors.xy * 100, 0.0f, 1.0f);
 #else 
 	outputTexture[input.DispatchThreadId.xy] = float4(1.0f, 0.0f, 0.0f, 1.0f); 

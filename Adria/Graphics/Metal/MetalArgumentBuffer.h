@@ -48,6 +48,9 @@ namespace adria
         Uint32 AllocatePersistent(Uint32 count);
         Uint32 AllocateTransient(Uint32 count);
 
+        void SetResourceAtIndex(id<MTLTexture> texture, Uint32 index);
+        void SetResourceAtIndex(id<MTLBuffer> buffer, Uint32 index, Uint64 offset = 0);
+
         void FinishCurrentFrame(Uint64 frame);
         void ReleaseCompletedFrames(Uint64 completed_frame);
 
@@ -67,15 +70,24 @@ namespace adria
         id<MTLBuffer> descriptor_buffer;
         void* descriptor_cpu_ptr;
         Uint32 capacity;
-        Uint32 next_free_index;  
+        Uint32 next_free_index;
         std::vector<MetalResourceEntry> resource_entries;
 
         RingOffsetAllocator ring_allocator;
         Uint32 reserved_size;
         Uint32 next_persistent_index;
 
+        id<MTLTexture> default_texture_2d;
+        id<MTLTexture> default_texture_3d;
+        id<MTLBuffer> default_buffer;
+        id<MTLSamplerState> default_sampler;
+
     private:
         void CreateDescriptorBuffer();
+        void InitializeDefaultResources();
+        void SetDefaultTexture(Uint32 index);
+        void SetDefaultBuffer(Uint32 index);
+        void SetDefaultSampler(Uint32 index);
         void GrowCapacity(Uint32 min_capacity);
         Bool ValidateIndex(Uint32 index) const;
         void* GetDescriptorEntry(Uint32 index);

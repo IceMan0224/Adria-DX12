@@ -246,6 +246,7 @@ namespace adria
 
     void MetalDevice::InitGlobalResourceBindings(Uint32 max_resources)
     {
+        ADRIA_ASSERT(argument_buffer != nullptr);
     }
 
     GfxCapabilities const& MetalDevice::GetCapabilities() const
@@ -378,36 +379,30 @@ namespace adria
         for (Uint32 i = 0; i < src_descriptors.size(); ++i)
         {
             MetalDescriptor src_desc = DecodeToMetalDescriptor(src_descriptors[i]);
+            Uint32 dst_index = table.base + i;
+
             if (!src_desc.IsValid())
             {
+                argument_buffer->SetTexture(nil, dst_index);
                 continue;
             }
 
             MetalResourceEntry const& src_entry = src_desc.parent_buffer->GetResourceEntry(src_desc.index);
-            Uint32 dst_index = table.base + i;
 
             switch (src_entry.type)
             {
                 case MetalResourceType::Texture:
-                    if (src_entry.texture != nil)
-                    {
-                        argument_buffer->SetTexture(src_entry.texture, dst_index);
-                    }
+                    argument_buffer->SetTexture(src_entry.texture, dst_index);
                     break;
                 case MetalResourceType::Buffer:
-                    if (src_entry.buffer != nil)
-                    {
-                        argument_buffer->SetBuffer(src_entry.buffer, dst_index, src_entry.buffer_offset);
-                    }
+                    argument_buffer->SetBuffer(src_entry.buffer, dst_index, src_entry.buffer_offset);
                     break;
                 case MetalResourceType::Sampler:
-                    if (src_entry.sampler != nil)
-                    {
-                        argument_buffer->SetSampler(src_entry.sampler, dst_index);
-                    }
+                    argument_buffer->SetSampler(src_entry.sampler, dst_index);
                     break;
                 case MetalResourceType::Unknown:
                 default:
+                    argument_buffer->SetTexture(nil, dst_index);
                     break;
             }
         }
@@ -421,40 +416,34 @@ namespace adria
         }
 
         MetalDescriptor src_desc = DecodeToMetalDescriptor(src_descriptor);
-        if (!src_desc.IsValid())
-        {
-            return;
-        }
 
         for (Uint32 i = 0; i < src_count; ++i)
         {
-            Uint32 src_index = src_desc.index + i;
             Uint32 dst_index = table.base + table_offset + i;
 
+            if (!src_desc.IsValid())
+            {
+                argument_buffer->SetTexture(nil, dst_index);
+                continue;
+            }
+
+            Uint32 src_index = src_desc.index + i;
             MetalResourceEntry const& src_entry = src_desc.parent_buffer->GetResourceEntry(src_index);
 
             switch (src_entry.type)
             {
                 case MetalResourceType::Texture:
-                    if (src_entry.texture != nil)
-                    {
-                        argument_buffer->SetTexture(src_entry.texture, dst_index);
-                    }
+                    argument_buffer->SetTexture(src_entry.texture, dst_index);
                     break;
                 case MetalResourceType::Buffer:
-                    if (src_entry.buffer != nil)
-                    {
-                        argument_buffer->SetBuffer(src_entry.buffer, dst_index, src_entry.buffer_offset);
-                    }
+                    argument_buffer->SetBuffer(src_entry.buffer, dst_index, src_entry.buffer_offset);
                     break;
                 case MetalResourceType::Sampler:
-                    if (src_entry.sampler != nil)
-                    {
-                        argument_buffer->SetSampler(src_entry.sampler, dst_index);
-                    }
+                    argument_buffer->SetSampler(src_entry.sampler, dst_index);
                     break;
                 case MetalResourceType::Unknown:
                 default:
+                    argument_buffer->SetTexture(nil, dst_index);
                     break;
             }
         }
@@ -528,7 +517,15 @@ namespace adria
         }
 
         MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(buffer);
-        Uint32 index = argument_buffer->AllocateTransient(1);
+        Uint32 index;
+        if (buffer->IsPersistent())
+        {
+            index = argument_buffer->AllocatePersistent(1);
+        }
+        else
+        {
+            index = argument_buffer->AllocateTransient(1);
+        }
 
         argument_buffer->SetBuffer(metal_buffer->GetMetalBuffer(), index, 0);
 
@@ -560,7 +557,16 @@ namespace adria
         id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
         id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
 
-        Uint32 index = argument_buffer->AllocateTransient(1);
+        Uint32 index;
+        if (texture->IsPersistent())
+        {
+            index = argument_buffer->AllocatePersistent(1);
+        }
+        else
+        {
+            index = argument_buffer->AllocateTransient(1);
+        }
+
         argument_buffer->SetTexture(texture_view, index);
 
         MetalDescriptor metal_desc{};
@@ -581,7 +587,16 @@ namespace adria
         id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
         id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
 
-        Uint32 index = argument_buffer->AllocateTransient(1);
+        Uint32 index;
+        if (texture->IsPersistent())
+        {
+            index = argument_buffer->AllocatePersistent(1);
+        }
+        else
+        {
+            index = argument_buffer->AllocateTransient(1);
+        }
+
         argument_buffer->SetTexture(texture_view, index);
 
         MetalDescriptor metal_desc{};

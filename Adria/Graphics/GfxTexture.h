@@ -137,11 +137,15 @@ namespace adria
 			return reinterpret_cast<T*>(mapped_data);
 		}
 
+		void SetPersistent(Bool persistent) { is_persistent = persistent; }
+		Bool IsPersistent() const { return is_persistent; }
+
 	protected:
 		GfxDevice* gfx;
 		GfxTextureDesc desc;
 		void* mapped_data = nullptr;
 		Bool is_backbuffer = false;
+		Bool is_persistent = false;
 
 	protected:
 		GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc) : gfx(gfx), desc(desc) {}

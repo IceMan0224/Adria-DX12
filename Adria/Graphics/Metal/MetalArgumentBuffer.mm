@@ -25,12 +25,18 @@ namespace adria
         resource_entries.reserve(capacity);
         resource_entries.resize(capacity);
         CreateDescriptorBuffer();
+
+        InitializeDefaultResources();
     }
 
     MetalArgumentBuffer::~MetalArgumentBuffer()
     {
         @autoreleasepool
         {
+            default_texture_2d = nil;
+            default_texture_3d = nil;
+            default_buffer = nil;
+            default_sampler = nil;
             descriptor_buffer = nil;
             descriptor_cpu_ptr = nullptr;
         }
@@ -91,6 +97,28 @@ namespace adria
         ring_allocator.ReleaseCompletedFrames(completed_frame);
     }
 
+    void MetalArgumentBuffer::SetResourceAtIndex(id<MTLTexture> texture, Uint32 index)
+    {
+        if (index >= capacity)
+        {
+            GrowCapacity(index + 1);
+        }
+
+        if (!ValidateIndex(index)) return;
+        SetTexture(texture, index);
+    }
+
+    void MetalArgumentBuffer::SetResourceAtIndex(id<MTLBuffer> buffer, Uint32 index, Uint64 offset)
+    {
+        if (index >= capacity)
+        {
+            GrowCapacity(index + 1);
+        }
+
+        if (!ValidateIndex(index)) return;
+        SetBuffer(buffer, index, offset);
+    }
+
     void MetalArgumentBuffer::SetTexture(id<MTLTexture> texture, Uint32 index)
     {
         if (!ValidateIndex(index)) return;
@@ -104,7 +132,7 @@ namespace adria
         }
         else
         {
-            ClearEntry(index);
+            SetDefaultTexture(index);
         }
     }
 
@@ -124,7 +152,8 @@ namespace adria
         }
         else
         {
-            ClearEntry(index);
+            // Set default buffer instead of clearing
+            SetDefaultBuffer(index);
         }
     }
 
@@ -142,7 +171,7 @@ namespace adria
         }
         else
         {
-            ClearEntry(index);
+            SetDefaultSampler(index);
         }
     }
 
@@ -202,6 +231,82 @@ namespace adria
         }
     }
 
+    void MetalArgumentBuffer::InitializeDefaultResources()
+    {
+        @autoreleasepool
+        {
+            id<MTLDevice> device = metal_gfx->GetMTLDevice();
+
+            MTLTextureDescriptor* tex2d_desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm
+                                                                                                  width:1
+                                                                                                 height:1
+                                                                                              mipmapped:NO];
+            tex2d_desc.usage = MTLTextureUsageShaderRead;
+            default_texture_2d = [device newTextureWithDescriptor:tex2d_desc];
+
+            uint32_t white_pixel = 0xFFFFFFFF;
+            MTLRegion region = MTLRegionMake2D(0, 0, 1, 1);
+            [default_texture_2d replaceRegion:region mipmapLevel:0 withBytes:&white_pixel bytesPerRow:4];
+            [default_texture_2d setLabel:@"DefaultTexture2D"];
+            metal_gfx->MakeResident(default_texture_2d);
+
+            MTLTextureDescriptor* tex3d_desc = [MTLTextureDescriptor new];
+            tex3d_desc.textureType = MTLTextureType3D;
+            tex3d_desc.pixelFormat = MTLPixelFormatRGBA8Unorm;
+            tex3d_desc.width = 1;
+            tex3d_desc.height = 1;
+            tex3d_desc.depth = 1;
+            tex3d_desc.usage = MTLTextureUsageShaderRead;
+            tex3d_desc.storageMode = MTLStorageModePrivate; // GPU-only memory
+            default_texture_3d = [device newTextureWithDescriptor:tex3d_desc];
+            [default_texture_3d setLabel:@"DefaultTexture3D"];
+            metal_gfx->MakeResident(default_texture_3d);
+
+            default_buffer = [device newBufferWithLength:16 options:MTLResourceStorageModeShared];
+            [default_buffer setLabel:@"DefaultBuffer"];
+            metal_gfx->MakeResident(default_buffer);
+
+            MTLSamplerDescriptor* sampler_desc = [MTLSamplerDescriptor new];
+            sampler_desc.minFilter = MTLSamplerMinMagFilterLinear;
+            sampler_desc.magFilter = MTLSamplerMinMagFilterLinear;
+            sampler_desc.sAddressMode = MTLSamplerAddressModeRepeat;
+            sampler_desc.tAddressMode = MTLSamplerAddressModeRepeat;
+            sampler_desc.label = @"DefaultSampler";
+            default_sampler = [device newSamplerStateWithDescriptor:sampler_desc];
+
+            for (Uint32 i = 0; i < capacity; ++i)
+            {
+                SetDefaultTexture(i);
+            }
+        }
+    }
+
+    void MetalArgumentBuffer::SetDefaultTexture(Uint32 index)
+    {
+        DescriptorEntry* entry = static_cast<DescriptorEntry*>(GetDescriptorEntry(index));
+        IRDescriptorTableSetTexture(entry, default_texture_2d, 0.0f, 0);
+        resource_entries[index].texture = default_texture_2d;
+        resource_entries[index].type = MetalResourceType::Texture;
+    }
+
+    void MetalArgumentBuffer::SetDefaultBuffer(Uint32 index)
+    {
+        DescriptorEntry* entry = static_cast<DescriptorEntry*>(GetDescriptorEntry(index));
+        Uint64 gpu_va = default_buffer.gpuAddress;
+        IRDescriptorTableSetBuffer(entry, gpu_va, 0);
+        resource_entries[index].buffer = default_buffer;
+        resource_entries[index].buffer_offset = 0;
+        resource_entries[index].type = MetalResourceType::Buffer;
+    }
+
+    void MetalArgumentBuffer::SetDefaultSampler(Uint32 index)
+    {
+        DescriptorEntry* entry = static_cast<DescriptorEntry*>(GetDescriptorEntry(index));
+        IRDescriptorTableSetSampler(entry, default_sampler, 0.0f);
+        resource_entries[index].sampler = default_sampler;
+        resource_entries[index].type = MetalResourceType::Sampler;
+    }
+
     void MetalArgumentBuffer::GrowCapacity(Uint32 min_capacity)
     {
         Uint32 new_capacity = capacity;
@@ -228,13 +333,17 @@ namespace adria
             }
 
             DescriptorEntry* new_entries = static_cast<DescriptorEntry*>(new_cpu_ptr);
-            std::memset(new_entries + capacity, 0, sizeof(DescriptorEntry) * (new_capacity - capacity));
+
+            for (Uint32 i = capacity; i < new_capacity; ++i)
+            {
+                resource_entries.push_back(MetalResourceEntry{});
+                SetDefaultTexture(i);
+            }
 
             id<MTLBuffer> old_buffer = descriptor_buffer;
             descriptor_buffer = new_buffer;
             descriptor_cpu_ptr = new_cpu_ptr;
             capacity = new_capacity;
-            resource_entries.resize(new_capacity);
 
             ring_allocator = RingOffsetAllocator(new_capacity, reserved_size);
 
@@ -254,13 +363,13 @@ namespace adria
             ADRIA_ASSERT(false && "Index out of bounds");
             return false;
         }
-        
+
         if (!descriptor_cpu_ptr)
         {
             ADRIA_ASSERT(false && "Descriptor buffer not initialized");
             return false;
         }
-        
+
         return true;
     }
 
@@ -271,15 +380,6 @@ namespace adria
 
     void MetalArgumentBuffer::ClearEntry(Uint32 index)
     {
-        if (index < resource_entries.size())
-        {
-            resource_entries[index] = MetalResourceEntry{};
-        }
-
-        if (descriptor_cpu_ptr)
-        {
-            DescriptorEntry* entries = static_cast<DescriptorEntry*>(descriptor_cpu_ptr);
-            entries[index] = DescriptorEntry{};
-        }
+        SetDefaultTexture(index);
     }
 }

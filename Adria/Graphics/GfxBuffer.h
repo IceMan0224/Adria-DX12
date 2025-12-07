@@ -81,10 +81,14 @@ namespace adria
 			Update(&src_data, sizeof(T));
 		}
 
+		void SetPersistent(Bool persistent) { is_persistent = persistent; }
+		Bool IsPersistent() const { return is_persistent; }
+
 	protected:
 		GfxDevice* gfx;
 		GfxBufferDesc desc;
 		void* mapped_data = nullptr;
+		Bool is_persistent = false;
 
 	protected:
 		GfxBuffer(GfxDevice* gfx, GfxBufferDesc const& desc) : gfx(gfx), desc(desc) {}
