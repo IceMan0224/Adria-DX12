@@ -100,7 +100,7 @@ namespace adria
 		{
 			for (GfxDescriptor const& view : view_vector)
 			{
-				gfx->FreeDescriptor(view);
+				gfx->FreeCPUViewDescriptor(view);
 			}
 		}
 
@@ -108,7 +108,7 @@ namespace adria
 		{
 			for (GfxDescriptor const& view : view_vector)
 			{
-				gfx->FreeDescriptor(view);
+				gfx->FreeCPUViewDescriptor(view);
 			}
 		}
 	}

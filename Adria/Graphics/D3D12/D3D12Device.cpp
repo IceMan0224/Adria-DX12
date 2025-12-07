@@ -495,17 +495,13 @@ namespace adria
 		ADRIA_UNREACHABLE();
 	}
 
-	D3D12Descriptor D3D12Device::AllocateDescriptorImpl(GfxDescriptorType type)
+	D3D12Descriptor D3D12Device::AllocateCPUDescriptorImpl(GfxDescriptorType type)
 	{
 		return cpu_descriptor_allocators[(Uint64)type]->AllocateDescriptor();
 	}
-	void D3D12Device::FreeDescriptorImpl(D3D12Descriptor descriptor, GfxDescriptorType type)
+	void D3D12Device::FreeCPUDescriptorImpl(D3D12Descriptor descriptor, GfxDescriptorType type)
 	{
 		cpu_descriptor_allocators[(Uint64)type]->FreeDescriptor(descriptor);
-	}
-	D3D12Descriptor D3D12Device::AllocateDescriptorsImpl(Uint32 count)
-	{
-		return GetDescriptorAllocator()->Allocate(count);
 	}
 
 	D3D12OnlineDescriptorAllocator* D3D12Device::GetDescriptorAllocator() const
@@ -641,7 +637,7 @@ namespace adria
 		);
 	}
 
-	void D3D12Device::FreeDescriptor(GfxDescriptor descriptor)
+	void D3D12Device::FreeCPUViewDescriptor(GfxDescriptor descriptor)
 	{
 		if (!descriptor.IsValid())
 		{
@@ -661,7 +657,7 @@ namespace adria
 		{
 			return;
 		}
-		FreeDescriptorImpl(internal_desc, descriptor_type);
+		FreeCPUDescriptorImpl(internal_desc, descriptor_type);
 	}
 
     Uint32 D3D12Device::GetBindlessDescriptorIndex(GfxDescriptor descriptor) const
@@ -1179,7 +1175,7 @@ namespace adria
 		D3D12_CHECK_CALL(hr);
 	}
 
-	D3D12Descriptor D3D12Device::CreateBufferViewImpl(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter)
+	D3D12Descriptor D3D12Device::CreateBufferViewImpl(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter, Bool force_cpu_heap = false)
 	{
 		if (uav_counter)
 		{
@@ -1198,7 +1194,7 @@ namespace adria
 		}
 		else
 		{
-			heap_descriptor = AllocateDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
+			heap_descriptor = AllocateCPUDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
 		}
 
 		switch (view_type)
@@ -1289,7 +1285,7 @@ namespace adria
 		}
 		return heap_descriptor;
 	}
-	D3D12Descriptor D3D12Device::CreateTextureViewImpl(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc)
+	D3D12Descriptor D3D12Device::CreateTextureViewImpl(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc, Bool force_cpu_heap = false)
 	{
 		GfxTextureDesc desc = texture->GetDesc();
 		GfxFormat format = desc.format;
@@ -1306,7 +1302,7 @@ namespace adria
 			}
 			else
 			{
-				descriptor = AllocateDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
+				descriptor = AllocateCPUDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
 			}
 
 			D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc{};
@@ -1437,7 +1433,7 @@ namespace adria
 			}
 			else
 			{
-				descriptor = AllocateDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
+				descriptor = AllocateCPUDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
 			}
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc{};
 			switch (format)
@@ -1503,7 +1499,7 @@ namespace adria
 		break;
 		case GfxSubresourceType::RTV:
 		{
-			D3D12Descriptor descriptor = AllocateDescriptorImpl(GfxDescriptorType::RTV);
+			D3D12Descriptor descriptor = AllocateCPUDescriptorImpl(GfxDescriptorType::RTV);
 			D3D12_RENDER_TARGET_VIEW_DESC rtv_desc{};
 			switch (format)
 			{
@@ -1583,7 +1579,7 @@ namespace adria
 		break;
 		case GfxSubresourceType::DSV:
 		{
-			D3D12Descriptor descriptor = AllocateDescriptorImpl(GfxDescriptorType::DSV);
+			D3D12Descriptor descriptor = AllocateCPUDescriptorImpl(GfxDescriptorType::DSV);
 			D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc{};
 			switch (format)
 			{

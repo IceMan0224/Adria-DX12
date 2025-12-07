@@ -72,8 +72,8 @@ namespace adria
 		virtual void UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors) override;
 		virtual void UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count) override;
 		virtual void UpdateBindlessTables(std::vector<GfxBindlessTable> const& table, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size) override;
-		virtual void FreeDescriptor(GfxDescriptor descriptor) override;
 		virtual Uint32 GetBindlessDescriptorIndex(GfxDescriptor descriptor) const override;
+		virtual void FreeCPUViewDescriptor(GfxDescriptor descriptor) override;
 
 		virtual std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) override;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) override;
@@ -217,11 +217,10 @@ namespace adria
 		void SetInfoQueue();
 		void CreateCommonRootSignature();
 
-		D3D12Descriptor AllocateDescriptorImpl(GfxDescriptorType type);
-		void FreeDescriptorImpl(D3D12Descriptor descriptor, GfxDescriptorType type);
-		D3D12Descriptor AllocateDescriptorsImpl(Uint32 count = 1);
+		D3D12Descriptor AllocateCPUDescriptorImpl(GfxDescriptorType type);
+		void FreeCPUDescriptorImpl(D3D12Descriptor descriptor, GfxDescriptorType type);
 
-		D3D12Descriptor CreateBufferViewImpl(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter = nullptr);
-		D3D12Descriptor CreateTextureViewImpl(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc);
+		D3D12Descriptor CreateBufferViewImpl(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter = nullptr, Bool force_cpu_heap = false);
+		D3D12Descriptor CreateTextureViewImpl(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc, Bool force_cpu_heap = false);
 	};
 }
