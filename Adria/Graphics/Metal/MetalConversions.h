@@ -138,7 +138,7 @@ namespace adria
         case GfxFormat::R32G32B32_SINT:
             return MTLPixelFormatInvalid; // Metal doesn't support RGB32 formats
         case GfxFormat::R32_TYPELESS:
-            return MTLPixelFormatDepth32Float; // Use D32_FLOAT for depth buffers
+            return MTLPixelFormatDepth32Float; 
         case GfxFormat::R32G8X24_TYPELESS:
             return MTLPixelFormatDepth32Float_Stencil8;
         case GfxFormat::R24G8_TYPELESS:

@@ -1,6 +1,5 @@
 #import <Metal/Metal.h>
 #import <Metal/MTLResource.h>
-#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 #include "MetalArgumentBuffer.h"
 #include "MetalDevice.h"
 
@@ -14,7 +13,7 @@ namespace adria
         , capacity(initial_capacity)
         , next_free_index(0)
         , descriptor_cpu_ptr(nullptr)
-        , ring_allocator(initial_capacity, reserve_size)  // Initialize ring allocator with capacity and reserved region
+        , ring_allocator(initial_capacity, reserve_size)  
         , reserved_size(reserve_size)
         , next_persistent_index(0)
     {
@@ -25,7 +24,6 @@ namespace adria
         resource_entries.reserve(capacity);
         resource_entries.resize(capacity);
         CreateDescriptorBuffer();
-
         InitializeDefaultResources();
     }
 
@@ -45,12 +43,10 @@ namespace adria
     Uint32 MetalArgumentBuffer::AllocateRange(Uint32 count)
     {
         ADRIA_ASSERT(count > 0);
-
         if (next_free_index + count > capacity)
         {
             GrowCapacity(next_free_index + count);
         }
-
         Uint32 base_index = next_free_index;
         next_free_index += count;
         return base_index;
@@ -104,7 +100,10 @@ namespace adria
             GrowCapacity(index + 1);
         }
 
-        if (!ValidateIndex(index)) return;
+        if (!ValidateIndex(index)) 
+        {
+            return;
+        }
         SetTexture(texture, index);
     }
 
@@ -115,18 +114,24 @@ namespace adria
             GrowCapacity(index + 1);
         }
 
-        if (!ValidateIndex(index)) return;
+        if (!ValidateIndex(index)) 
+        {
+            return;
+        }
         SetBuffer(buffer, index, offset);
     }
 
     void MetalArgumentBuffer::SetTexture(id<MTLTexture> texture, Uint32 index)
     {
-        if (!ValidateIndex(index)) return;
+        if (!ValidateIndex(index)) 
+        {
+            return;
+        }
 
         DescriptorEntry* entry = static_cast<DescriptorEntry*>(GetDescriptorEntry(index));
         if (texture != nil)
         {
-            IRDescriptorTableSetTexture(entry, texture, 0.0f /* minLODClamp */, 0 /* metadata */);
+            IRDescriptorTableSetTexture(entry, texture, 0.0f, 0);
             resource_entries[index].texture = texture;
             resource_entries[index].type = MetalResourceType::Texture;
         }
@@ -138,13 +143,16 @@ namespace adria
 
     void MetalArgumentBuffer::SetBuffer(id<MTLBuffer> buffer, Uint32 index, Uint64 offset)
     {
-        if (!ValidateIndex(index)) return;
+        if (!ValidateIndex(index)) 
+        {
+            return;
+        }
 
         DescriptorEntry* entry = static_cast<DescriptorEntry*>(GetDescriptorEntry(index));
         if (buffer != nil)
         {
             Uint64 gpu_va = buffer.gpuAddress + offset;
-            IRDescriptorTableSetBuffer(entry, gpu_va, 0 /* metadata */);
+            IRDescriptorTableSetBuffer(entry, gpu_va, 0);
 
             resource_entries[index].buffer = buffer;
             resource_entries[index].buffer_offset = offset;
@@ -152,19 +160,21 @@ namespace adria
         }
         else
         {
-            // Set default buffer instead of clearing
             SetDefaultBuffer(index);
         }
     }
 
     void MetalArgumentBuffer::SetSampler(id<MTLSamplerState> sampler, Uint32 index)
     {
-        if (!ValidateIndex(index)) return;
+        if (!ValidateIndex(index)) 
+        {
+            return;
+        }
 
         DescriptorEntry* entry = static_cast<DescriptorEntry*>(GetDescriptorEntry(index));
         if (sampler != nil)
         {
-            IRDescriptorTableSetSampler(entry, sampler, 0.0f /* lodBias */);
+            IRDescriptorTableSetSampler(entry, sampler, 0.0f);
 
             resource_entries[index].sampler = sampler;
             resource_entries[index].type = MetalResourceType::Sampler;
@@ -207,8 +217,6 @@ namespace adria
         return (index < resource_entries.size()) ? resource_entries[index] : empty_entry;
     }
 
-    // Private methods
-
     void MetalArgumentBuffer::CreateDescriptorBuffer()
     {
         @autoreleasepool
@@ -236,7 +244,6 @@ namespace adria
         @autoreleasepool
         {
             id<MTLDevice> device = metal_gfx->GetMTLDevice();
-
             MTLTextureDescriptor* tex2d_desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm
                                                                                                   width:1
                                                                                                  height:1
@@ -244,7 +251,7 @@ namespace adria
             tex2d_desc.usage = MTLTextureUsageShaderRead;
             default_texture_2d = [device newTextureWithDescriptor:tex2d_desc];
 
-            uint32_t white_pixel = 0xFFFFFFFF;
+            Uint32 white_pixel = 0xFFFFFFFF;
             MTLRegion region = MTLRegionMake2D(0, 0, 1, 1);
             [default_texture_2d replaceRegion:region mipmapLevel:0 withBytes:&white_pixel bytesPerRow:4];
             [default_texture_2d setLabel:@"DefaultTexture2D"];
@@ -319,7 +326,7 @@ namespace adria
         {
             id<MTLDevice> device = metal_gfx->GetMTLDevice();
 
-            const size_t new_buffer_size = sizeof(DescriptorEntry) * new_capacity;
+            const Usize new_buffer_size = sizeof(DescriptorEntry) * new_capacity;
             id<MTLBuffer> new_buffer = [device newBufferWithLength:new_buffer_size
                                                            options:MTLResourceStorageModeShared |
                                                                   MTLResourceCPUCacheModeWriteCombined |
@@ -356,7 +363,7 @@ namespace adria
         }
     }
 
-    bool MetalArgumentBuffer::ValidateIndex(Uint32 index) const
+    Bool MetalArgumentBuffer::ValidateIndex(Uint32 index) const
     {
         if (index >= capacity)
         {

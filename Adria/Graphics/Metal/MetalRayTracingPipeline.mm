@@ -37,14 +37,10 @@ namespace adria
 
                 if (shader_data && shader_size > 0)
                 {
-                    // Shader data is pure metallib (no header to skip)
-                    // Use DISPATCH_DATA_DESTRUCTOR_FREE with NULL to avoid freeing memory we don't own
                     dispatch_data_t data = dispatch_data_create(shader_data, shader_size, dispatch_get_main_queue(), ^{
-                        // Empty destructor - we don't own this memory
                     });
 
                     library = [device newLibraryWithData:data error:&error];
-
                     if (error || !library)
                     {
                         if (error)

@@ -2,6 +2,7 @@
 #import <Metal/Metal.h>
 #include "MetalDescriptor.h"
 #include "Utilities/RingOffsetAllocator.h"
+#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 
 @protocol MTLBuffer;
 @protocol MTLTexture;
@@ -21,14 +22,12 @@ namespace adria
         Unknown
     };
 
-    struct MetalResourceEntry
-    {
-        id<MTLTexture> texture = nil;
-        id<MTLBuffer> buffer = nil;
-        id<MTLSamplerState> sampler = nil;
-        Uint64 buffer_offset = 0;
-        MetalResourceType type = MetalResourceType::Unknown;
-    };
+    //typedef struct IRDescriptorTableEntry
+    //{
+    //    uint64_t gpuVA;
+    //    uint64_t textureViewID;
+    //    uint64_t metadata;
+    //} IRDescriptorTableEntry;
 
     class MetalArgumentBuffer final
     {
@@ -63,7 +62,7 @@ namespace adria
         id<MTLSamplerState> GetSampler(Uint32 index) const;
         Uint64 GetBufferOffset(Uint32 index) const;
         MetalResourceType GetResourceType(Uint32 index) const;
-        MetalResourceEntry const& GetResourceEntry(Uint32 index) const;
+        IRDescriptorTableEntry const& GetResourceEntry(Uint32 index) const;
 
     private:
         MetalDevice* metal_gfx;
@@ -71,7 +70,7 @@ namespace adria
         void* descriptor_cpu_ptr;
         Uint32 capacity;
         Uint32 next_free_index;
-        std::vector<MetalResourceEntry> resource_entries;
+        std::vector<IRDescriptorTableEntry> resource_entries;
 
         RingOffsetAllocator ring_allocator;
         Uint32 reserved_size;

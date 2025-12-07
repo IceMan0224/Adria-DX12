@@ -12,7 +12,6 @@ namespace adria
     static MTLAccelerationStructureInstanceOptions ConvertInstanceFlags(GfxRayTracingInstanceFlags flags)
     {
         MTLAccelerationStructureInstanceOptions options = MTLAccelerationStructureInstanceOptionNone;
-
         if (flags & GfxRayTracingInstanceFlag_ForceOpaque)
         {
             options |= MTLAccelerationStructureInstanceOptionOpaque;
@@ -58,7 +57,6 @@ namespace adria
             }
 
             triangleGeometry.opaque = geom.opaque ? YES : NO;
-
             [geometryDescriptors addObject:triangleGeometry];
         }
 

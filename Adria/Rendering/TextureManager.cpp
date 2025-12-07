@@ -7,10 +7,8 @@
 #include "Utilities/Image.h"
 #include "Utilities/PathHelpers.h"
 
-
 namespace adria
 {
-
     TextureManager::TextureManager() {}
     TextureManager::~TextureManager() = default;
 
@@ -152,15 +150,10 @@ namespace adria
 
 	void TextureManager::OnSceneInitialized()
 	{
-		const Uint32 max_textures = 1024; // Maximum texture handles we'll support
-		const Uint32 total_reserved = 2048; // Total reserved slots in argument buffer
+		const Uint32 max_textures = 1024; 
+		const Uint32 total_reserved = 2048; 
 
 		gfx->InitGlobalResourceBindings(total_reserved);
-
-		// Common textures are already placed at indices 0-3 by gfxcommon::Initialize
-		// which was called before TextureManager::OnSceneInitialized
-		// No need to update them again - doing so would corrupt the descriptors
-
 		for (Uint64 i = TEXTURE_MANAGER_START_HANDLE; i < handle; ++i)
         {
             GfxTexture* texture = texture_map[TextureHandle(i)].get();
@@ -181,12 +174,6 @@ namespace adria
 
 		GfxTexture* texture = texture_map[handle].get();
 		ADRIA_ASSERT(texture);
-
-		// CreateTextureSRV will allocate the texture at the next persistent index
-		// For TextureManager, if handles match sequential allocation, this works correctly
-		// Handle 4 → persistent index 4, Handle 5 → persistent index 5, etc.
 		texture_srv_map[handle] = gfx->CreateTextureSRV(texture);
-
-		// No need for UpdateBindlessTable - the texture is already at the correct index
 	}
 }

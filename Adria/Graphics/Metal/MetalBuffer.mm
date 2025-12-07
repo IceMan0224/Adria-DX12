@@ -19,7 +19,7 @@ namespace adria
         }
 
         metal_device->RegisterBuffer(metal_buffer);
-        metal_device->MakeResident(metal_buffer); // Make buffer resident
+        metal_device->MakeResident(metal_buffer);
     }
 
     MetalBuffer::~MetalBuffer()
@@ -28,7 +28,7 @@ namespace adria
         {
             MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
             metal_device->UnregisterBuffer(metal_buffer);
-            metal_device->Evict(metal_buffer); // Queue for eviction
+            metal_device->Evict(metal_buffer); 
             metal_buffer = nil;
         }
     }

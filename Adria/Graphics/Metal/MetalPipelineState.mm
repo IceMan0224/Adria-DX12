@@ -1,4 +1,5 @@
 #import <Metal/Metal.h>
+#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 #include "MetalPipelineState.h"
 #include "MetalDevice.h"
 #include "MetalConversions.h"
@@ -120,11 +121,9 @@ namespace adria
         }
     }
 
-    // Map HLSL semantics to Metal attribute indices
-    // Metal IR converter assigns attributes sequentially starting from index 11
     static Uint32 GetMetalAttributeIndex(Uint32 input_element_index)
     {
-        return 11 + input_element_index;
+        return kIRStageInAttributeStartIndex + input_element_index;
     }
 
     static id<MTLFunction> GetMetalFunction(GfxDevice* gfx, GfxShaderKey const& shader_key)
