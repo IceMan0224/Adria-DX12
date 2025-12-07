@@ -24,12 +24,13 @@ namespace adria
 		Count
 	};
 
-	namespace gfxcommon
+	namespace GfxCommon
 	{
 		void Initialize(GfxDevice* gfx);
 		void Destroy();
 
 		GfxTexture*   GetCommonTexture(GfxCommonTextureType);
 		GfxDescriptor GetCommonView(GfxCommonViewType);
+		Uint32		  GetCommonViewBindlessIndex(GfxCommonViewType);
 	}
 }

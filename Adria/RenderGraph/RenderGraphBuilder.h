@@ -43,6 +43,7 @@ namespace adria
 		tex_desc.clear_value = rg_tex_desc.clear_value;
 		tex_desc.bind_flags = GfxBindFlag::None;
 		tex_desc.initial_state = GfxResourceState::Common;
+		tex_desc.persistent = false;
 	}
 	inline void InitGfxBufferDesc(RGBufferDesc const& rg_buf_desc, GfxBufferDesc& buf_desc)
 	{
@@ -52,6 +53,7 @@ namespace adria
 		buf_desc.misc_flags = rg_buf_desc.misc_flags;
 		buf_desc.format = rg_buf_desc.format;
 		buf_desc.bind_flags = GfxBindFlag::None;
+		buf_desc.persistent = false;
 	}
 	inline void ExtractRGTextureDesc(GfxTextureDesc const& tex_desc, RGTextureDesc& rg_tex_desc)
 	{

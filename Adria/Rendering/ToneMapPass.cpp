@@ -90,9 +90,9 @@ namespace adria
 				GfxDescriptor src_descriptors[] =
 				{
 					ctx.GetReadOnlyTexture(data.hdr_input),
-					data.exposure.IsValid() ? ctx.GetReadOnlyTexture(data.exposure) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
+					data.exposure.IsValid() ? ctx.GetReadOnlyTexture(data.exposure) : GfxCommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
 					ctx.GetReadWriteTexture(data.output),
-					bloom_enabled ? ctx.GetReadOnlyTexture(data.bloom) : gfxcommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV)
+					bloom_enabled ? ctx.GetReadOnlyTexture(data.bloom) : GfxCommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV)
 				};
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 

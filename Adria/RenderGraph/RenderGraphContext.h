@@ -106,6 +106,8 @@ namespace adria
 		GfxDescriptor GetDepthStencil(RGDepthStencilId res_id) const;
 		GfxDescriptor GetReadOnlyTexture(RGTextureReadOnlyId res_id) const;
 		GfxDescriptor GetReadWriteTexture(RGTextureReadWriteId res_id) const;
+		Uint32		  GetReadOnlyTextureIndex(RGTextureReadOnlyId res_id) const;
+		Uint32		  GetReadWriteTextureIndex(RGTextureReadWriteId res_id) const;
 
 		GfxDescriptor GetReadOnlyBuffer(RGBufferReadOnlyId res_id) const;
 		GfxDescriptor GetReadWriteBuffer(RGBufferReadWriteId res_id) const;

@@ -73,7 +73,7 @@ namespace adria
 												context.GetReadOnlyTexture(data.gbuffer_emissive),
 												context.GetReadOnlyTexture(data.gbuffer_custom),
 												context.GetReadOnlyTexture(data.depth),
-												data.ambient_occlusion.IsValid() ? context.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
+												data.ambient_occlusion.IsValid() ? context.GetReadOnlyTexture(data.ambient_occlusion) : GfxCommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
 												context.GetReadWriteTexture(data.output),
 												context.GetReadWriteTexture(data.debug_output) };
 

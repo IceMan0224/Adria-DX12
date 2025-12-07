@@ -93,6 +93,16 @@ namespace adria
 		return rg.GetReadWriteTexture(res_id);
 	}
 
+	Uint32 RenderGraphContext::GetReadOnlyTextureIndex(RGTextureReadOnlyId res_id) const
+	{
+		return rg.GetReadOnlyTextureIndex(res_id);
+	}
+
+	Uint32 RenderGraphContext::GetReadWriteTextureIndex(RGTextureReadWriteId res_id) const
+	{
+		return rg.GetReadWriteTextureIndex(res_id);
+	}
+
 	GfxDescriptor RenderGraphContext::GetReadOnlyBuffer(RGBufferReadOnlyId res_id) const
 	{
 		return rg.GetReadOnlyBuffer(res_id);

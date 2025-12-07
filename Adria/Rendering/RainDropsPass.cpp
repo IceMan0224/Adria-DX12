@@ -51,7 +51,7 @@ namespace adria
 				GfxDescriptor src_descriptors[] =
 				{
 					ctx.GetReadWriteTexture(data.output),
-					g_TextureManager.GetSRV(noise_texture_handle)
+					g_TextureManager.GetDescriptor(noise_texture_handle)
 				};
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 

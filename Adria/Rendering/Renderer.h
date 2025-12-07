@@ -48,7 +48,6 @@ namespace adria
 	class Renderer
 	{
 	public:
-
 		Renderer(entt::registry& reg, GfxDevice* gfx, Uint32 width, Uint32 height);
 		~Renderer();
 

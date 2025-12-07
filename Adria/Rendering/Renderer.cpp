@@ -59,7 +59,7 @@ namespace adria
 		g_GfxProfiler.Shutdown();
 		gfx->WaitForGPU();
 		reg.clear();
-		gfxcommon::Destroy();
+		GfxCommon::Destroy();
 	}
 
 	void Renderer::SetDebugView(RendererDebugView debug_view)
@@ -142,7 +142,6 @@ namespace adria
 
 	void Renderer::OnSceneInitialized()
 	{
-		gfxcommon::Initialize(gfx);
 		sheenE_texture = g_TextureManager.LoadTexture(paths::TexturesDir + "SheenE.dds");
 		sky_pass.OnSceneInitialized();
 		decals_pass.OnSceneInitialized();
@@ -156,6 +155,7 @@ namespace adria
 		g_TextureManager.OnSceneInitialized();
 		g_GeometryBufferCache.OnSceneInitialized();
 	}
+
 	void Renderer::OnRightMouseClicked(Int32 x, Int32 y)
 	{
 		update_picking_data = true;
@@ -222,8 +222,14 @@ namespace adria
 
 	void Renderer::CreateAS()
 	{
-		if (!ray_tracing_supported) return;
-		if (reg.view<RayTracing>().size() == 0) return;
+		if (!ray_tracing_supported)
+		{
+			return;
+		}
+		if (reg.view<RayTracing>().size() == 0)
+		{
+			return;
+		}
 
 		accel_structure.Clear();
 		auto ray_tracing_view = reg.view<Mesh, RayTracing>();
@@ -329,31 +335,31 @@ namespace adria
 				MaterialGPU& material_gpu = materials.emplace_back();
 				material_gpu.shading_extension = (Uint32)material.shading_extension;
 				material_gpu.albedo_color = Vector3(material.albedo_color);
-				material_gpu.albedo_idx = (Uint32)material.albedo_texture;
-				material_gpu.roughness_metallic_idx = (Uint32)material.metallic_roughness_texture;
+				material_gpu.albedo_idx = g_TextureManager.GetBindlessIndex(material.albedo_texture);
+				material_gpu.roughness_metallic_idx = g_TextureManager.GetBindlessIndex(material.metallic_roughness_texture);
 				material_gpu.metallic_factor = material.metallic_factor;
 				material_gpu.roughness_factor = material.roughness_factor;
 
-				material_gpu.normal_idx = (Uint32)material.normal_texture;
-				material_gpu.emissive_idx = (Uint32)material.emissive_texture;
+				material_gpu.normal_idx = g_TextureManager.GetBindlessIndex(material.normal_texture);
+				material_gpu.emissive_idx = g_TextureManager.GetBindlessIndex(material.emissive_texture);
 				material_gpu.emissive_factor = material.emissive_factor;
 				material_gpu.alpha_cutoff = material.alpha_cutoff;
 				material_gpu.alpha_blended = material.alpha_mode == MaterialAlphaMode::Blend;
 
-				material_gpu.anisotropy_idx = (Int32)material.anisotropy_texture;
+				material_gpu.anisotropy_idx = g_TextureManager.GetBindlessIndex(material.anisotropy_texture);
 				material_gpu.anisotropy_strength = material.anisotropy_strength;
 				material_gpu.anisotropy_rotation = material.anisotropy_rotation;
 
-				material_gpu.clear_coat_idx = (Uint32)material.clear_coat_texture;
-				material_gpu.clear_coat_roughness_idx = (Uint32)material.clear_coat_roughness_texture;
-				material_gpu.clear_coat_normal_idx = (Uint32)material.clear_coat_normal_texture;
+				material_gpu.clear_coat_idx = g_TextureManager.GetBindlessIndex(material.clear_coat_texture);
+				material_gpu.clear_coat_roughness_idx = g_TextureManager.GetBindlessIndex(material.clear_coat_roughness_texture);
+				material_gpu.clear_coat_normal_idx = g_TextureManager.GetBindlessIndex(material.clear_coat_normal_texture);
 				material_gpu.clear_coat = material.clear_coat;
 				material_gpu.clear_coat_roughness = material.clear_coat_roughness;
 
 				material_gpu.sheen_color = Vector3(material.sheen_color);
-				material_gpu.sheen_color_idx = (Uint32)material.sheen_color_texture;
+				material_gpu.sheen_color_idx = g_TextureManager.GetBindlessIndex(material.sheen_color_texture);
 				material_gpu.sheen_roughness = material.sheen_roughness;
-				material_gpu.sheen_roughness_idx = (Uint32)material.sheen_roughness_texture;
+				material_gpu.sheen_roughness_idx = g_TextureManager.GetBindlessIndex(material.sheen_roughness_texture);
 			}
 		}
 
@@ -369,9 +375,7 @@ namespace adria
 				scene_buffer.buffer_srv = gfx->CreateBufferSRV(scene_buffer.buffer.get());
 			}
 			scene_buffer.buffer->Update(data.data(), data.size() * sizeof(T));
-
-			GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(scene_buffer.buffer_srv);
-			scene_buffer.buffer_srv_gpu_index = table;
+			scene_buffer.buffer_srv_gpu_index = gfx->GetBindlessDescriptorIndex(scene_buffer.buffer_srv);
 		};
 		CopyBuffer(hlsl_lights, scene_buffers[SceneBuffer_Light]);
 		CopyBuffer(meshes, scene_buffers[SceneBuffer_Mesh]);
@@ -547,12 +551,24 @@ namespace adria
 		{
 			ClearTriangleOverdrawTexture(render_graph);
 		}
-		if (rain_pass.IsEnabled()) rain_pass.AddBlockerPass(render_graph);
+		if (rain_pass.IsEnabled())
+		{
+			rain_pass.AddBlockerPass(render_graph);
+		}
 		
-		if (gpu_driven_renderer.IsEnabled()) gpu_driven_renderer.AddPasses(render_graph);
-		else gbuffer_pass.AddPass(render_graph);
+		if (gpu_driven_renderer.IsEnabled())
+		{
+			gpu_driven_renderer.AddPasses(render_graph);
+		}
+		else
+		{
+			gbuffer_pass.AddPass(render_graph);
+		}
 
-		if(ddgi.IsEnabled()) ddgi.AddPasses(render_graph);
+		if (ddgi.IsEnabled())
+		{
+			ddgi.AddPasses(render_graph);
+		}
 		decals_pass.AddPass(render_graph);
 		postprocessor.AddAmbientOcclusionPass(render_graph);
 		{

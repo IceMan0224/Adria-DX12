@@ -145,23 +145,26 @@ namespace adria
 	{
 		GfxCommandList* cmd_list = gfx->GetLatestGraphicsCommandList();
 		cmd_list->Begin();
-
-		camera = std::make_unique<Camera>(config.camera_params);
-		camera->SetAspectRatio((Float)window->Width() / window->Height());
-		scene_loader->LoadSkybox(config.skybox_params);
-
-		for (ModelParameters const& model : config.scene_models) scene_loader->LoadModel(model);
-		for (LightParameters const& light : config.scene_lights) scene_loader->LoadLight(light);
-
-		auto ray_tracing_view = reg.view<Mesh, RayTracing>();
-		for (entt::entity entity : reg.view<Mesh, RayTracing>())
 		{
-			auto const& mesh = ray_tracing_view.get<Mesh>(entity);
-			GfxBuffer* buffer = g_GeometryBufferCache.GetGeometryBuffer(mesh.geometry_buffer_handle);
-			cmd_list->BufferBarrier(*buffer, GfxResourceState::CopyDst, GfxResourceState::AllSRV);
-		}
+			GfxCommon::Initialize(gfx.get());
 
-		renderer->OnSceneInitialized();
+			camera = std::make_unique<Camera>(config.camera_params);
+			camera->SetAspectRatio((Float)window->Width() / window->Height());
+			scene_loader->LoadSkybox(config.skybox_params);
+
+			for (ModelParameters const& model : config.scene_models) scene_loader->LoadModel(model);
+			for (LightParameters const& light : config.scene_lights) scene_loader->LoadLight(light);
+
+			auto ray_tracing_view = reg.view<Mesh, RayTracing>();
+			for (entt::entity entity : reg.view<Mesh, RayTracing>())
+			{
+				auto const& mesh = ray_tracing_view.get<Mesh>(entity);
+				GfxBuffer* buffer = g_GeometryBufferCache.GetGeometryBuffer(mesh.geometry_buffer_handle);
+				cmd_list->BufferBarrier(*buffer, GfxResourceState::CopyDst, GfxResourceState::AllSRV);
+			}
+
+			renderer->OnSceneInitialized();
+		}
 		cmd_list->End();
 		cmd_list->Submit();
 		gfx->WaitForGPU();
@@ -178,7 +181,10 @@ namespace adria
 		std::string line;
 		while (std::getline(cvar_ini_file, line))
 		{
-			if (line.empty() || line[0] == '#') continue;
+			if (line.empty() || line[0] == '#')
+			{
+				continue;
+			}
 			g_ConsoleManager.ProcessInput(line);
 		}
 	}

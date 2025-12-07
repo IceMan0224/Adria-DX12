@@ -14,7 +14,6 @@ namespace adria
     {
 		for(auto& [handle, buffer] : buffer_map)
 		{
-			buffer->SetPersistent(true);
 			buffer_srv_map[handle] = gfx->CreateBufferSRV(buffer.get());
 		}
     }

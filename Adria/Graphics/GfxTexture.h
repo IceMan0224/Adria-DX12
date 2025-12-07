@@ -35,6 +35,7 @@ namespace adria
 		GfxClearValue clear_value{};
 		GfxResourceState initial_state = GfxResourceState::AllSRV;
 		GfxFormat format = GfxFormat::UNKNOWN;
+		Bool persistent = true;
 
 		std::strong_ordering operator<=>(GfxTextureDesc const& other) const = delete;
 		Bool IsCompatible(GfxTextureDesc const& desc) const
@@ -137,15 +138,14 @@ namespace adria
 			return reinterpret_cast<T*>(mapped_data);
 		}
 
-		void SetPersistent(Bool persistent) { is_persistent = persistent; }
-		Bool IsPersistent() const { return is_persistent; }
+		Bool IsPersistent() const { return desc.persistent; }
+		void SetPersistent(Bool persistent) { desc.persistent = persistent; }
 
 	protected:
 		GfxDevice* gfx;
 		GfxTextureDesc desc;
 		void* mapped_data = nullptr;
 		Bool is_backbuffer = false;
-		Bool is_persistent = false;
 
 	protected:
 		GfxTexture(GfxDevice* gfx, GfxTextureDesc const& desc) : gfx(gfx), desc(desc) {}

@@ -21,8 +21,11 @@ namespace adria
 
 		ADRIA_NODISCARD TextureHandle LoadTexture(std::string_view path, Bool srgb = false);
 		ADRIA_NODISCARD TextureHandle LoadCubemap(std::array<std::string, 6> const& cubemap_textures);
-		ADRIA_NODISCARD GfxDescriptor GetSRV(TextureHandle handle);
+
+		ADRIA_NODISCARD Uint32		  GetBindlessIndex(TextureHandle handle) const;
+		ADRIA_NODISCARD GfxDescriptor GetDescriptor(TextureHandle handle) const;
 		ADRIA_NODISCARD GfxTexture* GetTexture(TextureHandle handle) const;
+
 		void EnableMipMaps(Bool);
 		void OnSceneInitialized();
 

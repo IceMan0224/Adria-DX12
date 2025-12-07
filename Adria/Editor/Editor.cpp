@@ -621,7 +621,7 @@ namespace adria
 					ImGui::Text("Albedo Texture");
 					if (material->albedo_texture != INVALID_TEXTURE_HANDLE)
 					{
-						GfxDescriptor tex_handle = g_TextureManager.GetSRV(material->albedo_texture);
+						GfxDescriptor tex_handle = g_TextureManager.GetDescriptor(material->albedo_texture);
 						gui->ShowImage(tex_handle);
 					}
 
@@ -646,7 +646,7 @@ namespace adria
 					ImGui::Text("Metallic-Roughness Texture");
 					if (material->metallic_roughness_texture != INVALID_TEXTURE_HANDLE)
 					{
-						GfxDescriptor tex_handle = g_TextureManager.GetSRV(material->metallic_roughness_texture);
+						GfxDescriptor tex_handle = g_TextureManager.GetDescriptor(material->metallic_roughness_texture);
 						gui->ShowImage(tex_handle);
 					}
 
@@ -672,7 +672,7 @@ namespace adria
 					ImGui::Text("Emissive Texture");
 					if (material->emissive_texture != INVALID_TEXTURE_HANDLE)
 					{
-						GfxDescriptor tex_handle = g_TextureManager.GetSRV(material->emissive_texture);
+						GfxDescriptor tex_handle = g_TextureManager.GetDescriptor(material->emissive_texture);
 						gui->ShowImage(tex_handle);
 					}
 
@@ -722,7 +722,7 @@ namespace adria
 				if (decal && ImGui::CollapsingHeader("Decal"))
 				{
 					ImGui::Text("Decal Albedo Texture");
-					GfxDescriptor tex_handle = g_TextureManager.GetSRV(decal->albedo_decal_texture);
+					GfxDescriptor tex_handle = g_TextureManager.GetDescriptor(decal->albedo_decal_texture);
 					gui->ShowImage(tex_handle);
 
 					ImGui::PushID(4);
@@ -744,7 +744,7 @@ namespace adria
 					ImGui::PopID();
 
 					ImGui::Text("Decal Normal Texture");
-					tex_handle = g_TextureManager.GetSRV(decal->normal_decal_texture);
+					tex_handle = g_TextureManager.GetDescriptor(decal->normal_decal_texture);
 					gui->ShowImage(tex_handle);
 
 					ImGui::PushID(5);

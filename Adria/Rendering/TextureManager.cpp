@@ -121,9 +121,31 @@ namespace adria
 		return texture_handle;
 	}
 
-	GfxDescriptor TextureManager::GetSRV(TextureHandle tex_handle)
+	Uint32 TextureManager::GetBindlessIndex(TextureHandle handle) const
 	{
-		return texture_srv_map[tex_handle];
+		if (handle == INVALID_TEXTURE_HANDLE)
+		{
+			return Uint32(-1);
+		}
+		if (handle < TEXTURE_MANAGER_START_HANDLE)
+		{
+			return GfxCommon::GetCommonViewBindlessIndex(static_cast<GfxCommonViewType>(handle));
+		}
+		GfxDescriptor descriptor = GetDescriptor(handle);
+		return descriptor.IsValid() ? gfx->GetBindlessDescriptorIndex(descriptor) : Uint32(-1);
+	}
+
+	GfxDescriptor TextureManager::GetDescriptor(TextureHandle tex_handle) const
+	{
+		if (handle == INVALID_TEXTURE_HANDLE)
+		{
+			return GfxDescriptor{};
+		}
+		if (auto it = texture_srv_map.find(tex_handle); it != texture_srv_map.end())
+		{
+			return it->second;
+		}
+		return GfxDescriptor{};
 	}
 
 	GfxTexture* TextureManager::GetTexture(TextureHandle handle) const
@@ -166,7 +188,6 @@ namespace adria
 
 		GfxTexture* texture = texture_map[handle].get();
 		ADRIA_ASSERT(texture);
-		texture->SetPersistent(true);
         texture_srv_map[handle] = gfx->CreateTextureSRV(texture);
  	}
 }

@@ -59,6 +59,7 @@ namespace adria
 	void RenderGraph::ImportTexture(RGResourceName name, GfxTexture* texture)
 	{
 		ADRIA_ASSERT(texture);
+		texture->SetPersistent(false);
 		textures.emplace_back(new RGTexture(textures.size(), texture, name));
 		textures.back()->SetName();
 		texture_name_id_map[name] = RGTextureId(textures.size() - 1);
@@ -67,6 +68,7 @@ namespace adria
 	void RenderGraph::ImportBuffer(RGResourceName name, GfxBuffer* buffer)
 	{
 		ADRIA_ASSERT(buffer);
+		buffer->SetPersistent(false);
 		buffers.emplace_back(new RGBuffer(buffers.size(), buffer, name));
 		buffers.back()->SetName();
 		buffer_name_id_map[name] = RGBufferId(buffers.size() - 1);
@@ -96,20 +98,9 @@ namespace adria
 
 	RenderGraph::~RenderGraph()
 	{
-		for (auto& [tex_id, view_vector] : texture_view_map)
+		for (GfxDescriptor const& view : texture_views_to_free)
 		{
-			for (GfxDescriptor const& view : view_vector)
-			{
-				gfx->FreeCPUViewDescriptor(view);
-			}
-		}
-
-		for (auto& [buf_id, view_vector] : buffer_view_map)
-		{
-			for (GfxDescriptor const& view : view_vector)
-			{
-				gfx->FreeCPUViewDescriptor(view);
-			}
+			gfx->FreeCPUDescriptor(view);
 		}
 	}
 
@@ -703,9 +694,11 @@ namespace adria
 			{
 			case RGDescriptorType::RenderTarget:
 				view = gfx->CreateTextureRTV(texture, &view_desc);
+				texture_views_to_free.push_back(view);
 				break;
 			case RGDescriptorType::DepthStencil:
 				view = gfx->CreateTextureDSV(texture, &view_desc);
+				texture_views_to_free.push_back(view);
 				break;
 			case RGDescriptorType::ReadOnly:
 				view = gfx->CreateTextureSRV(texture, &view_desc);
@@ -1122,6 +1115,17 @@ namespace adria
 		RGBufferId buf_id = res_id.GetResourceId();
 		auto const& views = buffer_view_map[buf_id];
 		return views[res_id.GetViewId()];
+	}
+
+	Uint32 RenderGraph::GetReadOnlyTextureIndex(RGTextureReadOnlyId res_id) const
+	{
+		GfxDescriptor descriptor = GetReadOnlyTexture(res_id);
+		return gfx->GetBindlessDescriptorIndex(descriptor);
+	}
+	Uint32 RenderGraph::GetReadWriteTextureIndex(RGTextureReadWriteId res_id) const
+	{
+		GfxDescriptor descriptor = GetReadWriteTexture(res_id);
+		return gfx->GetBindlessDescriptorIndex(descriptor);
 	}
 
 	void RenderGraph::DependencyLevel::AddPass(RenderGraphPassBase* pass)

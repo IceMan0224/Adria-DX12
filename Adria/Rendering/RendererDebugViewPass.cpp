@@ -70,8 +70,8 @@ namespace adria
 												context.GetReadOnlyTexture(data.depth),
 												context.GetReadOnlyTexture(data.gbuffer_emissive),
 												context.GetReadOnlyTexture(data.gbuffer_custom),
-												data.ambient_occlusion.IsValid() ? context.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
-												data.motion_vectors.IsValid()    ? context.GetReadOnlyTexture(data.motion_vectors)    : gfxcommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV),
+												data.ambient_occlusion.IsValid() ? context.GetReadOnlyTexture(data.ambient_occlusion) : GfxCommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
+												data.motion_vectors.IsValid()    ? context.GetReadOnlyTexture(data.motion_vectors)    : GfxCommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV),
 												context.GetReadWriteTexture(data.output) };
 				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 

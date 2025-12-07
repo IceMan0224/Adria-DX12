@@ -353,7 +353,7 @@ namespace adria
 				{
 					auto const& [mesh, material, transform] = ocean_chunk_view.get<const SubMesh, const Material, const Transform>(ocean_chunk);
 
-					GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.displacement), ctx.GetReadOnlyTexture(data.normals), g_TextureManager.GetSRV(foam_handle) };
+					GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.displacement), ctx.GetReadOnlyTexture(data.normals), g_TextureManager.GetDescriptor(foam_handle) };
 					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 
 					struct OceanIndices

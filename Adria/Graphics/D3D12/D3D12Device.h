@@ -73,7 +73,7 @@ namespace adria
 		virtual void UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count) override;
 		virtual void UpdateBindlessTables(std::vector<GfxBindlessTable> const& table, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size) override;
 		virtual Uint32 GetBindlessDescriptorIndex(GfxDescriptor descriptor) const override;
-		virtual void FreeCPUViewDescriptor(GfxDescriptor descriptor) override;
+		virtual void FreeCPUDescriptor(GfxDescriptor descriptor) override;
 
 		virtual std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) override;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) override;

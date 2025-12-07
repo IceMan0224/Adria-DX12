@@ -256,16 +256,14 @@ namespace adria
 				mask_desc.format = GfxFormat::R8_UNORM;
 				mask_desc.initial_state = GfxResourceState::ComputeUAV;
 				mask_desc.bind_flags = GfxBindFlag::UnorderedAccess | GfxBindFlag::UnorderedAccess;
-
 				light_mask_textures[light_id] = gfx->CreateTexture(mask_desc);
-
 				light_mask_texture_srvs[light_id] = gfx->CreateTextureSRV(light_mask_textures[light_id].get());
 				light_mask_texture_uavs[light_id] = gfx->CreateTextureUAV(light_mask_textures[light_id].get());
 			}
 			GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(light_mask_texture_srvs[light_id]);
 			light.shadow_mask_index = static_cast<Int32>(table);
 		};
-		auto AddShadowMap  = [&](Uint64 light_id, Uint32 shadow_map_size)
+		auto AddShadowMap = [&](Uint64 light_id, Uint32 shadow_map_size)
 		{
 			GfxTextureDesc depth_desc{};
 			depth_desc.width = shadow_map_size;
@@ -290,7 +288,10 @@ namespace adria
 					light_shadow_maps[light_id].clear();
 					light_shadow_map_srvs[light_id].clear();
 					light_shadow_map_dsvs[light_id].clear();
-					for (Uint32 i = 0; i < SHADOW_CASCADE_COUNT; ++i) AddShadowMap(light_id, SHADOW_CASCADE_MAP_SIZE);
+					for (Uint32 i = 0; i < SHADOW_CASCADE_COUNT; ++i)
+					{
+						AddShadowMap(light_id, SHADOW_CASCADE_MAP_SIZE);
+					}
 				}
 				else if (!light.use_cascades && light_shadow_maps[light_id].size() != 1)
 				{
@@ -308,7 +309,10 @@ namespace adria
 					light_shadow_maps[light_id].clear();
 					light_shadow_map_srvs[light_id].clear();
 					light_shadow_map_dsvs[light_id].clear();
-					for (Uint32 i = 0; i < 6; ++i) AddShadowMap(light_id, SHADOW_CUBE_SIZE);
+					for (Uint32 i = 0; i < 6; ++i)
+					{
+						AddShadowMap(light_id, SHADOW_CUBE_SIZE);
+					}
 				}
 			}
 			break;
@@ -345,9 +349,18 @@ namespace adria
 			Light& light = light_view.get<Light>(e);
 			if (light.casts_shadows)
 			{
-				if (light.type == LightType::Directional && light.use_cascades) current_light_matrices_count += SHADOW_CASCADE_COUNT;
-				else if (light.type == LightType::Point) current_light_matrices_count += 6;
-				else current_light_matrices_count++;
+				if (light.type == LightType::Directional && light.use_cascades)
+				{
+					current_light_matrices_count += SHADOW_CASCADE_COUNT;
+				}
+				else if (light.type == LightType::Point)
+				{
+					current_light_matrices_count += 6;
+				}
+				else
+				{
+					current_light_matrices_count++;
+				}
 			}
 		}
 
@@ -378,7 +391,10 @@ namespace adria
 			light.shadow_texture_index = -1;
 			if (light.casts_shadows)
 			{
-				if (light.ray_traced_shadows) continue;
+				if (light.ray_traced_shadows)
+				{
+					continue;
+				}
 				light.shadow_matrix_index = (Uint32)light_matrices.size();
 				if (light.type == LightType::Directional)
 				{
@@ -438,7 +454,11 @@ namespace adria
 		for (entt::entity e : light_view)
 		{
 			Light& light = light_view.get<Light>(e);
-			if (!light.casts_shadows) continue;
+			if (!light.casts_shadows)
+			{
+				continue;
+			}
+
 			Int32 light_index = light.light_index;
 			Int32 light_matrix_index = light.shadow_matrix_index;
 			Uint64 light_id = entt::to_integral(e);
@@ -536,7 +556,10 @@ namespace adria
 		for (entt::entity e : light_view)
 		{
 			Light& light = light_view.get<Light>(e);
-			if (!light.ray_traced_shadows) continue;
+			if (!light.ray_traced_shadows)
+			{
+				continue;
+			}
 			Int32 light_index = light.light_index;
 			Uint64 light_id = entt::to_integral(e);
 
@@ -583,8 +606,14 @@ namespace adria
 		for (entt::entity batch_entity : reg.view<Batch>())
 		{
 			Batch& batch = reg.get<Batch>(batch_entity);
-			if (batch.alpha_mode == MaterialAlphaMode::Opaque) opaque_batches.push_back(&batch);
-			else masked_batches.push_back(&batch);
+			if (batch.alpha_mode == MaterialAlphaMode::Opaque)
+			{
+				opaque_batches.push_back(&batch);
+			}
+			else
+			{
+				masked_batches.push_back(&batch);
+			}
 		}
 
 		auto DrawBatch = [&](GfxCommandList* cmd_list, Bool masked_batch)
@@ -614,7 +643,10 @@ namespace adria
 				default:
 					ADRIA_ASSERT(false);
 				}
-				if (skip_batch) continue;
+				if (skip_batch)
+				{
+					continue;
+				}
 
 				struct ModelConstants
 				{
@@ -653,7 +685,9 @@ namespace adria
 		std::array<Matrix, SHADOW_CASCADE_COUNT> projection_matrices{};
 		projection_matrices[0] = XMMatrixPerspectiveFovLH(fov, ar, near_plane, split_distances[0]);
 		for (Uint32 i = 1; i < projection_matrices.size(); ++i)
+		{
 			projection_matrices[i] = XMMatrixPerspectiveFovLH(fov, ar, split_distances[i - 1], split_distances[i]);
+		}
 		return projection_matrices;
 	}
 }

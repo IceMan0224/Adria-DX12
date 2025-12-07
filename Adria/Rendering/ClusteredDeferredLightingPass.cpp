@@ -171,7 +171,7 @@ namespace adria
 												ctx.GetReadOnlyTexture(data.gbuffer_emissive),
 												ctx.GetReadOnlyTexture(data.gbuffer_custom),
 												ctx.GetReadOnlyTexture(data.depth),
-												data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTexture(data.ambient_occlusion) : gfxcommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
+												data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTexture(data.ambient_occlusion) : GfxCommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
 												ctx.GetReadWriteTexture(data.output),
 												ctx.GetReadOnlyBuffer(data.light_list), ctx.GetReadOnlyBuffer(data.light_grid)
 				};

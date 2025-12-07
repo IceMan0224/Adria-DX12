@@ -4,7 +4,7 @@
 
 namespace adria
 {
-	namespace gfxcommon
+	namespace GfxCommon
 	{
 		using enum GfxCommonTextureType;
 		namespace
@@ -86,8 +86,6 @@ namespace adria
 			gfx = _gfx;
 			CreateCommonTextures(gfx);
 			CreateCommonViews(gfx);
-			GfxBindlessTable table = gfx->AllocatePersistentBindlessTable((Uint32)GfxCommonViewType::Count);
-			gfx->UpdateBindlessTable(table, common_views);
 			initialized = true;
 		}
 
@@ -107,6 +105,12 @@ namespace adria
 		GfxDescriptor GetCommonView(GfxCommonViewType type)
 		{
 			return common_views[(Uint64)type];
+		}
+
+		Uint32 GetCommonViewBindlessIndex(GfxCommonViewType type)
+		{
+			GfxDescriptor common_view_descriptor = GetCommonView(type);
+			return gfx->GetBindlessDescriptorIndex(common_view_descriptor);
 		}
 
 	}

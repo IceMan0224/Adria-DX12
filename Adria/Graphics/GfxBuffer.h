@@ -11,6 +11,7 @@ namespace adria
 		GfxBufferMiscFlag misc_flags = GfxBufferMiscFlag::None;
 		Uint32 stride = 0; 
 		GfxFormat format = GfxFormat::UNKNOWN; 
+		Bool persistent = true;
 		std::strong_ordering operator<=>(GfxBufferDesc const& other) const = default;
 	};
 
@@ -81,14 +82,13 @@ namespace adria
 			Update(&src_data, sizeof(T));
 		}
 
-		void SetPersistent(Bool persistent) { is_persistent = persistent; }
-		Bool IsPersistent() const { return is_persistent; }
+		Bool IsPersistent() const { return desc.persistent; }
+		void SetPersistent(Bool persistent) { desc.persistent = persistent; }
 
 	protected:
 		GfxDevice* gfx;
 		GfxBufferDesc desc;
 		void* mapped_data = nullptr;
-		Bool is_persistent = false;
 
 	protected:
 		GfxBuffer(GfxDevice* gfx, GfxBufferDesc const& desc) : gfx(gfx), desc(desc) {}
