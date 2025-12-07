@@ -1,7 +1,7 @@
 #pragma once
 #import <Metal/Metal.h>
 #include "MetalDescriptor.h"
-#include <vector>
+#include "Utilities/RingOffsetAllocator.h"
 
 @protocol MTLBuffer;
 @protocol MTLTexture;
@@ -33,15 +33,23 @@ namespace adria
     class MetalArgumentBuffer final
     {
     public:
-        MetalArgumentBuffer(MetalDevice* metal_gfx, Uint32 initial_capacity);
+        MetalArgumentBuffer(MetalDevice* metal_gfx, Uint32 initial_capacity, Uint32 reserve_size = 0);
         ADRIA_NONCOPYABLE_NONMOVABLE(MetalArgumentBuffer)
         ~MetalArgumentBuffer();
 
         ADRIA_FORCEINLINE Uint32 GetCapacity() const { return capacity; }
         ADRIA_FORCEINLINE Uint32 GetNextFreeIndex() const { return next_free_index; }
         ADRIA_FORCEINLINE id<MTLBuffer> GetBuffer() const { return descriptor_buffer; }
+        ADRIA_FORCEINLINE Uint32 GetReservedSize() const { return reserved_size; }
 
+        [[deprecated("Use AllocatePersistent or AllocateTransient instead")]]
         Uint32 AllocateRange(Uint32 count);
+
+        Uint32 AllocatePersistent(Uint32 count);
+        Uint32 AllocateTransient(Uint32 count);
+
+        void FinishCurrentFrame(Uint64 frame);
+        void ReleaseCompletedFrames(Uint64 completed_frame);
 
         void SetTexture(id<MTLTexture> texture, Uint32 index);
         void SetBuffer(id<MTLBuffer> buffer, Uint32 index, Uint64 offset = 0);
@@ -57,10 +65,14 @@ namespace adria
     private:
         MetalDevice* metal_gfx;
         id<MTLBuffer> descriptor_buffer;
-        void* descriptor_cpu_ptr;  
+        void* descriptor_cpu_ptr;
         Uint32 capacity;
-        Uint32 next_free_index;
+        Uint32 next_free_index;  
         std::vector<MetalResourceEntry> resource_entries;
+
+        RingOffsetAllocator ring_allocator;
+        Uint32 reserved_size;
+        Uint32 next_persistent_index;
 
     private:
         void CreateDescriptorBuffer();

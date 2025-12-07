@@ -9,15 +9,19 @@ namespace adria
     ADRIA_LOG_CHANNEL(Graphics);
     using DescriptorEntry = IRDescriptorTableEntry;
 
-    MetalArgumentBuffer::MetalArgumentBuffer(MetalDevice* metal_gfx, Uint32 initial_capacity)
+    MetalArgumentBuffer::MetalArgumentBuffer(MetalDevice* metal_gfx, Uint32 initial_capacity, Uint32 reserve_size)
         : metal_gfx(metal_gfx)
         , capacity(initial_capacity)
         , next_free_index(0)
         , descriptor_cpu_ptr(nullptr)
+        , ring_allocator(initial_capacity, reserve_size)  // Initialize ring allocator with capacity and reserved region
+        , reserved_size(reserve_size)
+        , next_persistent_index(0)
     {
         ADRIA_ASSERT(metal_gfx != nullptr);
         ADRIA_ASSERT(initial_capacity > 0);
-        
+        ADRIA_ASSERT(reserve_size <= initial_capacity);
+
         resource_entries.reserve(capacity);
         resource_entries.resize(capacity);
         CreateDescriptorBuffer();
@@ -35,7 +39,7 @@ namespace adria
     Uint32 MetalArgumentBuffer::AllocateRange(Uint32 count)
     {
         ADRIA_ASSERT(count > 0);
-        
+
         if (next_free_index + count > capacity)
         {
             GrowCapacity(next_free_index + count);
@@ -44,6 +48,47 @@ namespace adria
         Uint32 base_index = next_free_index;
         next_free_index += count;
         return base_index;
+    }
+
+    Uint32 MetalArgumentBuffer::AllocatePersistent(Uint32 count)
+    {
+        ADRIA_ASSERT(count > 0);
+        ADRIA_ASSERT_MSG(next_persistent_index + count <= reserved_size,
+                         "Out of persistent bindless slots!");
+
+        Uint32 base_index = next_persistent_index;
+        next_persistent_index += count;
+        return base_index;
+    }
+
+    Uint32 MetalArgumentBuffer::AllocateTransient(Uint32 count)
+    {
+        ADRIA_ASSERT(count > 0);
+
+        if (reserved_size + count > capacity)
+        {
+            GrowCapacity(reserved_size + count);
+        }
+
+        Uint64 offset = ring_allocator.Allocate(count);
+        if (offset == INVALID_ALLOC_OFFSET)
+        {
+            ADRIA_LOG(ERROR, "Transient descriptor ring buffer full! Consider increasing capacity.");
+            ADRIA_ASSERT(false && "Ring buffer out of space!");
+            return 0;
+        }
+
+        return static_cast<Uint32>(offset);
+    }
+
+    void MetalArgumentBuffer::FinishCurrentFrame(Uint64 frame)
+    {
+        ring_allocator.FinishCurrentFrame(frame);
+    }
+
+    void MetalArgumentBuffer::ReleaseCompletedFrames(Uint64 completed_frame)
+    {
+        ring_allocator.ReleaseCompletedFrames(completed_frame);
     }
 
     void MetalArgumentBuffer::SetTexture(id<MTLTexture> texture, Uint32 index)
@@ -172,8 +217,8 @@ namespace adria
             const size_t new_buffer_size = sizeof(DescriptorEntry) * new_capacity;
             id<MTLBuffer> new_buffer = [device newBufferWithLength:new_buffer_size
                                                            options:MTLResourceStorageModeShared |
-                                                                   MTLResourceCPUCacheModeWriteCombined |
-                                                                   MTLResourceHazardTrackingModeTracked];
+                                                                  MTLResourceCPUCacheModeWriteCombined |
+                                                                  MTLResourceHazardTrackingModeTracked];
 
             void* new_cpu_ptr = [new_buffer contents];
 
@@ -190,6 +235,8 @@ namespace adria
             descriptor_cpu_ptr = new_cpu_ptr;
             capacity = new_capacity;
             resource_entries.resize(new_capacity);
+
+            ring_allocator = RingOffsetAllocator(new_capacity, reserved_size);
 
             [new_buffer setLabel:@"BindlessDescriptorTable"];
             metal_gfx->MakeResident(new_buffer);

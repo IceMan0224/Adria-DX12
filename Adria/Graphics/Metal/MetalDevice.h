@@ -43,7 +43,7 @@ namespace adria
         Uint32 GetBackbufferCount() const override { return 2; }
 
         void SetRenderingNotStarted() override;
-        void InitGlobalResourceBindings(Uint32 max_resources) override {}
+        void InitGlobalResourceBindings(Uint32 max_resources) override;
 
         void Update() override {}
         void BeginFrame() override;

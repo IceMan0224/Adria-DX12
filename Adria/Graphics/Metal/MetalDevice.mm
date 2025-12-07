@@ -147,7 +147,7 @@ namespace adria
         command_queue = [device newCommandQueue];
         [command_queue addResidencySet:residency_set]; // Attach residency set to queue
 
-        argument_buffer = std::make_unique<MetalArgumentBuffer>(this, 4096);
+        argument_buffer = std::make_unique<MetalArgumentBuffer>(this, 32767, 2048);
 
         if (!capabilities.Initialize(this))
         {
@@ -244,6 +244,10 @@ namespace adria
         dynamic_allocator_on_init.reset(new GfxLinearDynamicAllocator(this, 1 << 30));
     }
 
+    void MetalDevice::InitGlobalResourceBindings(Uint32 max_resources)
+    {
+    }
+
     GfxCapabilities const& MetalDevice::GetCapabilities() const
     {
         return capabilities;
@@ -333,7 +337,18 @@ namespace adria
 
     GfxBindlessTable MetalDevice::AllocatePersistentBindlessTable(Uint32 count, GfxDescriptorType type)
     {
-        return AllocateBindlessTable(count, type);
+        if (!argument_buffer)
+        {
+            ADRIA_LOG(ERROR, "Argument buffer not initialized. Call InitGlobalResourceBindings first!");
+            return {};
+        }
+
+        Uint32 base_index = argument_buffer->AllocatePersistent(count);
+        GfxBindlessTable table{};
+        table.base = base_index;
+        table.count = count;
+        table.type = type;
+        return table;
     }
 
     GfxBindlessTable MetalDevice::AllocateBindlessTable(Uint32 count, GfxDescriptorType type)
@@ -343,7 +358,7 @@ namespace adria
             return {};
         }
 
-        Uint32 base_index = argument_buffer->AllocateRange(count);
+        Uint32 base_index = argument_buffer->AllocateTransient(count);
         GfxBindlessTable table{};
         table.base = base_index;
         table.count = count;
@@ -513,7 +528,7 @@ namespace adria
         }
 
         MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(buffer);
-        Uint32 index = argument_buffer->AllocateRange(1);
+        Uint32 index = argument_buffer->AllocateTransient(1);
 
         argument_buffer->SetBuffer(metal_buffer->GetMetalBuffer(), index, 0);
 
@@ -545,7 +560,7 @@ namespace adria
         id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
         id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
 
-        Uint32 index = argument_buffer->AllocateRange(1);
+        Uint32 index = argument_buffer->AllocateTransient(1);
         argument_buffer->SetTexture(texture_view, index);
 
         MetalDescriptor metal_desc{};
@@ -566,7 +581,7 @@ namespace adria
         id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
         id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
 
-        Uint32 index = argument_buffer->AllocateRange(1);
+        Uint32 index = argument_buffer->AllocateTransient(1);
         argument_buffer->SetTexture(texture_view, index);
 
         MetalDescriptor metal_desc{};
@@ -775,6 +790,13 @@ namespace adria
             residency_dirty = false;
         }
 
+        if (argument_buffer)
+        {
+            Uint64 completed_frame = frame_index >= GFX_BACKBUFFER_COUNT
+                ? frame_index - GFX_BACKBUFFER_COUNT : 0;
+            argument_buffer->ReleaseCompletedFrames(completed_frame);
+        }
+
         if (rendering_not_started)
         {
             dynamic_allocator_on_init.reset();
@@ -832,7 +854,11 @@ namespace adria
             cmd_list->Begin();
         }
 
-        // Create a dedicated command buffer for presentation
+        if (argument_buffer)
+        {
+            argument_buffer->FinishCurrentFrame(frame_index);
+        }
+
         id<CAMetalDrawable> drawable = GetCurrentDrawable();
         if (drawable)
         {
