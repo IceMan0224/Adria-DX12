@@ -67,12 +67,12 @@ namespace adria
 				{
 					Matrix model_matrix;
 					Vector3 diffuse_color;
-					Uint32   diffuse_idx;
+					Uint32  diffuse_idx;
 				} constants =
 				{
 					.model_matrix = transform.current_transform,
 					.diffuse_color = Vector3(material.albedo_color),
-					.diffuse_idx = (Uint32)material.albedo_texture
+					.diffuse_idx =  g_TextureManager.GetBindlessIndex(material.albedo_texture)
 				};
 				cmd_list->SetRootCBV(2, constants);
 				Draw(mesh, cmd_list);

@@ -38,20 +38,14 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.ldr),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct FXAAConstants
 				{
 					Uint32 depth_idx;
 					Uint32 output_idx;
 				} constants =
 				{
-					.depth_idx = table, .output_idx = table + 1
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.ldr),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 
 				cmd_list->SetPipelineState(fxaa_pso->Get());

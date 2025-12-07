@@ -71,15 +71,6 @@ namespace adria
 				static const Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 				cmd_list->ClearTexture(ctx.GetTexture(*data.output), clear);
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.gbuffer_normal),
-												ctx.GetReadOnlyTexture(data.gbuffer_albedo),
-												ctx.GetReadOnlyTexture(data.gbuffer_emissive),
-												ctx.GetReadOnlyTexture(data.gbuffer_custom),
-												ctx.GetReadOnlyTexture(data.depth),
-												data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTexture(data.ambient_occlusion) : GfxCommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
-												ctx.GetReadWriteTexture(data.output) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct DeferredLightingConstants
 				{
 					Uint32 normal_metallic_idx;
@@ -91,7 +82,13 @@ namespace adria
 					Uint32 output_idx;
 				} constants =
 				{
-					.normal_metallic_idx = table, .diffuse_idx = table + 1, .emissive_idx = table + 2, .custom_idx = table + 3, .depth_idx = table + 4, .ao_idx = table + 5, .output_idx = table + 6
+					.normal_metallic_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_normal),
+					.diffuse_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_albedo),
+					.emissive_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_emissive),
+					.custom_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_custom),
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
+					.ao_idx = data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTextureIndex(data.ambient_occlusion) : GfxCommon::GetCommonViewBindlessIndex(GfxCommonViewType::WhiteTexture2D_SRV),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 
 				cmd_list->SetPipelineState(deferred_lighting_pso->Get());

@@ -33,7 +33,7 @@ namespace adria
 		struct SSRPassData
 		{
 			RGTextureReadOnlyId normals;
-			RGTextureReadOnlyId roughness;
+			RGTextureReadOnlyId albedo;
 			RGTextureReadOnlyId input;
 			RGTextureReadOnlyId depth;
 			RGTextureReadWriteId output;
@@ -51,23 +51,13 @@ namespace adria
 				data.output = builder.WriteTexture(RG_NAME(SSR_Output));
 				data.input = builder.ReadTexture(last_resource, ReadAccess_NonPixelShader);
 				data.normals = builder.ReadTexture(RG_NAME(GBufferNormal), ReadAccess_NonPixelShader);
-				data.roughness = builder.ReadTexture(RG_NAME(GBufferAlbedo), ReadAccess_NonPixelShader);
+				data.albedo = builder.ReadTexture(RG_NAME(GBufferAlbedo), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
 			[=, this](SSRPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
-
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.depth),
-					ctx.GetReadOnlyTexture(data.normals),
-					ctx.GetReadOnlyTexture(data.roughness),
-					ctx.GetReadOnlyTexture(data.input),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct SSRConstants
 				{
@@ -82,7 +72,11 @@ namespace adria
 				} constants =
 				{
 					.ssr_ray_step = SSRRayStep.Get(), .ssr_ray_hit_threshold = SSRRayHitThreshold.Get(),
-					.depth_idx = table, .normal_idx = table + 1, .diffuse_idx = table + 2, .scene_idx = table + 3, .output_idx = table + 4
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
+					.normal_idx = ctx.GetReadOnlyTextureIndex(data.normals),
+					.diffuse_idx = ctx.GetReadOnlyTextureIndex(data.albedo),
+					.scene_idx = ctx.GetReadOnlyTextureIndex(data.input),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 
 				cmd_list->SetPipelineState(ssr_pso->Get());

@@ -86,16 +86,8 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
+				Uint32 const exposure_idx = data.exposure.IsValid() ? ctx.GetReadOnlyTextureIndex(data.exposure) : GfxCommon::GetCommonViewBindlessIndex(GfxCommonViewType::WhiteTexture2D_SRV);
 				Bool const bloom_enabled = data.bloom.IsValid();
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.hdr_input),
-					data.exposure.IsValid() ? ctx.GetReadOnlyTexture(data.exposure) : GfxCommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
-					ctx.GetReadWriteTexture(data.output),
-					bloom_enabled ? ctx.GetReadOnlyTexture(data.bloom) : GfxCommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct TonemapConstants
 				{
 					Float    tonemap_exposure;
@@ -108,14 +100,16 @@ namespace adria
 					Uint32   bloom_params_packed;
 				} constants =
 				{
-					.tonemap_exposure = TonemapExposure.Get(), .tonemap_operator_lut_packed = PackTwoUint16ToUint32((Uint16)TonemapOperator.Get(), (Uint16)tony_mc_mapface_lut_handle),
-					.hdr_idx = table, .exposure_idx = table + 1, .output_idx = table + 2, .bloom_idx = -1
+					.tonemap_exposure = TonemapExposure.Get(), .tonemap_operator_lut_packed = PackTwoUint16ToUint32((Uint16)TonemapOperator.Get(), g_TextureManager.GetBindlessIndex(tony_mc_mapface_lut_handle)),
+					.hdr_idx = ctx.GetReadOnlyTextureIndex(data.hdr_input),
+					.exposure_idx = exposure_idx,
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output),
+					.bloom_idx = bloom_enabled ? (Int32)ctx.GetReadOnlyTextureIndex(data.bloom) : -1
 				};
 				if (bloom_enabled)
 				{
 					ADRIA_ASSERT(bloom_data != nullptr);
-					constants.bloom_idx = table + 3;
-					constants.lens_dirt_idx = (Uint32)lens_dirt_handle;
+					constants.lens_dirt_idx = g_TextureManager.GetBindlessIndex(lens_dirt_handle);
 					constants.bloom_params_packed = PackTwoFloatsToUint32(bloom_data->bloom_intensity, bloom_data->bloom_blend_factor);
 				}
 

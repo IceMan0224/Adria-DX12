@@ -66,8 +66,7 @@ namespace adria
 				GfxCommandList* cmd_list = context.GetCommandList();
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(context.GetReadWriteTexture(data.sky_uav));
-				cmd_list->SetRootConstant(1, table);
+				cmd_list->SetRootConstant(1, context.GetReadWriteTextureIndex(data.sky_uav));
 
 				switch (sky_type)
 				{
@@ -189,14 +188,16 @@ namespace adria
 			for (entt::entity e : skybox_view)
 			{
 				auto const& skybox = skybox_view.get<Skybox>(e);
-				if (!skybox.active) continue;
+				if (!skybox.active)
+				{
+					continue;
+				}
 
 				ADRIA_ASSERT(skybox.cubemap_texture != INVALID_TEXTURE_HANDLE);
 				return (Int32)skybox.cubemap_texture;
 			}
 		}
-		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(sky_texture_srv);
-		return static_cast<Int32>(table);
+		return (Int32)gfx->GetBindlessDescriptorIndex(sky_texture_srv);
 	}
 
 	void SkyPass::CreatePSOs()

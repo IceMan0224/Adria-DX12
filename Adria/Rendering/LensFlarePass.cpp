@@ -63,7 +63,6 @@ namespace adria
 				continue;
 			}
 
-			// Assert that at least one implementation is supported
 			ADRIA_ASSERT(is_procedural_supported || is_texture_based_supported);
 
 			switch (LensFlare.Get())
@@ -208,10 +207,10 @@ namespace adria
 					Uint32   depth_idx;
 				} constants =
 				{
-					.lens_idx0 = (Uint32)lens_flare_textures[0], .lens_idx1 = (Uint32)lens_flare_textures[1],
-					.lens_idx2 = (Uint32)lens_flare_textures[2], .lens_idx3 = (Uint32)lens_flare_textures[3],
-					.lens_idx4 = (Uint32)lens_flare_textures[4], .lens_idx5 = (Uint32)lens_flare_textures[5],
-					.lens_idx6 = (Uint32)lens_flare_textures[6], .depth_idx = table
+					.lens_idx0 = g_TextureManager.GetBindlessIndex(lens_flare_textures[0]), .lens_idx1 =  g_TextureManager.GetBindlessIndex(lens_flare_textures[1]),
+					.lens_idx2 = g_TextureManager.GetBindlessIndex(lens_flare_textures[2]), .lens_idx3 =  g_TextureManager.GetBindlessIndex(lens_flare_textures[3]),
+					.lens_idx4 = g_TextureManager.GetBindlessIndex(lens_flare_textures[4]), .lens_idx5 =  g_TextureManager.GetBindlessIndex(lens_flare_textures[5]),
+					.lens_idx6 = g_TextureManager.GetBindlessIndex(lens_flare_textures[6]), .depth_idx = table
 				};
 
 				struct LensFlareConstants2
@@ -292,8 +291,8 @@ namespace adria
 				{
 					.light_ss_x = light_ss.x,
 					.light_ss_y = light_ss.y,
-					.depth_idx = table + 0,
-					.output_idx = table + 1
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 
 				cmd_list->SetPipelineState(procedural_lens_flare_pso->Get());

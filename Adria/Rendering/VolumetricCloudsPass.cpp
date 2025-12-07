@@ -66,8 +66,7 @@ namespace adria
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
 				cmd_list->SetPipelineState(clouds_combine_pso->Get());
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(ctx.GetReadOnlyTexture(data.clouds_src));
-				cmd_list->SetRootConstant(1, table, 0);
+				cmd_list->SetRootConstant(1, ctx.GetReadOnlyTextureIndex(data.clouds_src), 0);
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->Draw(3);
 			}, RGPassType::Graphics, RGPassFlags::None);
@@ -78,8 +77,10 @@ namespace adria
 		width = w, height = h;
 		if (prev_clouds)
 		{
-			if (!gfx) gfx = cloud_shape_noise->GetParent();
-
+			if (!gfx)
+			{
+				gfx = cloud_shape_noise->GetParent();
+			}
 			GfxTextureDesc clouds_output_desc = prev_clouds->GetDesc();
 			clouds_output_desc.width = width >> resolution;
 			clouds_output_desc.height = height >> resolution;
@@ -200,7 +201,10 @@ namespace adria
 
 	void VolumetricCloudsPass::CreateCloudTextures(GfxDevice* gfx)
 	{
-		if (!gfx) gfx = cloud_shape_noise->GetParent();
+		if (!gfx)
+		{
+			gfx = cloud_shape_noise->GetParent();
+		}
 
 		GfxTextureDesc cloud_shape_noise_desc{};
 		cloud_shape_noise_desc.type = GfxTextureType_3D;
@@ -275,13 +279,11 @@ namespace adria
 						GfxCommandList* cmd_list = ctx.GetCommandList();
 
 						Uint32 const resolution = cloud_shape_noise->GetDesc().width >> i;
-						GfxDescriptor src_handles[] = { ctx.GetReadWriteTexture(data.shape) };
-						GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 						CloudNoiseConstants constants
 						{
 							.resolution_inv = 1.0f / resolution,
 							.frequency = (Uint32)params.shape_noise_frequency,
-							.output_idx = table
+							.output_idx = ctx.GetReadWriteTextureIndex(data.shape)
 						};
 						cmd_list->SetPipelineState(clouds_shape_pso->Get());
 						cmd_list->SetRootConstants(1, constants);
@@ -308,13 +310,11 @@ namespace adria
 						GfxCommandList* cmd_list = ctx.GetCommandList();
 
 						Uint32 const resolution = cloud_detail_noise->GetDesc().width >> i;
-						GfxDescriptor src_handles[] = { ctx.GetReadWriteTexture(data.detail) };
-						GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 						CloudNoiseConstants constants
 						{
 							.resolution_inv = 1.0f / resolution,
 							.frequency = (Uint32)params.detail_noise_frequency,
-							.output_idx = table
+							.output_idx = ctx.GetReadWriteTextureIndex(data.detail)
 						};
 						cmd_list->SetPipelineState(clouds_detail_pso->Get());
 						cmd_list->SetRootConstants(1, constants);
@@ -339,12 +339,10 @@ namespace adria
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 
 					Uint32 const resolution = cloud_type->GetDesc().width;
-					GfxDescriptor src_handles[] = { ctx.GetReadWriteTexture(data.type) };
-					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 					CloudNoiseConstants constants
 					{
 						.resolution_inv = 1.0f / resolution,
-						.output_idx = table
+						.output_idx = ctx.GetReadWriteTextureIndex(data.type)
 					};
 					cmd_list->SetPipelineState(clouds_type_pso->Get());
 					cmd_list->SetRootConstants(1, constants);
@@ -396,14 +394,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.type),
-												ctx.GetReadOnlyTexture(data.shape),
-												ctx.GetReadOnlyTexture(data.detail),
-												ctx.GetReadOnlyTexture(data.depth),
-												ctx.GetReadOnlyTexture(data.prev_output),
-												ctx.GetReadWriteTexture(data.output) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				Float noise_scale = 0.00001f + params.shape_noise_scale * 0.0004f;
 				struct CloudsConstants
 				{
@@ -442,13 +432,13 @@ namespace adria
 					Uint32      resolution_factor;
 				} constants =
 				{
-					.type_idx = table + 0,
-					.shape_idx = table + 1,
-					.detail_idx = table + 2,
-					.depth_output_idx = table + 3,
+					.type_idx = ctx.GetReadOnlyTextureIndex(data.type),
+					.shape_idx = ctx.GetReadOnlyTextureIndex(data.shape),
+					.detail_idx = ctx.GetReadOnlyTextureIndex(data.detail),
+					.depth_output_idx = ctx.GetReadOnlyTextureIndex(data.depth),
 
-					.prev_output_idx = table + 4,
-					.output_idx = table + 5,
+					.prev_output_idx = ctx.GetReadOnlyTextureIndex(data.prev_output),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output),
 					.cloud_type = params.cloud_type,
 					.cloud_min_height = params.cloud_min_height,
 					.cloud_max_height = params.cloud_max_height,

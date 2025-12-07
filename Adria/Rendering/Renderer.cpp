@@ -600,7 +600,10 @@ namespace adria
 				sky_pass.AddPasses(render_graph, sun_direction);
 				transparent_pass.AddPass(render_graph);
 				picking_pass.AddPass(render_graph);
-				if (rain_pass.IsEnabled()) rain_pass.AddPass(render_graph);
+				if (rain_pass.IsEnabled())
+				{
+					rain_pass.AddPass(render_graph);
+				}
 			}
 			postprocessor.AddPasses(render_graph);
 			g_DebugRenderer.Render(render_graph);

@@ -71,7 +71,10 @@ namespace adria
 					Uint32 sample_count;
 				} constants =
 				{
-					.depth_idx = table, .output_idx = table + 1, .resolution_scale = (Uint32)resolution, .sample_count = (Uint32)RayMarchedVolumetricFogSampleCount.Get()
+					.depth_idx = context.GetReadOnlyTextureIndex(data.depth),
+					.output_idx = context.GetReadWriteTextureIndex(data.output),
+					.resolution_scale = (Uint32)resolution, 
+					.sample_count = (Uint32)RayMarchedVolumetricFogSampleCount.Get()
 				};
 
 				Bool const use_pcf = RayMarchedVolumetricFogUsePCF.Get();
