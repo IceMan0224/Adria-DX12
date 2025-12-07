@@ -92,7 +92,6 @@ namespace adria
 		virtual constexpr Uint32 GetBackbufferCount() const = 0;
 
 		virtual void SetRenderingNotStarted() = 0;
-		virtual void InitGlobalResourceBindings(Uint32 max_resources) = 0;
 
 		virtual void Update() = 0;
 		virtual void BeginFrame() = 0;

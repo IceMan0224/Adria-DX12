@@ -95,10 +95,6 @@ namespace adria
 
 		void Destroy()
 		{
-			for (GfxDescriptor view : common_views)
-			{
-				gfx->FreeDescriptor(view);
-			}
 			for (auto& texture : common_textures)
 			{
 				texture.reset();

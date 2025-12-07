@@ -43,9 +43,7 @@ namespace adria
 		virtual void BeginFrame() override;
 		virtual void EndFrame() override;
 		virtual Bool IsFirstFrame() override { return first_frame; }
-
 		virtual void SetRenderingNotStarted() override;
-		virtual void InitGlobalResourceBindings(Uint32 max_resources) override;
 
 		virtual void* GetNative() const override { return device.Get(); }
 		virtual void* GetWindowHandle() const override { return hwnd; }

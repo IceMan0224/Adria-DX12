@@ -244,11 +244,6 @@ namespace adria
         dynamic_allocator_on_init.reset(new GfxLinearDynamicAllocator(this, 1 << 30));
     }
 
-    void MetalDevice::InitGlobalResourceBindings(Uint32 max_resources)
-    {
-        ADRIA_ASSERT(argument_buffer != nullptr);
-    }
-
     GfxCapabilities const& MetalDevice::GetCapabilities() const
     {
         return capabilities;
