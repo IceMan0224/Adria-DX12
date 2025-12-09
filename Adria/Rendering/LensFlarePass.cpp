@@ -101,22 +101,21 @@ namespace adria
 	{
 		QueueGUI([&]()
 			{
-				if (ImGui::TreeNodeEx("Lens Flare", ImGuiTreeNodeFlags_None))
+				if (ImGui::TreeNodeEx("Lens Flare"))
 				{
-					std::string combo_items;
+					std::vector<Char const*> items;
 					if (is_procedural_supported)
 					{
-						combo_items += "Procedural\0";
+						items.push_back("Procedural");
 					}
 					if (is_texture_based_supported)
 					{
-						combo_items += "Texture-based\0";
+						items.push_back("Texture-based");
 					}
-					combo_items += '\0';
 
-					if (!combo_items.empty())
+					if (!items.empty())
 					{
-						ImGui::Combo("Lens Flare Type", LensFlare.GetPtr(), combo_items.c_str());
+						ImGui::Combo("Lens Flare Type", LensFlare.GetPtr(), items.data(), (int)items.size());
 					}
 					ImGui::TreePop();
 				}
@@ -192,7 +191,6 @@ namespace adria
 					light_ss.y = -0.5f * light_pos.y / light_pos.w + 0.5f;
 					light_ss.z = light_pos.z / light_pos.w;
 				}
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(ctx.GetReadOnlyTexture(data.depth));
 
 				ADRIA_ASSERT(lens_flare_textures.size() == 7);
 				struct LensFlareConstants
@@ -210,7 +208,7 @@ namespace adria
 					.lens_idx0 = g_TextureManager.GetBindlessIndex(lens_flare_textures[0]), .lens_idx1 =  g_TextureManager.GetBindlessIndex(lens_flare_textures[1]),
 					.lens_idx2 = g_TextureManager.GetBindlessIndex(lens_flare_textures[2]), .lens_idx3 =  g_TextureManager.GetBindlessIndex(lens_flare_textures[3]),
 					.lens_idx4 = g_TextureManager.GetBindlessIndex(lens_flare_textures[4]), .lens_idx5 =  g_TextureManager.GetBindlessIndex(lens_flare_textures[5]),
-					.lens_idx6 = g_TextureManager.GetBindlessIndex(lens_flare_textures[6]), .depth_idx = table
+					.lens_idx6 = g_TextureManager.GetBindlessIndex(lens_flare_textures[6]), .depth_idx = ctx.GetReadOnlyTextureIndex(data.depth)
 				};
 
 				struct LensFlareConstants2

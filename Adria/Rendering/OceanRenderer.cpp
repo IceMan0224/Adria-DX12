@@ -69,7 +69,6 @@ namespace adria
 					GfxDevice* gfx = context.GetDevice();
 					GfxCommandList* cmd_list = context.GetCommandList();
 					
-					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(context.GetReadWriteTexture(data.initial_spectrum));
 					struct InitialSpectrumConstants
 					{
 						Float   fft_resolution;
@@ -77,7 +76,7 @@ namespace adria
 						Uint32  output_idx;
 					} constants =
 					{
-						.fft_resolution = FFT_RESOLUTION, .ocean_size = FFT_RESOLUTION, .output_idx = table
+						.fft_resolution = FFT_RESOLUTION, .ocean_size = FFT_RESOLUTION, .output_idx = context.GetReadWriteTextureIndex(data.initial_spectrum)
 					};
 
 					cmd_list->SetPipelineState(initial_spectrum_pso->Get());
@@ -103,12 +102,6 @@ namespace adria
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
 
-				GfxDescriptor src_handles[] = {
-					context.GetReadOnlyTexture(data.phase_srv),
-					context.GetReadWriteTexture(data.phase_uav)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct PhaseConstants
 				{
 					Float   fft_resolution;
@@ -118,8 +111,11 @@ namespace adria
 					Uint32  output_idx;
 				} constants =
 				{
-					.fft_resolution = FFT_RESOLUTION, .ocean_size = FFT_RESOLUTION, .ocean_choppiness = ocean_choppiness,
-					.phases_idx = table, .output_idx = table + 1
+					.fft_resolution = FFT_RESOLUTION, 
+					.ocean_size = FFT_RESOLUTION, 
+					.ocean_choppiness = ocean_choppiness,
+					.phases_idx = context.GetReadOnlyTextureIndex(data.phase_srv), 
+					.output_idx = context.GetReadWriteTextureIndex(data.phase_uav)
 				};
 
 				cmd_list->SetPipelineState(phase_pso->Get());
@@ -147,13 +143,6 @@ namespace adria
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
 
-				GfxDescriptor src_handles[] = {
-					context.GetReadOnlyTexture(data.initial_spectrum_srv),
-					context.GetReadOnlyTexture(data.phase_srv),
-					context.GetReadWriteTexture(data.spectrum_uav)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct SpectrumConstants
 				{
 					Float   fft_resolution;
@@ -165,7 +154,9 @@ namespace adria
 				} constants =
 				{
 					.fft_resolution = FFT_RESOLUTION, .ocean_size = FFT_RESOLUTION, .ocean_choppiness = ocean_choppiness,
-					.initial_spectrum_idx = table, .phases_idx = table + 1, .output_idx = table + 2
+					.initial_spectrum_idx = context.GetReadOnlyTextureIndex(data.initial_spectrum_srv),
+					.phases_idx = context.GetReadOnlyTextureIndex(data.phase_srv),
+					.output_idx = context.GetReadWriteTextureIndex(data.spectrum_uav)
 				};
 
 				cmd_list->SetPipelineState(spectrum_pso->Get());
@@ -206,17 +197,11 @@ namespace adria
 
 					cmd_list->SetPipelineState(fft_horizontal_pso->Get());
 
-					GfxDescriptor src_handles[] = {
-						ctx.GetReadOnlyTexture(data.spectrum_srv),
-						ctx.GetReadWriteTexture(data.spectrum_uav)
-					};
-					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 					FFTConstants fft_constants{};
 					fft_constants.seq_count = FFT_RESOLUTION;
 					fft_constants.subseq_count = p;
-					fft_constants.input_idx = table;
-					fft_constants.output_idx = table + 1;
+					fft_constants.input_idx = ctx.GetReadOnlyTextureIndex(data.spectrum_srv);
+					fft_constants.output_idx = ctx.GetReadWriteTextureIndex(data.spectrum_uav);
 
 					cmd_list->SetRootConstants(1, fft_constants);
 					cmd_list->Dispatch(FFT_RESOLUTION, 1, 1);
@@ -248,17 +233,11 @@ namespace adria
 
 					cmd_list->SetPipelineState(fft_vertical_pso->Get());
 
-					GfxDescriptor src_handles[] = {
-						ctx.GetReadOnlyTexture(data.spectrum_srv),
-						ctx.GetReadWriteTexture(data.spectrum_uav)
-					};
-					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 					FFTConstants fft_constants{};
 					fft_constants.seq_count = FFT_RESOLUTION;
 					fft_constants.subseq_count = p;
-					fft_constants.input_idx = table;
-					fft_constants.output_idx = table + 1;
+					fft_constants.input_idx = ctx.GetReadOnlyTextureIndex(data.spectrum_srv);
+					fft_constants.output_idx = ctx.GetReadWriteTextureIndex(data.spectrum_uav);
 
 					cmd_list->SetRootConstants(1, fft_constants);
 					cmd_list->Dispatch(FFT_RESOLUTION, 1, 1);
@@ -290,12 +269,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = {
-					ctx.GetReadOnlyTexture(data.spectrum_srv),
-					ctx.GetReadWriteTexture(data.normals_uav)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct OceanNormalsConstants
 				{
 					Float   fft_resolution;
@@ -306,7 +279,8 @@ namespace adria
 				} constants =
 				{
 					.fft_resolution = FFT_RESOLUTION, .ocean_size = FFT_RESOLUTION, .ocean_choppiness = ocean_choppiness,
-					.displacement_idx = table, .output_idx = table + 1
+					.displacement_idx = ctx.GetReadOnlyTextureIndex(data.spectrum_srv),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.normals_uav)
 				};
 
 				cmd_list->SetPipelineState(ocean_normals_pso->Get());
@@ -353,9 +327,6 @@ namespace adria
 				{
 					auto const& [mesh, material, transform] = ocean_chunk_view.get<const SubMesh, const Material, const Transform>(ocean_chunk);
 
-					GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.displacement), ctx.GetReadOnlyTexture(data.normals), g_TextureManager.GetDescriptor(foam_handle) };
-					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 					struct OceanIndices
 					{
 						Uint32 displacement_idx;
@@ -363,7 +334,9 @@ namespace adria
 						Uint32 foam_idx;
 					} indices =
 					{
-						.displacement_idx = table, .normal_idx = table + 1, .foam_idx = table + 2
+						.displacement_idx = ctx.GetReadOnlyTextureIndex(data.displacement), 
+						.normal_idx = ctx.GetReadOnlyTextureIndex(data.normals), 
+						.foam_idx = g_TextureManager.GetBindlessIndex(foam_handle)
 					};
 
 					struct OceanConstants

@@ -394,15 +394,6 @@ namespace adria
 			ddgi_volume_buffer_srv = gfx->CreateBufferSRV(ddgi_volume_buffer.get());
 		}
 
-		GfxDescriptor src_descriptors[] =
-		{
-			ddgi_volume.irradiance_history_srv,
-			ddgi_volume.distance_history_srv,
-			ddgi_volume_buffer_srv
-		};
-		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-		Int32 table_base_index = static_cast<Int32>(table);
-
 		ddgi_gpu.irradiance_history_idx = gfx->GetBindlessDescriptorIndex(ddgi_volume.irradiance_history_srv);
 		ddgi_gpu.distance_history_idx = gfx->GetBindlessDescriptorIndex(ddgi_volume.distance_history_srv);
 		ddgi_volume_buffer->Update(ddgi_data.data(), ddgi_data.size() * sizeof(DDGIVolumeGPU));

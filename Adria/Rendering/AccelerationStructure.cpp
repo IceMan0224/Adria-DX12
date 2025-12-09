@@ -73,10 +73,7 @@ namespace adria
 
 	Int32 AccelerationStructure::GetTLASIndex() const
 	{
-		GfxBindlessTable table = gfx->AllocateBindlessTable(1);
-		gfx->UpdateBindlessTable(table, 0, tlas_srv);
-		Int32 new_index = (Int32)table.base;
-		return new_index;
+		return (Int32)gfx->GetBindlessDescriptorIndex(tlas_srv);
 	}
 
 	void AccelerationStructure::BuildBottomLevels()

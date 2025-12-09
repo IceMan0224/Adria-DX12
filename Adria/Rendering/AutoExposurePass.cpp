@@ -114,9 +114,6 @@ namespace adria
 
 				cmd_list->SetPipelineState(histogram_reduction_pso->Get());
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.histogram_buffer), ctx.GetReadWriteTexture(data.avg_luminance), ctx.GetReadWriteTexture(data.exposure) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct HistogramReductionConstants
 				{
 					Float  min_log_luminance;
@@ -127,9 +124,13 @@ namespace adria
 					Uint32 histogram_idx;
 					Uint32 luminance_idx;
 					Uint32 exposure_idx;
-				} constants = { .min_log_luminance = MinLogLuminance.Get(), .log_luminance_range = MaxLogLuminance.Get() - MinLogLuminance.Get(),
-								.delta_time = frame_data.delta_time, .adaption_speed = AdaptionSpeed.Get(), .pixel_count = data.pixel_count,
-								.histogram_idx = table, .luminance_idx = table + 1, .exposure_idx = table + 2 };
+				} constants = { 
+					.min_log_luminance = MinLogLuminance.Get(), .log_luminance_range = MaxLogLuminance.Get() - MinLogLuminance.Get(),
+					.delta_time = frame_data.delta_time, .adaption_speed = AdaptionSpeed.Get(), .pixel_count = data.pixel_count,
+					.histogram_idx = ctx.GetReadOnlyBufferIndex(data.histogram_buffer),
+					.luminance_idx = ctx.GetReadWriteTextureIndex(data.avg_luminance),
+					.exposure_idx = ctx.GetReadWriteTextureIndex(data.exposure)
+				};
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(1, 1, 1);
 			}, RGPassType::Compute, RGPassFlags::None);

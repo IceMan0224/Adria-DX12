@@ -255,11 +255,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadWriteBuffer(data.candidate_meshlets_counter),
-												ctx.GetReadWriteBuffer(data.visible_meshlets_counter),
-												ctx.GetReadWriteBuffer(data.occluded_instances_counter) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct ClearCountersConstants
 				{
 					Uint32 candidate_meshlets_counter_idx;
@@ -267,9 +262,9 @@ namespace adria
 					Uint32 occluded_instances_counter_idx;
 				} constants =
 				{
-					.candidate_meshlets_counter_idx = table,
-					.visible_meshlets_counter_idx = table + 1,
-					.occluded_instances_counter_idx = table + 2
+					.candidate_meshlets_counter_idx = ctx.GetReadWriteBufferIndex(data.candidate_meshlets_counter),
+					.visible_meshlets_counter_idx = ctx.GetReadWriteBufferIndex(data.visible_meshlets_counter),
+					.occluded_instances_counter_idx = ctx.GetReadWriteBufferIndex(data.occluded_instances_counter)
 				};
 				cmd_list->SetPipelineState(clear_counters_pso->Get());
 				cmd_list->SetRootConstants(1, constants);
@@ -320,13 +315,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.hzb),
-												ctx.GetReadWriteBuffer(data.occluded_instances),
-												ctx.GetReadWriteBuffer(data.occluded_instances_counter),
-												ctx.GetReadWriteBuffer(data.candidate_meshlets),
-												ctx.GetReadWriteBuffer(data.candidate_meshlets_counter) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				Uint32 const num_instances = (Uint32)reg.view<Batch>().size();
 				struct CullInstances1stPhaseConstants
 				{
@@ -339,11 +327,11 @@ namespace adria
 				} constants =
 				{
 					.num_instances = num_instances,
-					.hzb_idx = table,
-					.occluded_instances_idx = table + 1,
-					.occluded_instances_counter_idx = table + 2,
-					.candidate_meshlets_idx = table + 3,
-					.candidate_meshlets_counter_idx = table + 4,
+					.hzb_idx = ctx.GetReadOnlyTextureIndex(data.hzb),
+					.occluded_instances_idx = ctx.GetReadWriteBufferIndex(data.occluded_instances),
+					.occluded_instances_counter_idx = ctx.GetReadWriteBufferIndex(data.occluded_instances_counter),
+					.candidate_meshlets_idx = ctx.GetReadWriteBufferIndex(data.candidate_meshlets),
+					.candidate_meshlets_counter_idx = ctx.GetReadWriteBufferIndex(data.candidate_meshlets_counter)
 				};
 
 				cull_instances_psos->AddDefine("SKIP_ALPHA_BLENDED", skip_alpha_blended ? "1" : "0");
@@ -380,19 +368,14 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.candidate_meshlets_counter),
-												ctx.GetReadWriteBuffer(data.meshlet_cull_args)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct BuildMeshletCullArgsConstants
 				{
 					Uint32 candidate_meshlets_counter_idx;
 					Uint32 meshlet_cull_args_idx;
 				} constants =
 				{
-					.candidate_meshlets_counter_idx = table + 0,
-					.meshlet_cull_args_idx = table + 1
+					.candidate_meshlets_counter_idx = ctx.GetReadOnlyBufferIndex(data.candidate_meshlets_counter),
+					.meshlet_cull_args_idx = ctx.GetReadWriteBufferIndex(data.meshlet_cull_args)
 				};
 				cmd_list->SetPipelineState(build_meshlet_cull_args_psos->Get());
 				cmd_list->SetRootConstants(1, constants);
@@ -433,13 +416,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.hzb),
-												ctx.GetReadWriteBuffer(data.candidate_meshlets),
-												ctx.GetReadWriteBuffer(data.candidate_meshlets_counter),
-												ctx.GetReadWriteBuffer(data.visible_meshlets),
-												ctx.GetReadWriteBuffer(data.visible_meshlets_counter) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct CullMeshlets1stPhaseConstants
 				{
 					Uint32 hzb_idx;
@@ -449,11 +425,11 @@ namespace adria
 					Uint32 visible_meshlets_counter_idx;
 				} constants =
 				{
-					.hzb_idx = table,
-					.candidate_meshlets_idx = table + 1,
-					.candidate_meshlets_counter_idx = table + 2,
-					.visible_meshlets_idx = table + 3,
-					.visible_meshlets_counter_idx = table + 4,
+					.hzb_idx = ctx.GetReadOnlyTextureIndex(data.hzb),
+					.candidate_meshlets_idx = ctx.GetReadWriteBufferIndex(data.candidate_meshlets),
+					.candidate_meshlets_counter_idx = ctx.GetReadWriteBufferIndex(data.candidate_meshlets_counter),
+					.visible_meshlets_idx = ctx.GetReadWriteBufferIndex(data.visible_meshlets),
+					.visible_meshlets_counter_idx = ctx.GetReadWriteBufferIndex(data.visible_meshlets_counter)
 				};
 
 				cull_meshlets_psos->AddDefine("OCCLUSION_CULL", occlusion_culling ? "1" : "0");
@@ -490,18 +466,14 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.visible_meshlets_counter),
-												ctx.GetReadWriteBuffer(data.meshlet_draw_args) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct BuildMeshletDrawArgsConstants
 				{
 					Uint32 visible_meshlets_counter_idx;
 					Uint32 meshlet_draw_args_idx;
 				} constants =
 				{
-					.visible_meshlets_counter_idx = table + 0,
-					.meshlet_draw_args_idx = table + 1
+					.visible_meshlets_counter_idx = ctx.GetReadOnlyBufferIndex(data.visible_meshlets_counter),
+					.meshlet_draw_args_idx = ctx.GetReadWriteBufferIndex(data.meshlet_draw_args)
 				};
 				cmd_list->SetPipelineState(build_meshlet_draw_args_psos->Get());
 				cmd_list->SetRootConstants(1, constants);
@@ -550,18 +522,12 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] =
-				{
-					ctx.GetReadOnlyBuffer(data.visible_meshlets)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct DrawMeshlets1stPhaseConstants
 				{
 					Uint32 visible_meshlets_idx;
 				} constants =
 				{
-					.visible_meshlets_idx = table
+					.visible_meshlets_idx = ctx.GetReadOnlyBufferIndex(data.visible_meshlets)
 				};
 				GfxShadingRateInfo const& vrs = gfx->GetShadingRateInfo();
 				cmd_list->BeginVRS(vrs);
@@ -616,18 +582,14 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.occluded_instances_counter),
-												ctx.GetReadWriteBuffer(data.instance_cull_args) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct BuildInstanceCullArgsConstants
 				{
 					Uint32  occluded_instances_counter_idx;
 					Uint32  instance_cull_args_idx;
 				} constants =
 				{
-					.occluded_instances_counter_idx = table + 0,
-					.instance_cull_args_idx = table + 1
+					.occluded_instances_counter_idx = ctx.GetReadOnlyBufferIndex(data.occluded_instances_counter),
+					.instance_cull_args_idx = ctx.GetReadWriteBufferIndex(data.instance_cull_args)
 				};
 				cmd_list->SetPipelineState(build_instance_cull_args_pso->Get());
 				cmd_list->SetRootConstants(1, constants);
@@ -660,13 +622,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.hzb),
-												ctx.GetReadWriteBuffer(data.occluded_instances),
-												ctx.GetReadWriteBuffer(data.occluded_instances_counter),
-												ctx.GetReadWriteBuffer(data.candidate_meshlets),
-												ctx.GetReadWriteBuffer(data.candidate_meshlets_counter) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct CullInstances2ndPhaseConstants
 				{
 					Uint32 num_instances;
@@ -678,11 +633,11 @@ namespace adria
 				} constants =
 				{
 					.num_instances = 0,
-					.hzb_idx = table,
-					.occluded_instances_idx = table + 1,
-					.occluded_instances_counter_idx = table + 2,
-					.candidate_meshlets_idx = table + 3,
-					.candidate_meshlets_counter_idx = table + 4,
+					.hzb_idx = ctx.GetReadOnlyTextureIndex(data.hzb),
+					.occluded_instances_idx = ctx.GetReadWriteBufferIndex(data.occluded_instances),
+					.occluded_instances_counter_idx = ctx.GetReadWriteBufferIndex(data.occluded_instances_counter),
+					.candidate_meshlets_idx = ctx.GetReadWriteBufferIndex(data.candidate_meshlets),
+					.candidate_meshlets_counter_idx = ctx.GetReadWriteBufferIndex(data.candidate_meshlets_counter)
 				};
 
 				cull_instances_psos->AddDefine("SECOND_PHASE", "1");
@@ -713,18 +668,14 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.candidate_meshlets_counter),
-												ctx.GetReadWriteBuffer(data.meshlet_cull_args) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct BuildMeshletCullArgsConstants
 				{
 					Uint32 candidate_meshlets_counter_idx;
 					Uint32 meshlet_cull_args_idx;
 				} constants =
 				{
-					.candidate_meshlets_counter_idx = table + 0,
-					.meshlet_cull_args_idx = table + 1
+					.candidate_meshlets_counter_idx = ctx.GetReadOnlyBufferIndex(data.candidate_meshlets_counter),
+					.meshlet_cull_args_idx = ctx.GetReadWriteBufferIndex(data.meshlet_cull_args)
 				};
 				build_meshlet_cull_args_psos->AddDefine("SECOND_PHASE", "1");
 				cmd_list->SetPipelineState(build_meshlet_cull_args_psos->Get());
@@ -759,13 +710,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.hzb),
-												ctx.GetReadWriteBuffer(data.candidate_meshlets),
-												ctx.GetReadWriteBuffer(data.candidate_meshlets_counter),
-												ctx.GetReadWriteBuffer(data.visible_meshlets),
-												ctx.GetReadWriteBuffer(data.visible_meshlets_counter) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct CullMeshlets2ndPhaseConstants
 				{
 					Uint32 hzb_idx;
@@ -775,11 +719,11 @@ namespace adria
 					Uint32 visible_meshlets_counter_idx;
 				} constants =
 				{
-					.hzb_idx = table,
-					.candidate_meshlets_idx = table + 1,
-					.candidate_meshlets_counter_idx = table + 2,
-					.visible_meshlets_idx = table + 3,
-					.visible_meshlets_counter_idx = table + 4,
+					.hzb_idx = ctx.GetReadOnlyTextureIndex(data.hzb),
+					.candidate_meshlets_idx = ctx.GetReadWriteBufferIndex(data.candidate_meshlets),
+					.candidate_meshlets_counter_idx = ctx.GetReadWriteBufferIndex(data.candidate_meshlets_counter),
+					.visible_meshlets_idx = ctx.GetReadWriteBufferIndex(data.visible_meshlets),
+					.visible_meshlets_counter_idx = ctx.GetReadWriteBufferIndex(data.visible_meshlets_counter)
 				};
 
 				cull_meshlets_psos->AddDefine("OCCLUSION_CULL", occlusion_culling ? "1" : "0");
@@ -809,18 +753,14 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.visible_meshlets_counter),
-												ctx.GetReadWriteBuffer(data.meshlet_draw_args) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct BuildMeshletDrawArgsConstants
 				{
 					Uint32 visible_meshlets_counter_idx;
 					Uint32 meshlet_draw_args_idx;
 				} constants =
 				{
-					.visible_meshlets_counter_idx = table + 0,
-					.meshlet_draw_args_idx = table + 1
+					.visible_meshlets_counter_idx = ctx.GetReadOnlyBufferIndex(data.visible_meshlets_counter),
+					.meshlet_draw_args_idx = ctx.GetReadWriteBufferIndex(data.meshlet_draw_args)
 				};
 				build_meshlet_draw_args_psos->AddDefine("SECOND_PHASE", "1");
 				cmd_list->SetPipelineState(build_meshlet_draw_args_psos->Get());
@@ -852,18 +792,12 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] =
-				{
-					ctx.GetReadOnlyBuffer(data.visible_meshlets)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct DrawMeshlets1stPhaseConstants
 				{
 					Uint32 visible_meshlets_idx;
 				} constants =
 				{
-					.visible_meshlets_idx = table
+					.visible_meshlets_idx = ctx.GetReadOnlyBufferIndex(data.visible_meshlets)
 				};
 
 				GfxShadingRateInfo const& vrs = gfx->GetShadingRateInfo();
@@ -912,13 +846,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = 
-				{
-					ctx.GetReadOnlyTexture(data.depth),
-					ctx.GetReadWriteTexture(data.hzb)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct InitializeHZBConstants
 				{
 					Uint32 depth_idx;
@@ -927,8 +854,8 @@ namespace adria
 					Float inv_hzb_height;
 				} constants =
 				{
-					.depth_idx = table,
-					.hzb_idx = table + 1,
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
+					.hzb_idx = ctx.GetReadWriteTextureIndex(data.hzb), 
 					.inv_hzb_width = 1.0f / hzb_width,
 					.inv_hzb_height = 1.0f / hzb_height
 				};
@@ -982,14 +909,6 @@ namespace adria
 					rectInfo,
 					mips - 1);
 
-				std::vector<GfxDescriptor> src_handles(hzb_mip_count + 1);
-				src_handles[0] = ctx.GetReadWriteBuffer(data.spd_counter);
-				for (Uint32 i = 0; i < hzb_mip_count; ++i)
-				{
-					src_handles[i + 1] = ctx.GetReadWriteTexture(data.hzb_mips[i]);
-				}
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				GfxBuffer& spd_counter = ctx.GetBuffer(*data.spd_counter);
 				Uint32 clear[] = { 0u };
 				cmd_list->ClearBuffer(spd_counter, clear);
@@ -1013,11 +932,11 @@ namespace adria
 				{
 					XMUINT4	dstIdx[12];
 					Uint32	spdGlobalAtomicIdx;
-				} indices{ .spdGlobalAtomicIdx = table };
+				} indices{ .spdGlobalAtomicIdx = ctx.GetReadWriteBufferIndex(data.spd_counter) };
 
 				for (Uint32 j = 0; j < hzb_mip_count; ++j)
 				{
-					indices.dstIdx[j].x = table + 1 + j;
+					indices.dstIdx[j].x = ctx.GetReadWriteTextureIndex(data.hzb_mips[j]);
 				}
 
 				cmd_list->SetPipelineState(hzb_mips_pso->Get());
@@ -1029,7 +948,10 @@ namespace adria
 
 	void GPUDrivenGBufferPass::AddDebugPass(RenderGraph& rg)
 	{
-		if (!display_debug_stats) return;
+		if (!display_debug_stats)
+		{
+			return;
+		}
 
 		struct GPUDrivenDebugPassData
 		{

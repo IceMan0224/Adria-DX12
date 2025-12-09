@@ -176,22 +176,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				ADRIA_ASSERT_MSG(false, "Move to new descriptor system");
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.direct_illum), ctx.GetReadOnlyTexture(data.indirect_illum),
-					ctx.GetReadOnlyTexture(data.motion_vectors), ctx.GetReadOnlyTexture(data.compact_norm_depth),
-
-					ctx.GetReadOnlyTexture(data.history_direct), ctx.GetReadOnlyTexture(data.history_indirect),
-					ctx.GetReadOnlyTexture(data.history_moments), ctx.GetReadOnlyTexture(data.history_normal_depth),
-					ctx.GetReadOnlyTexture(data.history_length),
-
-					ctx.GetReadWriteTexture(data.output_direct), ctx.GetReadWriteTexture(data.output_indirect),
-					ctx.GetReadWriteTexture(data.output_moments), ctx.GetReadWriteTexture(data.output_normal_depth),
-					ctx.GetReadWriteTexture(data.output_history_length)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct ReprojectionPassConstants
 				{
 					Bool32 reset;
@@ -214,20 +198,20 @@ namespace adria
 				} constants =
 				{
 					.reset = reset_history, .alpha = SVGF_Alpha.Get(), .moments_alpha = SVGF_MomentsAlpha.Get(),
-					.direct_illum_idx = table + 0, 
-					.indirect_illum_idx = table + 1, 
-					.motion_idx = table + 2, 
-					.compact_norm_depth_idx = table + 3,
-					.history_direct_idx = table + 4, 
-					.history_indirect_idx = table + 5, 
-					.history_moments_idx = table + 6, 
-					.history_normal_depth_idx = table + 7, 
-					.history_length_idx = table + 8,
-					.output_direct_idx = table + 9, 
-					.output_indirect_idx = table + 10, 
-					.output_moments_idx = table + 11, 
-					.output_normal_depth_idx = table + 12, 
-					.output_history_length_idx = table + 13
+					.direct_illum_idx = ctx.GetReadOnlyTextureIndex(data.direct_illum),
+					.indirect_illum_idx = ctx.GetReadOnlyTextureIndex(data.indirect_illum),
+					.motion_idx = ctx.GetReadOnlyTextureIndex(data.motion_vectors),
+					.compact_norm_depth_idx = ctx.GetReadOnlyTextureIndex(data.compact_norm_depth),
+					.history_direct_idx = ctx.GetReadOnlyTextureIndex(data.history_direct),
+					.history_indirect_idx = ctx.GetReadOnlyTextureIndex(data.history_indirect),
+					.history_moments_idx = ctx.GetReadOnlyTextureIndex(data.history_moments),
+					.history_normal_depth_idx = ctx.GetReadOnlyTextureIndex(data.history_normal_depth),
+					.history_length_idx = ctx.GetReadOnlyTextureIndex(data.history_length),
+					.output_direct_idx = ctx.GetReadWriteTextureIndex(data.output_direct),
+					.output_indirect_idx = ctx.GetReadWriteTextureIndex(data.output_indirect),
+					.output_moments_idx = ctx.GetReadWriteTextureIndex(data.output_moments),
+					.output_normal_depth_idx = ctx.GetReadWriteTextureIndex(data.output_normal_depth),
+					.output_history_length_idx = ctx.GetReadWriteTextureIndex(data.output_history_length)
 				};
 				reset_history = false;
 
@@ -272,15 +256,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.direct_illum), ctx.GetReadOnlyTexture(data.indirect_illum),
-					ctx.GetReadOnlyTexture(data.moments), ctx.GetReadOnlyTexture(data.history_length),
-					ctx.GetReadOnlyTexture(data.compact_norm_depth),
-					ctx.GetReadWriteTexture(data.output_direct), ctx.GetReadWriteTexture(data.output_indirect)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct FilterMomentsConstants
 				{
 					Float phi_color;
@@ -295,13 +270,13 @@ namespace adria
 				} constants =
 				{
 					.phi_color = SVGF_PhiColor.Get(), .phi_normal = SVGF_PhiNormal.Get(),
-					.direct_illum_idx = table, 
-					.indirect_illum_idx = table + 1, 
-					.moments_idx = table + 2,
-					.history_length_idx = table + 3, 
-					.compact_norm_depth_idx = table + 4,
-					.output_direct_idx = table + 5, 
-					.output_indirect_idx = table + 6
+					.direct_illum_idx = ctx.GetReadOnlyTextureIndex(data.direct_illum),
+					.indirect_illum_idx = ctx.GetReadOnlyTextureIndex(data.indirect_illum),
+					.moments_idx = ctx.GetReadOnlyTextureIndex(data.moments),
+					.history_length_idx = ctx.GetReadOnlyTextureIndex(data.history_length),
+					.compact_norm_depth_idx = ctx.GetReadOnlyTextureIndex(data.compact_norm_depth),
+					.output_direct_idx = ctx.GetReadWriteTextureIndex(data.output_direct), 
+					.output_indirect_idx = ctx.GetReadWriteTextureIndex(data.output_indirect)
 				};
 
 				cmd_list->SetPipelineState(filter_moments_pso->Get());
@@ -321,7 +296,13 @@ namespace adria
 			final_indirect_illum_name_for_history = RG_NAME(SVGF_Filtered_Indirect);
 
 			output_name = RG_NAME(PT_Denoised);
-			struct PassData { RGTextureReadOnlyId direct, indirect, albedo_d, albedo_i; RGTextureReadWriteId output; };
+
+			struct PassData 
+			{ 
+				RGTextureReadOnlyId direct, indirect, albedo_d, albedo_i; 
+				RGTextureReadWriteId output; 
+			};
+
 			rg.AddPass<PassData>("SVGF Modulation Only Pass",
 				[&](PassData& data, RenderGraphBuilder& builder) 
 				{
@@ -414,26 +395,6 @@ namespace adria
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 
-					std::vector<GfxDescriptor> src_descriptors;
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.direct_in));
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.indirect_in));
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.history_length));
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.compact_norm_depth));
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.direct_albedo));
-					src_descriptors.push_back(ctx.GetReadOnlyTexture(data.indirect_albedo));
-					src_descriptors.push_back(ctx.GetReadWriteTexture(data.direct_out));
-
-					if (!is_final_iteration)
-					{
-						src_descriptors.push_back(ctx.GetReadWriteTexture(data.indirect_out));
-					}
-					else
-					{
-						src_descriptors.push_back(ctx.GetReadWriteTexture(data.feedback_direct_out));
-						src_descriptors.push_back(ctx.GetReadWriteTexture(data.feedback_indirect_out));
-					}
-					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 					struct AtrousPassConstants
 					{
 						Int32 step_size;
@@ -455,11 +416,16 @@ namespace adria
 					{
 						.step_size = 1 << i, .perform_modulation = is_final_iteration,
 						.phi_color = SVGF_PhiColor.Get(), .phi_normal = SVGF_PhiNormal.Get(), .phi_depth = SVGF_PhiDepth.Get(),
-						.direct_in_idx = table, .indirect_in_idx = table + 1, .history_length_idx = table + 2, .compact_norm_depth_idx = table + 3,
-						.direct_albedo_idx = table + 4, .indirect_albedo_idx = table + 5, .direct_out_idx = table + 6,
-						.indirect_out_idx = is_final_iteration ? 0 : (table + 7),
-						.feedback_direct_out_idx = is_final_iteration ? (table + 7) : 0,
-						.feedback_indirect_out_idx = is_final_iteration ? (table + 8) : 0
+						.direct_in_idx = ctx.GetReadOnlyTextureIndex(data.direct_in),
+						.indirect_in_idx = ctx.GetReadOnlyTextureIndex(data.indirect_in),
+						.history_length_idx = ctx.GetReadOnlyTextureIndex(data.history_length),
+						.compact_norm_depth_idx = ctx.GetReadOnlyTextureIndex(data.compact_norm_depth),
+						.direct_albedo_idx = ctx.GetReadOnlyTextureIndex(data.direct_albedo),
+						.indirect_albedo_idx = ctx.GetReadOnlyTextureIndex(data.indirect_albedo),
+						.direct_out_idx = ctx.GetReadWriteTextureIndex(data.direct_out),
+						.indirect_out_idx = is_final_iteration ? 0 : ctx.GetReadWriteTextureIndex(data.indirect_out),
+						.feedback_direct_out_idx = is_final_iteration ? ctx.GetReadWriteTextureIndex(data.feedback_direct_out) : 0,
+						.feedback_indirect_out_idx = is_final_iteration ? ctx.GetReadWriteTextureIndex(data.feedback_indirect_out) : 0
 					};
 
 					cmd_list->SetPipelineState(atrous_pso->Get());
