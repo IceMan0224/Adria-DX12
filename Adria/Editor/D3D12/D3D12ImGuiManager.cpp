@@ -102,10 +102,10 @@ namespace adria
 		return visible;
 	}
 
-	void D3D12ImGuiManager::ShowImage(GfxDescriptor image_descriptor, ImVec2 image_size)
+	void D3D12ImGuiManager::ShowImage(GfxTexture const& final_texture, ImVec2 image_size)
 	{
 		D3D12Descriptor dst_descriptor = imgui_allocator->Allocate(); 
-		d3d12_gfx->GetD3D12Device()->CopyDescriptorsSimple(1, ToD3D12CPUHandle(dst_descriptor), DecodeToD3D12CPUHandle(image_descriptor), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		d3d12_gfx->GetD3D12Device()->CreateShaderResourceView((ID3D12Resource*)final_texture.GetNative(), nullptr, ToD3D12CPUHandle(dst_descriptor));
 		ImGui::Image((ImTextureID)ToD3D12GPUHandle(dst_descriptor).ptr, image_size);
 	}
 

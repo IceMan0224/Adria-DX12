@@ -99,7 +99,7 @@ namespace adria
 		void ListEntities();
 		void Properties();
 		void Camera();
-		void Scene(GfxDescriptor& tex);
+		void Scene(GfxTexture const&);
 		void Log();
 		void Console();
 		void Settings();

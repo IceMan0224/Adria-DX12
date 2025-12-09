@@ -513,160 +513,6 @@ namespace adria
 		return rendering_not_started ? dynamic_allocator_on_init.get() : dynamic_allocators[swapchain->GetBackbufferIndex()].get();
 	}
 
-	ADRIA_NODISCARD GfxBindlessTable D3D12Device::AllocatePersistentBindlessTable(Uint32 count, GfxDescriptorType type)
-	{
-		ADRIA_TODO("Need a way to free persistent descriptors");
-		static Uint32 next_persistent_index = 0;
-		ADRIA_ASSERT_MSG(next_persistent_index + count <= gpu_descriptor_allocator->GetReservedSize(), "Out of persistent bindless slots!");
-		GfxBindlessTable table;
-		table.base = next_persistent_index;
-		table.count = count;
-		table.type = type;
-		next_persistent_index += count;
-		return table;
-	}
-
-	GfxBindlessTable D3D12Device::AllocateBindlessTable(Uint32 count, GfxDescriptorType type)
-	{
-		D3D12Descriptor base_descriptor = GetDescriptorAllocator()->Allocate(count);
-		GfxBindlessTable table{};
-		table.count = count;
-		table.type = type;
-		table.base = base_descriptor.index;
-		return table;
-	}
-
-	void D3D12Device::UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors)
-	{
-		if (!table.IsValid() || src_descriptors.empty())
-		{
-			return;
-		}
-		ADRIA_ASSERT_MSG(table.count == src_descriptors.size(), "Source descriptor count must match table size!");
-
-		D3D12DescriptorHeap* gpu_heap = gpu_descriptor_allocator->GetHeap();
-		D3D12_CPU_DESCRIPTOR_HANDLE dst_range_starts[] = { gpu_heap->GetCpuHandle(table.base) };
-		UINT dst_range_sizes[] = { table.count };
-
-		Uint64 const num_src_descriptors = src_descriptors.size();
-		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> src_range_starts;
-		src_range_starts.reserve(num_src_descriptors);
-		for (GfxDescriptor const& opaque_src_descriptor : src_descriptors)
-		{
-			src_range_starts.push_back(DecodeToD3D12CPUHandle(opaque_src_descriptor));
-		}
-
-		std::vector<UINT> src_range_sizes(num_src_descriptors, 1);
-		device->CopyDescriptors(
-			1,
-			dst_range_starts,
-			dst_range_sizes,
-			(UINT)num_src_descriptors,
-			src_range_starts.data(),
-			src_range_sizes.data(),
-			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV 
-		);
-	}
-
-	void D3D12Device::UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count)
-	{
-		if (!table.IsValid() || !src_descriptor.IsValid())
-		{
-			return;
-		}
-		ADRIA_ASSERT_MSG(table_offset + src_count <= table.count, "Table offset is out of bounds!");
-
-		D3D12DescriptorHeap* gpu_heap = gpu_descriptor_allocator->GetHeap();
-		D3D12_CPU_DESCRIPTOR_HANDLE dst_handle = gpu_heap->GetCpuHandle(table.base + table_offset);
-		D3D12_CPU_DESCRIPTOR_HANDLE src_handle = DecodeToD3D12CPUHandle(src_descriptor);
-		device->CopyDescriptorsSimple(
-			src_count,
-			dst_handle,
-			src_handle,
-			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
-		);
-	}
-
-	void D3D12Device::UpdateBindlessTables(std::vector<GfxBindlessTable> const& tables, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size)
-	{
-		if (tables.empty() || src_range_starts_and_size.empty())
-		{
-			return;
-		}
-
-		ADRIA_ASSERT_MSG(tables.size() == src_range_starts_and_size.size(), "Mismatch between destination table count and source range count");
-
-		D3D12DescriptorHeap* gpu_heap = gpu_descriptor_allocator->GetHeap();
-
-		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> dst_range_starts;
-		std::vector<UINT> dst_range_sizes;
-		dst_range_starts.reserve(tables.size());
-		dst_range_sizes.reserve(tables.size());
-		Uint64 total_dst_descriptors = 0;
-		for (auto const& table : tables)
-		{
-			ADRIA_ASSERT(table.IsValid());
-			dst_range_starts.push_back(gpu_heap->GetCpuHandle(table.base));
-			dst_range_sizes.push_back(table.count);
-			total_dst_descriptors += table.count;
-		}
-
-		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> src_range_starts;
-		std::vector<UINT> src_range_sizes;
-		src_range_starts.reserve(src_range_starts_and_size.size());
-		src_range_sizes.reserve(src_range_starts_and_size.size());
-
-		Uint64 total_src_descriptors = 0;
-		for (auto const& [opaque_desc, size] : src_range_starts_and_size)
-		{
-			ADRIA_ASSERT(opaque_desc.IsValid());
-			src_range_starts.push_back(DecodeToD3D12CPUHandle(opaque_desc));
-			src_range_sizes.push_back(size);
-			total_src_descriptors += size;
-		}
-
-		ADRIA_ASSERT(total_dst_descriptors == total_src_descriptors && "Total number of source and destination descriptors must match!");
-		device->CopyDescriptors(
-			(UINT)tables.size(),
-			dst_range_starts.data(),
-			dst_range_sizes.data(),
-			(UINT)src_range_starts_and_size.size(),
-			src_range_starts.data(),
-			src_range_sizes.data(),
-			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
-		);
-	}
-
-	void D3D12Device::FreeCPUDescriptor(GfxDescriptor descriptor)
-	{
-		if (!descriptor.IsValid())
-		{
-			return;
-		}
-
-		D3D12Descriptor internal_desc = DecodeToD3D12Descriptor(descriptor);
-		if (!internal_desc.parent_heap)
-		{
-			ADRIA_LOG(WARNING, "Attempting to free a descriptor with a null parent heap.");
-			return;
-		}
-
-		GfxDescriptorType const descriptor_type = internal_desc.parent_heap->GetType();
-		ADRIA_ASSERT(!internal_desc.parent_heap->IsShaderVisible() && "Cannot free a GPU descriptor handle directly!");
-		if (internal_desc.parent_heap->IsShaderVisible())
-		{
-			return;
-		}
-		FreeCPUDescriptorImpl(internal_desc, descriptor_type);
-	}
-
-    Uint32 D3D12Device::GetBindlessDescriptorIndex(GfxDescriptor descriptor) const
-    {
-		D3D12Descriptor internal_desc = DecodeToD3D12Descriptor(descriptor);
-		ADRIA_ASSERT(internal_desc.parent_heap == gpu_descriptor_allocator->GetHeap() && "Descriptor is not from the bindless descriptor heap!");
-		return internal_desc.index;
-    }
-
     std::unique_ptr<GfxCommandList> D3D12Device::CreateCommandList(GfxCommandListType type)
 	{
 		return std::make_unique<D3D12CommandList>(this, type);
@@ -1006,7 +852,6 @@ namespace adria
 	{
 		release_queue.emplace(_obj, release_queue_fence_value);
 	}
-
 	void D3D12Device::ProcessReleaseQueue()
 	{
 		while (!release_queue.empty())
@@ -1175,6 +1020,143 @@ namespace adria
 		D3D12_CHECK_CALL(hr);
 	}
 
+
+	ADRIA_NODISCARD GfxDescriptor D3D12Device::AllocatePersistentGPUDescriptor(GfxDescriptorType type)
+	{
+		ADRIA_TODO("Need a way to free persistent descriptors");
+		static Uint32 next_persistent_index = 0;
+		ADRIA_ASSERT_MSG(next_persistent_index + 1 <= gpu_descriptor_allocator->GetReservedSize(), "Out of persistent bindless slots!");
+		return EncodeFromD3D12Descriptor(gpu_descriptor_allocator->GetDescriptor(next_persistent_index));
+	}
+	ADRIA_NODISCARD GfxDescriptor D3D12Device::AllocateTransientGPUDescriptor(GfxDescriptorType type)
+	{
+		return EncodeFromD3D12Descriptor(GetDescriptorAllocator()->Allocate(1));
+	}
+
+	void D3D12Device::CopyDescriptors(GfxDescriptor dst_descriptor, std::span<GfxDescriptor const> src_descriptors)
+	{
+		if (!dst_descriptor.IsValid() || src_descriptors.empty())
+		{
+			return;
+		}
+
+		D3D12DescriptorHeap* gpu_heap = gpu_descriptor_allocator->GetHeap();
+		D3D12_CPU_DESCRIPTOR_HANDLE dst_range_starts[] = { DecodeToD3D12CPUHandle(dst_descriptor) };
+		UINT dst_range_sizes[] = { (UINT)src_descriptors.size() };
+
+		Uint64 const num_src_descriptors = src_descriptors.size();
+		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> src_range_starts;
+		src_range_starts.reserve(num_src_descriptors);
+		for (GfxDescriptor const& opaque_src_descriptor : src_descriptors)
+		{
+			src_range_starts.push_back(DecodeToD3D12CPUHandle(opaque_src_descriptor));
+		}
+
+		std::vector<UINT> src_range_sizes(num_src_descriptors, 1);
+		device->CopyDescriptors(
+			1,
+			dst_range_starts,
+			dst_range_sizes,
+			(UINT)num_src_descriptors,
+			src_range_starts.data(),
+			src_range_sizes.data(),
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+		);
+	}
+	void D3D12Device::CopyDescriptors(GfxDescriptor dst_descriptor, GfxDescriptor src_descriptor, Uint32 src_count)
+	{
+		if (!dst_descriptor.IsValid() || !src_descriptor.IsValid())
+		{
+			return;
+		}
+
+		D3D12DescriptorHeap* gpu_heap = gpu_descriptor_allocator->GetHeap();
+
+		D3D12_CPU_DESCRIPTOR_HANDLE dst_handle = DecodeToD3D12CPUHandle(dst_descriptor);
+		D3D12_CPU_DESCRIPTOR_HANDLE src_handle = DecodeToD3D12CPUHandle(src_descriptor);
+		device->CopyDescriptorsSimple(
+			src_count,
+			dst_handle,
+			src_handle,
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+		);
+	}
+	void D3D12Device::CopyDescriptors(std::span<std::pair<GfxDescriptor, Uint32>> const& dst_range_starts_and_size, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size)
+	{
+		if (dst_range_starts_and_size.empty() || src_range_starts_and_size.empty())
+		{
+			return;
+		}
+
+		D3D12DescriptorHeap* gpu_heap = gpu_descriptor_allocator->GetHeap();
+
+		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> dst_range_starts;
+		std::vector<UINT> dst_range_sizes;
+		dst_range_starts.reserve(dst_range_starts_and_size.size());
+		dst_range_sizes.reserve(dst_range_starts_and_size.size());
+		Uint64 total_dst_descriptors = 0;
+		for (auto const& [range_start, range_size] : dst_range_starts_and_size)
+		{
+			ADRIA_ASSERT(range_start.IsValid());
+			dst_range_starts.push_back(DecodeToD3D12CPUHandle(range_start));
+			dst_range_sizes.push_back(range_size);
+			total_dst_descriptors += range_size;
+		}
+
+		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> src_range_starts;
+		std::vector<UINT> src_range_sizes;
+		src_range_starts.reserve(src_range_starts_and_size.size());
+		src_range_sizes.reserve(src_range_starts_and_size.size());
+
+		Uint64 total_src_descriptors = 0;
+		for (auto const& [range_start, range_size] : src_range_starts_and_size)
+		{
+			ADRIA_ASSERT(range_start.IsValid());
+			src_range_starts.push_back(DecodeToD3D12CPUHandle(range_start));
+			src_range_sizes.push_back(range_size);
+			total_src_descriptors += range_size;
+		}
+
+		ADRIA_ASSERT(total_dst_descriptors == total_src_descriptors && "Total number of source and destination descriptors must match!");
+		device->CopyDescriptors(
+			(UINT)dst_range_starts_and_size.size(),
+			dst_range_starts.data(),
+			dst_range_sizes.data(),
+			(UINT)src_range_starts_and_size.size(),
+			src_range_starts.data(),
+			src_range_sizes.data(),
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+		);
+	}
+	void D3D12Device::FreeCPUDescriptor(GfxDescriptor descriptor)
+	{
+		if (!descriptor.IsValid())
+		{
+			return;
+		}
+
+		D3D12Descriptor internal_desc = DecodeToD3D12Descriptor(descriptor);
+		if (!internal_desc.parent_heap)
+		{
+			ADRIA_LOG(WARNING, "Attempting to free a descriptor with a null parent heap.");
+			return;
+		}
+
+		GfxDescriptorType const descriptor_type = internal_desc.parent_heap->GetType();
+		ADRIA_ASSERT(!internal_desc.parent_heap->IsShaderVisible() && "Cannot free a GPU descriptor handle directly!");
+		if (internal_desc.parent_heap->IsShaderVisible())
+		{
+			return;
+		}
+		FreeCPUDescriptorImpl(internal_desc, descriptor_type);
+	}
+	Uint32 D3D12Device::GetBindlessDescriptorIndex(GfxDescriptor descriptor) const
+	{
+		D3D12Descriptor internal_desc = DecodeToD3D12Descriptor(descriptor);
+		ADRIA_ASSERT(internal_desc.parent_heap == gpu_descriptor_allocator->GetHeap() && "Descriptor is not from the bindless descriptor heap!");
+		return internal_desc.index;
+	}
+
 	D3D12Descriptor D3D12Device::CreateBufferViewImpl(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter, Bool force_cpu_heap)
 	{
 		if (uav_counter)
@@ -1190,15 +1172,13 @@ namespace adria
 		{
 			heap_descriptor = AllocateCPUDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
 		}
-		if(buffer->IsPersistent())
+		else if(buffer->IsPersistent())
 		{
-			GfxBindlessTable bindless_table = AllocatePersistentBindlessTable(1, GfxDescriptorType::CBV_SRV_UAV);
-			heap_descriptor = gpu_descriptor_allocator->GetDescriptor(bindless_table);
+			heap_descriptor = DecodeToD3D12Descriptor(AllocatePersistentGPUDescriptor(GfxDescriptorType::CBV_SRV_UAV));
 		}
 		else
 		{
-			GfxBindlessTable bindless_table = AllocateBindlessTable(1, GfxDescriptorType::CBV_SRV_UAV);
-			heap_descriptor = gpu_descriptor_allocator->GetDescriptor(bindless_table);
+			heap_descriptor = DecodeToD3D12Descriptor(AllocateTransientGPUDescriptor(GfxDescriptorType::CBV_SRV_UAV));
 		}
 
 		switch (view_type)
@@ -1297,20 +1277,18 @@ namespace adria
 		{
 		case GfxSubresourceType::SRV:
 		{
-			D3D12Descriptor descriptor{};
+			D3D12Descriptor heap_descriptor{};
 			if (force_cpu_heap)
 			{
-				descriptor = AllocateCPUDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
+				heap_descriptor = AllocateCPUDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
 			}
-			else if(texture->IsPersistent())
+			else if (texture->IsPersistent())
 			{
-				GfxBindlessTable bindless_table = AllocatePersistentBindlessTable(1, GfxDescriptorType::CBV_SRV_UAV);
-				descriptor = gpu_descriptor_allocator->GetDescriptor(bindless_table);
+				heap_descriptor = DecodeToD3D12Descriptor(AllocatePersistentGPUDescriptor(GfxDescriptorType::CBV_SRV_UAV));
 			}
 			else
 			{
-				GfxBindlessTable bindless_table = AllocateBindlessTable(1, GfxDescriptorType::CBV_SRV_UAV);
-				descriptor = gpu_descriptor_allocator->GetDescriptor(bindless_table);
+				heap_descriptor = DecodeToD3D12Descriptor(AllocateTransientGPUDescriptor(GfxDescriptorType::CBV_SRV_UAV));
 			}
 
 			D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc{};
@@ -1426,26 +1404,24 @@ namespace adria
 				srv_desc.Format = AdjustFormatSRGB(srv_desc.Format);
 			}
 
-			device->CreateShaderResourceView((ID3D12Resource*)texture->GetNative(), &srv_desc, ToD3D12CPUHandle(descriptor));
-			return descriptor;
+			device->CreateShaderResourceView((ID3D12Resource*)texture->GetNative(), &srv_desc, ToD3D12CPUHandle(heap_descriptor));
+			return heap_descriptor;
 		}
 		break;
 		case GfxSubresourceType::UAV:
 		{
-			D3D12Descriptor descriptor{};
+			D3D12Descriptor heap_descriptor{};
 			if (force_cpu_heap)
 			{
-				descriptor = AllocateCPUDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
+				heap_descriptor = AllocateCPUDescriptorImpl(GfxDescriptorType::CBV_SRV_UAV);
 			}
 			else if (texture->IsPersistent())
 			{
-				GfxBindlessTable bindless_table = AllocatePersistentBindlessTable(1, GfxDescriptorType::CBV_SRV_UAV);
-				descriptor = gpu_descriptor_allocator->GetDescriptor(bindless_table);
+				heap_descriptor = DecodeToD3D12Descriptor(AllocatePersistentGPUDescriptor(GfxDescriptorType::CBV_SRV_UAV));
 			}
 			else
 			{
-				GfxBindlessTable bindless_table = AllocateBindlessTable(1, GfxDescriptorType::CBV_SRV_UAV);
-				descriptor = gpu_descriptor_allocator->GetDescriptor(bindless_table);
+				heap_descriptor = DecodeToD3D12Descriptor(AllocateTransientGPUDescriptor(GfxDescriptorType::CBV_SRV_UAV));
 			}
 
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc{};
@@ -1506,8 +1482,8 @@ namespace adria
 				uav_desc.Texture3D.WSize = -1;
 			}
 
-			device->CreateUnorderedAccessView((ID3D12Resource*)texture->GetNative(), nullptr, &uav_desc, ToD3D12CPUHandle(descriptor));
-			return descriptor;
+			device->CreateUnorderedAccessView((ID3D12Resource*)texture->GetNative(), nullptr, &uav_desc, ToD3D12CPUHandle(heap_descriptor));
+			return heap_descriptor;
 		}
 		break;
 		case GfxSubresourceType::RTV:

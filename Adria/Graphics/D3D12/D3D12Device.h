@@ -67,12 +67,6 @@ namespace adria
 
 		virtual GfxLinearDynamicAllocator* GetDynamicAllocator() const override;
 
-		ADRIA_NODISCARD virtual GfxBindlessTable AllocatePersistentBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) override;
-		ADRIA_NODISCARD virtual GfxBindlessTable AllocateBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) override;
-		virtual void UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors) override;
-		virtual void UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count) override;
-		virtual void UpdateBindlessTables(std::vector<GfxBindlessTable> const& table, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size) override;
-		
 		virtual Uint32 GetBindlessDescriptorIndex(GfxDescriptor descriptor) const override;
 		virtual void FreeCPUDescriptor(GfxDescriptor descriptor) override;
 
@@ -218,8 +212,13 @@ namespace adria
 		void SetInfoQueue();
 		void CreateCommonRootSignature();
 
-		D3D12Descriptor AllocateCPUDescriptorImpl(GfxDescriptorType type);
+		ADRIA_NODISCARD GfxDescriptor AllocatePersistentGPUDescriptor(GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV);
+		ADRIA_NODISCARD GfxDescriptor AllocateTransientGPUDescriptor(GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV);
+		ADRIA_NODISCARD D3D12Descriptor AllocateCPUDescriptorImpl(GfxDescriptorType type);
 		void FreeCPUDescriptorImpl(D3D12Descriptor descriptor, GfxDescriptorType type);
+		void CopyDescriptors(GfxDescriptor dst_descriptor, std::span<GfxDescriptor const> src_descriptors);
+		void CopyDescriptors(GfxDescriptor dst_descriptor, GfxDescriptor src_descriptor, Uint32 src_count);
+		void CopyDescriptors(std::span<std::pair<GfxDescriptor, Uint32>> const& dst_range_starts_and_size, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size);
 
 		D3D12Descriptor CreateBufferViewImpl(GfxBuffer const* buffer, GfxSubresourceType view_type, GfxBufferDescriptorDesc const& view_desc, GfxBuffer const* uav_counter = nullptr, Bool force_cpu_heap = false);
 		D3D12Descriptor CreateTextureViewImpl(GfxTexture const* texture, GfxSubresourceType view_type, GfxTextureDescriptorDesc const& view_desc, Bool force_cpu_heap = false);

@@ -147,12 +147,12 @@ namespace adria
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptor = ctx.GetReadOnlyTexture(data.src);
+				GfxTexture const& final_texture = ctx.GetTexture(*data.src);
 				gui->Begin();
 				{
 					ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 					MenuBar();
-					Scene(src_descriptor);
+					Scene(final_texture);
 					ListEntities();
 					AddEntities();
 					Settings();
@@ -621,8 +621,8 @@ namespace adria
 					ImGui::Text("Albedo Texture");
 					if (material->albedo_texture != INVALID_TEXTURE_HANDLE)
 					{
-						GfxDescriptor tex_handle = g_TextureManager.GetDescriptor(material->albedo_texture);
-						gui->ShowImage(tex_handle);
+						GfxTexture* tex_handle = g_TextureManager.GetTexture(material->albedo_texture);
+						gui->ShowImage(*tex_handle);
 					}
 
 					ImGui::PushID(0);
@@ -646,8 +646,8 @@ namespace adria
 					ImGui::Text("Metallic-Roughness Texture");
 					if (material->metallic_roughness_texture != INVALID_TEXTURE_HANDLE)
 					{
-						GfxDescriptor tex_handle = g_TextureManager.GetDescriptor(material->metallic_roughness_texture);
-						gui->ShowImage(tex_handle);
+						GfxTexture* tex_handle = g_TextureManager.GetTexture(material->metallic_roughness_texture);
+						gui->ShowImage(*tex_handle);
 					}
 
 
@@ -672,8 +672,8 @@ namespace adria
 					ImGui::Text("Emissive Texture");
 					if (material->emissive_texture != INVALID_TEXTURE_HANDLE)
 					{
-						GfxDescriptor tex_handle = g_TextureManager.GetDescriptor(material->emissive_texture);
-						gui->ShowImage(tex_handle);
+						GfxTexture* tex_handle = g_TextureManager.GetTexture(material->emissive_texture);
+						gui->ShowImage(*tex_handle);
 					}
 
 					ImGui::PushID(2);
@@ -722,8 +722,8 @@ namespace adria
 				if (decal && ImGui::CollapsingHeader("Decal"))
 				{
 					ImGui::Text("Decal Albedo Texture");
-					GfxDescriptor tex_handle = g_TextureManager.GetDescriptor(decal->albedo_decal_texture);
-					gui->ShowImage(tex_handle);
+					GfxTexture* tex_handle = g_TextureManager.GetTexture(decal->albedo_decal_texture);
+					gui->ShowImage(*tex_handle);
 
 					ImGui::PushID(4);
 					if (ImGui::Button("Remove"))
@@ -744,8 +744,8 @@ namespace adria
 					ImGui::PopID();
 
 					ImGui::Text("Decal Normal Texture");
-					tex_handle = g_TextureManager.GetDescriptor(decal->normal_decal_texture);
-					gui->ShowImage(tex_handle);
+					tex_handle = g_TextureManager.GetTexture(decal->normal_decal_texture);
+					gui->ShowImage(*tex_handle);
 
 					ImGui::PushID(5);
 					if (ImGui::Button("Remove")) decal->normal_decal_texture = INVALID_TEXTURE_HANDLE;
@@ -809,7 +809,7 @@ namespace adria
 		}
 		ImGui::End();
 	}
-	void Editor::Scene(GfxDescriptor& src)
+	void Editor::Scene(GfxTexture const& final_texture)
 	{
 		ImGui::Begin(ICON_FA_GLOBE" Scene", nullptr, ImGuiWindowFlags_MenuBar);
 		{
@@ -868,7 +868,7 @@ namespace adria
 			v_max.x += ImGui::GetWindowPos().x;
 			v_max.y += ImGui::GetWindowPos().y;
 			ImVec2 size(v_max.x - v_min.x, v_max.y - v_min.y);
-			gui->ShowImage(src, size);
+			gui->ShowImage(final_texture, size);
 
 			scene_focused = ImGui::IsWindowFocused();
 
@@ -1377,28 +1377,15 @@ namespace adria
 
 			if (ImGui::TreeNode("Textures"))
 			{
-				struct VoidPointerHash
-				{
-					Uint64 operator()(void const* ptr) const { return reinterpret_cast<Uint64>(ptr); }
-				};
-				static std::unordered_map<void const*, GfxDescriptor, VoidPointerHash> debug_srv_map;
-
 				for (Int32 i = 0; i < debug_textures.size(); ++i)
 				{
 					ImGui::PushID(i);
 					auto& debug_texture = debug_textures[i];
 					ImGui::Text(debug_texture.name);
-
-					if (!debug_srv_map.contains(debug_texture.gfx_texture))
-					{
-						GfxDescriptor debug_srv_cpu = gfx->CreateTextureSRV(debug_texture.gfx_texture);
-						debug_srv_map[debug_texture.gfx_texture] = debug_srv_cpu;
-					}
-					GfxDescriptor debug_srv_cpu = debug_srv_map[debug_texture.gfx_texture];
 					Uint32 const width = debug_texture.gfx_texture->GetDesc().width;
 					Uint32 const height = debug_texture.gfx_texture->GetDesc().height;
 					Float const window_width = ImGui::GetWindowWidth();
-					gui->ShowImage(debug_srv_cpu, ImVec2(window_width * 0.9f, window_width * 0.9f * (Float)height / width));
+					gui->ShowImage(*debug_texture.gfx_texture, ImVec2(window_width * 0.9f, window_width * 0.9f * (Float)height / width));
 					ImGui::PopID();
 				}
 				ImGui::TreePop();

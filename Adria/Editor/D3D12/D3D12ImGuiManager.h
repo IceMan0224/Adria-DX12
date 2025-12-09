@@ -24,7 +24,7 @@ namespace adria
 		virtual void ToggleVisibility() override;
 		virtual Bool IsVisible() const override;
 
-		virtual void ShowImage(GfxDescriptor image_descriptor, ImVec2 image_size) override;
+		virtual void ShowImage(GfxTexture const& final_texture, ImVec2 image_size) override;
 		virtual void OnWindowEvent(WindowEventInfo const&) const override;
 
 	private:

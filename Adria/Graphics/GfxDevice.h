@@ -126,11 +126,6 @@ namespace adria
 
 		virtual GfxLinearDynamicAllocator* GetDynamicAllocator() const = 0;
 
-		ADRIA_NODISCARD virtual GfxBindlessTable AllocatePersistentBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) = 0;
-		ADRIA_NODISCARD virtual GfxBindlessTable AllocateBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) = 0;
-		virtual void UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors) = 0;
-		virtual void UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count = 1) = 0;
-		virtual void UpdateBindlessTables(std::vector<GfxBindlessTable> const& table, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size) = 0;
 		virtual void FreeCPUDescriptor(GfxDescriptor descriptor) = 0;
 		virtual Uint32 GetBindlessDescriptorIndex(GfxDescriptor descriptor) const = 0;
 
@@ -245,19 +240,6 @@ namespace adria
 		std::unique_ptr<GfxGraphicsPipelineState> CreateManagedGraphicsPipelineState(GfxGraphicsPipelineStateDesc const& desc);
 		std::unique_ptr<GfxComputePipelineState> CreateManagedComputePipelineState(GfxComputePipelineStateDesc const& desc);
 		std::unique_ptr<GfxMeshShaderPipelineState> CreateManagedMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc);
-
-		ADRIA_NODISCARD GfxBindlessTable AllocateAndUpdateBindlessTable(GfxDescriptor src_descriptor, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV)
-		{
-			GfxBindlessTable table = AllocateBindlessTable(1);
-			UpdateBindlessTable(table, 0, src_descriptor, 1);
-			return table;
-		}
-		ADRIA_NODISCARD GfxBindlessTable AllocateAndUpdateBindlessTable(std::span<GfxDescriptor const> src_descriptors, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV)
-		{
-			GfxBindlessTable table = AllocateBindlessTable(static_cast<Uint32>(src_descriptors.size()));
-			UpdateBindlessTable(table, src_descriptors);
-			return table;
-		}
 
 	private:
 		virtual void AddToReleaseQueue_Internal(ReleasableObject* _obj) = 0;
