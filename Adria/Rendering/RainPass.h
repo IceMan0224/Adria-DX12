@@ -38,9 +38,9 @@ namespace adria
 			rain_event.Broadcast(enabled && !cheap);
 		}
 
+		Int32 GetRainSplashDiffuseIndex() const;
+		Int32 GetRainSplashBumpIndex()    const;
 		Float GetRainTotalTime()		  const { return rain_total_time; }
-		Int32 GetRainSplashDiffuseIndex() const { return (Int32)rain_splash_diffuse_handle; }
-		Int32 GetRainSplashBumpIndex()    const { return (Int32)rain_splash_bump_handle;    }
 		Int32 GetRainBlockerMapIndex()    const { return rain_blocker_map_pass.GetRainBlockerMapIdx(); }
 		Matrix GetRainViewProjection()    const { return rain_blocker_map_pass.GetViewProjection(); }
 

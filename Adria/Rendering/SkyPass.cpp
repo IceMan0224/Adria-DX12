@@ -194,7 +194,7 @@ namespace adria
 				}
 
 				ADRIA_ASSERT(skybox.cubemap_texture != INVALID_TEXTURE_HANDLE);
-				return (Int32)skybox.cubemap_texture;
+				return (Int32)g_TextureManager.GetBindlessIndex(skybox.cubemap_texture);
 			}
 		}
 		return (Int32)gfx->GetBindlessDescriptorIndex(sky_texture_srv);

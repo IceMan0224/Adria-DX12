@@ -108,6 +108,16 @@ namespace adria
 		rain_data_buffer = gfx->CreateBuffer(rain_data_buffer_desc, rain_data_buffer_init.data());
 	}
 
+	Int32 RainPass::GetRainSplashDiffuseIndex() const
+	{
+		return g_TextureManager.GetBindlessIndex(rain_splash_diffuse_handle);
+	}
+
+	Int32 RainPass::GetRainSplashBumpIndex() const
+	{
+		return g_TextureManager.GetBindlessIndex(rain_splash_bump_handle);
+	}
+
 	void RainPass::CreatePSOs()
 	{
 		GfxGraphicsPipelineStateDesc gfx_pso_desc{};
@@ -203,7 +213,7 @@ namespace adria
 				} constants =
 				{
 					.rain_data_idx = context.GetReadOnlyBufferIndex(data.rain_data_buffer),
-					.rain_streak_idx = (Uint32)rain_streak_handle,
+					.rain_streak_idx = g_TextureManager.GetBindlessIndex(rain_streak_handle),
 					.rain_streak_scale = streak_scale
 				};
 

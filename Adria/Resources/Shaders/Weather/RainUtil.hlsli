@@ -10,7 +10,10 @@ bool IsBlockedFromRain(float3 worldPosition)
 	UVD.xy = 0.5 * UVD.xy + 0.5;
 	UVD.y = 1.0 - UVD.y;
 	Texture2D<float> blockerMap = ResourceDescriptorHeap[FrameCB.rainBlockerMapIdx];
-	if (UVD.z > 1.0f) return true;
+	if (UVD.z > 1.0f)
+	{
+		return true;
+	}
 	float depth = UVD.z;
 	return !blockerMap.SampleCmpLevelZero(ShadowWrapSampler, UVD.xy, depth);
 }
