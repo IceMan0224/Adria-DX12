@@ -145,7 +145,7 @@ namespace adria
 					.fog_volume_buffer_idx = fog_volume_buffer_idx,
 					.light_injection_target_idx = ctx.GetReadWriteTextureIndex(data.light_injection_target),
 					.light_injection_target_history_idx = ctx.GetReadOnlyTextureIndex(data.light_injection_target_history),
-					.blue_noise_idx = (Uint32)blue_noise_handles[gfx->GetFrameIndex() % BLUE_NOISE_TEXTURE_COUNT]
+					.blue_noise_idx = g_TextureManager.GetBindlessIndex(blue_noise_handles[gfx->GetFrameIndex() % BLUE_NOISE_TEXTURE_COUNT])
 				};
 				
 				cmd_list->SetPipelineState(light_injection_pso->Get());

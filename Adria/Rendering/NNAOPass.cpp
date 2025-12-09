@@ -69,8 +69,8 @@ namespace adria
 					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
 					.normal_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_normal),
 					.output_idx = ctx.GetReadWriteTextureIndex(data.output),
-					.F0_idx = (Uint32)F_texture_handles[0], .F1_idx = (Uint32)F_texture_handles[1],
-					.F2_idx = (Uint32)F_texture_handles[2], .F3_idx = (Uint32)F_texture_handles[3],
+					.F0_idx = g_TextureManager.GetBindlessIndex(F_texture_handles[0]), .F1_idx = g_TextureManager.GetBindlessIndex(F_texture_handles[1]),
+					.F2_idx = g_TextureManager.GetBindlessIndex(F_texture_handles[2]), .F3_idx = g_TextureManager.GetBindlessIndex(F_texture_handles[3]),
 				};
 
 				cmd_list->SetPipelineState(nnao_pso->Get());
