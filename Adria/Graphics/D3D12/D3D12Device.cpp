@@ -1026,7 +1026,7 @@ namespace adria
 		ADRIA_TODO("Need a way to free persistent descriptors");
 		static Uint32 next_persistent_index = 0;
 		ADRIA_ASSERT_MSG(next_persistent_index + 1 <= gpu_descriptor_allocator->GetReservedSize(), "Out of persistent bindless slots!");
-		return EncodeFromD3D12Descriptor(gpu_descriptor_allocator->GetDescriptor(next_persistent_index));
+		return EncodeFromD3D12Descriptor(gpu_descriptor_allocator->GetDescriptor(next_persistent_index++));
 	}
 	ADRIA_NODISCARD GfxDescriptor D3D12Device::AllocateTransientGPUDescriptor(GfxDescriptorType type)
 	{
