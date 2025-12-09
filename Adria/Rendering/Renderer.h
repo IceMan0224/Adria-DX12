@@ -145,7 +145,6 @@ namespace adria
 
 		std::unique_ptr<GfxTexture> overdraw_texture = nullptr;
 		GfxDescriptor				overdraw_texture_uav;
-		GfxDescriptor				overdraw_texture_uav_gpu;
 
 		TextureHandle		 sheenE_texture = INVALID_TEXTURE_HANDLE;
 

@@ -21,7 +21,6 @@ namespace adria
 	void BlurPass::AddPass(RenderGraph& rendergraph, RGResourceName src_texture, RGResourceName blurred_texture,
 		Char const* pass_name)
 	{
-
 		static Uint64 counter = 0;
 		counter++;
 
@@ -51,20 +50,14 @@ namespace adria
 
 				GfxTextureDesc const& src_desc = ctx.GetTexture(*data.src_texture).GetDesc();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.src_texture),
-					ctx.GetReadWriteTexture(data.dst_texture)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct BlurConstants
 				{
 					Uint32 input_idx;
 					Uint32 output_idx;
 				} constants =
 				{
-					.input_idx = table, .output_idx = table + 1
+					.input_idx = ctx.GetReadOnlyTextureIndex(data.src_texture), 
+					.output_idx = ctx.GetReadWriteTextureIndex(data.dst_texture)
 				};
 
 				cmd_list->SetPipelineState(blur_horizontal_pso->Get());
@@ -88,20 +81,14 @@ namespace adria
 
 				GfxTextureDesc const& src_desc = ctx.GetTexture(*data.src_texture).GetDesc();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.src_texture),
-					ctx.GetReadWriteTexture(data.dst_texture)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct BlurConstants
 				{
 					Uint32 input_idx;
 					Uint32 output_idx;
 				} constants =
 				{
-					.input_idx = table, .output_idx = table + 1
+					.input_idx = ctx.GetReadOnlyTextureIndex(data.src_texture),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.dst_texture)
 				};
 
 				cmd_list->SetPipelineState(blur_vertical_pso->Get());

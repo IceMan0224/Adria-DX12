@@ -44,13 +44,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.input),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct FilmEffectsConstants
 				{
 					Bool32  lens_distortion_enabled;
@@ -77,8 +70,8 @@ namespace adria
 					.film_grain_scale = film_grain_scale,
 					.film_grain_amount = film_grain_amount,
 					.film_grain_seed = GetFilmGrainSeed(frame_data.delta_time, film_grain_seed_update_rate),
-					.input_idx = table + 0,
-					.output_idx = table + 1
+					.input_idx = ctx.GetReadOnlyTextureIndex(data.input),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 				cmd_list->SetPipelineState(film_effects_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

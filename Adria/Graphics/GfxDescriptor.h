@@ -31,7 +31,7 @@ namespace adria
 	{
 		Usize operator()(GfxDescriptor const& d) const
 		{
-			return std::hash<Uint64>{}(d.opaque_data[0]) + std::hash<Uint64>{}(d.opaque_data[1]);
+			return std::hash<Usize>{}(d.opaque_data[0]) + std::hash<Usize>{}(d.opaque_data[1]);
 		}
 	};
 

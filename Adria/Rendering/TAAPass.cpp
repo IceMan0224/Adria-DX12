@@ -51,15 +51,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.input),
-					ctx.GetReadOnlyTexture(data.history),
-					ctx.GetReadOnlyTexture(data.velocity),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct TAAConstants
 				{
 					Uint32 scene_idx;
@@ -68,7 +59,10 @@ namespace adria
 					Uint32 output_idx;
 				} constants =
 				{
-					.scene_idx = table, .prev_scene_idx = table + 1, .velocity_idx = table + 2, .output_idx = table + 3
+					.scene_idx = ctx.GetReadOnlyTextureIndex(data.input),
+					.prev_scene_idx = ctx.GetReadOnlyTextureIndex(data.history),
+					.velocity_idx = ctx.GetReadOnlyTextureIndex(data.velocity),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 
 				cmd_list->SetPipelineState(taa_pso->Get());

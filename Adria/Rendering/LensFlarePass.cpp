@@ -265,6 +265,7 @@ namespace adria
 					ADRIA_LOG(WARNING, "Using Lens Flare on a Non-Directional Light Source");
 					return;
 				}
+
 				XMFLOAT3 light_ss{};
 				{
 					Vector4 camera_position(frame_data.camera_position);
@@ -274,12 +275,6 @@ namespace adria
 					light_ss.y = -0.5f * light_pos.y / light_pos.w + 0.5f;
 					light_ss.z = light_pos.z / light_pos.w;
 				}
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.depth),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct LensFlareConstants
 				{

@@ -24,7 +24,10 @@ namespace adria
 
 	void RayTracedShadowsPass::AddPass(RenderGraph& rg, Uint32 light_index)
 	{
-		if (!IsSupported()) return;
+		if (!IsSupported())
+		{
+			return;
+		}
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		struct RayTracedShadowsPassData
@@ -42,14 +45,13 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(ctx.GetReadOnlyTexture(data.depth));
 				struct RayTracedShadowsConstants
 				{
 					Uint32  depth_idx;
 					Uint32  light_idx;
 				} constants =
 				{
-					.depth_idx = table,
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
 					.light_idx = light_index
 				};
 				

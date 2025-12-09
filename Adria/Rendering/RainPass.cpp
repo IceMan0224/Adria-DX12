@@ -151,7 +151,6 @@ namespace adria
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
 
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(context.GetReadWriteBuffer(data.rain_data_buffer));
 				struct RainSimulationConstants
 				{
 					Uint32   rain_data_idx;
@@ -160,7 +159,7 @@ namespace adria
 					Float    range_radius;
 				} constants =
 				{
-					.rain_data_idx = table,
+					.rain_data_idx = context.GetReadWriteBufferIndex(data.rain_data_buffer),
 					.simulation_speed = simulation_speed,
 					.range_radius = range_radius
 				};
@@ -195,9 +194,6 @@ namespace adria
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
 
-				GfxDescriptor src_handle[] = { context.GetReadOnlyBuffer(data.rain_data_buffer) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handle);
-
 				struct Constants
 				{
 					Uint32   rain_data_idx;
@@ -206,7 +202,7 @@ namespace adria
 
 				} constants =
 				{
-					.rain_data_idx = table,
+					.rain_data_idx = context.GetReadOnlyBufferIndex(data.rain_data_buffer),
 					.rain_streak_idx = (Uint32)rain_streak_handle,
 					.rain_streak_scale = streak_scale
 				};

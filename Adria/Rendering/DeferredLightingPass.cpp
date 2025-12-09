@@ -58,6 +58,7 @@ namespace adria
 				{
 					data.ambient_occlusion.Invalidate();
 				}
+
 				for (RGResourceName shadow_texture : shadow_textures)
 				{
 					std::ignore = builder.ReadTexture(shadow_texture);

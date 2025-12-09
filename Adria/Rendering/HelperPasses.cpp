@@ -65,9 +65,8 @@ namespace adria
 				default:
 					ADRIA_ASSERT_MSG(false, "Invalid Copy Mode in CopyTexture");
 				}
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(ctx.GetReadOnlyTexture(data.texture_src));
 
-				cmd_list->SetRootConstant(1, table, 0);
+				cmd_list->SetRootConstant(1, ctx.GetReadOnlyTextureIndex(data.texture_src), 0);
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->Draw(3);
 			}, RGPassType::Graphics, RGPassFlags::None);
@@ -154,15 +153,8 @@ namespace adria
 				default:
 					ADRIA_ASSERT_MSG(false, "Invalid Copy Mode in CopyTexture");
 				}
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.texture_src1),
-					ctx.GetReadOnlyTexture(data.texture_src2)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
-				cmd_list->SetRootConstant(1, table, 0);
-				cmd_list->SetRootConstant(1, table + 1, 1);
+				cmd_list->SetRootConstant(1, ctx.GetReadOnlyTextureIndex(data.texture_src1), 0);
+				cmd_list->SetRootConstant(1, ctx.GetReadOnlyTextureIndex(data.texture_src2), 1);
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->Draw(3);
 			}, RGPassType::Graphics, RGPassFlags::None);

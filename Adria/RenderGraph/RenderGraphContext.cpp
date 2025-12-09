@@ -93,6 +93,16 @@ namespace adria
 		return rg.GetReadWriteTexture(res_id);
 	}
 
+	GfxDescriptor RenderGraphContext::GetReadOnlyBuffer(RGBufferReadOnlyId res_id) const
+	{
+		return rg.GetReadOnlyBuffer(res_id);
+	}
+
+	GfxDescriptor RenderGraphContext::GetReadWriteBuffer(RGBufferReadWriteId res_id) const
+	{
+		return rg.GetReadWriteBuffer(res_id);
+	}
+
 	Uint32 RenderGraphContext::GetReadOnlyTextureIndex(RGTextureReadOnlyId res_id) const
 	{
 		return rg.GetReadOnlyTextureIndex(res_id);
@@ -103,13 +113,14 @@ namespace adria
 		return rg.GetReadWriteTextureIndex(res_id);
 	}
 
-	GfxDescriptor RenderGraphContext::GetReadOnlyBuffer(RGBufferReadOnlyId res_id) const
+	Uint32 RenderGraphContext::GetReadOnlyBufferIndex(RGBufferReadOnlyId res_id) const
 	{
-		return rg.GetReadOnlyBuffer(res_id);
+		return rg.GetReadOnlyBufferIndex(res_id);
 	}
 
-	GfxDescriptor RenderGraphContext::GetReadWriteBuffer(RGBufferReadWriteId res_id) const
+	Uint32 RenderGraphContext::GetReadWriteBufferIndex(RGBufferReadWriteId res_id) const
 	{
-		return rg.GetReadWriteBuffer(res_id);
+		return rg.GetReadWriteBufferIndex(res_id);
 	}
+
 }

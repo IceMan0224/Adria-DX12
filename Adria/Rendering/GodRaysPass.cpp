@@ -95,13 +95,6 @@ namespace adria
 					return;
 				}
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.sun),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				Vector4 camera_position(frame_data.camera_position);
 				Vector4 light_pos = Vector4::Transform(light.position, XMMatrixTranslation(camera_position.x, 0.0f, camera_position.y));
 				light_pos = Vector4::Transform(light_pos, frame_data.camera_viewproj);
@@ -123,7 +116,8 @@ namespace adria
 					.light_screen_space_position_y = -0.5f * light_pos.y / light_pos.w + 0.5f,
 					.density = light.godrays_density, .weight = light.godrays_weight,
 					.decay = light.godrays_decay, .exposure = light.godrays_exposure,
-					.sun_idx = table, .output_idx = table + 1
+					.sun_idx = ctx.GetReadOnlyTextureIndex(data.sun),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 				cmd_list->SetPipelineState(god_rays_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

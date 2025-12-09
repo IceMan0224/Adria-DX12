@@ -104,7 +104,10 @@ namespace adria
 				for (entt::entity batch_entity : batch_view)
 				{
 					Batch& batch = batch_view.get<Batch>(batch_entity);
-					if (!batch.camera_visibility) continue;
+					if (!batch.camera_visibility)
+					{
+						continue;
+					}
 
 					struct TransparentConstants
 					{
@@ -115,14 +118,8 @@ namespace adria
 
 					if (reflections_enabled)
 					{
-						GfxDescriptor src_descriptors[] =
-						{
-							context.GetReadOnlyTexture(data.scene),
-							context.GetReadOnlyTexture(data.depth)
-						};
-						GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-						constants.scene_idx = table;
-						constants.depth_idx = table + 1;
+						constants.scene_idx = context.GetReadOnlyTextureIndex(data.scene);
+						constants.depth_idx = context.GetReadOnlyTextureIndex(data.depth);
 					}
 					cmd_list->SetRootConstants(1, constants);
 

@@ -73,7 +73,8 @@ namespace adria
 					Float  warp_y;
 				} constants =
 				{
-					.input_idx = table, .output_idx = table + 1,
+					.input_idx = ctx.GetReadOnlyTextureIndex(data.input),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output),
 					.hard_scan = CRTHardScan.Get(), .pixel_hardness = CRTPixelHardness.Get(),
 					.warp_x = CRTWarpX.Get(), .warp_y = CRTWarpY.Get()
 				};

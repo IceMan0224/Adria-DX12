@@ -157,12 +157,9 @@ namespace adria
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
 
-					GfxDescriptor src_descriptors[] = { vrs_image_srv };
-					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 					cmd_list->SetPipelineState(vrs_overlay_pso->Get());
 					cmd_list->TextureBarrier(*vrs_image, GfxResourceState::ComputeUAV, GfxResourceState::PixelSRV);
-					cmd_list->SetRootConstant(1, table, 0);
+					cmd_list->SetRootConstant(1, gfx->GetBindlessDescriptorIndex(vrs_image_srv), 0);
 					cmd_list->SetRootConstant(1, shading_rate_image_tile_size, 1);
 					cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 					cmd_list->Draw(3);

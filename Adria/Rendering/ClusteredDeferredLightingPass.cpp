@@ -62,13 +62,9 @@ namespace adria
 				{
 					GfxDevice* gfx = ctx.GetDevice();
 					GfxCommandList* cmd_list = ctx.GetCommandList();
-
-					GfxDescriptor src_descriptors[] = { ctx.GetReadWriteBuffer(data.clusters) };
-					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 					cmd_list->SetPipelineState(clustered_building_pso->Get());
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-					cmd_list->SetRootConstant(1, table, 0);
+					cmd_list->SetRootConstant(1, ctx.GetReadWriteBufferIndex(data.clusters), 0);
 					cmd_list->Dispatch(CLUSTER_SIZE_X, CLUSTER_SIZE_Y, CLUSTER_SIZE_Z);
 				}, RGPassType::Compute, RGPassFlags::None);
 		}
@@ -93,13 +89,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyBuffer(data.clusters),
-												ctx.GetReadWriteBuffer(data.light_counter),
-												ctx.GetReadWriteBuffer(data.light_list),
-												ctx.GetReadWriteBuffer(data.light_grid) };
-
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct ClusterCullingConstants
 				{
 					Uint32 clusters_idx;
@@ -108,8 +97,10 @@ namespace adria
 					Uint32 light_grid_idx;
 				} constants =
 				{
-					.clusters_idx = table, .light_index_counter_idx = table + 1,
-					.light_index_list_idx = table + 2, .light_grid_idx = table + 3
+					.clusters_idx = ctx.GetReadOnlyBufferIndex(data.clusters),
+					.light_index_counter_idx = ctx.GetReadWriteBufferIndex(data.light_counter),
+					.light_index_list_idx = ctx.GetReadWriteBufferIndex(data.light_list),
+					.light_grid_idx = ctx.GetReadWriteBufferIndex(data.light_grid)
 				};
 
 				cmd_list->SetPipelineState(clustered_culling_pso->Get());
@@ -165,18 +156,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_handles[] = {
-												ctx.GetReadOnlyTexture(data.gbuffer_normal),
-												ctx.GetReadOnlyTexture(data.gbuffer_albedo),
-												ctx.GetReadOnlyTexture(data.gbuffer_emissive),
-												ctx.GetReadOnlyTexture(data.gbuffer_custom),
-												ctx.GetReadOnlyTexture(data.depth),
-												data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTexture(data.ambient_occlusion) : GfxCommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
-												ctx.GetReadWriteTexture(data.output),
-												ctx.GetReadOnlyBuffer(data.light_list), ctx.GetReadOnlyBuffer(data.light_grid)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 				cmd_list->ClearTexture(ctx.GetTexture(*data.output), clear);
 
@@ -192,11 +171,15 @@ namespace adria
 					Uint32 light_buffer_data_packed;
 				} constants =
 				{
-					.normal_idx = table + 0, .diffuse_idx = table + 1,
-					.emissive_idx = table + 2,.custom_idx = table + 3,  .depth_idx = table + 4, .ao_idx = table + 5,
-					.output_idx = table + 6, .light_buffer_data_packed = PackTwoUint16ToUint32((Uint16)table + 7, (Uint16)table + 8)
+					.normal_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_normal),
+					.diffuse_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_albedo),
+					.emissive_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_emissive),
+					.custom_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_custom),
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
+					.ao_idx = data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTextureIndex(data.ambient_occlusion) : GfxCommon::GetCommonViewBindlessIndex(GfxCommonViewType::WhiteTexture2D_SRV),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output),
+					.light_buffer_data_packed = PackTwoUint16ToUint32((Uint16)ctx.GetReadOnlyBufferIndex(data.light_list), (Uint16)ctx.GetReadOnlyBufferIndex(data.light_grid))
 				};
-				ADRIA_ASSERT(table + 8 < UINT32_MAX);
 
 				cmd_list->SetPipelineState(clustered_lighting_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

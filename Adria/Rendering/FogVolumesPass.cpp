@@ -89,9 +89,7 @@ namespace adria
 	{
 		RG_SCOPE(rg, "Fog Volumes");
 
-		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(fog_volume_buffer_srv);
-		fog_volume_buffer_idx = table.base;
-
+		fog_volume_buffer_idx = gfx->GetBindlessDescriptorIndex(fog_volume_buffer_srv);
 		AddLightInjectionPass(rg);
 		AddScatteringIntegrationPass(rg);
 		AddCombineFogPass(rg);
@@ -131,13 +129,6 @@ namespace adria
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
-				
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadWriteTexture(data.light_injection_target),
-					ctx.GetReadOnlyTexture(data.light_injection_target_history)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct LightInjectionConstants
 				{
@@ -152,8 +143,8 @@ namespace adria
 					.voxel_grid_dimensions = Vector3u(light_injection_target_history->GetWidth(), light_injection_target_history->GetHeight(), light_injection_target_history->GetDepth()),
 					.fog_volumes_count = fog_volume_buffer->GetCount(),
 					.fog_volume_buffer_idx = fog_volume_buffer_idx,
-					.light_injection_target_idx = table,
-					.light_injection_target_history_idx = table + 1,
+					.light_injection_target_idx = ctx.GetReadWriteTextureIndex(data.light_injection_target),
+					.light_injection_target_history_idx = ctx.GetReadOnlyTextureIndex(data.light_injection_target_history),
 					.blue_noise_idx = (Uint32)blue_noise_handles[gfx->GetFrameIndex() % BLUE_NOISE_TEXTURE_COUNT]
 				};
 				
@@ -200,13 +191,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.injected_light),
-					ctx.GetReadWriteTexture(data.integrated_scattering)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct ScatteringAccumulationConstants
 				{
 					Vector3u voxel_grid_dimensions;
@@ -215,8 +199,8 @@ namespace adria
 				} constants =
 				{
 					.voxel_grid_dimensions = Vector3u(light_injection_target_history->GetWidth(), light_injection_target_history->GetHeight(), light_injection_target_history->GetDepth()),
-					.injected_light_idx = table,
-					.integrated_scattering_idx = table + 1
+					.injected_light_idx = ctx.GetReadOnlyTextureIndex(data.injected_light),
+					.integrated_scattering_idx = ctx.GetReadWriteTextureIndex(data.integrated_scattering)
 				};
 
 				cmd_list->SetPipelineState(scattering_integration_pso->Get());
@@ -248,14 +232,10 @@ namespace adria
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
-
 				cmd_list->SetPipelineState(combine_fog_pso->Get());
 
-				GfxDescriptor src_descriptors[] = { ctx.GetReadOnlyTexture(data.fog), ctx.GetReadOnlyTexture(data.depth) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
-				cmd_list->SetRootConstant(1, table, 0);
-				cmd_list->SetRootConstant(1, table + 1, 1);
+				cmd_list->SetRootConstant(1, ctx.GetReadOnlyTextureIndex(data.fog), 0);
+				cmd_list->SetRootConstant(1, ctx.GetReadOnlyTextureIndex(data.depth), 1);
 				cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);
 				cmd_list->Draw(3);
 			}, RGPassType::Graphics, RGPassFlags::None);
@@ -308,7 +288,6 @@ namespace adria
 		light_injection_target_desc.initial_state = GfxResourceState::CopyDst;
 		light_injection_target_history = gfx->CreateTexture(light_injection_target_desc);
 		light_injection_target_history->SetName("Light Injection Target History");
-		light_injection_target_history_srv = gfx->CreateTextureSRV(light_injection_target_history.get());
 	}
 
 	void FogVolumesPass::CreateFogVolumeBuffer()

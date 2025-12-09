@@ -103,8 +103,7 @@ namespace adria
 
 	Int32 RainBlockerMapPass::GetRainBlockerMapIdx() const
 	{
-		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(blocker_map_srv);
-		return static_cast<Int32>(table);
+		return gfx->GetBindlessDescriptorIndex(blocker_map_srv);
 	}
 
 	void RainBlockerMapPass::CreatePSOs()

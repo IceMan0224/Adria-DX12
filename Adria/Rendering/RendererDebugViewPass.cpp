@@ -51,11 +51,23 @@ namespace adria
 				data.gbuffer_custom = builder.ReadTexture(RG_NAME(GBufferCustom), ReadAccess_NonPixelShader);
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 
-				if (builder.IsTextureDeclared(RG_NAME(AmbientOcclusion))) data.ambient_occlusion = builder.ReadTexture(RG_NAME(AmbientOcclusion), ReadAccess_NonPixelShader);
-				else data.ambient_occlusion.Invalidate();
+				if (builder.IsTextureDeclared(RG_NAME(AmbientOcclusion)))
+				{
+					data.ambient_occlusion = builder.ReadTexture(RG_NAME(AmbientOcclusion), ReadAccess_NonPixelShader);
+				}
+				else
+				{
+					data.ambient_occlusion.Invalidate();
+				}
 
-				if (builder.IsTextureDeclared(RG_NAME(VelocityBuffer))) data.motion_vectors = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
-				else data.motion_vectors.Invalidate();
+				if (builder.IsTextureDeclared(RG_NAME(VelocityBuffer)))
+				{
+					data.motion_vectors = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
+				}
+				else
+				{
+					data.motion_vectors.Invalidate();
+				}
 			},
 			[=, this](RendererDebugViewPassData const& data, RenderGraphContext& context)
 			{
@@ -64,16 +76,6 @@ namespace adria
 				
 				const Float clear[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 				cmd_list->ClearTexture(context.GetTexture(*data.output), clear);
-
-				GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.gbuffer_normal),
-												context.GetReadOnlyTexture(data.gbuffer_albedo),
-												context.GetReadOnlyTexture(data.depth),
-												context.GetReadOnlyTexture(data.gbuffer_emissive),
-												context.GetReadOnlyTexture(data.gbuffer_custom),
-												data.ambient_occlusion.IsValid() ? context.GetReadOnlyTexture(data.ambient_occlusion) : GfxCommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
-												data.motion_vectors.IsValid()    ? context.GetReadOnlyTexture(data.motion_vectors)    : GfxCommon::GetCommonView(GfxCommonViewType::BlackTexture2D_SRV),
-												context.GetReadWriteTexture(data.output) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 
 				struct RendererDebugViewIndices
 				{
@@ -87,8 +89,14 @@ namespace adria
 					Uint32 output_idx;
 				} indices =
 				{
-					.normal_metallic_idx = table, .diffuse_idx = table + 1, .depth_idx = table + 2, .emissive_idx = table + 3,
-					.custom_idx = table + 4, .ao_idx = table + 5, .motion_vectors_idx = table + 6, .output_idx = table + 7,
+					.normal_metallic_idx = context.GetReadOnlyTextureIndex(data.gbuffer_normal),
+					.diffuse_idx = context.GetReadOnlyTextureIndex(data.gbuffer_albedo),
+					.depth_idx = context.GetReadOnlyTextureIndex(data.depth),
+					.emissive_idx = context.GetReadOnlyTextureIndex(data.gbuffer_emissive),
+					.custom_idx = context.GetReadOnlyTextureIndex(data.gbuffer_custom),
+					.ao_idx = data.ambient_occlusion.IsValid() ? context.GetReadOnlyTextureIndex(data.ambient_occlusion) : GfxCommon::GetCommonViewBindlessIndex(GfxCommonViewType::WhiteTexture2D_SRV),
+					.motion_vectors_idx = data.motion_vectors.IsValid() ? context.GetReadOnlyTextureIndex(data.motion_vectors) : GfxCommon::GetCommonViewBindlessIndex(GfxCommonViewType::BlackTexture2D_SRV),
+					.output_idx = context.GetReadWriteTextureIndex(data.output)
 				};
 
 				struct RendererDebugViewConstants

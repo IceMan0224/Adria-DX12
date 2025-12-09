@@ -59,10 +59,7 @@ namespace adria
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
-				
-				GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.depth),
-												context.GetReadWriteTexture(data.output) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
+
 				struct VolumetricLightingConstants
 				{
 					Uint32 depth_idx;

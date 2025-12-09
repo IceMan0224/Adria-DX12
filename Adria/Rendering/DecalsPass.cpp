@@ -48,12 +48,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.depth_srv)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct DecalsConstants
 				{
 					Matrix model_matrix;
@@ -64,7 +58,7 @@ namespace adria
 					Uint32 depth_idx;
 				} constants = 
 				{
-					.depth_idx = table
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth_srv)
 				};
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
@@ -100,8 +94,8 @@ namespace adria
 						constants.model_matrix = decal.decal_model_matrix;
 						constants.transposed_inverse_model = decal.decal_model_matrix.Invert().Transpose(); 
 						constants.decal_type = static_cast<Uint32>(decal.decal_type);
-						constants.decal_albedo_idx = (Uint32)decal.albedo_decal_texture;
-						constants.decal_normal_idx = (Uint32)decal.normal_decal_texture;
+						constants.decal_albedo_idx = g_TextureManager.GetBindlessIndex(decal.albedo_decal_texture);
+						constants.decal_normal_idx = g_TextureManager.GetBindlessIndex(decal.normal_decal_texture);
 						
 						cmd_list->SetRootCBV(2, constants);
 						cmd_list->SetPrimitiveTopology(GfxPrimitiveTopology::TriangleList);

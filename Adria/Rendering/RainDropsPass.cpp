@@ -48,21 +48,14 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadWriteTexture(data.output),
-					g_TextureManager.GetDescriptor(noise_texture_handle)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct RainDropsConstants
 				{
 					Uint32   output_idx;
 					Uint32   noise_idx;
 				} constants =
 				{
-					.output_idx = table,
-					.noise_idx = table + 1
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output),
+					.noise_idx = g_TextureManager.GetBindlessIndex(noise_texture_handle)
 				};
 				cmd_list->SetPipelineState(rain_drops_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

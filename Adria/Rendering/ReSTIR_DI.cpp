@@ -97,15 +97,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.depth),
-					ctx.GetReadOnlyTexture(data.normal),
-					ctx.GetReadOnlyTexture(data.albedo),
-					ctx.GetReadWriteBuffer(data.reservoir),
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(ctx.GetReadOnlyTexture(data.depth));
-
 				struct InitialSamplingPassParameters
 				{
 					Uint32 depth_idx;
@@ -114,10 +105,10 @@ namespace adria
 					Uint32 reservoir_idx;
 				} parameters = 
 				{
-					.depth_idx = table,
-					.normal_idx = table + 1,
-					.albedo_idx = table + 2,
-					.reservoir_idx = table + 3,
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
+					.normal_idx = ctx.GetReadOnlyTextureIndex(data.normal),
+					.albedo_idx = ctx.GetReadOnlyTextureIndex(data.albedo),
+					.reservoir_idx = ctx.GetReadWriteBufferIndex(data.reservoir),
 				};
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);

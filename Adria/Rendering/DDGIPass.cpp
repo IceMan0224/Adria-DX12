@@ -116,11 +116,6 @@ namespace adria
 		rg.ImportTexture(RG_NAME(DDGIIrradianceHistory), ddgi_volume.irradiance_history.get());
 		rg.ImportTexture(RG_NAME(DDGIDistanceHistory), ddgi_volume.distance_history.get());
 
-		struct DDGIBlackboardData
-		{
-			Uint32 heap_index;
-		};
-
 		if (gfx->IsFirstFrame())
 		{
 			struct DDGIClearHistoryPassData
@@ -169,13 +164,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptor[] = 
-				{
-					ctx.GetReadWriteBuffer(data.ray_buffer)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptor);
-				ctx.GetBlackboard().Create<DDGIBlackboardData>(table.base);
-
 				struct DDGIParameters
 				{
 					Vector3  random_vector;
@@ -187,7 +175,7 @@ namespace adria
 					.random_vector = random_vector,
 					.random_angle = random_angle,
 					.history_blend_weight = 0.98f,
-					.ray_buffer_index = table
+					.ray_buffer_index = ctx.GetReadWriteBufferIndex(data.ray_buffer)
 				};
 
 				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ddgi_trace_pso.get());
@@ -229,14 +217,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				DDGIBlackboardData const& ddgi_blackboard = ctx.GetBlackboard().Get<DDGIBlackboardData>();
-
-				GfxDescriptor src_descriptor[] = 
-				{
-					ctx.GetReadWriteTexture(data.irradiance)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptor);
-
 				struct DDGIParameters
 				{
 					Vector3  random_vector;
@@ -249,8 +229,8 @@ namespace adria
 					.random_vector = random_vector,
 					.random_angle = random_angle,
 					.history_blend_weight = 0.98f,
-					.ray_buffer_index = ddgi_blackboard.heap_index,
-					.irradiance_idx = table
+					.ray_buffer_index = ctx.GetReadOnlyBufferIndex(data.ray_buffer),
+					.irradiance_idx = ctx.GetReadWriteTextureIndex(data.irradiance)
 				};
 
 				cmd_list->SetPipelineState(update_irradiance_pso->Get());
@@ -286,14 +266,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				DDGIBlackboardData const& ddgi_blackboard = ctx.GetBlackboard().Get<DDGIBlackboardData>();
-
-				GfxDescriptor src_descriptor[] =
-				{
-					ctx.GetReadWriteTexture(data.distance)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptor);
-
 				struct DDGIParameters
 				{
 					Vector3  random_vector;
@@ -306,8 +278,8 @@ namespace adria
 					.random_vector = random_vector,
 					.random_angle = random_angle,
 					.history_blend_weight = 0.98f,
-					.ray_buffer_index = ddgi_blackboard.heap_index,
-					.distance_idx = table
+					.ray_buffer_index = ctx.GetReadOnlyBufferIndex(data.ray_buffer),
+					.distance_idx = ctx.GetReadWriteTextureIndex(data.distance)
 				};
 
 				cmd_list->SetPipelineState(update_distance_pso->Get());
@@ -431,11 +403,10 @@ namespace adria
 		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 		Int32 table_base_index = static_cast<Int32>(table);
 
-		ddgi_gpu.irradiance_history_idx = table_base_index;
-		ddgi_gpu.distance_history_idx = table_base_index + 1;
+		ddgi_gpu.irradiance_history_idx = gfx->GetBindlessDescriptorIndex(ddgi_volume.irradiance_history_srv);
+		ddgi_gpu.distance_history_idx = gfx->GetBindlessDescriptorIndex(ddgi_volume.distance_history_srv);
 		ddgi_volume_buffer->Update(ddgi_data.data(), ddgi_data.size() * sizeof(DDGIVolumeGPU));
-
-		return table_base_index + 2;
+		return gfx->GetBindlessDescriptorIndex(ddgi_volume_buffer_srv);
 	}
 
 	void DDGIPass::CreatePSOs()

@@ -176,6 +176,7 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
+				ADRIA_ASSERT_MSG(false, "Move to new descriptor system");
 				GfxDescriptor src_descriptors[] =
 				{
 					ctx.GetReadOnlyTexture(data.direct_illum), ctx.GetReadOnlyTexture(data.indirect_illum),
@@ -213,9 +214,20 @@ namespace adria
 				} constants =
 				{
 					.reset = reset_history, .alpha = SVGF_Alpha.Get(), .moments_alpha = SVGF_MomentsAlpha.Get(),
-					.direct_illum_idx = table + 0, .indirect_illum_idx = table + 1, .motion_idx = table + 2, .compact_norm_depth_idx = table + 3,
-					.history_direct_idx = table + 4, .history_indirect_idx = table + 5, .history_moments_idx = table + 6, .history_normal_depth_idx = table + 7, .history_length_idx = table + 8,
-					.output_direct_idx = table + 9, .output_indirect_idx = table + 10, .output_moments_idx = table + 11, .output_normal_depth_idx = table + 12, .output_history_length_idx = table + 13
+					.direct_illum_idx = table + 0, 
+					.indirect_illum_idx = table + 1, 
+					.motion_idx = table + 2, 
+					.compact_norm_depth_idx = table + 3,
+					.history_direct_idx = table + 4, 
+					.history_indirect_idx = table + 5, 
+					.history_moments_idx = table + 6, 
+					.history_normal_depth_idx = table + 7, 
+					.history_length_idx = table + 8,
+					.output_direct_idx = table + 9, 
+					.output_indirect_idx = table + 10, 
+					.output_moments_idx = table + 11, 
+					.output_normal_depth_idx = table + 12, 
+					.output_history_length_idx = table + 13
 				};
 				reset_history = false;
 
@@ -283,9 +295,13 @@ namespace adria
 				} constants =
 				{
 					.phi_color = SVGF_PhiColor.Get(), .phi_normal = SVGF_PhiNormal.Get(),
-					.direct_illum_idx = table, .indirect_illum_idx = table + 1, .moments_idx = table + 2,
-					.history_length_idx = table + 3, .compact_norm_depth_idx = table + 4,
-					.output_direct_idx = table + 5, .output_indirect_idx = table + 6
+					.direct_illum_idx = table, 
+					.indirect_illum_idx = table + 1, 
+					.moments_idx = table + 2,
+					.history_length_idx = table + 3, 
+					.compact_norm_depth_idx = table + 4,
+					.output_direct_idx = table + 5, 
+					.output_indirect_idx = table + 6
 				};
 
 				cmd_list->SetPipelineState(filter_moments_pso->Get());

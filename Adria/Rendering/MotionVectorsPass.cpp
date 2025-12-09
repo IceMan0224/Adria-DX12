@@ -47,20 +47,14 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.depth),
-					ctx.GetReadWriteTexture(data.velocity)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct MotionVectorsConstants
 				{
 					Uint32   depth_idx;
 					Uint32   output_idx;
 				} constants =
 				{
-					.depth_idx = table, .output_idx = table + 1
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.velocity)
 				};
 
 				cmd_list->SetPipelineState(motion_vectors_pso->Get());

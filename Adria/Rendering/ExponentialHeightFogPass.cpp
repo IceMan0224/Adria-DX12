@@ -53,14 +53,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.depth),
-					ctx.GetReadOnlyTexture(data.input),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				Float density = params.fog_density / 1000.0f;
 				Float falloff = params.fog_falloff / 1000.0f;
 
@@ -86,7 +78,9 @@ namespace adria
 					.fog_min_opacity = params.fog_min_opacity,
 					.fog_cutoff_distance = params.fog_cutoff_distance,
 					.fog_color = PackToUint(params.fog_color),
-					.depth_idx = table, .scene_idx = table + 1, .output_idx = table + 2
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
+					.scene_idx = ctx.GetReadOnlyTextureIndex(data.input),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 
 				cmd_list->SetPipelineState(fog_pso->Get());

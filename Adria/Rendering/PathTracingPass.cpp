@@ -330,15 +330,6 @@ namespace adria
 
 				if (denoiser_active)
 				{
-					GfxDescriptor src_descriptors[] =
-					{
-						ctx.GetReadWriteTexture(data.direct_radiance),
-						ctx.GetReadWriteTexture(data.indirect_radiance),
-						ctx.GetReadWriteTexture(data.direct_albedo),
-						ctx.GetReadWriteTexture(data.indirect_albedo),
-					};
-					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 					struct PathTracingConstants
 					{
 						Int32   bounce_count;
@@ -350,8 +341,10 @@ namespace adria
 					} constants =
 					{
 						.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
-						.direct_radiance_idx = table + 0, .indirect_radiance_idx = table + 1,
-						.direct_albedo_idx = table + 2, .indirect_albedo_idx = table + 3
+						.direct_radiance_idx = ctx.GetReadWriteTextureIndex(data.direct_radiance),
+						.indirect_radiance_idx = ctx.GetReadWriteTextureIndex(data.indirect_radiance),
+						.direct_albedo_idx = ctx.GetReadWriteTextureIndex(data.direct_albedo),
+						.indirect_albedo_idx = ctx.GetReadWriteTextureIndex(data.indirect_albedo)
 					};
 
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
@@ -364,13 +357,6 @@ namespace adria
 				}
 				else
 				{
-					GfxDescriptor src_descriptors[] =
-					{
-						ctx.GetReadWriteTexture(data.accumulation),
-						ctx.GetReadWriteTexture(data.output)
-					};
-					GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 					struct PathTracingConstants
 					{
 						Int32   bounce_count;
@@ -380,7 +366,8 @@ namespace adria
 					} constants =
 					{
 						.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
-						.accum_idx = table + 0, .output_idx = table + 1
+						.accum_idx = ctx.GetReadWriteTextureIndex(data.accumulation),
+						.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 					};
 
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);

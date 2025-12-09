@@ -51,14 +51,6 @@ namespace adria
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
-				
-				GfxDescriptor src_descriptors[] =
-				{
-					context.GetReadOnlyTexture(data.depth),
-					context.GetReadOnlyTexture(data.normal),
-					context.GetReadWriteBuffer(data.pick_buffer)
-				};	
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
 
 				struct PickingConstants
 				{
@@ -67,7 +59,9 @@ namespace adria
 					Uint32 buffer_idx;
 				} constants =
 				{
-					.depth_idx = table, .normal_idx = table + 1, .buffer_idx = table + 2
+					.depth_idx  = context.GetReadOnlyTextureIndex(data.depth),
+					.normal_idx = context.GetReadOnlyTextureIndex(data.normal),
+					.buffer_idx = context.GetReadWriteBufferIndex(data.pick_buffer)
 				};
 				
 				cmd_list->SetPipelineState(picking_pso->Get());

@@ -117,13 +117,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.input),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct BloomDownsampleConstants
 				{
 					Float    dims_inv_x;
@@ -134,8 +127,8 @@ namespace adria
 				{
 					.dims_inv_x = 1.0f / target_dim_x,
 					.dims_inv_y = 1.0f / target_dim_y,
-					.source_idx = table,
-					.target_idx = table + 1
+					.source_idx = ctx.GetReadOnlyTextureIndex(data.input),
+					.target_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 				if (pass_idx == 1)
 				{
@@ -185,14 +178,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.input_low),
-					ctx.GetReadOnlyTexture(data.input_high),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct BloomUpsampleConstants
 				{
 					Float    dims_inv_x;
@@ -205,9 +190,9 @@ namespace adria
 				{
 					.dims_inv_x = 1.0f / (target_dim_x),
 					.dims_inv_y = 1.0f / (target_dim_y),
-					.low_input_idx = table,
-					.high_input_idx = table + 1,
-					.output_idx = table + 2,
+					.low_input_idx = ctx.GetReadOnlyTextureIndex(data.input_low),
+					.high_input_idx = ctx.GetReadOnlyTextureIndex(data.input_high),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output),
 					.radius = BloomRadius.Get()
 				};
 

@@ -60,14 +60,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.depth),
-					ctx.GetReadOnlyTexture(data.normal),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct RayTracedAmbientOcclusionConstants
 				{
 					Uint32  depth_idx;
@@ -77,7 +69,9 @@ namespace adria
 					Float   ao_power;
 				} constants =
 				{
-					.depth_idx = table + 0, .gbuf_normals_idx = table + 1, .output_idx = table + 2,
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
+					.gbuf_normals_idx = ctx.GetReadOnlyTextureIndex(data.normal),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output),
 					.ao_radius = params.radius, .ao_power = pow(2.f, params.power_log)
 				};
 
@@ -118,14 +112,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.depth),
-					ctx.GetReadOnlyTexture(data.input),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct RTAOFilterIndices
 				{
 					Uint32  depth_idx;
@@ -133,7 +119,9 @@ namespace adria
 					Uint32  output_idx;
 				} indices =
 				{
-					.depth_idx = table + 0, .input_idx = table + 1, .output_idx = table + 2
+					.depth_idx  = ctx.GetReadOnlyTextureIndex(data.depth),
+					.input_idx  = ctx.GetReadOnlyTextureIndex(data.input),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 
 				Float distance_kernel[6];

@@ -443,8 +443,7 @@ namespace adria
 		}
 		if (renderer_debug_view_pass.GetDebugView() == RendererDebugView::TriangleOverdraw)
 		{
-			GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(overdraw_texture_uav);
-			frame_cbuf_data.triangle_overdraw_idx = table;
+			frame_cbuf_data.triangle_overdraw_idx = gfx->GetBindlessDescriptorIndex(overdraw_texture_uav);
 		}
 
 		auto lights = reg.view<Light>();

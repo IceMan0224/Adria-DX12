@@ -196,6 +196,8 @@ namespace adria
 		GfxDescriptor GetReadWriteBuffer(RGBufferReadWriteId) const;
 		Uint32		  GetReadOnlyTextureIndex(RGTextureReadOnlyId) const;
 		Uint32		  GetReadWriteTextureIndex(RGTextureReadWriteId) const;
+		Uint32		  GetReadOnlyBufferIndex(RGBufferReadOnlyId) const;
+		Uint32		  GetReadWriteBufferIndex(RGBufferReadWriteId) const;
 
 		GfxTexture* GetTexture(RGTextureId) const;
 		GfxBuffer* GetBuffer(RGBufferId) const;

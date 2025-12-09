@@ -50,8 +50,6 @@ namespace adria
 		Uint32 width, height;
 
 		std::unique_ptr<GfxTexture> light_injection_target_history;
-		GfxDescriptor light_injection_target_history_srv;
-
 		std::vector<FogVolume> fog_volumes;
 		std::unique_ptr<GfxBuffer> fog_volume_buffer;
 		GfxDescriptor fog_volume_buffer_srv;

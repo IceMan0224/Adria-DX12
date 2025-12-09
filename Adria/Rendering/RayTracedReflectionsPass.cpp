@@ -29,7 +29,10 @@ namespace adria
 
 	void RayTracedReflectionsPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
-		if (!IsSupported()) return;
+		if (!IsSupported())
+		{
+			return;
+		}
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		struct RayTracedReflectionsPassData
@@ -59,15 +62,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.depth),
-					ctx.GetReadOnlyTexture(data.normal),
-					ctx.GetReadOnlyTexture(data.diffuse),
-					ctx.GetReadWriteTexture(data.output)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct RayTracedReflectionsConstants
 				{
 					Float   roughness_scale;
@@ -78,7 +72,10 @@ namespace adria
 				} constants =
 				{
 					.roughness_scale = reflection_roughness_scale,
-					.depth_idx = table + 0, .normal_idx = table + 1, .albedo_idx = table + 2, .output_idx = table + 3
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
+					.normal_idx = ctx.GetReadOnlyTextureIndex(data.normal),
+					.albedo_idx = ctx.GetReadOnlyTextureIndex(data.diffuse),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
 				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ray_traced_reflections_pso.get());
 				bindings->SetRayGenShader("RTR_RayGen");
@@ -97,7 +94,10 @@ namespace adria
 
 	void RayTracedReflectionsPass::OnResize(Uint32 w, Uint32 h)
 	{
-		if (!IsSupported()) return;
+		if (!IsSupported())
+		{
+			return;
+		}
 		width = w, height = h;
 		copy_to_texture_pass.OnResize(w, h);
 	}

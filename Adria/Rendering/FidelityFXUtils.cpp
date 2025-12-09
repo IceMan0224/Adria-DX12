@@ -152,4 +152,4 @@ namespace adria
 	}
 }
 
-#endif // _WIN32
+#endif 

@@ -55,9 +55,6 @@ namespace adria
 				cmd_list->FlushBarriers();
 				cmd_list->SetPipelineState(build_histogram_pso->Get());
 
-				GfxDescriptor src_handles[] = { ctx.GetReadOnlyTexture(data.scene_texture), ctx.GetReadWriteBuffer(data.histogram_buffer) };
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
-
 				struct BuildHistogramConstants
 				{
 					Uint32  width;
@@ -71,7 +68,9 @@ namespace adria
 				} constants = { .width = width, .height = height,
 								.rcp_width = 1.0f / width, .rcp_height = 1.0f / height,
 								.min_log_luminance = MinLogLuminance.Get(), .log_luminance_range_rcp = 1.0f/ (MaxLogLuminance.Get() - MinLogLuminance.Get()),
-								.scene_idx = table, .histogram_idx = table + 1 };
+								.scene_idx = ctx.GetReadOnlyTextureIndex(data.scene_texture),
+								.histogram_idx = ctx.GetReadWriteBufferIndex(data.histogram_buffer)
+				};
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::Compute, RGPassFlags::None);

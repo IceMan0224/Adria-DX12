@@ -260,8 +260,7 @@ namespace adria
 				light_mask_texture_srvs[light_id] = gfx->CreateTextureSRV(light_mask_textures[light_id].get());
 				light_mask_texture_uavs[light_id] = gfx->CreateTextureUAV(light_mask_textures[light_id].get());
 			}
-			GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(light_mask_texture_srvs[light_id]);
-			light.shadow_mask_index = static_cast<Int32>(table);
+			light.shadow_mask_index = gfx->GetBindlessDescriptorIndex(light_mask_texture_srvs[light_id]);
 		};
 		auto AddShadowMap = [&](Uint64 light_id, Uint32 shadow_map_size)
 		{
@@ -329,15 +328,8 @@ namespace adria
 			break;
 			}
 
-			GfxBindlessTable table = gfx->AllocateBindlessTable(light_shadow_maps[light_id].size());
-			for (Uint64 j = 0; j < light_shadow_maps[light_id].size(); ++j)
-			{
-				gfx->UpdateBindlessTable(table, j, light_shadow_map_srvs[light_id][j]);
-				if (j == 0)
-				{
-					light.shadow_texture_index = table;
-				}
-			}
+			ADRIA_TODO("Check if this is ok, the descriptors have to be created in sequential positions");
+			light.shadow_texture_index = gfx->GetBindlessDescriptorIndex(light_shadow_map_srvs[light_id][0]);
 		};
 
 		static Uint64 light_matrices_count = 0;
@@ -442,8 +434,7 @@ namespace adria
 		if (light_matrices_buffer)
 		{
 			light_matrices_buffer->Update(light_matrices.data(), light_matrices_count * sizeof(Matrix), light_matrices_count * sizeof(Matrix) * backbuffer_index);
-			GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(light_matrices_buffer_srvs[backbuffer_index]);
-			light_matrices_gpu_index = static_cast<Int32>(table);
+			light_matrices_gpu_index = static_cast<Int32>(gfx->GetBindlessDescriptorIndex(light_matrices_buffer_srvs[backbuffer_index]));
 		}
 	}
 

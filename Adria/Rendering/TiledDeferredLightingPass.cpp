@@ -58,8 +58,13 @@ namespace adria
 				data.gbuffer_custom = builder.ReadTexture(RG_NAME(GBufferCustom), ReadAccess_NonPixelShader);
 
 				if (builder.IsTextureDeclared(RG_NAME(AmbientOcclusion)))
+				{
 					data.ambient_occlusion = builder.ReadTexture(RG_NAME(AmbientOcclusion), ReadAccess_NonPixelShader);
-				else data.ambient_occlusion.Invalidate();
+				}
+				else
+				{
+					data.ambient_occlusion.Invalidate();
+				}
 
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},
@@ -67,17 +72,6 @@ namespace adria
 			{
 				GfxDevice* gfx = context.GetDevice();
 				GfxCommandList* cmd_list = context.GetCommandList();
-
-				GfxDescriptor src_handles[] = { context.GetReadOnlyTexture(data.gbuffer_normal),
-												context.GetReadOnlyTexture(data.gbuffer_albedo),
-												context.GetReadOnlyTexture(data.gbuffer_emissive),
-												context.GetReadOnlyTexture(data.gbuffer_custom),
-												context.GetReadOnlyTexture(data.depth),
-												data.ambient_occlusion.IsValid() ? context.GetReadOnlyTexture(data.ambient_occlusion) : GfxCommon::GetCommonView(GfxCommonViewType::WhiteTexture2D_SRV),
-												context.GetReadWriteTexture(data.output),
-												context.GetReadWriteTexture(data.debug_output) };
-
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_handles);
 
 				struct TiledLightingConstants
 				{
@@ -91,15 +85,15 @@ namespace adria
 					Uint32 debug_data_packed;
 				} constants =
 				{
-					.normal_idx = table, .diffuse_idx = table + 1, .emissive_idx = table + 2, .custom_idx = table + 3,
-					.depth_idx = table + 4, .ao_idx = table + 5, .output_idx = table + 6,
-					.debug_data_packed = PackTwoUint16ToUint32(visualize_tiled ? Uint16(table + 7) : 0, (Uint16)visualize_max_lights)
+					.normal_idx = context.GetReadOnlyTextureIndex(data.gbuffer_normal),
+					.diffuse_idx = context.GetReadOnlyTextureIndex(data.gbuffer_albedo),
+					.emissive_idx = context.GetReadOnlyTextureIndex(data.gbuffer_emissive),
+					.custom_idx = context.GetReadOnlyTextureIndex(data.gbuffer_custom),
+					.depth_idx = context.GetReadOnlyTextureIndex(data.depth),
+					.ao_idx = data.ambient_occlusion.IsValid() ? context.GetReadOnlyTextureIndex(data.ambient_occlusion) : GfxCommon::GetCommonViewBindlessIndex(GfxCommonViewType::WhiteTexture2D_SRV),
+					.output_idx = context.GetReadWriteTextureIndex(data.output),
+					.debug_data_packed = PackTwoUint16ToUint32(visualize_tiled ? Uint16(context.GetReadWriteTextureIndex(data.debug_output)) : 0, (Uint16)visualize_max_lights)
 				};
-
-				if (visualize_tiled)
-				{
-					ADRIA_ASSERT(table + 7 < UINT16_MAX);
-				}
 
 				static constexpr Float black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 				GfxTexture const& tiled_target = context.GetTexture(*data.output);

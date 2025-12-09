@@ -1122,9 +1122,22 @@ namespace adria
 		GfxDescriptor descriptor = GetReadOnlyTexture(res_id);
 		return gfx->GetBindlessDescriptorIndex(descriptor);
 	}
+
 	Uint32 RenderGraph::GetReadWriteTextureIndex(RGTextureReadWriteId res_id) const
 	{
 		GfxDescriptor descriptor = GetReadWriteTexture(res_id);
+		return gfx->GetBindlessDescriptorIndex(descriptor);
+	}
+
+	Uint32 RenderGraph::GetReadOnlyBufferIndex(RGBufferReadOnlyId res_id) const
+	{
+		GfxDescriptor descriptor = GetReadOnlyBuffer(res_id);
+		return gfx->GetBindlessDescriptorIndex(descriptor);
+	}
+
+	Uint32 RenderGraph::GetReadWriteBufferIndex(RGBufferReadWriteId res_id) const
+	{
+		GfxDescriptor descriptor = GetReadWriteBuffer(res_id);
 		return gfx->GetBindlessDescriptorIndex(descriptor);
 	}
 

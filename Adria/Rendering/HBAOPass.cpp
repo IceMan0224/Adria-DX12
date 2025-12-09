@@ -47,15 +47,6 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				GfxDescriptor src_descriptors[] =
-				{
-					ctx.GetReadOnlyTexture(data.depth_stencil_srv),
-					ctx.GetReadOnlyTexture(data.gbuffer_normal_srv),
-					hbao_random_texture_srv,
-					ctx.GetReadWriteTexture(data.output_uav)
-				};
-				GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(src_descriptors);
-
 				struct HBAOConstants
 				{
 					Float  r2;
@@ -72,7 +63,10 @@ namespace adria
 					.r2 = params.hbao_radius * params.hbao_radius, .radius_to_screen = params.hbao_radius * 0.5f * Float(height) / (tanf(frame_data.camera_fov * 0.5f) * 2.0f),
 					.power = params.hbao_power,
 					.noise_scale = std::max(width * 1.0f / NOISE_DIM,height * 1.0f / NOISE_DIM),
-					.depth_idx = table, .normal_idx = table + 1, .noise_idx = table + 2, .output_idx = table + 3
+					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth_stencil_srv),
+					.normal_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_normal_srv),
+					.noise_idx = gfx->GetBindlessDescriptorIndex(hbao_random_texture_srv),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output_uav)
 				};
 
 				cmd_list->SetPipelineState(hbao_pso->Get());

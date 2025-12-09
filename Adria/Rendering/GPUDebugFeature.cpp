@@ -27,17 +27,18 @@ namespace adria
 	}
 	Int32 GpuDebugFeature::GetBufferIndex()
 	{
-		GfxBindlessTable table = gfx->AllocateAndUpdateBindlessTable(uav_descriptor);
-		return (Int32)table;
+		return gfx->GetBindlessDescriptorIndex(uav_descriptor);
 	}
 
 	void GpuDebugFeature::AddClearPass(RenderGraph& rg, Char const* pass_name)
 	{
 		rg.ImportBuffer(gpu_buffer_name, gpu_buffer.get());
+
 		struct ClearBufferPassData
 		{
 			RGBufferReadWriteId printf_buffer;
 		};
+
 		rg.AddPass<ClearBufferPassData>(pass_name,
 			[=, this](ClearBufferPassData& data, RenderGraphBuilder& builder)
 			{
@@ -46,7 +47,7 @@ namespace adria
 			[=, this](ClearBufferPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
-				Uint32 clear[] = { 0,0,0,0 };
+				Uint32 clear[] = { 0, 0, 0, 0 };
 				cmd_list->ClearBuffer(*gpu_buffer, clear);
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
 	}
