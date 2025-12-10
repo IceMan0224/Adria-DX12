@@ -133,6 +133,7 @@ namespace adria
         BufferLookupResult LookupBuffer(Uint64 gpu_address) const;
 
         Uint32 AllocateResourceDescriptor(IRDescriptorTableEntry** descriptor);
+        Uint32 AllocatePersistentResourceDescriptor(IRDescriptorTableEntry** descriptor);
         void FreeResourceDescriptor(Uint32 index);
         id<MTLBuffer> GetResourceDescriptorBuffer() const;
 #endif
@@ -148,7 +149,7 @@ namespace adria
         Bool residency_dirty = false;
 
         std::unique_ptr<MetalSwapchain> swapchain;
-        std::unique_ptr<class MetalDescriptorAllocator> resource_descriptor_allocator;
+        std::unique_ptr<class MetalRingDescriptorAllocator> resource_descriptor_allocator;
         std::unique_ptr<GfxGraphicsCommandListPool> graphics_cmd_list_pool[GFX_BACKBUFFER_COUNT];
         std::unique_ptr<GfxComputeCommandListPool> compute_cmd_list_pool[GFX_BACKBUFFER_COUNT];
         std::unique_ptr<GfxCopyCommandListPool> copy_cmd_list_pool[GFX_BACKBUFFER_COUNT];

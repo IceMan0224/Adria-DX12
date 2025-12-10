@@ -8,7 +8,7 @@
 #include "MetalCommandList.h"
 #include "MetalPipelineState.h"
 #include "MetalDescriptor.h"
-#include "MetalDescriptorAllocator.h"
+#include "MetalRingDescriptorAllocator.h"
 #include "MetalConversions.h"
 #include "MetalRayTracingAS.h"
 #include "MetalRayTracingPipeline.h"
@@ -147,7 +147,7 @@ namespace adria
         command_queue = [device newCommandQueue];
         [command_queue addResidencySet:residency_set]; 
 
-        resource_descriptor_allocator = std::make_unique<MetalDescriptorAllocator>(this, 65536, "Resource Descriptor Allocator");
+        resource_descriptor_allocator = std::make_unique<MetalRingDescriptorAllocator>(this, 65536, 2048, "Resource Descriptor Allocator");
 
         if (!capabilities.Initialize(this))
         {
@@ -389,7 +389,17 @@ namespace adria
         MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(buffer);
 
         IRDescriptorTableEntry* entry = nullptr;
-        Uint32 index = AllocateResourceDescriptor(&entry);
+        Uint32 index = UINT32_MAX;
+
+        // Use persistent or transient allocation based on buffer's persistence flag
+        if (buffer->IsPersistent())
+        {
+            index = AllocatePersistentResourceDescriptor(&entry);
+        }
+        else
+        {
+            index = AllocateResourceDescriptor(&entry);
+        }
 
         if (index == UINT32_MAX || !entry)
         {
@@ -424,7 +434,17 @@ namespace adria
         id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
 
         IRDescriptorTableEntry* entry = nullptr;
-        Uint32 index = AllocateResourceDescriptor(&entry);
+        Uint32 index = UINT32_MAX;
+
+        // Use persistent or transient allocation based on texture's persistence flag
+        if (texture->IsPersistent())
+        {
+            index = AllocatePersistentResourceDescriptor(&entry);
+        }
+        else
+        {
+            index = AllocateResourceDescriptor(&entry);
+        }
 
         if (index == UINT32_MAX || !entry)
         {
@@ -450,7 +470,18 @@ namespace adria
         id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
 
         IRDescriptorTableEntry* entry = nullptr;
-        Uint32 index = AllocateResourceDescriptor(&entry);
+        Uint32 index = UINT32_MAX;
+
+        // Use persistent or transient allocation based on texture's persistence flag
+        if (texture->IsPersistent())
+        {
+            index = AllocatePersistentResourceDescriptor(&entry);
+        }
+        else
+        {
+            index = AllocateResourceDescriptor(&entry);
+        }
+
         if (index == UINT32_MAX || !entry)
         {
             return {};
@@ -643,6 +674,17 @@ namespace adria
             return;
         }
 
+        // Release completed frame descriptors (like D3D12)
+        if (resource_descriptor_allocator)
+        {
+            // Use frame_index - GFX_BACKBUFFER_COUNT as completed frame
+            // This ensures we don't free descriptors still in use by GPU
+            if (frame_index >= GFX_BACKBUFFER_COUNT)
+            {
+                resource_descriptor_allocator->ReleaseCompletedFrames(frame_index - GFX_BACKBUFFER_COUNT);
+            }
+        }
+
         while (!eviction_queue.empty())
         {
             EvictionEntry const& entry = eviction_queue.front();
@@ -728,6 +770,13 @@ namespace adria
         }
 
         swapchain->Present(true);
+
+        // Finish current frame for descriptor allocator (like D3D12)
+        if (resource_descriptor_allocator)
+        {
+            resource_descriptor_allocator->FinishCurrentFrame(frame_index);
+        }
+
         frame_index++;
     }
 
@@ -790,15 +839,23 @@ namespace adria
         {
             return UINT32_MAX;
         }
-        return resource_descriptor_allocator->Allocate(descriptor);
+        return resource_descriptor_allocator->AllocateTransient(descriptor);
+    }
+
+    Uint32 MetalDevice::AllocatePersistentResourceDescriptor(IRDescriptorTableEntry** descriptor)
+    {
+        if (!resource_descriptor_allocator)
+        {
+            return UINT32_MAX;
+        }
+        return resource_descriptor_allocator->AllocateReserved(descriptor);
     }
 
     void MetalDevice::FreeResourceDescriptor(Uint32 index)
     {
-        if (resource_descriptor_allocator && index != UINT32_MAX)
-        {
-            resource_descriptor_allocator->Free(index);
-        }
+        // Ring allocator handles automatic freeing - no manual free needed
+        // This is kept for API compatibility but does nothing
+        (void)index;
     }
 
     id<MTLBuffer> MetalDevice::GetResourceDescriptorBuffer() const
