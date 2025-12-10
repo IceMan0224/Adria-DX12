@@ -9,7 +9,6 @@
 #include "MetalConversions.h"
 #include "MetalRayTracingPipeline.h"
 #include "MetalRayTracingShaderBindings.h"
-#include "MetalArgumentBuffer.h"
 #include "MetalDescriptor.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxBufferView.h"
@@ -368,15 +367,14 @@ namespace adria
 
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:pass_desc];
 
-        MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
-        if (arg_buffer && render_encoder)
+        id<MTLBuffer> descriptor_buffer = metal_device->GetResourceDescriptorBuffer();
+        if (descriptor_buffer && render_encoder)
         {
-            id<MTLBuffer> buffer = arg_buffer->GetBuffer();
-            [render_encoder setVertexBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
-            [render_encoder setFragmentBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
+            [render_encoder setVertexBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
+            [render_encoder setFragmentBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
 
-            [render_encoder setObjectBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
-            [render_encoder setMeshBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
+            [render_encoder setObjectBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
+            [render_encoder setMeshBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
         }
         SetViewport(0, 0, render_pass_desc.width, render_pass_desc.height);
         SetScissorRect(0, 0, render_pass_desc.width, render_pass_desc.height);
@@ -573,11 +571,7 @@ namespace adria
 
     void MetalCommandList::SetRootDescriptorTable(Uint32 slot, GfxDescriptor base_descriptor)
     {
-        MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
-        if (arg_buffer && base_descriptor.IsValid())
-        {
-            ADRIA_ASSERT(false);
-        }
+        // Not needed for bindless - descriptors are accessed directly via index
     }
 
     void MetalCommandList::UpdateTopLevelArgumentBuffer()
@@ -706,11 +700,10 @@ namespace adria
         {
             compute_encoder = [command_buffer computeCommandEncoder];
 
-            MetalArgumentBuffer* arg_buffer = metal_device->GetArgumentBuffer();
-            if (arg_buffer && compute_encoder)
+            id<MTLBuffer> descriptor_buffer = metal_device->GetResourceDescriptorBuffer();
+            if (descriptor_buffer && compute_encoder)
             {
-                id<MTLBuffer> buffer = arg_buffer->GetBuffer();
-                [compute_encoder setBuffer:buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
+                [compute_encoder setBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
             }
         }
     }

@@ -7,8 +7,8 @@
 #include "MetalBuffer.h"
 #include "MetalCommandList.h"
 #include "MetalPipelineState.h"
-#include "MetalArgumentBuffer.h"
 #include "MetalDescriptor.h"
+#include "MetalDescriptorAllocator.h"
 #include "MetalConversions.h"
 #include "MetalRayTracingAS.h"
 #include "MetalRayTracingPipeline.h"
@@ -145,9 +145,9 @@ namespace adria
         }
 
         command_queue = [device newCommandQueue];
-        [command_queue addResidencySet:residency_set]; // Attach residency set to queue
+        [command_queue addResidencySet:residency_set]; 
 
-        argument_buffer = std::make_unique<MetalArgumentBuffer>(this, 32767, 2048);
+        resource_descriptor_allocator = std::make_unique<MetalDescriptorAllocator>(this, 65536, "Resource Descriptor Allocator");
 
         if (!capabilities.Initialize(this))
         {
@@ -187,7 +187,7 @@ namespace adria
         {
             buffer_map.clear();
             swapchain.reset();
-            argument_buffer.reset();
+            resource_descriptor_allocator.reset();
             shader_library = nil;
 
             residency_set = nil;
@@ -331,201 +331,41 @@ namespace adria
         return shading_rate_info;
     }
 
-    GfxBindlessTable MetalDevice::AllocatePersistentBindlessTable(Uint32 count, GfxDescriptorType type)
+    void MetalDevice::FreeCPUDescriptor(GfxDescriptor descriptor)
     {
-        if (!argument_buffer)
-        {
-            ADRIA_LOG(ERROR, "Argument buffer not initialized. Call InitGlobalResourceBindings first!");
-            return {};
-        }
-
-        Uint32 base_index = argument_buffer->AllocatePersistent(count);
-        GfxBindlessTable table{};
-        table.base = base_index;
-        table.count = count;
-        table.type = type;
-        return table;
+        
     }
 
-    GfxBindlessTable MetalDevice::AllocateBindlessTable(Uint32 count, GfxDescriptorType type)
+    Uint32 MetalDevice::GetBindlessDescriptorIndex(GfxDescriptor descriptor) const
     {
-        if (!argument_buffer)
+        MetalDescriptor metal_desc = DecodeToMetalDescriptor(descriptor);
+        if (!metal_desc.IsValid())
         {
-            return {};
+            return Uint32(-1);
         }
-
-        Uint32 base_index = argument_buffer->AllocateTransient(count);
-        GfxBindlessTable table{};
-        table.base = base_index;
-        table.count = count;
-        table.type = type;
-        return table;
-    }
-
-    void MetalDevice::UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors)
-    {
-        if (!table.IsValid() || src_descriptors.empty() || !argument_buffer)
-        {
-            return;
-        }
-
-        ADRIA_ASSERT_MSG(table.count == src_descriptors.size(), "Source descriptor count must match table size!");
-
-        for (Uint32 i = 0; i < src_descriptors.size(); ++i)
-        {
-            MetalDescriptor src_desc = DecodeToMetalDescriptor(src_descriptors[i]);
-            Uint32 dst_index = table.base + i;
-
-            if (!src_desc.IsValid())
-            {
-                argument_buffer->SetTexture(nil, dst_index);
-                continue;
-            }
-
-            MetalResourceEntry const& src_entry = src_desc.parent_buffer->GetResourceEntry(src_desc.index);
-
-            switch (src_entry.type)
-            {
-                case MetalResourceType::Texture:
-                    argument_buffer->SetTexture(src_entry.texture, dst_index);
-                    break;
-                case MetalResourceType::Buffer:
-                    argument_buffer->SetBuffer(src_entry.buffer, dst_index, src_entry.buffer_offset);
-                    break;
-                case MetalResourceType::Sampler:
-                    argument_buffer->SetSampler(src_entry.sampler, dst_index);
-                    break;
-                case MetalResourceType::Unknown:
-                default:
-                    argument_buffer->SetTexture(nil, dst_index);
-                    break;
-            }
-        }
-    }
-
-    void MetalDevice::UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count)
-    {
-        if (!table.IsValid() || !argument_buffer)
-        {
-            return;
-        }
-
-        MetalDescriptor src_desc = DecodeToMetalDescriptor(src_descriptor);
-
-        for (Uint32 i = 0; i < src_count; ++i)
-        {
-            Uint32 dst_index = table.base + table_offset + i;
-
-            if (!src_desc.IsValid())
-            {
-                argument_buffer->SetTexture(nil, dst_index);
-                continue;
-            }
-
-            Uint32 src_index = src_desc.index + i;
-            MetalResourceEntry const& src_entry = src_desc.parent_buffer->GetResourceEntry(src_index);
-
-            switch (src_entry.type)
-            {
-                case MetalResourceType::Texture:
-                    argument_buffer->SetTexture(src_entry.texture, dst_index);
-                    break;
-                case MetalResourceType::Buffer:
-                    argument_buffer->SetBuffer(src_entry.buffer, dst_index, src_entry.buffer_offset);
-                    break;
-                case MetalResourceType::Sampler:
-                    argument_buffer->SetSampler(src_entry.sampler, dst_index);
-                    break;
-                case MetalResourceType::Unknown:
-                default:
-                    argument_buffer->SetTexture(nil, dst_index);
-                    break;
-            }
-        }
-    }
-
-    void MetalDevice::UpdateBindlessTables(std::vector<GfxBindlessTable> const& tables, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size)
-    {
-        if (tables.empty() || src_range_starts_and_size.empty() || !argument_buffer)
-        {
-            return;
-        }
-
-        ADRIA_ASSERT_MSG(tables.size() == src_range_starts_and_size.size(), "Tables and source ranges must have the same size!");
-
-        for (Usize i = 0; i < tables.size(); ++i)
-        {
-            GfxBindlessTable const& table = tables[i];
-            auto const& [src_descriptor, count] = src_range_starts_and_size[i];
-
-            if (!table.IsValid())
-            {
-                continue;
-            }
-
-            MetalDescriptor src_desc = DecodeToMetalDescriptor(src_descriptor);
-            if (!src_desc.IsValid())
-            {
-                continue;
-            }
-
-            for (Uint32 j = 0; j < count; ++j)
-            {
-                Uint32 src_index = src_desc.index + j;
-                Uint32 dst_index = table.base + j;
-
-                MetalResourceEntry const& src_entry = src_desc.parent_buffer->GetResourceEntry(src_index);
-
-                switch (src_entry.type)
-                {
-                    case MetalResourceType::Texture:
-                        if (src_entry.texture != nil)
-                        {
-                            argument_buffer->SetTexture(src_entry.texture, dst_index);
-                        }
-                        break;
-                    case MetalResourceType::Buffer:
-                        if (src_entry.buffer != nil)
-                        {
-                            argument_buffer->SetBuffer(src_entry.buffer, dst_index, src_entry.buffer_offset);
-                        }
-                        break;
-                    case MetalResourceType::Sampler:
-                        if (src_entry.sampler != nil)
-                        {
-                            argument_buffer->SetSampler(src_entry.sampler, dst_index);
-                        }
-                        break;
-                    case MetalResourceType::Unknown:
-                    default:
-                        break;
-                }
-            }
-        }
+        return metal_desc.index;
     }
 
     GfxDescriptor MetalDevice::CreateBufferSRV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)
     {
-        if (!buffer || !argument_buffer)
+        if (!buffer || !resource_descriptor_allocator)
         {
             return {};
         }
 
         MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(buffer);
-        Uint32 index;
-        if (buffer->IsPersistent())
+        id<MTLBuffer> mtl_buffer = metal_buffer->GetMetalBuffer();
+
+        IRDescriptorTableEntry* entry = nullptr;
+        Uint32 index = AllocateResourceDescriptor(&entry);
+
+        if (index == UINT32_MAX || !entry)
         {
-            index = argument_buffer->AllocatePersistent(1);
-        }
-        else
-        {
-            index = argument_buffer->AllocateTransient(1);
+            return {};
         }
 
-        argument_buffer->SetBuffer(metal_buffer->GetMetalBuffer(), index, 0);
 
         MetalDescriptor metal_desc{};
-        metal_desc.parent_buffer = argument_buffer.get();
         metal_desc.index = index;
 
         return EncodeFromMetalDescriptor(metal_desc);
@@ -543,7 +383,7 @@ namespace adria
 
     GfxDescriptor MetalDevice::CreateTextureSRV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
     {
-        if (!texture || !argument_buffer)
+        if (!texture || !resource_descriptor_allocator)
         {
             return {};
         }
@@ -552,20 +392,16 @@ namespace adria
         id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
         id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
 
-        Uint32 index;
-        if (texture->IsPersistent())
+        IRDescriptorTableEntry* entry = nullptr;
+        Uint32 index = AllocateResourceDescriptor(&entry);
+
+        if (index == UINT32_MAX || !entry)
         {
-            index = argument_buffer->AllocatePersistent(1);
-        }
-        else
-        {
-            index = argument_buffer->AllocateTransient(1);
+            return {};
         }
 
-        argument_buffer->SetTexture(texture_view, index);
-
+        IRDescriptorTableSetTexture(entry, texture_view, 0.0f, 0);
         MetalDescriptor metal_desc{};
-        metal_desc.parent_buffer = argument_buffer.get();
         metal_desc.index = index;
 
         return EncodeFromMetalDescriptor(metal_desc);
@@ -573,7 +409,7 @@ namespace adria
 
     GfxDescriptor MetalDevice::CreateTextureUAV(GfxTexture const* texture, GfxTextureDescriptorDesc const* desc)
     {
-        if (!texture || !argument_buffer)
+        if (!texture || !resource_descriptor_allocator)
         {
             return {};
         }
@@ -582,20 +418,16 @@ namespace adria
         id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
         id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
 
-        Uint32 index;
-        if (texture->IsPersistent())
+        IRDescriptorTableEntry* entry = nullptr;
+        Uint32 index = AllocateResourceDescriptor(&entry);
+        if (index == UINT32_MAX || !entry)
         {
-            index = argument_buffer->AllocatePersistent(1);
-        }
-        else
-        {
-            index = argument_buffer->AllocateTransient(1);
+            return {};
         }
 
-        argument_buffer->SetTexture(texture_view, index);
+        IRDescriptorTableSetTexture(entry, texture_view, 0.0f, 0);
 
         MetalDescriptor metal_desc{};
-        metal_desc.parent_buffer = argument_buffer.get();
         metal_desc.index = index;
 
         return EncodeFromMetalDescriptor(metal_desc);
@@ -780,13 +612,12 @@ namespace adria
             return;
         }
 
-        // Process eviction queue - remove allocations that are old enough
         while (!eviction_queue.empty())
         {
             EvictionEntry const& entry = eviction_queue.front();
             if (entry.frame_id + GFX_BACKBUFFER_COUNT > frame_index)
             {
-                break; // Too recent, keep in queue
+                break; 
             }
 
             [residency_set removeAllocation:entry.buffer_or_texture];
@@ -798,13 +629,6 @@ namespace adria
         {
             [residency_set commit];
             residency_dirty = false;
-        }
-
-        if (argument_buffer)
-        {
-            Uint64 completed_frame = frame_index >= GFX_BACKBUFFER_COUNT
-                ? frame_index - GFX_BACKBUFFER_COUNT : 0;
-            argument_buffer->ReleaseCompletedFrames(completed_frame);
         }
 
         if (rendering_not_started)
@@ -862,11 +686,6 @@ namespace adria
             cmd_list->End();
             cmd_list->Submit();
             cmd_list->Begin();
-        }
-
-        if (argument_buffer)
-        {
-            argument_buffer->FinishCurrentFrame(frame_index);
         }
 
         id<CAMetalDrawable> drawable = GetCurrentDrawable();
@@ -932,5 +751,31 @@ namespace adria
             entry.frame_id = frame_index;
             eviction_queue.push(entry);
         }
+    }
+
+    Uint32 MetalDevice::AllocateResourceDescriptor(IRDescriptorTableEntry** descriptor)
+    {
+        if (!resource_descriptor_allocator)
+        {
+            return UINT32_MAX;
+        }
+        return resource_descriptor_allocator->Allocate(descriptor);
+    }
+
+    void MetalDevice::FreeResourceDescriptor(Uint32 index)
+    {
+        if (resource_descriptor_allocator && index != UINT32_MAX)
+        {
+            resource_descriptor_allocator->Free(index);
+        }
+    }
+
+    id<MTLBuffer> MetalDevice::GetResourceDescriptorBuffer() const
+    {
+        if (!resource_descriptor_allocator)
+        {
+            return nil;
+        }
+        return resource_descriptor_allocator->GetBuffer();
     }
 }

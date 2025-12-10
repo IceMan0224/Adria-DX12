@@ -3,6 +3,8 @@
 #include "Graphics/GfxCapabilities.h"
 #include "Graphics/GfxCommandListPool.h"
 
+struct IRDescriptorTableEntry;
+
 #ifdef __OBJC__
     @protocol MTLDevice;
     @protocol MTLCommandQueue;
@@ -21,7 +23,6 @@ namespace adria
 {
     class MetalSwapchain;
     class MetalTexture;
-    class MetalArgumentBuffer;
     class MetalCommandList;
     class GfxLinearDynamicAllocator;
 
@@ -71,12 +72,8 @@ namespace adria
 
         GfxLinearDynamicAllocator* GetDynamicAllocator() const override;
 
-        GfxBindlessTable AllocatePersistentBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) override;
-        GfxBindlessTable AllocateBindlessTable(Uint32 count, GfxDescriptorType type = GfxDescriptorType::CBV_SRV_UAV) override;
-        void UpdateBindlessTable(GfxBindlessTable table, std::span<GfxDescriptor const> src_descriptors) override;
-        void UpdateBindlessTable(GfxBindlessTable table, Uint32 table_offset, GfxDescriptor src_descriptor, Uint32 src_count = 1) override;
-        void UpdateBindlessTables(std::vector<GfxBindlessTable> const& table, std::span<std::pair<GfxDescriptor, Uint32>> src_range_starts_and_size) override;
-        void FreeDescriptor(GfxDescriptor descriptor) override {}
+        void FreeCPUDescriptor(GfxDescriptor descriptor) override;
+        Uint32 GetBindlessDescriptorIndex(GfxDescriptor descriptor) const override;
 
         std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) override;
         std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) override;
@@ -114,8 +111,6 @@ namespace adria
         void GetTimestampFrequency(Uint64& frequency) const override { frequency = 0; }
         GPUMemoryUsage GetMemoryUsage() const override { return {0, 0}; }
 
-        MetalArgumentBuffer* GetArgumentBuffer() const { return argument_buffer.get(); }
-
 #ifdef __OBJC__
         id<MTLDevice> GetMTLDevice() const { return device; }
         id<MTLCommandQueue> GetMTLCommandQueue() const { return command_queue; }
@@ -136,6 +131,10 @@ namespace adria
         void RegisterBuffer(id<MTLBuffer> buffer);
         void UnregisterBuffer(id<MTLBuffer> buffer);
         BufferLookupResult LookupBuffer(Uint64 gpu_address) const;
+
+        Uint32 AllocateResourceDescriptor(IRDescriptorTableEntry** descriptor);
+        void FreeResourceDescriptor(Uint32 index);
+        id<MTLBuffer> GetResourceDescriptorBuffer() const;
 #endif
 
     private:
@@ -149,7 +148,7 @@ namespace adria
         Bool residency_dirty = false;
 
         std::unique_ptr<MetalSwapchain> swapchain;
-        std::unique_ptr<MetalArgumentBuffer> argument_buffer;
+        std::unique_ptr<class MetalDescriptorAllocator> resource_descriptor_allocator;
         std::unique_ptr<GfxGraphicsCommandListPool> graphics_cmd_list_pool[GFX_BACKBUFFER_COUNT];
         std::unique_ptr<GfxComputeCommandListPool> compute_cmd_list_pool[GFX_BACKBUFFER_COUNT];
         std::unique_ptr<GfxCopyCommandListPool> copy_cmd_list_pool[GFX_BACKBUFFER_COUNT];

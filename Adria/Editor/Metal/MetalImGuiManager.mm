@@ -13,8 +13,8 @@
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/Metal/MetalDevice.h"
 #include "Graphics/Metal/MetalCommandList.h"
+#include "Graphics/Metal/MetalTexture.h"
 #include "Graphics/Metal/MetalDescriptor.h"
-#include "Graphics/Metal/MetalArgumentBuffer.h"
 #include "IconsFontAwesome6.h"
 #include "Logging/Log.h"
 
@@ -111,16 +111,13 @@ namespace adria
 		return visible;
 	}
 
-	void MetalImGuiManager::ShowImage(GfxDescriptor image_descriptor, ImVec2 image_size)
+	void MetalImGuiManager::ShowImage(GfxTexture const& final_texture, ImVec2 image_size)
 	{
-		MetalDescriptor metal_desc = DecodeToMetalDescriptor(image_descriptor);
-		if (metal_desc.IsValid() && metal_desc.parent_buffer)
+		MetalTexture const* metal_texture = static_cast<MetalTexture const*>(&final_texture);
+		id<MTLTexture> mtl_texture = metal_texture->GetMetalTexture();
+		if (mtl_texture)
 		{
-			id<MTLTexture> metal_texture = metal_desc.parent_buffer->GetTexture(metal_desc.index);
-			if (metal_texture)
-			{
-				ImGui::Image((ImTextureID)(Intptr)metal_texture, image_size);
-			}
+			ImGui::Image((ImTextureID)(Intptr)mtl_texture, image_size);
 		}
 	}
 
