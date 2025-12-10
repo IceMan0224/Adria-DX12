@@ -155,42 +155,42 @@ namespace std
 {
 	template <> struct hash<adria::RGTextureId>
 	{
-		adria::Uint64 operator()(adria::RGTextureId const& h) const
+		adria::Usize operator()(adria::RGTextureId const& h) const
 		{
 			return hash<decltype(h.id)>()(h.id);
 		}
 	};
 	template <> struct hash<adria::RGBufferId>
 	{
-		adria::Uint64 operator()(adria::RGBufferId const& h) const
+		adria::Usize operator()(adria::RGBufferId const& h) const
 		{
 			return hash<decltype(h.id)>()(h.id);
 		}
 	};
 	template <> struct hash<adria::RGTextureReadOnlyId>
 	{
-		adria::Uint64 operator()(adria::RGTextureReadOnlyId const& h) const
+		adria::Usize operator()(adria::RGTextureReadOnlyId const& h) const
 		{
 			return hash<decltype(h.id)>()(h.id);
 		}
 	};
 	template <> struct hash<adria::RGTextureReadWriteId>
 	{
-		adria::Uint64 operator()(adria::RGTextureReadWriteId const& h) const
+		adria::Usize operator()(adria::RGTextureReadWriteId const& h) const
 		{
 			return hash<decltype(h.id)>()(h.id);
 		}
 	};
 	template <> struct hash<adria::RGRenderTargetId>
 	{
-		adria::Uint64 operator()(adria::RGRenderTargetId const& h) const
+		adria::Usize operator()(adria::RGRenderTargetId const& h) const
 		{
 			return hash<decltype(h.id)>()(h.id);
 		}
 	};
 	template <> struct hash<adria::RGDepthStencilId>
 	{
-		adria::Uint64 operator()(adria::RGDepthStencilId const& h) const
+		adria::Usize operator()(adria::RGDepthStencilId const& h) const
 		{
 			return hash<decltype(h.id)>()(h.id);
 		}
@@ -198,7 +198,7 @@ namespace std
 
 	template <> struct hash<adria::RGBufferReadOnlyId>
 	{
-		adria::Uint64 operator()(adria::RGBufferReadOnlyId const& h) const
+		adria::Usize operator()(adria::RGBufferReadOnlyId const& h) const
 		{
 			return hash<decltype(h.id)>()(h.id);
 		}
@@ -206,7 +206,7 @@ namespace std
 
 	template <> struct hash<adria::RGBufferReadWriteId>
 	{
-		adria::Uint64 operator()(adria::RGBufferReadWriteId const& h) const
+		adria::Usize operator()(adria::RGBufferReadWriteId const& h) const
 		{
 			return hash<decltype(h.id)>()(h.id);
 		}
