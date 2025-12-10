@@ -179,6 +179,9 @@ namespace adria
             dynamic_allocators.emplace_back(new GfxLinearDynamicAllocator(this, 1 << 20));
         }
         dynamic_allocator_on_init.reset(new GfxLinearDynamicAllocator(this, 1 << 30));
+
+        dummy_fence = new MetalFence();
+        dummy_fence->Create(this, "Dummy Fence");
     }
 
     MetalDevice::~MetalDevice()
@@ -189,6 +192,9 @@ namespace adria
             swapchain.reset();
             resource_descriptor_allocator.reset();
             shader_library = nil;
+
+            delete dummy_fence;
+            dummy_fence = nullptr;
 
             residency_set = nil;
 
@@ -251,9 +257,7 @@ namespace adria
 
     GfxFence& MetalDevice::GetFence(GfxCommandListType type)
     {
-        ADRIA_TODO("Revisit this");
-        static GfxFence* static_dummy_fence = nullptr;
-        return *static_dummy_fence;
+        return *dummy_fence;
     }
 
     GfxCommandList* MetalDevice::GetCommandList(GfxCommandListType type) const
@@ -364,6 +368,10 @@ namespace adria
             return {};
         }
 
+        // Set the buffer in the descriptor entry using GPU address
+        Uint64 buffer_address = metal_buffer->GetGpuAddress();
+        Uint64 offset = desc ? desc->offset : 0;
+        IRDescriptorTableSetBuffer(entry, buffer_address + offset, 0);
 
         MetalDescriptor metal_desc{};
         metal_desc.index = index;
@@ -373,7 +381,30 @@ namespace adria
 
     GfxDescriptor MetalDevice::CreateBufferUAV(GfxBuffer const* buffer, GfxBufferDescriptorDesc const* desc)
     {
-        return CreateBufferSRV(buffer, desc);
+        if (!buffer || !resource_descriptor_allocator)
+        {
+            return {};
+        }
+
+        MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(buffer);
+
+        IRDescriptorTableEntry* entry = nullptr;
+        Uint32 index = AllocateResourceDescriptor(&entry);
+
+        if (index == UINT32_MAX || !entry)
+        {
+            return {};
+        }
+
+        // Set the buffer in the descriptor entry using GPU address
+        Uint64 buffer_address = metal_buffer->GetGpuAddress();
+        Uint64 offset = desc ? desc->offset : 0;
+        IRDescriptorTableSetBuffer(entry, buffer_address + offset, 0);
+
+        MetalDescriptor metal_desc{};
+        metal_desc.index = index;
+
+        return EncodeFromMetalDescriptor(metal_desc);
     }
 
     GfxDescriptor MetalDevice::CreateBufferUAV(GfxBuffer const* buffer, GfxBuffer const* counter, GfxBufferDescriptorDesc const* desc)

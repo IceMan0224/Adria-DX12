@@ -38,8 +38,8 @@ namespace adria
         virtual void ResolveQueryData(GfxQueryHeap const& query_heap, Uint32 start, Uint32 count, GfxBuffer& dst_buffer, Uint64 dst_offset) override {}
 
         virtual GfxDynamicAllocation AllocateTransient(Uint32 size, Uint32 align = 0) override;
-        virtual void ClearRenderTarget(GfxDescriptor rtv, Float const* clear_color) override {}
-        virtual void ClearDepth(GfxDescriptor dsv, Float depth = 1.0f, Uint8 stencil = 0, Bool clear_stencil = false) override {}
+        virtual void ClearRenderTarget(GfxDescriptor rtv, Float const* clear_color) override;
+        virtual void ClearDepth(GfxDescriptor dsv, Float depth = 1.0f, Uint8 stencil = 0, Bool clear_stencil = false) override;
         virtual void SetRenderTargets(std::span<GfxDescriptor const> rtvs, GfxDescriptor const* dsv = nullptr, Bool single_rt = false) override {}
         virtual void SetContext(Context ctx) override {}
 
@@ -60,16 +60,16 @@ namespace adria
 
         virtual void CopyBuffer(GfxBuffer& dst, GfxBuffer const& src) override;
         virtual void CopyBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxBuffer const& src, Uint64 src_offset, Uint64 size) override;
-        virtual void CopyTexture(GfxTexture& dst, GfxTexture const& src) override {}
-        virtual void CopyTexture(GfxTexture& dst, Uint32 dst_mip, Uint32 dst_array, GfxTexture const& src, Uint32 src_mip, Uint32 src_array) override {}
-        virtual void CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array) override {}
-        virtual void CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset) override {}
+        virtual void CopyTexture(GfxTexture& dst, GfxTexture const& src) override;
+        virtual void CopyTexture(GfxTexture& dst, Uint32 dst_mip, Uint32 dst_array, GfxTexture const& src, Uint32 src_mip, Uint32 src_array) override;
+        virtual void CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array) override;
+        virtual void CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset) override;
 
-        virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float const clear_value[4]) override {}
-        virtual void ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Float const clear_value[4]) override {}
-        virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 const clear_value[4]) override {}
-        virtual void ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 const clear_value[4]) override {}
-        virtual void WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data) override {}
+        virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float const clear_value[4]) override;
+        virtual void ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Float const clear_value[4]) override;
+        virtual void ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 const clear_value[4]) override;
+        virtual void ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 const clear_value[4]) override;
+        virtual void WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data) override;
 
         virtual void BeginRenderPass(GfxRenderPassDesc const& render_pass_desc) override;
         virtual void EndRenderPass() override;

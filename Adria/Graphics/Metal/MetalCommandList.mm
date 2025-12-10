@@ -13,6 +13,7 @@
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxFence.h"
+#include "Graphics/GfxFormat.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
 #include "Graphics/GfxDynamicAllocation.h"
 
@@ -289,6 +290,219 @@ namespace adria
                         toBuffer:metal_dst->GetMetalBuffer()
                         destinationOffset:dst_offset
                         size:size];
+    }
+
+    void MetalCommandList::CopyTexture(GfxTexture& dst, GfxTexture const& src)
+    {
+        MetalTexture* metal_dst = static_cast<MetalTexture*>(&dst);
+        MetalTexture const* metal_src = static_cast<MetalTexture const*>(&src);
+
+        BeginBlitEncoder();
+        [blit_encoder copyFromTexture:metal_src->GetMetalTexture()
+                          sourceSlice:0
+                          sourceLevel:0
+                         sourceOrigin:MTLOriginMake(0, 0, 0)
+                           sourceSize:MTLSizeMake(src.GetWidth(), src.GetHeight(), src.GetDepth())
+                            toTexture:metal_dst->GetMetalTexture()
+                     destinationSlice:0
+                     destinationLevel:0
+                    destinationOrigin:MTLOriginMake(0, 0, 0)];
+    }
+
+    void MetalCommandList::CopyTexture(GfxTexture& dst, Uint32 dst_mip, Uint32 dst_array, GfxTexture const& src, Uint32 src_mip, Uint32 src_array)
+    {
+        MetalTexture* metal_dst = static_cast<MetalTexture*>(&dst);
+        MetalTexture const* metal_src = static_cast<MetalTexture const*>(&src);
+
+        Uint32 src_width = std::max(1u, src.GetWidth() >> src_mip);
+        Uint32 src_height = std::max(1u, src.GetHeight() >> src_mip);
+        Uint32 src_depth = std::max(1u, src.GetDepth() >> src_mip);
+
+        BeginBlitEncoder();
+        [blit_encoder copyFromTexture:metal_src->GetMetalTexture()
+                          sourceSlice:src_array
+                          sourceLevel:src_mip
+                         sourceOrigin:MTLOriginMake(0, 0, 0)
+                           sourceSize:MTLSizeMake(src_width, src_height, src_depth)
+                            toTexture:metal_dst->GetMetalTexture()
+                     destinationSlice:dst_array
+                     destinationLevel:dst_mip
+                    destinationOrigin:MTLOriginMake(0, 0, 0)];
+    }
+
+    void MetalCommandList::CopyTextureToBuffer(GfxBuffer& dst, Uint64 dst_offset, GfxTexture const& src, Uint32 src_mip, Uint32 src_array)
+    {
+        MetalBuffer* metal_dst = static_cast<MetalBuffer*>(&dst);
+        MetalTexture const* metal_src = static_cast<MetalTexture const*>(&src);
+
+        Uint32 src_width = std::max(1u, src.GetWidth() >> src_mip);
+        Uint32 src_height = std::max(1u, src.GetHeight() >> src_mip);
+        Uint32 src_depth = std::max(1u, src.GetDepth() >> src_mip);
+
+        // Calculate bytes per row using proper format stride
+        Uint32 bytes_per_pixel = GetGfxFormatStride(src.GetFormat());
+        Uint32 bytes_per_row = src_width * bytes_per_pixel;
+
+        BeginBlitEncoder();
+        [blit_encoder copyFromTexture:metal_src->GetMetalTexture()
+                          sourceSlice:src_array
+                          sourceLevel:src_mip
+                         sourceOrigin:MTLOriginMake(0, 0, 0)
+                           sourceSize:MTLSizeMake(src_width, src_height, src_depth)
+                             toBuffer:metal_dst->GetMetalBuffer()
+                    destinationOffset:dst_offset
+               destinationBytesPerRow:bytes_per_row
+             destinationBytesPerImage:bytes_per_row * src_height];
+    }
+
+    void MetalCommandList::CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset)
+    {
+        MetalTexture* metal_dst = static_cast<MetalTexture*>(&dst_texture);
+        MetalBuffer const* metal_src = static_cast<MetalBuffer const*>(&src_buffer);
+
+        Uint32 dst_width = std::max(1u, dst_texture.GetWidth() >> mip_level);
+        Uint32 dst_height = std::max(1u, dst_texture.GetHeight() >> mip_level);
+        Uint32 dst_depth = std::max(1u, dst_texture.GetDepth() >> mip_level);
+
+        Uint32 bytes_per_pixel = GetGfxFormatStride(dst_texture.GetFormat());
+        Uint32 bytes_per_row = dst_width * bytes_per_pixel;
+
+        BeginBlitEncoder();
+        [blit_encoder copyFromBuffer:metal_src->GetMetalBuffer()
+                        sourceOffset:offset
+                   sourceBytesPerRow:bytes_per_row
+                 sourceBytesPerImage:bytes_per_row * dst_height
+                          sourceSize:MTLSizeMake(dst_width, dst_height, dst_depth)
+                           toTexture:metal_dst->GetMetalTexture()
+                    destinationSlice:array_slice
+                    destinationLevel:mip_level
+                   destinationOrigin:MTLOriginMake(0, 0, 0)];
+    }
+
+    void MetalCommandList::ClearRenderTarget(GfxDescriptor rtv, Float const* clear_color)
+    {
+        EndRenderPass();
+        EndComputeEncoder();
+        EndBlitEncoder();
+
+        MetalRenderTargetDescriptor rtv_desc = DecodeToMetalRenderTargetDescriptor(rtv);
+        if (!rtv_desc.texture)
+        {
+            return;
+        }
+
+        MTLRenderPassDescriptor* pass_desc = [MTLRenderPassDescriptor new];
+        MTLRenderPassColorAttachmentDescriptor* color_attachment = pass_desc.colorAttachments[0];
+
+        color_attachment.texture = rtv_desc.texture;
+        color_attachment.level = rtv_desc.mip_level;
+        color_attachment.slice = rtv_desc.array_slice;
+        color_attachment.clearColor = MTLClearColorMake(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
+        color_attachment.loadAction = MTLLoadActionClear;
+        color_attachment.storeAction = MTLStoreActionStore;
+
+        id<MTLRenderCommandEncoder> clear_encoder = [command_buffer renderCommandEncoderWithDescriptor:pass_desc];
+        [clear_encoder endEncoding];
+    }
+
+    void MetalCommandList::ClearDepth(GfxDescriptor dsv, Float depth, Uint8 stencil, Bool clear_stencil)
+    {
+        EndRenderPass();
+        EndComputeEncoder();
+        EndBlitEncoder();
+
+        MetalRenderTargetDescriptor dsv_desc = DecodeToMetalRenderTargetDescriptor(dsv);
+        if (!dsv_desc.texture)
+        {
+            return;
+        }
+
+        MTLRenderPassDescriptor* pass_desc = [MTLRenderPassDescriptor new];
+
+        MTLRenderPassDepthAttachmentDescriptor* depth_attachment = pass_desc.depthAttachment;
+        depth_attachment.texture = dsv_desc.texture;
+        depth_attachment.level = dsv_desc.mip_level;
+        depth_attachment.slice = dsv_desc.array_slice;
+        depth_attachment.clearDepth = depth;
+        depth_attachment.loadAction = MTLLoadActionClear;
+        depth_attachment.storeAction = MTLStoreActionStore;
+
+        if (clear_stencil)
+        {
+            MTLRenderPassStencilAttachmentDescriptor* stencil_attachment = pass_desc.stencilAttachment;
+            stencil_attachment.texture = dsv_desc.texture;
+            stencil_attachment.level = dsv_desc.mip_level;
+            stencil_attachment.slice = dsv_desc.array_slice;
+            stencil_attachment.clearStencil = stencil;
+            stencil_attachment.loadAction = MTLLoadActionClear;
+            stencil_attachment.storeAction = MTLStoreActionStore;
+        }
+
+        id<MTLRenderCommandEncoder> clear_encoder = [command_buffer renderCommandEncoderWithDescriptor:pass_desc];
+        [clear_encoder endEncoding];
+    }
+
+    void MetalCommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float const clear_value[4])
+    {
+        MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(&resource);
+        if (clear_value[0] == 0.0f && clear_value[1] == 0.0f && clear_value[2] == 0.0f && clear_value[3] == 0.0f)
+        {
+            BeginBlitEncoder();
+            [blit_encoder fillBuffer:metal_buffer->GetMetalBuffer()
+                               range:NSMakeRange(uav_desc.offset, uav_desc.size == 0 ? resource.GetSize() : uav_desc.size)
+                               value:0];
+        }
+        else
+        {
+            ADRIA_TODO();
+            ADRIA_LOG(WARNING, "Non-zero buffer clear not implemented - requires compute shader");
+        }
+    }
+
+    void MetalCommandList::ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Float const clear_value[4])
+    {
+        ADRIA_LOG(WARNING, "Texture UAV clear not implemented - requires compute shader");
+    }
+
+    void MetalCommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 const clear_value[4])
+    {
+        MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(&resource);
+
+        if (clear_value[0] == 0 && clear_value[1] == 0 && clear_value[2] == 0 && clear_value[3] == 0)
+        {
+            BeginBlitEncoder();
+            [blit_encoder fillBuffer:metal_buffer->GetMetalBuffer()
+                               range:NSMakeRange(uav_desc.offset, uav_desc.size == 0 ? resource.GetSize() : uav_desc.size)
+                               value:0];
+        }
+        else
+        {
+            ADRIA_TODO();
+            ADRIA_LOG(WARNING, "Non-zero integer buffer clear not implemented - requires compute shader");
+        }
+    }
+
+    void MetalCommandList::ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 const clear_value[4])
+    {
+        ADRIA_TODO();
+        ADRIA_LOG(WARNING, "Integer texture UAV clear not implemented - requires compute shader");
+    }
+
+    void MetalCommandList::WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data)
+    {
+        MetalBuffer* metal_buffer = static_cast<MetalBuffer*>(&buffer);
+
+        void* mapped_ptr = metal_buffer->Map();
+        if (mapped_ptr)
+        {
+            *((Uint32*)((Uint8*)mapped_ptr + offset)) = data;
+            metal_buffer->Unmap();
+        }
+        else
+        {
+            ADRIA_TODO();
+            ADRIA_LOG(WARNING, "WriteBufferImmediate not implemented for non-mappable buffers");
+        }
     }
 
     void MetalCommandList::BeginRenderPass(GfxRenderPassDesc const& render_pass_desc)

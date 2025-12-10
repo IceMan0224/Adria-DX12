@@ -124,7 +124,6 @@ namespace adria
         MTLInstanceAccelerationStructureDescriptor* accelDescriptor = [MTLInstanceAccelerationStructureDescriptor descriptor];
         accelDescriptor.instancedAccelerationStructures = [NSMutableArray array];
 
-        // First, build the array of unique BLAS objects
         NSMutableDictionary* blasToIndexMap = [NSMutableDictionary dictionary];
         for (auto const& inst : instances)
         {
@@ -139,7 +138,6 @@ namespace adria
             }
         }
 
-        // Now fill in the instance descriptors
         MetalBuffer* metal_instance_buffer = static_cast<MetalBuffer*>(instance_buffer.get());
         MTLAccelerationStructureInstanceDescriptor* instanceData =
             (MTLAccelerationStructureInstanceDescriptor*)[metal_instance_buffer->GetMetalBuffer() contents];
