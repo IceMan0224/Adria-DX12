@@ -296,9 +296,9 @@ namespace adria
 			current_backend = gfx->GetBackend();
 
 #if defined(ADRIA_PLATFORM_WINDOWS)
-			std::string dxcompiler_path = paths::MainDir + "dxcompiler.dll";
+			std::string dxcompiler_path = "dxcompiler.dll";
 #elif defined(ADRIA_PLATFORM_MACOS)
-			std::string dxcompiler_path = paths::MainDir + "dxcompiler.dylib";
+			std::string dxcompiler_path = "@executable_path/dxcompiler.dylib";
 #endif
 			dxcompiler.Open(dxcompiler_path.c_str());
 			ADRIA_FATAL_ASSERT(dxcompiler.IsOpen(), "Couldn't open dxcompiler!");
