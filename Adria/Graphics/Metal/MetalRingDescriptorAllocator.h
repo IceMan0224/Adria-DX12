@@ -13,10 +13,7 @@ namespace adria
         MetalRingDescriptorAllocator(MetalDevice* device, Uint32 descriptor_count, Uint32 reserved_count, std::string const& name);
         ~MetalRingDescriptorAllocator();
 
-        // Allocate from reserved/persistent section (index < reserved_count)
         Uint32 AllocateReserved(IRDescriptorTableEntry** descriptor);
-
-        // Allocate from ring buffer section (automatically freed per frame)
         Uint32 AllocateTransient(IRDescriptorTableEntry** descriptor, Uint32 count = 1);
 
         void FinishCurrentFrame(Uint64 frame);
