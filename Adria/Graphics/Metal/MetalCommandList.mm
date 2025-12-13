@@ -297,12 +297,16 @@ namespace adria
         MetalTexture* metal_dst = static_cast<MetalTexture*>(&dst);
         MetalTexture const* metal_src = static_cast<MetalTexture const*>(&src);
 
+        Uint32 src_width = std::max(1u, src.GetWidth());
+        Uint32 src_height = std::max(1u, src.GetHeight());
+        Uint32 src_depth = std::max(1u, src.GetDepth());
+
         BeginBlitEncoder();
         [blit_encoder copyFromTexture:metal_src->GetMetalTexture()
                           sourceSlice:0
                           sourceLevel:0
                          sourceOrigin:MTLOriginMake(0, 0, 0)
-                           sourceSize:MTLSizeMake(src.GetWidth(), src.GetHeight(), src.GetDepth())
+                           sourceSize:MTLSizeMake(src_width, src_height, src_depth)
                             toTexture:metal_dst->GetMetalTexture()
                      destinationSlice:0
                      destinationLevel:0
@@ -339,7 +343,6 @@ namespace adria
         Uint32 src_height = std::max(1u, src.GetHeight() >> src_mip);
         Uint32 src_depth = std::max(1u, src.GetDepth() >> src_mip);
 
-        // Calculate bytes per row using proper format stride
         Uint32 bytes_per_pixel = GetGfxFormatStride(src.GetFormat());
         Uint32 bytes_per_row = src_width * bytes_per_pixel;
 
@@ -445,11 +448,12 @@ namespace adria
     void MetalCommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Float const clear_value[4])
     {
         MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(&resource);
+        Uint64 size = (uav_desc.size == 0 || uav_desc.size == Uint64(-1)) ? resource.GetSize() : uav_desc.size;
         if (clear_value[0] == 0.0f && clear_value[1] == 0.0f && clear_value[2] == 0.0f && clear_value[3] == 0.0f)
         {
             BeginBlitEncoder();
             [blit_encoder fillBuffer:metal_buffer->GetMetalBuffer()
-                               range:NSMakeRange(uav_desc.offset, uav_desc.size == 0 ? resource.GetSize() : uav_desc.size)
+                               range:NSMakeRange(uav_desc.offset, size)
                                value:0];
         }
         else
@@ -467,12 +471,13 @@ namespace adria
     void MetalCommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 const clear_value[4])
     {
         MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(&resource);
+        Uint64 size = (uav_desc.size == 0 || uav_desc.size == Uint64(-1)) ? resource.GetSize() : uav_desc.size;
 
         if (clear_value[0] == 0 && clear_value[1] == 0 && clear_value[2] == 0 && clear_value[3] == 0)
         {
             BeginBlitEncoder();
             [blit_encoder fillBuffer:metal_buffer->GetMetalBuffer()
-                               range:NSMakeRange(uav_desc.offset, uav_desc.size == 0 ? resource.GetSize() : uav_desc.size)
+                               range:NSMakeRange(uav_desc.offset, size)
                                value:0];
         }
         else

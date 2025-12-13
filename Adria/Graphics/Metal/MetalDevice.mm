@@ -361,7 +361,16 @@ namespace adria
         id<MTLBuffer> mtl_buffer = metal_buffer->GetMetalBuffer();
 
         IRDescriptorTableEntry* entry = nullptr;
-        Uint32 index = AllocateResourceDescriptor(&entry);
+        Uint32 index = UINT32_MAX;
+
+        if (buffer->IsPersistent())
+        {
+            index = AllocatePersistentResourceDescriptor(&entry);
+        }
+        else
+        {
+            index = AllocateResourceDescriptor(&entry);
+        }
 
         if (index == UINT32_MAX || !entry)
         {

@@ -2,7 +2,7 @@
 
 namespace adria
 {
-	enum class GfxShaderStage
+	enum class GfxShaderStage : Uint8
 	{
 		VS,
 		PS,
@@ -15,7 +15,7 @@ namespace adria
 		AS,
 		ShaderStageCount
 	};
-	enum GfxShaderModel
+	enum GfxShaderModel : Uint8
 	{
 		SM_Unknown,
 		SM_6_0,
@@ -26,7 +26,8 @@ namespace adria
 		SM_6_5,
 		SM_6_6,
 		SM_6_7,
-		SM_6_8
+		SM_6_8,
+		SM_6_9
 	};
 
 	struct GfxShaderDefine
