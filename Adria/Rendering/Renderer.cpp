@@ -435,7 +435,7 @@ namespace adria
 		frame_cbuf_data.rain_splash_bump_idx = rain_pass.GetRainSplashBumpIndex();
 		frame_cbuf_data.rain_blocker_map_idx = rain_pass.GetRainBlockerMapIndex();
 		frame_cbuf_data.rain_view_projection = rain_pass.GetRainViewProjection();
-		frame_cbuf_data.sheenE_idx = (Int32)sheenE_texture;
+		frame_cbuf_data.sheenE_idx = g_TextureManager.GetBindlessIndex(sheenE_texture);
 		frame_cbuf_data.rain_total_time = rain_pass.GetRainTotalTime();
 		if (ray_tracing_supported && reg.view<RayTracing>().size())
 		{
