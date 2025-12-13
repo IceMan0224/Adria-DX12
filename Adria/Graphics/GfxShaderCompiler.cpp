@@ -22,7 +22,7 @@ namespace adria
 	ADRIA_LOG_CHANNEL(ShaderCompiler);
 
 	using DxcCreateInstanceT = decltype(DxcCreateInstance);
-	extern DxcCreateInstanceT* PFN_DxcCreateInstance = nullptr;
+	static DxcCreateInstanceT* PFN_DxcCreateInstance = nullptr;
 
 	namespace
 	{
