@@ -189,11 +189,7 @@ namespace adria
                                       length:sizeof(TopLevelArgumentBuffer)
                                      atIndex:kIRArgumentBufferBindPoint];
 
-            [render_encoder drawPrimitives:ConvertTopology(current_topology)
-                                vertexStart:start_vertex_location
-                                vertexCount:vertex_count
-                                instanceCount:instance_count
-                                baseInstance:start_instance_location];
+            IRRuntimeDrawPrimitives(render_encoder, ConvertTopology(current_topology), start_vertex_location, vertex_count, instance_count, start_instance_location);
         }
     }
 
@@ -213,15 +209,9 @@ namespace adria
             {
                 MTLIndexType index_type = ConvertIndexFormat(current_index_buffer_view->format);
                 Uint32 index_size = (index_type == MTLIndexTypeUInt16) ? 2 : 4;
+                Uint64 index_buffer_offset = lookup.offset + (index_offset * index_size);
 
-                [render_encoder drawIndexedPrimitives:ConvertTopology(current_topology)
-                                           indexCount:index_count
-                                            indexType:index_type
-                                          indexBuffer:lookup.buffer
-                                    indexBufferOffset:lookup.offset + (index_offset * index_size)
-                                        instanceCount:instance_count
-                                           baseVertex:base_vertex_location
-                                         baseInstance:start_instance_location];
+                IRRuntimeDrawIndexedPrimitives(render_encoder, ConvertTopology(current_topology), index_count, index_type, lookup.buffer, index_buffer_offset, instance_count, base_vertex_location, start_instance_location);
             }
         }
     }
@@ -343,8 +333,10 @@ namespace adria
         Uint32 src_height = std::max(1u, src.GetHeight() >> src_mip);
         Uint32 src_depth = std::max(1u, src.GetDepth() >> src_mip);
 
-        Uint32 bytes_per_pixel = GetGfxFormatStride(src.GetFormat());
-        Uint32 bytes_per_row = src_width * bytes_per_pixel;
+        Uint32 bytes_per_row = metal_src->GetRowPitch(src_mip);
+        Uint32 block_size = GetGfxFormatBlockSize(src.GetFormat());
+        Uint32 row_count = std::max(1u, DivideAndRoundUp(src_height, block_size));
+        Uint32 bytes_per_image = bytes_per_row * row_count;
 
         BeginBlitEncoder();
         [blit_encoder copyFromTexture:metal_src->GetMetalTexture()
@@ -355,7 +347,7 @@ namespace adria
                              toBuffer:metal_dst->GetMetalBuffer()
                     destinationOffset:dst_offset
                destinationBytesPerRow:bytes_per_row
-             destinationBytesPerImage:bytes_per_row * src_height];
+             destinationBytesPerImage:bytes_per_image];
     }
 
     void MetalCommandList::CopyBufferToTexture(GfxTexture& dst_texture, Uint32 mip_level, Uint32 array_slice, GfxBuffer const& src_buffer, Uint32 offset)
@@ -367,14 +359,16 @@ namespace adria
         Uint32 dst_height = std::max(1u, dst_texture.GetHeight() >> mip_level);
         Uint32 dst_depth = std::max(1u, dst_texture.GetDepth() >> mip_level);
 
-        Uint32 bytes_per_pixel = GetGfxFormatStride(dst_texture.GetFormat());
-        Uint32 bytes_per_row = dst_width * bytes_per_pixel;
+        Uint32 bytes_per_row = metal_dst->GetRowPitch(mip_level);
+        Uint32 block_size = GetGfxFormatBlockSize(dst_texture.GetFormat());
+        Uint32 row_count = std::max(1u, DivideAndRoundUp(dst_height, block_size));
+        Uint32 bytes_per_image = bytes_per_row * row_count;
 
         BeginBlitEncoder();
         [blit_encoder copyFromBuffer:metal_src->GetMetalBuffer()
                         sourceOffset:offset
                    sourceBytesPerRow:bytes_per_row
-                 sourceBytesPerImage:bytes_per_row * dst_height
+                 sourceBytesPerImage:bytes_per_image
                           sourceSize:MTLSizeMake(dst_width, dst_height, dst_depth)
                            toTexture:metal_dst->GetMetalTexture()
                     destinationSlice:array_slice

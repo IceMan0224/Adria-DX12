@@ -490,8 +490,7 @@ namespace adria
 			desc.desc_1_1.NumStaticSamplers = 10;
 			desc.desc_1_1.pStaticSamplers = staticSamplers;
 			desc.desc_1_1.Flags = IRRootSignatureFlags(
-				IRRootSignatureFlagCBVSRVUAVHeapDirectlyIndexed |
-				IRRootSignatureFlagSamplerHeapDirectlyIndexed);
+				IRRootSignatureFlagCBVSRVUAVHeapDirectlyIndexed);
 
 			IRError* error = nullptr;
 			metal_root_signature = IRRootSignatureCreateFromDescriptor(&desc, &error);
@@ -511,7 +510,10 @@ namespace adria
 		void Destroy()
 		{
 			static bool destroyed = false;
-			if (destroyed) return;
+			if (destroyed) 
+			{
+				return;
+			}
 			destroyed = true;
 
 #if defined(ADRIA_PLATFORM_MACOS)

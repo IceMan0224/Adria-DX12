@@ -16,10 +16,13 @@ namespace adria
 
         descriptor_buffer.label = [NSString stringWithUTF8String:name.c_str()];
         cpu_address = descriptor_buffer.contents;
+
+        metal_device->MakeResident(descriptor_buffer);
     }
 
     MetalRingDescriptorAllocator::~MetalRingDescriptorAllocator()
     {
+        metal_device->Evict(descriptor_buffer);
         descriptor_buffer = nil;
     }
 
