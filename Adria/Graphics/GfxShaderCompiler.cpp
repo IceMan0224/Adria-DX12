@@ -581,6 +581,9 @@ namespace adria
 			if (input.flags & GfxShaderCompilerFlag_Debug)
 			{
 				compile_args.push_back(DXC_ARG_DEBUG);
+#if defined(ADRIA_PLATFORM_MACOS)
+				compile_args.push_back(L"-Qembed_debug");
+#endif
 			}
 
 			if (input.flags & GfxShaderCompilerFlag_DisableOptimization)
@@ -686,6 +689,7 @@ namespace adria
 				return false;
 			}
 			
+#if !defined(ADRIA_PLATFORM_MACOS)
 			if (input.flags & GfxShaderCompilerFlag_Debug)
 			{
 				Ref<IDxcBlob> pdb_blob;
@@ -706,6 +710,8 @@ namespace adria
 					}
 				}
 			}
+#endif
+
 			Ref<IDxcBlob> hash;
 			if (SUCCEEDED(result->GetOutput(DXC_OUT_SHADER_HASH, IID_PPV_ARGS(hash.GetAddressOf()), nullptr)))
 			{
