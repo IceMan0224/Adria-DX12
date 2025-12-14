@@ -77,6 +77,7 @@ namespace adria
           current_pipeline_state(nullptr), current_index_buffer_view(nullptr)
     {
         std::memset(&top_level_ab, 0, sizeof(TopLevelArgumentBuffer));
+        top_level_ab.sampler_table_address = metal_device->GetSamplerTableGpuAddress();
     }
 
     MetalCommandList::~MetalCommandList()
@@ -841,11 +842,8 @@ namespace adria
                            length:sizeof(TopLevelArgumentBuffer)
                           atIndex:kIRArgumentBufferBindPoint];
 
-        // Use the official IR runtime structure for ray dispatch
-        // IRDispatchRaysArgument is defined in metal_irconverter_runtime/ir_raytracing.h
         IRDispatchRaysArgument rt_args = {};
 
-        // Set dispatch dimensions
         rt_args.DispatchRaysDesc.Width = dispatch_width;
         rt_args.DispatchRaysDesc.Height = dispatch_height;
         rt_args.DispatchRaysDesc.Depth = dispatch_depth;
@@ -861,7 +859,6 @@ namespace adria
         // rt_args.VisibleFunctionTable = ...
         // rt_args.IntersectionFunctionTable = ...
         // rt_args.IntersectionFunctionTables = ...
-
         // Bind the ray tracing dispatch argument at index 3 for Metal Shader Converter
         [compute_encoder setBytes:&rt_args length:sizeof(IRDispatchRaysArgument) atIndex:3];
 

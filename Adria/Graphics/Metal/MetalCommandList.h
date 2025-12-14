@@ -109,7 +109,7 @@ namespace adria
             Uint32 root_constants[8];
             Uint64 cbv2_address;
             Uint64 cbv3_address;
-            Uint64 _padding;  
+            Uint64 sampler_table_address;
         };
 
         MetalDevice* metal_device;

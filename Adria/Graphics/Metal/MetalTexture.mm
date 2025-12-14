@@ -17,7 +17,7 @@ namespace adria
         tex_desc.width = desc.width;
         tex_desc.height = desc.height;
         tex_desc.pixelFormat = ToMTLPixelFormat(desc.format);
-        tex_desc.usage = MTLTextureUsageShaderRead;
+        tex_desc.usage = MTLTextureUsageShaderRead | MTLTextureUsagePixelFormatView;
 
         if (HasFlag(desc.bind_flags, GfxBindFlag::RenderTarget))
             tex_desc.usage |= MTLTextureUsageRenderTarget;
@@ -84,16 +84,58 @@ namespace adria
         }
     }
 
+    
     MetalTexture::MetalTexture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data)
         : MetalTexture(gfx, desc)
     {
         if (data.sub_data && data.sub_count > 0)
         {
-            MTLRegion region = MTLRegionMake2D(0, 0, desc.width, desc.height);
-            [metal_texture replaceRegion:region
-                             mipmapLevel:0
-                               withBytes:data.sub_data[0].data
-                             bytesPerRow:data.sub_data[0].row_pitch];
+            Uint32 mip_levels = desc.mip_levels;
+            Uint32 array_size = desc.array_size;
+            
+            for (Uint32 slice = 0; slice < array_size; ++slice)
+            {
+                Uint32 mip_width = desc.width;
+                Uint32 mip_height = desc.height;
+                Uint32 mip_depth = std::max(1u, desc.depth);
+                
+                for (Uint32 mip = 0; mip < mip_levels; ++mip)
+                {
+                    Uint32 sub_resource_index = slice * mip_levels + mip;
+                    
+                    if (sub_resource_index >= data.sub_count)
+                        break;
+                    
+                    GfxTextureSubData const& sub_data = data.sub_data[sub_resource_index];
+                    
+                    if (sub_data.data)
+                    {
+                        MTLRegion region;
+                        if (desc.type == GfxTextureType_3D)
+                        {
+                            region = MTLRegionMake3D(0, 0, 0, mip_width, mip_height, mip_depth);
+                        }
+                        else
+                        {
+                            region = MTLRegionMake2D(0, 0, mip_width, mip_height);
+                        }
+                        
+                        [metal_texture replaceRegion:region
+                                        mipmapLevel:mip
+                                            slice:slice
+                                        withBytes:sub_data.data
+                                        bytesPerRow:sub_data.row_pitch
+                                    bytesPerImage:sub_data.slice_pitch];
+                    }
+                    
+                    mip_width = std::max(1u, mip_width / 2);
+                    mip_height = std::max(1u, mip_height / 2);
+                    if (desc.type == GfxTextureType_3D)
+                    {
+                        mip_depth = std::max(1u, mip_depth / 2);
+                    }
+                }
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 #import <Metal/Metal.h>
 #import <MetalKit/MetalKit.h>
 #import <QuartzCore/CAMetalLayer.h>
+#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 #include "MetalDevice.h"
 #include "MetalSwapchain.h"
 #include "MetalTexture.h"
@@ -21,9 +22,9 @@ namespace adria
     ADRIA_LOG_CHANNEL(Graphics);
     namespace
     {
-        id<MTLTexture> CreateTextureView(id<MTLTexture> base_texture, GfxTexture const* gfx_texture, GfxTextureDescriptorDesc const* desc)
+        id<MTLTexture> CreateTextureView(id<MTLTexture> base_texture, GfxTexture const* gfx_texture, GfxTextureDescriptorDesc const* desc, Bool is_uav = false)
         {
-            if (!desc || !base_texture)
+            if (!base_texture || !desc)
             {
                 return base_texture;
             }
@@ -131,9 +132,8 @@ namespace adria
             return;
         }
 
-        // Create residency set for managing resource residency
         MTLResidencySetDescriptor* residency_desc = [MTLResidencySetDescriptor new];
-        residency_desc.initialCapacity = 4096; // Start with reasonable capacity
+        residency_desc.initialCapacity = 4096; 
         residency_set = [device newResidencySetWithDescriptor:residency_desc error:nil];
         residency_desc = nil;
 
@@ -156,6 +156,8 @@ namespace adria
             command_queue = nil;
             return;
         }
+
+        CreateStaticSamplers();
 
         if (window)
         {
@@ -192,6 +194,11 @@ namespace adria
             swapchain.reset();
             resource_descriptor_allocator.reset();
             shader_library = nil;
+            sampler_table_buffer = nil;
+            for (Uint32 i = 0; i < STATIC_SAMPLER_COUNT; ++i)
+            {
+                static_samplers[i] = nil;
+            }
 
             delete dummy_fence;
             dummy_fence = nullptr;
@@ -481,7 +488,6 @@ namespace adria
         IRDescriptorTableEntry* entry = nullptr;
         Uint32 index = UINT32_MAX;
 
-        // Use persistent or transient allocation based on texture's persistence flag
         if (texture->IsPersistent())
         {
             index = AllocatePersistentResourceDescriptor(&entry);
@@ -874,5 +880,89 @@ namespace adria
             return nil;
         }
         return resource_descriptor_allocator->GetBuffer();
+    }
+
+    void MetalDevice::CreateStaticSamplers()
+    {
+        sampler_table_buffer = [device newBufferWithLength:sizeof(IRDescriptorTableEntry) * STATIC_SAMPLER_COUNT
+                                       options:MTLResourceStorageModeShared | MTLResourceHazardTrackingModeTracked];
+        sampler_table_buffer.label = @"Static Sampler Table";
+        MakeResident(sampler_table_buffer);
+        sampler_table_gpu_address = [sampler_table_buffer gpuAddress];
+
+        IRDescriptorTableEntry* entries = (IRDescriptorTableEntry*)sampler_table_buffer.contents;
+        auto EncodeSampler = [&, this](Uint32 index, MTLSamplerMinMagFilter minMag, MTLSamplerMipFilter mip,
+                                  MTLSamplerAddressMode addressU, MTLSamplerAddressMode addressV, MTLSamplerAddressMode addressW,
+                                  MTLCompareFunction compareFunc, NSUInteger maxAniso, MTLSamplerBorderColor borderColor) {
+            MTLSamplerDescriptor* desc = [MTLSamplerDescriptor new];
+            desc.minFilter = minMag;
+            desc.magFilter = minMag;
+            desc.mipFilter = mip;
+            desc.sAddressMode = addressU;
+            desc.tAddressMode = addressV;
+            desc.rAddressMode = addressW;
+            desc.compareFunction = compareFunc;
+            desc.maxAnisotropy = maxAniso;
+            desc.borderColor = borderColor;
+            desc.lodMinClamp = 0.0f;
+            desc.lodMaxClamp = FLT_MAX;
+            desc.supportArgumentBuffers = YES;
+
+            id<MTLSamplerState> sampler = [device newSamplerStateWithDescriptor:desc];
+            static_samplers[index] = sampler;  
+            IRDescriptorTableSetSampler(&entries[index], sampler, 0.0f);
+        };
+
+        // s0: LinearWrapSampler
+        EncodeSampler(0, MTLSamplerMinMagFilterLinear, MTLSamplerMipFilterLinear,
+                      MTLSamplerAddressModeRepeat, MTLSamplerAddressModeRepeat, MTLSamplerAddressModeRepeat,
+                      MTLCompareFunctionNever, 1, MTLSamplerBorderColorOpaqueBlack);
+
+        // s1: LinearClampSampler
+        EncodeSampler(1, MTLSamplerMinMagFilterLinear, MTLSamplerMipFilterLinear,
+                      MTLSamplerAddressModeClampToEdge, MTLSamplerAddressModeClampToEdge, MTLSamplerAddressModeClampToEdge,
+                      MTLCompareFunctionNever, 1, MTLSamplerBorderColorOpaqueBlack);
+
+        // s2: LinearBorderSampler
+        EncodeSampler(2, MTLSamplerMinMagFilterLinear, MTLSamplerMipFilterLinear,
+                      MTLSamplerAddressModeClampToBorderColor, MTLSamplerAddressModeClampToBorderColor, MTLSamplerAddressModeClampToBorderColor,
+                      MTLCompareFunctionNever, 1, MTLSamplerBorderColorOpaqueBlack);
+
+        // s3: PointWrapSampler
+        EncodeSampler(3, MTLSamplerMinMagFilterNearest, MTLSamplerMipFilterNearest,
+                      MTLSamplerAddressModeRepeat, MTLSamplerAddressModeRepeat, MTLSamplerAddressModeRepeat,
+                      MTLCompareFunctionNever, 1, MTLSamplerBorderColorOpaqueBlack);
+
+        // s4: PointClampSampler
+        EncodeSampler(4, MTLSamplerMinMagFilterNearest, MTLSamplerMipFilterNearest,
+                      MTLSamplerAddressModeClampToEdge, MTLSamplerAddressModeClampToEdge, MTLSamplerAddressModeClampToEdge,
+                      MTLCompareFunctionNever, 1, MTLSamplerBorderColorOpaqueBlack);
+
+        // s5: PointBorderSampler
+        EncodeSampler(5, MTLSamplerMinMagFilterNearest, MTLSamplerMipFilterNearest,
+                      MTLSamplerAddressModeClampToBorderColor, MTLSamplerAddressModeClampToBorderColor, MTLSamplerAddressModeClampToBorderColor,
+                      MTLCompareFunctionNever, 1, MTLSamplerBorderColorOpaqueBlack);
+
+        // s6: ShadowClampSampler (comparison)
+        EncodeSampler(6, MTLSamplerMinMagFilterLinear, MTLSamplerMipFilterLinear,
+                      MTLSamplerAddressModeClampToEdge, MTLSamplerAddressModeClampToEdge, MTLSamplerAddressModeClampToEdge,
+                      MTLCompareFunctionLessEqual, 1, MTLSamplerBorderColorOpaqueWhite);
+
+        // s7: ShadowWrapSampler (comparison)
+        EncodeSampler(7, MTLSamplerMinMagFilterLinear, MTLSamplerMipFilterLinear,
+                      MTLSamplerAddressModeRepeat, MTLSamplerAddressModeRepeat, MTLSamplerAddressModeRepeat,
+                      MTLCompareFunctionLessEqual, 1, MTLSamplerBorderColorOpaqueWhite);
+
+        // s8: LinearMirrorSampler
+        EncodeSampler(8, MTLSamplerMinMagFilterLinear, MTLSamplerMipFilterLinear,
+                      MTLSamplerAddressModeMirrorRepeat, MTLSamplerAddressModeMirrorRepeat, MTLSamplerAddressModeRepeat,
+                      MTLCompareFunctionNever, 1, MTLSamplerBorderColorOpaqueBlack);
+
+        // s9: PointMirrorSampler
+        EncodeSampler(9, MTLSamplerMinMagFilterNearest, MTLSamplerMipFilterNearest,
+                      MTLSamplerAddressModeMirrorRepeat, MTLSamplerAddressModeMirrorRepeat, MTLSamplerAddressModeRepeat,
+                      MTLCompareFunctionNever, 1, MTLSamplerBorderColorOpaqueBlack);
+
+        ADRIA_LOG(INFO, "Created %u static samplers for Metal (GPU address: 0x%llx)", STATIC_SAMPLER_COUNT, sampler_table_gpu_address);
     }
 }

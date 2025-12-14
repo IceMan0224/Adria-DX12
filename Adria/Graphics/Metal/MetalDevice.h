@@ -10,6 +10,7 @@ struct IRDescriptorTableEntry;
     @protocol MTLCommandQueue;
     @protocol MTLLibrary;
     @protocol MTLBuffer;
+    @protocol MTLSamplerState;
     @protocol CAMetalDrawable;
     @protocol MTLResidencySet;
     #define ID_POINTER(x) id<x>
@@ -33,6 +34,7 @@ namespace adria
 
     class MetalDevice : public GfxDevice
     {
+        static constexpr Uint32 STATIC_SAMPLER_COUNT = 10;
     public:
         explicit MetalDevice(Window* window);
         ~MetalDevice() override;
@@ -136,17 +138,24 @@ namespace adria
         Uint32 AllocatePersistentResourceDescriptor(IRDescriptorTableEntry** descriptor);
         void FreeResourceDescriptor(Uint32 index);
         id<MTLBuffer> GetResourceDescriptorBuffer() const;
+        id<MTLBuffer> GetSamplerTableBuffer() const { return sampler_table_buffer; }
+        Uint64 GetSamplerTableGpuAddress() const { return sampler_table_gpu_address; }
 #endif
 
     private:
         void AddToReleaseQueue_Internal(ReleasableObject* _obj) override {}
+        void CreateStaticSamplers();
 
         Window* window = nullptr;
         ID_POINTER(MTLDevice) device;
         ID_POINTER(MTLCommandQueue) command_queue;
         ID_POINTER(MTLLibrary) shader_library;
         ID_POINTER(MTLResidencySet) residency_set;
+        ID_POINTER(MTLBuffer) sampler_table_buffer;
+        ID_POINTER(MTLSamplerState) static_samplers[STATIC_SAMPLER_COUNT] = {};
+        Uint64 sampler_table_gpu_address = 0;
         Bool residency_dirty = false;
+
 
         std::unique_ptr<MetalSwapchain> swapchain;
         std::unique_ptr<class MetalRingDescriptorAllocator> resource_descriptor_allocator;
