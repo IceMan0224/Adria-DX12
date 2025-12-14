@@ -20,42 +20,6 @@
 namespace adria
 {
     ADRIA_LOG_CHANNEL(Graphics);
-    namespace
-    {
-        id<MTLTexture> CreateTextureView(id<MTLTexture> base_texture, GfxTexture const* gfx_texture, GfxTextureDescriptorDesc const* desc, Bool is_uav = false)
-        {
-            if (!base_texture || !desc)
-            {
-                return base_texture;
-            }
-
-            GfxTextureDesc const& texture_desc = gfx_texture->GetDesc();
-
-            Uint32 first_mip = desc->first_mip;
-            Uint32 mip_count = desc->mip_count == static_cast<Uint32>(-1) ? (texture_desc.mip_levels - first_mip) : desc->mip_count;
-            Uint32 first_slice = desc->first_slice;
-            Uint32 slice_count = desc->slice_count == static_cast<Uint32>(-1) ? (texture_desc.array_size - first_slice) : desc->slice_count;
-
-            Bool needs_view = (first_mip != 0) ||
-                             (mip_count != texture_desc.mip_levels) ||
-                             (first_slice != 0) ||
-                             (slice_count != texture_desc.array_size);
-
-            if (!needs_view)
-            {
-                return base_texture;
-            }
-
-            NSRange mip_range = NSMakeRange(first_mip, mip_count);
-            NSRange slice_range = NSMakeRange(first_slice, slice_count);
-
-            id<MTLTexture> texture_view = [base_texture newTextureViewWithPixelFormat:base_texture.pixelFormat
-                                                                          textureType:base_texture.textureType
-                                                                               levels:mip_range
-                                                                               slices:slice_range];
-            return texture_view;
-        }
-    }
 
     Bool MetalCapabilities::Initialize(GfxDevice* gfx)
     {
@@ -158,6 +122,7 @@ namespace adria
         }
 
         CreateStaticSamplers();
+        CreateClearPipelines();
 
         if (window)
         {
@@ -199,6 +164,11 @@ namespace adria
             {
                 static_samplers[i] = nil;
             }
+            for (Uint32 i = 0; i < CLEAR_PIPELINE_COUNT; ++i)
+            {
+                clear_pipelines[i] = nil;
+            }
+            clear_library = nil;
 
             delete dummy_fence;
             dummy_fence = nullptr;
@@ -964,5 +934,225 @@ namespace adria
                       MTLCompareFunctionNever, 1, MTLSamplerBorderColorOpaqueBlack);
 
         ADRIA_LOG(INFO, "Created %u static samplers for Metal (GPU address: 0x%llx)", STATIC_SAMPLER_COUNT, sampler_table_gpu_address);
+    }
+
+    void MetalDevice::CreateClearPipelines()
+    {
+        NSString* shader_source = @R"(
+#include <metal_stdlib>
+using namespace metal;
+
+struct ClearBufferParams
+{
+    uint4 clear_value;
+    uint  element_count;
+};
+
+struct ClearTextureParams
+{
+    uint4 clear_value_uint;
+    float4 clear_value_float;
+    uint3 dimensions;
+};
+
+kernel void ClearBufferUint(device uint* buffer [[buffer(0)]], constant ClearBufferParams& params [[buffer(1)]], uint tid [[thread_position_in_grid]])
+{
+    if (tid >= params.element_count) return;
+    buffer[tid] = params.clear_value.x;
+}
+
+kernel void ClearBufferUint4(device uint4* buffer [[buffer(0)]], constant ClearBufferParams& params [[buffer(1)]], uint tid [[thread_position_in_grid]])
+{
+    if (tid >= params.element_count) return;
+    buffer[tid] = params.clear_value;
+}
+
+kernel void ClearBufferFloat(device float* buffer [[buffer(0)]], constant ClearBufferParams& params [[buffer(1)]], uint tid [[thread_position_in_grid]])
+{
+    if (tid >= params.element_count) return;
+    buffer[tid] = as_type<float>(params.clear_value.x);
+}
+
+kernel void ClearBufferFloat4(device float4* buffer [[buffer(0)]], constant ClearBufferParams& params [[buffer(1)]], uint tid [[thread_position_in_grid]])
+{
+    if (tid >= params.element_count) return;
+    buffer[tid] = as_type<float4>(params.clear_value);
+}
+
+kernel void ClearTexture1DFloat(texture1d<float, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint tid [[thread_position_in_grid]])
+{
+    if (tid >= params.dimensions.x) return;
+    tex.write(params.clear_value_float, tid);
+}
+
+kernel void ClearTexture1DUint(texture1d<uint, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint tid [[thread_position_in_grid]])
+{
+    if (tid >= params.dimensions.x) return;
+    tex.write(params.clear_value_uint, tid);
+}
+
+kernel void ClearTexture1DInt(texture1d<int, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint tid [[thread_position_in_grid]])
+{
+    if (tid >= params.dimensions.x) return;
+    tex.write(as_type<int4>(params.clear_value_uint), tid);
+}
+
+kernel void ClearTexture1DArrayFloat(texture1d_array<float, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint2 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y) return;
+    tex.write(params.clear_value_float, tid.x, tid.y);
+}
+
+kernel void ClearTexture1DArrayUint(texture1d_array<uint, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint2 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y) return;
+    tex.write(params.clear_value_uint, tid.x, tid.y);
+}
+
+kernel void ClearTexture1DArrayInt(texture1d_array<int, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint2 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y) return;
+    tex.write(as_type<int4>(params.clear_value_uint), tid.x, tid.y);
+}
+
+kernel void ClearTexture2DFloat(texture2d<float, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint2 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y) return;
+    tex.write(params.clear_value_float, tid);
+}
+
+kernel void ClearTexture2DUint(texture2d<uint, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint2 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y) return;
+    tex.write(params.clear_value_uint, tid);
+}
+
+kernel void ClearTexture2DInt(texture2d<int, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint2 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y) return;
+    tex.write(as_type<int4>(params.clear_value_uint), tid);
+}
+
+kernel void ClearTexture2DArrayFloat(texture2d_array<float, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint3 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y || tid.z >= params.dimensions.z) return;
+    tex.write(params.clear_value_float, tid.xy, tid.z);
+}
+
+kernel void ClearTexture2DArrayUint(texture2d_array<uint, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint3 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y || tid.z >= params.dimensions.z) return;
+    tex.write(params.clear_value_uint, tid.xy, tid.z);
+}
+
+kernel void ClearTexture2DArrayInt(texture2d_array<int, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint3 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y || tid.z >= params.dimensions.z) return;
+    tex.write(as_type<int4>(params.clear_value_uint), tid.xy, tid.z);
+}
+
+kernel void ClearTexture3DFloat(texture3d<float, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint3 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y || tid.z >= params.dimensions.z) return;
+    tex.write(params.clear_value_float, tid);
+}
+
+kernel void ClearTexture3DUint(texture3d<uint, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint3 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y || tid.z >= params.dimensions.z) return;
+    tex.write(params.clear_value_uint, tid);
+}
+
+kernel void ClearTexture3DInt(texture3d<int, access::write> tex [[texture(10)]], constant ClearTextureParams& params [[buffer(10)]], uint3 tid [[thread_position_in_grid]])
+{
+    if (tid.x >= params.dimensions.x || tid.y >= params.dimensions.y || tid.z >= params.dimensions.z) return;
+    tex.write(as_type<int4>(params.clear_value_uint), tid);
+}
+)";
+
+        NSError* error = nil;
+        MTLCompileOptions* options = [MTLCompileOptions new];
+        options.languageVersion = MTLLanguageVersion3_0;
+
+        clear_library = [device newLibraryWithSource:shader_source options:options error:&error];
+        if (error || !clear_library)
+        {
+            ADRIA_LOG(ERROR, "Failed to compile clear shaders: %s", [[error localizedDescription] UTF8String]);
+            return;
+        }
+
+        Char const* kernel_names[] = {
+            "ClearBufferUint",
+            "ClearBufferUint4",
+            "ClearBufferFloat",
+            "ClearBufferFloat4",
+            "ClearTexture1DFloat",
+            "ClearTexture1DUint",
+            "ClearTexture1DInt",
+            "ClearTexture1DArrayFloat",
+            "ClearTexture1DArrayUint",
+            "ClearTexture1DArrayInt",
+            "ClearTexture2DFloat",
+            "ClearTexture2DUint",
+            "ClearTexture2DInt",
+            "ClearTexture2DArrayFloat",
+            "ClearTexture2DArrayUint",
+            "ClearTexture2DArrayInt",
+            "ClearTexture3DFloat",
+            "ClearTexture3DUint",
+            "ClearTexture3DInt"
+        };
+
+        for (Uint32 i = 0; i < CLEAR_PIPELINE_COUNT; ++i)
+        {
+            id<MTLFunction> function = [clear_library newFunctionWithName:[NSString stringWithUTF8String:kernel_names[i]]];
+            if (!function)
+            {
+                ADRIA_LOG(ERROR, "Failed to find clear kernel: %s", kernel_names[i]);
+                continue;
+            }
+
+            clear_pipelines[i] = [device newComputePipelineStateWithFunction:function error:&error];
+            if (error || !clear_pipelines[i])
+            {
+                ADRIA_LOG(ERROR, "Failed to create clear pipeline for %s: %s", kernel_names[i], [[error localizedDescription] UTF8String]);
+            }
+        }
+
+        ADRIA_LOG(INFO, "Created %u clear pipelines for Metal", CLEAR_PIPELINE_COUNT);
+    }
+
+    id<MTLTexture> MetalDevice::CreateTextureView(id<MTLTexture> base_texture, GfxTexture const* gfx_texture, GfxTextureDescriptorDesc const* desc)
+    {
+        if (!base_texture || !desc)
+        {
+            return base_texture;
+        }
+
+        GfxTextureDesc const& texture_desc = gfx_texture->GetDesc();
+
+        Uint32 first_mip = desc->first_mip;
+        Uint32 mip_count = desc->mip_count == static_cast<Uint32>(-1) ? (texture_desc.mip_levels - first_mip) : desc->mip_count;
+        Uint32 first_slice = desc->first_slice;
+        Uint32 slice_count = desc->slice_count == static_cast<Uint32>(-1) ? (texture_desc.array_size - first_slice) : desc->slice_count;
+
+        Bool needs_view = (first_mip != 0) ||
+                         (mip_count != texture_desc.mip_levels) ||
+                         (first_slice != 0) ||
+                         (slice_count != texture_desc.array_size);
+
+        if (!needs_view)
+        {
+            return base_texture;
+        }
+
+        NSRange mip_range = NSMakeRange(first_mip, mip_count);
+        NSRange slice_range = NSMakeRange(first_slice, slice_count);
+
+        id<MTLTexture> texture_view = [base_texture newTextureViewWithPixelFormat:base_texture.pixelFormat
+                                                                      textureType:base_texture.textureType
+                                                                           levels:mip_range
+                                                                           slices:slice_range];
+        return texture_view;
     }
 }

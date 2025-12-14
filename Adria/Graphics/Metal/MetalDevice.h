@@ -11,6 +11,7 @@ struct IRDescriptorTableEntry;
     @protocol MTLLibrary;
     @protocol MTLBuffer;
     @protocol MTLSamplerState;
+    @protocol MTLComputePipelineState;
     @protocol CAMetalDrawable;
     @protocol MTLResidencySet;
     #define ID_POINTER(x) id<x>
@@ -32,9 +33,35 @@ namespace adria
         virtual Bool Initialize(GfxDevice* gfx) override;
     };
 
+    enum class MetalClearPipeline : Uint8
+    {
+        ClearBufferUint,
+        ClearBufferUint4,
+        ClearBufferFloat,
+        ClearBufferFloat4,
+        ClearTexture1DFloat,
+        ClearTexture1DUint,
+        ClearTexture1DInt,
+        ClearTexture1DArrayFloat,
+        ClearTexture1DArrayUint,
+        ClearTexture1DArrayInt,
+        ClearTexture2DFloat,
+        ClearTexture2DUint,
+        ClearTexture2DInt,
+        ClearTexture2DArrayFloat,
+        ClearTexture2DArrayUint,
+        ClearTexture2DArrayInt,
+        ClearTexture3DFloat,
+        ClearTexture3DUint,
+        ClearTexture3DInt,
+        Count
+    };
+
     class MetalDevice : public GfxDevice
     {
         static constexpr Uint32 STATIC_SAMPLER_COUNT = 10;
+        static constexpr Uint32 CLEAR_PIPELINE_COUNT = static_cast<Uint32>(MetalClearPipeline::Count);
+
     public:
         explicit MetalDevice(Window* window);
         ~MetalDevice() override;
@@ -140,12 +167,10 @@ namespace adria
         id<MTLBuffer> GetResourceDescriptorBuffer() const;
         id<MTLBuffer> GetSamplerTableBuffer() const { return sampler_table_buffer; }
         Uint64 GetSamplerTableGpuAddress() const { return sampler_table_gpu_address; }
+        id<MTLComputePipelineState> GetClearPipeline(MetalClearPipeline pipeline) const { return clear_pipelines[static_cast<Uint32>(pipeline)]; }
 #endif
 
     private:
-        void AddToReleaseQueue_Internal(ReleasableObject* _obj) override {}
-        void CreateStaticSamplers();
-
         Window* window = nullptr;
         ID_POINTER(MTLDevice) device;
         ID_POINTER(MTLCommandQueue) command_queue;
@@ -155,6 +180,9 @@ namespace adria
         ID_POINTER(MTLSamplerState) static_samplers[STATIC_SAMPLER_COUNT] = {};
         Uint64 sampler_table_gpu_address = 0;
         Bool residency_dirty = false;
+
+        ID_POINTER(MTLLibrary) clear_library;
+        ID_POINTER(MTLComputePipelineState) clear_pipelines[CLEAR_PIPELINE_COUNT] = {};
 
 
         std::unique_ptr<MetalSwapchain> swapchain;
@@ -186,5 +214,13 @@ namespace adria
             Uint64 size;
         };
         std::map<Uint64, BufferEntry> buffer_map; 
+
+    private:
+        void AddToReleaseQueue_Internal(ReleasableObject* _obj) override {}
+        void CreateStaticSamplers();
+        void CreateClearPipelines();
+#ifdef __OBJC__
+        id<MTLTexture> CreateTextureView(id<MTLTexture> base_texture, GfxTexture const* gfx_texture, GfxTextureDescriptorDesc const* desc);
+#endif
     };
 }

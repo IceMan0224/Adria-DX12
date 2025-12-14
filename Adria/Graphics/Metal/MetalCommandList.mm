@@ -453,14 +453,143 @@ namespace adria
         }
         else
         {
-            ADRIA_TODO();
-            ADRIA_LOG(WARNING, "Non-zero buffer clear not implemented - requires compute shader");
+            BeginComputeEncoder();
+
+            id<MTLComputePipelineState> pipeline = metal_device->GetClearPipeline(MetalClearPipeline::ClearBufferFloat4);
+            [compute_encoder setComputePipelineState:pipeline];
+
+            struct ClearBufferParams
+            {
+                Uint32 clear_value[4];
+                Uint32 element_count;
+            } params;
+
+            std::memcpy(params.clear_value, clear_value, sizeof(Float) * 4);
+            params.element_count = static_cast<Uint32>(size / (sizeof(Float) * 4));
+
+            [compute_encoder setBuffer:metal_buffer->GetMetalBuffer() offset:uav_desc.offset atIndex:0];
+            [compute_encoder setBytes:&params length:sizeof(params) atIndex:1];
+
+            Uint32 thread_group_size = 256;
+            Uint32 thread_groups = (params.element_count + thread_group_size - 1) / thread_group_size;
+            [compute_encoder dispatchThreadgroups:MTLSizeMake(thread_groups, 1, 1)
+                            threadsPerThreadgroup:MTLSizeMake(thread_group_size, 1, 1)];
         }
     }
 
     void MetalCommandList::ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Float const clear_value[4])
     {
-        ADRIA_LOG(WARNING, "Texture UAV clear not implemented - requires compute shader");
+        MetalTexture const* metal_texture = static_cast<MetalTexture const*>(&resource);
+        GfxTextureDesc const& desc = resource.GetDesc();
+
+        Uint32 first_mip = uav_desc.first_mip;
+        Uint32 first_slice = uav_desc.first_slice;
+        Uint32 mip_width = std::max(1u, desc.width >> first_mip);
+        Uint32 mip_height = std::max(1u, desc.height >> first_mip);
+        Uint32 mip_depth = std::max(1u, desc.depth >> first_mip);
+        Uint32 slice_count = (uav_desc.slice_count == static_cast<Uint32>(-1)) ? (desc.array_size - first_slice) : uav_desc.slice_count;
+
+        BeginComputeEncoder();
+
+        id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
+        id<MTLTexture> texture_view = nil;
+
+        Bool is_array = (desc.array_size > 1) && (desc.type != GfxTextureType_3D);
+
+        if (is_array)
+        {
+            texture_view = [base_texture newTextureViewWithPixelFormat:base_texture.pixelFormat
+                                                           textureType:base_texture.textureType
+                                                                levels:NSMakeRange(first_mip, 1)
+                                                                slices:NSMakeRange(first_slice, slice_count)];
+        }
+        else if (first_mip != 0)
+        {
+            texture_view = [base_texture newTextureViewWithPixelFormat:base_texture.pixelFormat
+                                                           textureType:base_texture.textureType
+                                                                levels:NSMakeRange(first_mip, 1)
+                                                                slices:NSMakeRange(0, 1)];
+        }
+        else
+        {
+            texture_view = base_texture;
+        }
+
+        struct ClearTextureParams
+        {
+            Uint32 clear_value_uint[4];
+            Float  clear_value_float[4];
+            Uint32 dimensions[3];
+            Uint32 _padding;
+        } params;
+
+        std::memcpy(params.clear_value_uint, clear_value, sizeof(Float) * 4);
+        std::memcpy(params.clear_value_float, clear_value, sizeof(Float) * 4);
+
+        MetalClearPipeline pipeline_type;
+        MTLSize threadgroups;
+        MTLSize threads_per_group;
+
+        switch (desc.type)
+        {
+        case GfxTextureType_1D:
+            if (is_array)
+            {
+                pipeline_type = MetalClearPipeline::ClearTexture1DArrayFloat;
+                params.dimensions[0] = mip_width;
+                params.dimensions[1] = slice_count;
+                params.dimensions[2] = 1;
+                threadgroups = MTLSizeMake((mip_width + 255) / 256, slice_count, 1);
+                threads_per_group = MTLSizeMake(256, 1, 1);
+            }
+            else
+            {
+                pipeline_type = MetalClearPipeline::ClearTexture1DFloat;
+                params.dimensions[0] = mip_width;
+                params.dimensions[1] = 1;
+                params.dimensions[2] = 1;
+                threadgroups = MTLSizeMake((mip_width + 255) / 256, 1, 1);
+                threads_per_group = MTLSizeMake(256, 1, 1);
+            }
+            break;
+        case GfxTextureType_2D:
+            if (is_array)
+            {
+                pipeline_type = MetalClearPipeline::ClearTexture2DArrayFloat;
+                params.dimensions[0] = mip_width;
+                params.dimensions[1] = mip_height;
+                params.dimensions[2] = slice_count;
+                threadgroups = MTLSizeMake((mip_width + 7) / 8, (mip_height + 7) / 8, slice_count);
+                threads_per_group = MTLSizeMake(8, 8, 1);
+            }
+            else
+            {
+                pipeline_type = MetalClearPipeline::ClearTexture2DFloat;
+                params.dimensions[0] = mip_width;
+                params.dimensions[1] = mip_height;
+                params.dimensions[2] = 1;
+                threadgroups = MTLSizeMake((mip_width + 7) / 8, (mip_height + 7) / 8, 1);
+                threads_per_group = MTLSizeMake(8, 8, 1);
+            }
+            break;
+        case GfxTextureType_3D:
+            pipeline_type = MetalClearPipeline::ClearTexture3DFloat;
+            params.dimensions[0] = mip_width;
+            params.dimensions[1] = mip_height;
+            params.dimensions[2] = mip_depth;
+            threadgroups = MTLSizeMake((mip_width + 7) / 8, (mip_height + 7) / 8, (mip_depth + 3) / 4);
+            threads_per_group = MTLSizeMake(8, 8, 4);
+            break;
+        default:
+            ADRIA_LOG(WARNING, "Unknown texture type for clear");
+            return;
+        }
+
+        id<MTLComputePipelineState> pipeline = metal_device->GetClearPipeline(pipeline_type);
+        [compute_encoder setComputePipelineState:pipeline];
+        [compute_encoder setTexture:texture_view atIndex:10];
+        [compute_encoder setBytes:&params length:sizeof(params) atIndex:10];
+        [compute_encoder dispatchThreadgroups:threadgroups threadsPerThreadgroup:threads_per_group];
     }
 
     void MetalCommandList::ClearBuffer(GfxBuffer const& resource, GfxBufferDescriptorDesc const& uav_desc, Uint32 const clear_value[4])
@@ -477,15 +606,143 @@ namespace adria
         }
         else
         {
-            ADRIA_TODO();
-            ADRIA_LOG(WARNING, "Non-zero integer buffer clear not implemented - requires compute shader");
+            BeginComputeEncoder();
+
+            id<MTLComputePipelineState> pipeline = metal_device->GetClearPipeline(MetalClearPipeline::ClearBufferUint4);
+            [compute_encoder setComputePipelineState:pipeline];
+
+            struct ClearBufferParams
+            {
+                Uint32 clear_value[4];
+                Uint32 element_count;
+            } params;
+
+            std::memcpy(params.clear_value, clear_value, sizeof(Uint32) * 4);
+            params.element_count = static_cast<Uint32>(size / (sizeof(Uint32) * 4));
+
+            [compute_encoder setBuffer:metal_buffer->GetMetalBuffer() offset:uav_desc.offset atIndex:0];
+            [compute_encoder setBytes:&params length:sizeof(params) atIndex:1];
+
+            Uint32 thread_group_size = 256;
+            Uint32 thread_groups = (params.element_count + thread_group_size - 1) / thread_group_size;
+            [compute_encoder dispatchThreadgroups:MTLSizeMake(thread_groups, 1, 1)
+                            threadsPerThreadgroup:MTLSizeMake(thread_group_size, 1, 1)];
         }
     }
 
     void MetalCommandList::ClearTexture(GfxTexture const& resource, GfxTextureDescriptorDesc const& uav_desc, Uint32 const clear_value[4])
     {
-        ADRIA_TODO();
-        ADRIA_LOG(WARNING, "Integer texture UAV clear not implemented - requires compute shader");
+        MetalTexture const* metal_texture = static_cast<MetalTexture const*>(&resource);
+        GfxTextureDesc const& desc = resource.GetDesc();
+
+        Uint32 first_mip = uav_desc.first_mip;
+        Uint32 first_slice = uav_desc.first_slice;
+        Uint32 mip_width = std::max(1u, desc.width >> first_mip);
+        Uint32 mip_height = std::max(1u, desc.height >> first_mip);
+        Uint32 mip_depth = std::max(1u, desc.depth >> first_mip);
+        Uint32 slice_count = (uav_desc.slice_count == static_cast<Uint32>(-1)) ? (desc.array_size - first_slice) : uav_desc.slice_count;
+
+        BeginComputeEncoder();
+
+        id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
+        id<MTLTexture> texture_view = nil;
+
+        Bool is_array = (desc.array_size > 1) && (desc.type != GfxTextureType_3D);
+
+        if (is_array)
+        {
+            texture_view = [base_texture newTextureViewWithPixelFormat:base_texture.pixelFormat
+                                                           textureType:base_texture.textureType
+                                                                levels:NSMakeRange(first_mip, 1)
+                                                                slices:NSMakeRange(first_slice, slice_count)];
+        }
+        else if (first_mip != 0)
+        {
+            texture_view = [base_texture newTextureViewWithPixelFormat:base_texture.pixelFormat
+                                                           textureType:base_texture.textureType
+                                                                levels:NSMakeRange(first_mip, 1)
+                                                                slices:NSMakeRange(0, 1)];
+        }
+        else
+        {
+            texture_view = base_texture;
+        }
+
+        struct ClearTextureParams
+        {
+            Uint32 clear_value_uint[4];
+            Float  clear_value_float[4];
+            Uint32 dimensions[3];
+            Uint32 _padding;
+        } params;
+
+        std::memcpy(params.clear_value_uint, clear_value, sizeof(Uint32) * 4);
+        std::memcpy(params.clear_value_float, clear_value, sizeof(Uint32) * 4);
+
+        MetalClearPipeline pipeline_type;
+        MTLSize threadgroups;
+        MTLSize threads_per_group;
+
+        switch (desc.type)
+        {
+        case GfxTextureType_1D:
+            if (is_array)
+            {
+                pipeline_type = MetalClearPipeline::ClearTexture1DArrayUint;
+                params.dimensions[0] = mip_width;
+                params.dimensions[1] = slice_count;
+                params.dimensions[2] = 1;
+                threadgroups = MTLSizeMake((mip_width + 255) / 256, slice_count, 1);
+                threads_per_group = MTLSizeMake(256, 1, 1);
+            }
+            else
+            {
+                pipeline_type = MetalClearPipeline::ClearTexture1DUint;
+                params.dimensions[0] = mip_width;
+                params.dimensions[1] = 1;
+                params.dimensions[2] = 1;
+                threadgroups = MTLSizeMake((mip_width + 255) / 256, 1, 1);
+                threads_per_group = MTLSizeMake(256, 1, 1);
+            }
+            break;
+        case GfxTextureType_2D:
+            if (is_array)
+            {
+                pipeline_type = MetalClearPipeline::ClearTexture2DArrayUint;
+                params.dimensions[0] = mip_width;
+                params.dimensions[1] = mip_height;
+                params.dimensions[2] = slice_count;
+                threadgroups = MTLSizeMake((mip_width + 7) / 8, (mip_height + 7) / 8, slice_count);
+                threads_per_group = MTLSizeMake(8, 8, 1);
+            }
+            else
+            {
+                pipeline_type = MetalClearPipeline::ClearTexture2DUint;
+                params.dimensions[0] = mip_width;
+                params.dimensions[1] = mip_height;
+                params.dimensions[2] = 1;
+                threadgroups = MTLSizeMake((mip_width + 7) / 8, (mip_height + 7) / 8, 1);
+                threads_per_group = MTLSizeMake(8, 8, 1);
+            }
+            break;
+        case GfxTextureType_3D:
+            pipeline_type = MetalClearPipeline::ClearTexture3DUint;
+            params.dimensions[0] = mip_width;
+            params.dimensions[1] = mip_height;
+            params.dimensions[2] = mip_depth;
+            threadgroups = MTLSizeMake((mip_width + 7) / 8, (mip_height + 7) / 8, (mip_depth + 3) / 4);
+            threads_per_group = MTLSizeMake(8, 8, 4);
+            break;
+        default:
+            ADRIA_LOG(WARNING, "Unknown texture type for clear");
+            return;
+        }
+
+        id<MTLComputePipelineState> pipeline = metal_device->GetClearPipeline(pipeline_type);
+        [compute_encoder setComputePipelineState:pipeline];
+        [compute_encoder setTexture:texture_view atIndex:10];
+        [compute_encoder setBytes:&params length:sizeof(params) atIndex:10];
+        [compute_encoder dispatchThreadgroups:threadgroups threadsPerThreadgroup:threads_per_group];
     }
 
     void MetalCommandList::WriteBufferImmediate(GfxBuffer& buffer, Uint32 offset, Uint32 data)
