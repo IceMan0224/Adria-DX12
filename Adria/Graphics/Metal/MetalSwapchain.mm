@@ -33,7 +33,7 @@ namespace adria
             texture_desc.format = GfxFormat::B8G8R8A8_UNORM;
             texture_desc.bind_flags = GfxBindFlag::RenderTarget;
 
-            for (Uint32 i = 0; i < BACKBUFFER_COUNT; ++i)
+            for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
             {
                 back_buffers[i] = std::make_unique<MetalTexture>(gfx, nullptr, texture_desc);
                 back_buffers[i]->SetName("Backbuffer");
@@ -53,7 +53,7 @@ namespace adria
     Bool MetalSwapchain::Present(Bool vsync)
     {
         current_drawable = nil;
-        frame_index = (frame_index + 1) % BACKBUFFER_COUNT;
+        frame_index = (frame_index + 1) % GFX_BACKBUFFER_COUNT;
         return true;
     }
 
@@ -78,7 +78,7 @@ namespace adria
             texture_desc.format = GfxFormat::B8G8R8A8_UNORM;
             texture_desc.bind_flags = GfxBindFlag::RenderTarget;
 
-            for (Uint32 i = 0; i < BACKBUFFER_COUNT; ++i)
+            for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
             {
                 back_buffers[i] = std::make_unique<MetalTexture>(gfx, nullptr, texture_desc);
                 back_buffers[i]->SetName("Backbuffer");

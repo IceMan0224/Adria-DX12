@@ -5,6 +5,7 @@
 @protocol MTLRenderCommandEncoder;
 @protocol MTLComputeCommandEncoder;
 @protocol MTLBlitCommandEncoder;
+@protocol MTLFence;
 
 namespace adria
 {
@@ -118,6 +119,7 @@ namespace adria
         id<MTLRenderCommandEncoder> render_encoder;
         id<MTLComputeCommandEncoder> compute_encoder;
         id<MTLBlitCommandEncoder> blit_encoder;
+        id<MTLFence> encoder_fence;
         GfxPrimitiveTopology current_topology;
         GfxPipelineState const* current_pipeline_state;
         GfxIndexBufferView* current_index_buffer_view;

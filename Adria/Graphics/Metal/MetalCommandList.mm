@@ -72,12 +72,15 @@ namespace adria
 
     MetalCommandList::MetalCommandList(GfxDevice* gfx, GfxCommandListType type, Char const* name)
         : metal_device(static_cast<MetalDevice*>(gfx)), type(type), command_buffer(nil), render_encoder(nil),
-          compute_encoder(nil), blit_encoder(nil),
+          compute_encoder(nil), blit_encoder(nil), encoder_fence(nil),
           current_topology(GfxPrimitiveTopology::TriangleList),
           current_pipeline_state(nullptr), current_index_buffer_view(nullptr)
     {
         std::memset(&top_level_ab, 0, sizeof(TopLevelArgumentBuffer));
         top_level_ab.sampler_table_address = metal_device->GetSamplerTableGpuAddress();
+
+        id<MTLDevice> device = metal_device->GetMTLDevice();
+        encoder_fence = [device newFence];
     }
 
     MetalCommandList::~MetalCommandList()
@@ -87,6 +90,7 @@ namespace adria
             render_encoder = nil;
             compute_encoder = nil;
             blit_encoder = nil;
+            encoder_fence = nil;
             command_buffer = nil;
         }
     }
@@ -837,6 +841,7 @@ namespace adria
         }
 
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:pass_desc];
+        [render_encoder waitForFence:encoder_fence beforeStages:MTLRenderStageVertex | MTLRenderStageObject];
 
         id<MTLBuffer> descriptor_buffer = metal_device->GetResourceDescriptorBuffer();
         if (descriptor_buffer && render_encoder)
@@ -855,6 +860,7 @@ namespace adria
     {
         if (render_encoder)
         {
+            [render_encoder updateFence:encoder_fence afterStages:MTLRenderStageFragment];
             [render_encoder endEncoding];
             render_encoder = nil;
         }
@@ -1143,6 +1149,7 @@ namespace adria
         if (!blit_encoder)
         {
             blit_encoder = [command_buffer blitCommandEncoder];
+            [blit_encoder waitForFence:encoder_fence];
         }
     }
 
@@ -1150,6 +1157,7 @@ namespace adria
     {
         if (blit_encoder)
         {
+            [blit_encoder updateFence:encoder_fence];
             [blit_encoder endEncoding];
             blit_encoder = nil;
         }
@@ -1159,6 +1167,7 @@ namespace adria
     {
         if (render_encoder)
         {
+            [render_encoder updateFence:encoder_fence afterStages:MTLRenderStageFragment];
             [render_encoder endEncoding];
             render_encoder = nil;
         }
@@ -1167,6 +1176,7 @@ namespace adria
         if (!compute_encoder)
         {
             compute_encoder = [command_buffer computeCommandEncoder];
+            [compute_encoder waitForFence:encoder_fence];
 
             id<MTLBuffer> descriptor_buffer = metal_device->GetResourceDescriptorBuffer();
             if (descriptor_buffer && compute_encoder)
@@ -1180,6 +1190,7 @@ namespace adria
     {
         if (compute_encoder)
         {
+            [compute_encoder updateFence:encoder_fence];
             [compute_encoder endEncoding];
             compute_encoder = nil;
         }
