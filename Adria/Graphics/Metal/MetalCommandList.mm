@@ -73,7 +73,7 @@ namespace adria
     MetalCommandList::MetalCommandList(GfxDevice* gfx, GfxCommandListType type, Char const* name)
         : metal_device(static_cast<MetalDevice*>(gfx)), type(type), command_buffer(nil), render_encoder(nil),
           compute_encoder(nil), blit_encoder(nil), encoder_fence(nil),
-          current_topology(GfxPrimitiveTopology::TriangleList),
+          current_topology(GfxPrimitiveTopology::Undefined),
           current_pipeline_state(nullptr), current_index_buffer_view(nullptr)
     {
         std::memset(&top_level_ab, 0, sizeof(TopLevelArgumentBuffer));
@@ -163,9 +163,17 @@ namespace adria
 
     void MetalCommandList::ResetState()
     {
-        current_topology = GfxPrimitiveTopology::TriangleList;
+        current_topology = GfxPrimitiveTopology::Undefined;
         current_pipeline_state = nullptr;
         current_index_buffer_view = nullptr;
+        current_stencil_ref = 0;
+
+        cached_cull_mode = MTLCullModeNone;
+        cached_front_face_winding = MTLWindingClockwise;
+        cached_depth_bias = 0.0f;
+        cached_depth_slope_scale = 0.0f;
+        cached_depth_bias_clamp = 0.0f;
+        cached_depth_stencil_state = nil;
     }
 
     void MetalCommandList::BeginEvent(Char const* event_name)
@@ -863,12 +871,18 @@ namespace adria
             [render_encoder updateFence:encoder_fence afterStages:MTLRenderStageFragment];
             [render_encoder endEncoding];
             render_encoder = nil;
+            ResetState();
         }
     }
 
     void MetalCommandList::SetPipelineState(GfxPipelineState const* state)
     {
+        if (state == current_pipeline_state)
+        {
+            return;
+        }
         current_pipeline_state = state;
+
         if (render_encoder && state)
         {
             if (state->GetType() == GfxPipelineStateType::Graphics)
@@ -876,19 +890,37 @@ namespace adria
                 MetalGraphicsPipelineState const* metal_pso = static_cast<MetalGraphicsPipelineState const*>(state);
                 id<MTLRenderPipelineState> pipeline = metal_pso->GetPipelineState();
                 [render_encoder setRenderPipelineState:pipeline];
-                if (metal_pso->GetDepthStencilState())
+
+                id<MTLDepthStencilState> depth_stencil = metal_pso->GetDepthStencilState();
+                if (depth_stencil && depth_stencil != cached_depth_stencil_state)
                 {
-                    [render_encoder setDepthStencilState:metal_pso->GetDepthStencilState()];
+                    [render_encoder setDepthStencilState:depth_stencil];
+                    cached_depth_stencil_state = depth_stencil;
                 }
 
-                [render_encoder setCullMode:ConvertCullMode(metal_pso->GetCullMode())];
-                [render_encoder setFrontFacingWinding:metal_pso->GetFrontCounterClockwise()
-                    ? MTLWindingCounterClockwise : MTLWindingClockwise];
-                if (metal_pso->GetDepthBias() != 0.0f || metal_pso->GetSlopeScaledDepthBias() != 0.0f)
+                MTLCullMode cull_mode = ConvertCullMode(metal_pso->GetCullMode());
+                if (cull_mode != cached_cull_mode)
                 {
-                    [render_encoder setDepthBias:metal_pso->GetDepthBias()
-                                       slopeScale:metal_pso->GetSlopeScaledDepthBias()
-                                            clamp:metal_pso->GetDepthBiasClamp()];
+                    [render_encoder setCullMode:cull_mode];
+                    cached_cull_mode = cull_mode;
+                }
+
+                MTLWinding winding = metal_pso->GetFrontCounterClockwise() ? MTLWindingCounterClockwise : MTLWindingClockwise;
+                if (winding != cached_front_face_winding)
+                {
+                    [render_encoder setFrontFacingWinding:winding];
+                    cached_front_face_winding = winding;
+                }
+
+                Float depth_bias = metal_pso->GetDepthBias();
+                Float slope_scale = metal_pso->GetSlopeScaledDepthBias();
+                Float bias_clamp = metal_pso->GetDepthBiasClamp();
+                if (depth_bias != cached_depth_bias || slope_scale != cached_depth_slope_scale || bias_clamp != cached_depth_bias_clamp)
+                {
+                    [render_encoder setDepthBias:depth_bias slopeScale:slope_scale clamp:bias_clamp];
+                    cached_depth_bias = depth_bias;
+                    cached_depth_slope_scale = slope_scale;
+                    cached_depth_bias_clamp = bias_clamp;
                 }
             }
             else if (state->GetType() == GfxPipelineStateType::MeshShader)
@@ -896,20 +928,36 @@ namespace adria
                 MetalMeshShadingPipelineState const* metal_pso = static_cast<MetalMeshShadingPipelineState const*>(state);
                 [render_encoder setRenderPipelineState:metal_pso->GetPipelineState()];
 
-                if (metal_pso->GetDepthStencilState())
+                id<MTLDepthStencilState> depth_stencil = metal_pso->GetDepthStencilState();
+                if (depth_stencil && depth_stencil != cached_depth_stencil_state)
                 {
-                    [render_encoder setDepthStencilState:metal_pso->GetDepthStencilState()];
+                    [render_encoder setDepthStencilState:depth_stencil];
+                    cached_depth_stencil_state = depth_stencil;
                 }
 
-                [render_encoder setCullMode:ConvertCullMode(metal_pso->GetCullMode())];
-                [render_encoder setFrontFacingWinding:metal_pso->GetFrontCounterClockwise()
-                    ? MTLWindingCounterClockwise : MTLWindingClockwise];
-
-                if (metal_pso->GetDepthBias() != 0.0f || metal_pso->GetSlopeScaledDepthBias() != 0.0f)
+                MTLCullMode cull_mode = ConvertCullMode(metal_pso->GetCullMode());
+                if (cull_mode != cached_cull_mode)
                 {
-                    [render_encoder setDepthBias:metal_pso->GetDepthBias()
-                                       slopeScale:metal_pso->GetSlopeScaledDepthBias()
-                                            clamp:metal_pso->GetDepthBiasClamp()];
+                    [render_encoder setCullMode:cull_mode];
+                    cached_cull_mode = cull_mode;
+                }
+
+                MTLWinding winding = metal_pso->GetFrontCounterClockwise() ? MTLWindingCounterClockwise : MTLWindingClockwise;
+                if (winding != cached_front_face_winding)
+                {
+                    [render_encoder setFrontFacingWinding:winding];
+                    cached_front_face_winding = winding;
+                }
+
+                Float depth_bias = metal_pso->GetDepthBias();
+                Float slope_scale = metal_pso->GetSlopeScaledDepthBias();
+                Float bias_clamp = metal_pso->GetDepthBiasClamp();
+                if (depth_bias != cached_depth_bias || slope_scale != cached_depth_slope_scale || bias_clamp != cached_depth_bias_clamp)
+                {
+                    [render_encoder setDepthBias:depth_bias slopeScale:slope_scale clamp:bias_clamp];
+                    cached_depth_bias = depth_bias;
+                    cached_depth_slope_scale = slope_scale;
+                    cached_depth_bias_clamp = bias_clamp;
                 }
             }
         }
@@ -924,9 +972,13 @@ namespace adria
 
     void MetalCommandList::SetStencilReference(Uint8 stencil)
     {
-        if (render_encoder)
+        if (stencil != current_stencil_ref)
         {
-            [render_encoder setStencilReferenceValue:stencil];
+            current_stencil_ref = stencil;
+            if (render_encoder)
+            {
+                [render_encoder setStencilReferenceValue:stencil];
+            }
         }
     }
 

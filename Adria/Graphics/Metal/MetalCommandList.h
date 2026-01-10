@@ -123,6 +123,14 @@ namespace adria
         GfxPrimitiveTopology current_topology;
         GfxPipelineState const* current_pipeline_state;
         GfxIndexBufferView* current_index_buffer_view;
+        Uint8 current_stencil_ref = 0;
+
+        MTLCullMode cached_cull_mode = MTLCullModeNone;
+        MTLWinding cached_front_face_winding = MTLWindingClockwise;
+        Float cached_depth_bias = 0.0f;
+        Float cached_depth_slope_scale = 0.0f;
+        Float cached_depth_bias_clamp = 0.0f;
+        id<MTLDepthStencilState> cached_depth_stencil_state = nil;
         
         std::unique_ptr<GfxRayTracingShaderBindings> current_rt_bindings;
         std::vector<std::pair<GfxFence&, Uint64>> pending_signals;

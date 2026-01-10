@@ -1011,9 +1011,9 @@ namespace adria
 				Int32 const fps = static_cast<Int32>(1000.0f / frame_time_ms);
 				ImGui::Text("FPS        : %d (%.2f ms)", fps, frame_time_ms);
 #if GFX_PROFILING
-				Uint32 const profiler_tree_size = (Uint32)profiler_tree->Size();
-				if (ImGui::CollapsingHeader("Timings", ImGuiTreeNodeFlags_DefaultOpen))
+				if (profiler_tree && ImGui::CollapsingHeader("Timings", ImGuiTreeNodeFlags_DefaultOpen))
 				{
+					Uint32 const profiler_tree_size = (Uint32)profiler_tree->Size();
 					ImGui::Checkbox("Show Avg/Min/Max", &state.show_average);
 					ImGui::Spacing();
 
