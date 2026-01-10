@@ -415,6 +415,8 @@ set(ADRIA_METAL_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalRayTracingPipeline.mm"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalRayTracingShaderBindings.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalRayTracingShaderBindings.mm"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalQueryHeap.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalQueryHeap.mm"
 
 	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Metal/MetalImGuiManager.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Metal/MetalImGuiManager.mm"

@@ -177,12 +177,8 @@ namespace adria
 		void Clear()
 		{
 			if (!root) return;
-
-			TraversePostOrder([this](NodeType* node)
-				{
-					node->~TreeNode();
-					node_allocator.Deallocate(node, 1);
-				});
+			root->~TreeNode();
+			node_allocator.Deallocate(root, 1);
 			root = nullptr;
 		}
 

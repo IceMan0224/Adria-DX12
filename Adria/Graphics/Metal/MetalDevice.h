@@ -118,7 +118,7 @@ namespace adria
         std::unique_ptr<GfxPipelineState> CreateComputePipelineState(GfxComputePipelineStateDesc const& desc) override;
         std::unique_ptr<GfxPipelineState> CreateMeshShaderPipelineState(GfxMeshShaderPipelineStateDesc const& desc) override;
         std::unique_ptr<GfxFence> CreateFence(Char const* name) override;
-        std::unique_ptr<GfxQueryHeap> CreateQueryHeap(GfxQueryHeapDesc const& desc) override { return nullptr; }
+        std::unique_ptr<GfxQueryHeap> CreateQueryHeap(GfxQueryHeapDesc const& desc) override;
         std::unique_ptr<GfxRayTracingTLAS> CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags) override;
         std::unique_ptr<GfxRayTracingBLAS> CreateRayTracingBLAS(std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags) override;
         std::unique_ptr<GfxRayTracingPipeline> CreateRayTracingPipeline(GfxRayTracingPipelineDesc const& desc) override;
@@ -137,7 +137,7 @@ namespace adria
         GfxShadingRateInfo const& GetShadingRateInfo() const override;
         void SetShadingRateInfo(GfxShadingRateInfo const& info) override {}
 
-        void GetTimestampFrequency(Uint64& frequency) const override { frequency = 0; }
+        void GetTimestampFrequency(Uint64& frequency) const override;
         GPUMemoryUsage GetMemoryUsage() const override { return {0, 0}; }
 
 #ifdef __OBJC__

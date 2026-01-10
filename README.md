@@ -4,7 +4,7 @@ Graphics engine written in C++ using DirectX12 and Metal.
 
 ## Backends
 * **DirectX12** - Full feature support (Windows)
-* **Metal** - Work in progress (macOS). 
+* **Metal** - Work in progress (macOS)
 
 ## Features
 * Render graph

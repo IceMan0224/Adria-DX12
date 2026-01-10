@@ -14,6 +14,7 @@
 #include "MetalRayTracingAS.h"
 #include "MetalRayTracingPipeline.h"
 #include "MetalFence.h"
+#include "MetalQueryHeap.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
 #include "Platform/Window.h"
 
@@ -600,6 +601,21 @@ namespace adria
             return nullptr;
         }
         return fence;
+    }
+
+    std::unique_ptr<GfxQueryHeap> MetalDevice::CreateQueryHeap(GfxQueryHeapDesc const& desc)
+    {
+        auto heap = std::make_unique<MetalQueryHeap>(this, desc);
+        if (!heap->IsValid())
+        {
+            return nullptr;
+        }
+        return heap;
+    }
+
+    void MetalDevice::GetTimestampFrequency(Uint64& frequency) const
+    {
+        frequency = 1000000000ULL;
     }
 
     std::unique_ptr<GfxRayTracingTLAS> MetalDevice::CreateRayTracingTLAS(std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags)

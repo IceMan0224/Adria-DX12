@@ -6,6 +6,9 @@
 #include "D3D12/D3D12TimestampProfiler.h"
 #include "D3D12/D3D12TracyProfiler.h"
 #endif
+#if defined(ADRIA_PLATFORM_MACOS)
+//#include "Metal/MetalTimestampProfiler.h"
+#endif
 
 namespace adria
 {
@@ -37,9 +40,13 @@ namespace adria
 #if defined(ADRIA_PLATFORM_WINDOWS)
 		case GfxBackend::D3D12: timestamp_profiler = std::make_unique<D3D12TimestampProfiler>(); break;
 #endif
-		case GfxBackend::Vulkan:
-		case GfxBackend::Metal:
-		default:				timestamp_profiler = std::make_unique<GfxDummyProfiler>(); break;
+#if defined(ADRIA_PLATFORM_WINDOWS) || defined(ADRIA_PLATFORM_LINUX)
+		case GfxBackend::Vulkan: timestamp_profiler = std::make_unique<GfxDummyProfiler>(); break;
+#endif
+#if defined(ADRIA_PLATFORM_MACOS)
+		case GfxBackend::Metal: timestamp_profiler = std::make_unique<GfxDummyProfiler>(); break;
+#endif
+		default: timestamp_profiler = std::make_unique<GfxDummyProfiler>(); break;
 		}
 		ADRIA_ASSERT(timestamp_profiler != nullptr);
 		timestamp_profiler->Initialize(gfx);
@@ -51,9 +58,13 @@ namespace adria
 #if defined(ADRIA_PLATFORM_WINDOWS)
 		case GfxBackend::D3D12: tracy_profiler = std::make_unique<D3D12TracyProfiler>(); break;
 #endif
-		case GfxBackend::Vulkan:
-		case GfxBackend::Metal:
-		default:				tracy_profiler = std::make_unique<GfxDummyProfiler>(); break;
+#if defined(ADRIA_PLATFORM_WINDOWS) || defined(ADRIA_PLATFORM_LINUX)
+		case GfxBackend::Vulkan: tracy_profiler = std::make_unique<GfxDummyProfiler>(); break;
+#endif
+#if defined(ADRIA_PLATFORM_MACOS)
+		case GfxBackend::Metal: tracy_profiler = std::make_unique<GfxDummyProfiler>(); break;
+#endif
+		default: tracy_profiler = std::make_unique<GfxDummyProfiler>(); break;
 		}
 		ADRIA_ASSERT(tracy_profiler != nullptr);
 		tracy_profiler->Initialize(gfx);
