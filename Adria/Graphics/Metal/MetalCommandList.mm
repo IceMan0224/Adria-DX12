@@ -941,9 +941,10 @@ namespace adria
             MetalDevice::BufferLookupResult lookup = metal_device->LookupBuffer(vertex_buffer_view.buffer_location);
             if (lookup.buffer != nil)
             {
+                Uint32 bind_index = kIRVertexBufferBindPoint + start_slot;
                 [render_encoder setVertexBuffer:lookup.buffer
                                         offset:lookup.offset
-                                        atIndex:start_slot];
+                                        atIndex:bind_index];
             }
         }
     }

@@ -453,7 +453,26 @@ namespace adria
 
         MetalTexture const* metal_texture = static_cast<MetalTexture const*>(texture);
         id<MTLTexture> base_texture = metal_texture->GetMetalTexture();
-        id<MTLTexture> texture_view = CreateTextureView(base_texture, texture, desc);
+
+        id<MTLTexture> texture_view = nil;
+        GfxTextureDesc const& tex_desc = texture->GetDesc();
+        if (HasFlag(tex_desc.misc_flags, GfxTextureMiscFlag::TextureCube))
+        {
+            Uint32 first_mip = desc ? desc->first_mip : 0;
+            Uint32 mip_count = desc ? (desc->mip_count == static_cast<Uint32>(-1) ? tex_desc.mip_levels - first_mip : desc->mip_count) : tex_desc.mip_levels;
+            Uint32 first_slice = desc ? desc->first_slice : 0;
+            Uint32 slice_count = desc ? (desc->slice_count == static_cast<Uint32>(-1) ? tex_desc.array_size - first_slice : desc->slice_count) : tex_desc.array_size;
+
+            texture_view = [base_texture newTextureViewWithPixelFormat:base_texture.pixelFormat
+                                                           textureType:MTLTextureType2DArray
+                                                                levels:NSMakeRange(first_mip, mip_count)
+                                                                slices:NSMakeRange(first_slice, slice_count)];
+            MakeResident(texture_view);
+        }
+        else
+        {
+            texture_view = CreateTextureView(base_texture, texture, desc);
+        }
 
         IRDescriptorTableEntry* entry = nullptr;
         Uint32 index = UINT32_MAX;

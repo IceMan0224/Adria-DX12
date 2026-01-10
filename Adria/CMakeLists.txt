@@ -631,15 +631,11 @@ elseif(APPLE)
 		"-framework MetalKit"
 		"-framework QuartzCore"
 		"-framework GameController"
+		"-framework AppKit"
+		"-framework UniformTypeIdentifiers"
 		"${EXTERNAL_DIR}/MetalShaderConverter/lib/libmetalirconverter.dylib"
-
-		$<$<CONFIG:Debug>:
-			"${EXTERNAL_DIR}/nfd/lib/libnfd_d_arm64.a"
-		>
-
-		$<$<CONFIG:Profile,Release,RelWithDebInfo>:
-			"${EXTERNAL_DIR}/nfd/lib/libnfd_arm64.a"
-		>
+		$<$<CONFIG:Debug>:${EXTERNAL_DIR}/nfd/lib/libnfd_d_arm64.a>
+		$<$<CONFIG:Profile,Release,RelWithDebInfo>:${EXTERNAL_DIR}/nfd/lib/libnfd_arm64.a>
 	)
 
 	# Copy libmetalirconverter.dylib to the app bundle

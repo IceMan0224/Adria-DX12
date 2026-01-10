@@ -66,7 +66,6 @@ namespace adria
         }
 
         tex_desc.mipmapLevelCount = desc.mip_levels;
-        // For cubemaps, Metal expects arrayLength to be the number of cubemaps, not faces
         if (HasFlag(desc.misc_flags, GfxTextureMiscFlag::TextureCube))
         {
             tex_desc.arrayLength = desc.array_size / 6;

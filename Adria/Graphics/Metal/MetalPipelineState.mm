@@ -252,71 +252,115 @@ namespace adria
         {
             MTLVertexDescriptor* vertex_desc = [MTLVertexDescriptor new];
 
-            for (Uint32 i = 0; i < desc.input_layout.elements.size(); ++i)
+            auto GetElementSize = [](GfxFormat format) -> Uint32 
             {
-                GfxInputLayout::GfxInputElement const& element = desc.input_layout.elements[i];
-
-                // Map to Metal attribute index (Metal IR converter uses sequential indices starting from 11)
-                Uint32 metal_attr_index = GetMetalAttributeIndex(i);
-
-                MTLVertexAttributeDescriptor* attr = vertex_desc.attributes[metal_attr_index];
-                attr.format = ToMTLVertexFormat(element.format);
-                attr.offset = element.aligned_byte_offset;
-                attr.bufferIndex = element.input_slot;
-            }
-
-            // Setup buffer layouts
-            // Collect unique buffer slots and calculate strides
-            std::map<Uint32, Uint32> buffer_strides;
-            for (auto const& element : desc.input_layout.elements)
-            {
-                Uint32 slot = element.input_slot;
-                Uint32 element_end = element.aligned_byte_offset;
-
-                switch (element.format)
+                switch (format)
                 {
                 case GfxFormat::R32G32B32A32_FLOAT:
                 case GfxFormat::R32G32B32A32_UINT:
                 case GfxFormat::R32G32B32A32_SINT:
-                    element_end += 16;
-                    break;
+                    return 16;
                 case GfxFormat::R32G32B32_FLOAT:
                 case GfxFormat::R32G32B32_UINT:
                 case GfxFormat::R32G32B32_SINT:
-                    element_end += 12;
-                    break;
+                    return 12;
                 case GfxFormat::R32G32_FLOAT:
                 case GfxFormat::R32G32_UINT:
                 case GfxFormat::R32G32_SINT:
-                    element_end += 8;
-                    break;
-                case GfxFormat::R32_FLOAT:
-                case GfxFormat::R32_UINT:
-                case GfxFormat::R32_SINT:
-                    element_end += 4;
-                    break;
                 case GfxFormat::R16G16B16A16_FLOAT:
                 case GfxFormat::R16G16B16A16_UNORM:
                 case GfxFormat::R16G16B16A16_UINT:
                 case GfxFormat::R16G16B16A16_SNORM:
                 case GfxFormat::R16G16B16A16_SINT:
-                    element_end += 8;
-                    break;
+                    return 8;
+                case GfxFormat::R32_FLOAT:
+                case GfxFormat::R32_UINT:
+                case GfxFormat::R32_SINT:
                 case GfxFormat::R16G16_FLOAT:
                 case GfxFormat::R16G16_UNORM:
                 case GfxFormat::R16G16_UINT:
                 case GfxFormat::R16G16_SNORM:
                 case GfxFormat::R16G16_SINT:
-                    element_end += 4;
-                    break;
                 case GfxFormat::R8G8B8A8_UNORM:
                 case GfxFormat::R8G8B8A8_UINT:
                 case GfxFormat::R8G8B8A8_SNORM:
                 case GfxFormat::R8G8B8A8_SINT:
-                    element_end += 4;
-                    break;
+                    return 4;
+                case GfxFormat::R16_FLOAT:
+                case GfxFormat::R16_UNORM:
+                case GfxFormat::R16_UINT:
+                case GfxFormat::R16_SNORM:
+                case GfxFormat::R16_SINT:
+                case GfxFormat::R8G8_UNORM:
+                case GfxFormat::R8G8_UINT:
+                case GfxFormat::R8G8_SNORM:
+                case GfxFormat::R8G8_SINT:
+                    return 2;
+                case GfxFormat::R8_UNORM:
+                case GfxFormat::R8_UINT:
+                case GfxFormat::R8_SNORM:
+                case GfxFormat::R8_SINT:
+                    return 1;
                 default:
-                    break;
+                    return 4;
+                }
+            };
+
+            static constexpr Uint32 APPEND_ALIGNED_ELEMENT = ~0u;
+            std::map<Uint32, Uint32> slot_element_count;
+            std::map<Uint32, Bool> slot_needs_auto_offset;
+            for (auto const& element : desc.input_layout.elements)
+            {
+                slot_element_count[element.input_slot]++;
+                if (element.aligned_byte_offset == APPEND_ALIGNED_ELEMENT)
+                {
+                    slot_needs_auto_offset[element.input_slot] = true;
+                }
+            }
+
+            std::map<Uint32, Uint32> slot_current_offset;
+            for (auto const& [slot, _] : slot_element_count)
+            {
+                slot_current_offset[slot] = 0;
+            }
+
+            for (Uint32 i = 0; i < desc.input_layout.elements.size(); ++i)
+            {
+                GfxInputLayout::GfxInputElement const& element = desc.input_layout.elements[i];
+                Uint32 metal_attr_index = GetMetalAttributeIndex(i);
+
+                MTLVertexAttributeDescriptor* attr = vertex_desc.attributes[metal_attr_index];
+                attr.format = ToMTLVertexFormat(element.format);
+
+                Uint32 slot = element.input_slot;
+                Uint32 attr_offset;
+                if (slot_needs_auto_offset[slot])
+                {
+                    attr_offset = slot_current_offset[slot];
+                    slot_current_offset[slot] += GetElementSize(element.format);
+                }
+                else
+                {
+                    attr_offset = element.aligned_byte_offset;
+                }
+                attr.offset = attr_offset;
+                attr.bufferIndex = kIRVertexBufferBindPoint + slot;
+            }
+
+            std::map<Uint32, Uint32> buffer_strides;
+            for (Uint32 i = 0; i < desc.input_layout.elements.size(); ++i)
+            {
+                auto const& element = desc.input_layout.elements[i];
+                Uint32 slot = element.input_slot;
+                Uint32 element_end;
+
+                if (slot_needs_auto_offset[slot])
+                {
+                    element_end = slot_current_offset[slot];
+                }
+                else
+                {
+                    element_end = element.aligned_byte_offset + GetElementSize(element.format);
                 }
 
                 buffer_strides[slot] = std::max(buffer_strides[slot], element_end);
@@ -324,7 +368,8 @@ namespace adria
 
             for (auto const& [slot, stride] : buffer_strides)
             {
-                MTLVertexBufferLayoutDescriptor* layout = vertex_desc.layouts[slot];
+                Uint32 const layout_index = kIRVertexBufferBindPoint + slot;
+                MTLVertexBufferLayoutDescriptor* layout = vertex_desc.layouts[layout_index];
                 layout.stride = stride;
                 layout.stepRate = 1;
                 layout.stepFunction = MTLVertexStepFunctionPerVertex;
