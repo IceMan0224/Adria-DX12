@@ -8,8 +8,8 @@ namespace adria
 
 	enum class GfxCommonTextureType : Uint8
 	{
-		WhiteTexture2D,
 		BlackTexture2D,
+		WhiteTexture2D,
 		DefaultNormal2D,
 		MetallicRoughness2D,
 		Count
@@ -17,8 +17,8 @@ namespace adria
 
 	enum class GfxCommonViewType : Uint8
 	{
-		WhiteTexture2D_SRV,
 		BlackTexture2D_SRV,
+		WhiteTexture2D_SRV,
 		DefaultNormal2D_SRV,
 		MetallicRoughness2D_SRV,
 		Count

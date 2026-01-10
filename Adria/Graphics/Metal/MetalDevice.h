@@ -70,7 +70,7 @@ namespace adria
         GfxTexture* GetBackbuffer() const override;
         Uint32 GetBackbufferIndex() const override;
         Uint32 GetFrameIndex() const override;
-        Uint32 GetBackbufferCount() const override { return 2; }
+        Uint32 GetBackbufferCount() const override { return GFX_BACKBUFFER_COUNT; }
 
         void SetRenderingNotStarted() override;
 

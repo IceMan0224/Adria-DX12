@@ -1,6 +1,7 @@
 #pragma once
 #include "Graphics/GfxSwapchain.h"
 #include "Graphics/GfxTexture.h"
+#include "Graphics/GfxDefines.h"
 #include <memory>
 
 @class CAMetalLayer;
@@ -34,8 +35,6 @@ namespace adria
         Uint32 width;
         Uint32 height;
         Uint32 frame_index = 0;
-
-        static constexpr Uint32 BACKBUFFER_COUNT = 2;
-        std::unique_ptr<MetalTexture> back_buffers[BACKBUFFER_COUNT];
+        std::unique_ptr<MetalTexture> back_buffers[GFX_BACKBUFFER_COUNT];
     };
 }

@@ -28,16 +28,15 @@ namespace adria
 				data.sub_data = &init_data;
 				data.sub_count = 1;
 
-				Uint8 white[] = { 0xff, 0xff, 0xff, 0xff };
-				init_data.data = white;
-				init_data.row_pitch = sizeof(white);
-				init_data.slice_pitch = 0;
-				common_textures[(Uint64)WhiteTexture2D] = gfx->CreateTexture(desc, data);
-
 				Uint8 black[] = { 0x00, 0x00, 0x00, 0xff };
 				init_data.data = black;
 				init_data.row_pitch = sizeof(black);
 				common_textures[(Uint64)BlackTexture2D] = gfx->CreateTexture(desc, data);
+
+				Uint8 white[] = { 0xff, 0xff, 0xff, 0xff };
+				init_data.data = white;
+				init_data.row_pitch = sizeof(white);
+				common_textures[(Uint64)WhiteTexture2D] = gfx->CreateTexture(desc, data);
 
 				GfxTextureDesc default_normal_desc{};
 				default_normal_desc.width = 1;
@@ -69,8 +68,8 @@ namespace adria
 			void CreateCommonViews(GfxDevice* gfx)
 			{
 				using enum GfxCommonViewType;
-				common_views[(Uint64)WhiteTexture2D_SRV] = gfx->CreateTextureSRV(common_textures[(Uint64)WhiteTexture2D].get());
 				common_views[(Uint64)BlackTexture2D_SRV] = gfx->CreateTextureSRV(common_textures[(Uint64)BlackTexture2D].get());
+				common_views[(Uint64)WhiteTexture2D_SRV] = gfx->CreateTextureSRV(common_textures[(Uint64)WhiteTexture2D].get());
 				common_views[(Uint64)DefaultNormal2D_SRV] = gfx->CreateTextureSRV(common_textures[(Uint64)DefaultNormal2D].get());
 				common_views[(Uint64)MetallicRoughness2D_SRV] = gfx->CreateTextureSRV(common_textures[(Uint64)MetallicRoughness2D].get());
 			}
