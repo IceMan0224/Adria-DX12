@@ -47,7 +47,11 @@ namespace adria
 
 	Bool GPUDrivenGBufferPass::IsSupported() const
     {
+#if defined(ADRIA_PLATFORM_WINDOWS)
         return gfx->GetCapabilities().SupportsMeshShaders();
+#else
+		return false;
+#endif
     }
 
 	Bool GPUDrivenGBufferPass::IsEnabled() const

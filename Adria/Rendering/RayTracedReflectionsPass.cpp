@@ -126,7 +126,11 @@ namespace adria
 
 	Bool RayTracedReflectionsPass::IsSupported() const
 	{
+#if defined(ADRIA_PLATFORM_WINDOWS)
 		return is_supported;
+#else
+		return false;
+#endif
 	}
 
 	void RayTracedReflectionsPass::CreateStateObject()

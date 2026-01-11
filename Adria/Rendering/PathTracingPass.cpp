@@ -90,7 +90,11 @@ namespace adria
 
 	Bool PathTracingPass::IsSupported() const
 	{
+#if defined(ADRIA_PLATFORM_WINDOWS)
 		return is_supported;
+#else
+		return false;
+#endif
 	}
 
 	void PathTracingPass::Reset()

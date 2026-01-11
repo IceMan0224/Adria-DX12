@@ -579,11 +579,15 @@ namespace adria
 					if (light->type == LightType::Directional)
 					{
 						static Int current_shadow_type = light->casts_shadows;
+#if defined(ADRIA_PLATFORM_WINDOWS)
 						ImGui::Combo("Shadow Technique", &current_shadow_type, "None\0Shadow Map\0Ray Traced Shadows\0", 3);
 						if (!ray_tracing_supported && current_shadow_type == 2) current_shadow_type = 1;
-
-						light->casts_shadows = (current_shadow_type == 1);
 						light->ray_traced_shadows = (current_shadow_type == 2);
+#else
+						ImGui::Combo("Shadow Technique", &current_shadow_type, "None\0Shadow Map\0", 2);
+						light->ray_traced_shadows = false;
+#endif
+						light->casts_shadows = (current_shadow_type == 1);
 					}
 					else
 					{

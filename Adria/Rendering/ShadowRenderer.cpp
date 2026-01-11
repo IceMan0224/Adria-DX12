@@ -376,17 +376,21 @@ namespace adria
 		bounding_objects.clear();
 		std::vector<Matrix> light_matrices;
 		light_matrices.reserve(light_matrices_count);
+		Bool const rt_shadows_supported = ray_traced_shadows_pass.IsSupported();
 		for (entt::entity e : light_view)
 		{
 			Light& light = light_view.get<Light>(e);
 			light.shadow_mask_index = -1;
 			light.shadow_texture_index = -1;
+
+			if (light.ray_traced_shadows && !rt_shadows_supported)
+			{
+				light.ray_traced_shadows = false;
+				light.casts_shadows = true;
+			}
+
 			if (light.casts_shadows)
 			{
-				if (light.ray_traced_shadows)
-				{
-					continue;
-				}
 				light.shadow_matrix_index = (Uint32)light_matrices.size();
 				if (light.type == LightType::Directional)
 				{
@@ -543,6 +547,11 @@ namespace adria
 	}
 	void ShadowRenderer::AddRayTracingShadowPasses(RenderGraph& rg)
 	{
+		if (!ray_traced_shadows_pass.IsSupported())
+		{
+			return;
+		}
+		
 		auto light_view = reg.view<Light>();
 		for (entt::entity e : light_view)
 		{

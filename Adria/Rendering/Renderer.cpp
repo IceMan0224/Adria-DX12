@@ -193,7 +193,16 @@ namespace adria
 		renderer_debug_view_pass.GetDebugViewChangedEvent().AddMember(&GPUDrivenGBufferPass::OnDebugViewChanged, gpu_driven_renderer);
 		renderer_debug_view_pass.GetDebugViewChangedEvent().AddMember(&GBufferPass::OnDebugViewChanged, gbuffer_pass);
 
-		LightingPathType->AddOnChanged(ConsoleVariableDelegate::CreateLambda([this](IConsoleVariable* cvar) { lighting_path = static_cast<LightingPath>(cvar->GetInt()); }));
+		LightingPathType->AddOnChanged(ConsoleVariableDelegate::CreateLambda([this](IConsoleVariable* cvar)
+		{
+			LightingPath new_path = static_cast<LightingPath>(cvar->GetInt());
+			if (new_path == LightingPath::PathTracing && !path_tracer.IsSupported())
+			{
+				new_path = LightingPath::Deferred;
+				cvar->Set((Int)new_path);
+			}
+			lighting_path = new_path;
+		}));
 	}
 
 	void Renderer::CreateDisplaySizeDependentResources()

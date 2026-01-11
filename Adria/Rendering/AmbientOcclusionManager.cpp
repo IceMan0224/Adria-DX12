@@ -61,7 +61,7 @@ namespace adria
 			{
 				if (ImGui::Combo("Ambient Occlusion Type", AmbientOcclusion.GetPtr(), "None\0SSAO\0HBAO\0NNAO\0CACAO\0RTAO\0", 6))
 				{
-					if (!gfx->GetCapabilities().SupportsRayTracing() && AmbientOcclusion.Get() == AmbientOcclusionType_RTAO)
+					if (!rtao_pass.IsSupported() && AmbientOcclusion.Get() == AmbientOcclusionType_RTAO)
 					{
 						AmbientOcclusion->Set(AmbientOcclusionType_SSAO);
 					}

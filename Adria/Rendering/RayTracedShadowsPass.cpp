@@ -78,7 +78,11 @@ namespace adria
 
 	Bool RayTracedShadowsPass::IsSupported() const
 	{
+#if defined(ADRIA_PLATFORM_WINDOWS)
 		return is_supported;
+#else
+		return false;
+#endif
 	}
 
 	void RayTracedShadowsPass::CreateStateObject()
