@@ -27,6 +27,23 @@ namespace adria
         return options;
     }
 
+    static MTLAccelerationStructureUsage ConvertASFlags(GfxRayTracingASFlags flags)
+    {
+        MTLAccelerationStructureUsage usage = MTLAccelerationStructureUsageNone;
+
+        if (flags & GfxRayTracingASFlag_AllowUpdate)
+        {
+            usage |= MTLAccelerationStructureUsageRefit;
+        }
+
+        if (flags & GfxRayTracingASFlag_PreferFastBuild)
+        {
+            usage |= MTLAccelerationStructureUsagePreferFastBuild;
+        }
+
+        return usage;
+    }
+
     MetalRayTracingBLAS::MetalRayTracingBLAS(GfxDevice* gfx, std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags)
     {
         MetalDevice* metal_gfx = static_cast<MetalDevice*>(gfx);
@@ -62,6 +79,7 @@ namespace adria
 
         MTLPrimitiveAccelerationStructureDescriptor* accelDescriptor = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
         accelDescriptor.geometryDescriptors = geometryDescriptors;
+        accelDescriptor.usage = ConvertASFlags(flags);
 
         MTLAccelerationStructureSizes sizes = [device accelerationStructureSizesWithDescriptor:accelDescriptor];
 
@@ -127,6 +145,7 @@ namespace adria
 
         MTLInstanceAccelerationStructureDescriptor* accelDescriptor = [MTLInstanceAccelerationStructureDescriptor descriptor];
         accelDescriptor.instancedAccelerationStructures = [NSMutableArray array];
+        accelDescriptor.usage = ConvertASFlags(flags);
 
         NSMutableDictionary* blasToIndexMap = [NSMutableDictionary dictionary];
         for (auto const& inst : instances)
@@ -246,6 +265,10 @@ namespace adria
 
         Uint8* instance_contributions_buffer = header_data + header_size;
         MTLResourceID as_resource_id = acceleration_structure.gpuResourceID;
+
+        ADRIA_ASSERT(header_data != nullptr && "GPU header buffer contents is null");
+        ADRIA_ASSERT(as_resource_id._impl != 0 && "AS GPU resource ID is invalid");
+        ADRIA_ASSERT(acceleration_structure != nil && "Acceleration structure is nil");
 
         IRRaytracingSetAccelerationStructure(
             header_data,
