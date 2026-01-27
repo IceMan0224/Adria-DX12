@@ -81,11 +81,15 @@ namespace adria
         MetalBuffer* metal_result_buffer = static_cast<MetalBuffer*>(result_buffer.get());
         acceleration_structure = [device newAccelerationStructureWithSize:sizes.accelerationStructureSize];
 
+        metal_gfx->MakeResident(acceleration_structure);
+        metal_gfx->MakeResident(metal_result_buffer->GetMetalBuffer());
+        MetalBuffer* metal_scratch_buffer = static_cast<MetalBuffer*>(scratch_buffer.get());
+        metal_gfx->MakeResident(metal_scratch_buffer->GetMetalBuffer());
+
         id<MTLCommandQueue> commandQueue = metal_gfx->GetMTLCommandQueue();
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
         id<MTLAccelerationStructureCommandEncoder> accelEncoder = [commandBuffer accelerationStructureCommandEncoder];
 
-        MetalBuffer* metal_scratch_buffer = static_cast<MetalBuffer*>(scratch_buffer.get());
         [accelEncoder buildAccelerationStructure:acceleration_structure
                                       descriptor:accelDescriptor
                                    scratchBuffer:metal_scratch_buffer->GetMetalBuffer()
@@ -205,11 +209,15 @@ namespace adria
         MetalBuffer* metal_result_buffer = static_cast<MetalBuffer*>(result_buffer.get());
         acceleration_structure = [device newAccelerationStructureWithSize:sizes.accelerationStructureSize];
 
+        metal_gfx->MakeResident(acceleration_structure);
+        metal_gfx->MakeResident(metal_result_buffer->GetMetalBuffer());
+        MetalBuffer* metal_scratch_buffer = static_cast<MetalBuffer*>(scratch_buffer.get());
+        metal_gfx->MakeResident(metal_scratch_buffer->GetMetalBuffer());
+
         id<MTLCommandQueue> commandQueue = metal_gfx->GetMTLCommandQueue();
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
         id<MTLAccelerationStructureCommandEncoder> accelEncoder = [commandBuffer accelerationStructureCommandEncoder];
 
-        MetalBuffer* metal_scratch_buffer = static_cast<MetalBuffer*>(scratch_buffer.get());
         [accelEncoder buildAccelerationStructure:acceleration_structure
                                       descriptor:accelDescriptor
                                    scratchBuffer:metal_scratch_buffer->GetMetalBuffer()
@@ -229,19 +237,22 @@ namespace adria
         gpu_header_desc.bind_flags = GfxBindFlag::None;
         gpu_header_buffer = gfx->CreateBuffer(gpu_header_desc);
         MetalBuffer* metal_gpu_header = static_cast<MetalBuffer*>(gpu_header_buffer.get());
+
+        metal_gfx->MakeResident(metal_gpu_header->GetMetalBuffer());
+        metal_gfx->MakeResident(metal_instance_buffer->GetMetalBuffer());
+
         Uint8* header_data = static_cast<Uint8*>([metal_gpu_header->GetMetalBuffer() contents]);
         std::vector<Uint32> instance_contributions(instance_count, 0);
 
         Uint8* instance_contributions_buffer = header_data + header_size;
-        Uint64 instance_contributions_gpu_address = metal_gpu_header->GetMetalBuffer().gpuAddress + header_size;
+        MTLResourceID as_resource_id = acceleration_structure.gpuResourceID;
 
         IRRaytracingSetAccelerationStructure(
-            header_data,                              
-            acceleration_structure.gpuResourceID,     
-            instance_contributions_buffer,            
-            instance_contributions_gpu_address,       
+            header_data,
+            as_resource_id,
+            instance_contributions_buffer,
             instance_contributions.data(),
-            instance_count                            
+            instance_count
         );
     }
 

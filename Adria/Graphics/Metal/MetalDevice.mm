@@ -538,6 +538,39 @@ namespace adria
         return EncodeFromMetalRenderTargetDescriptor(rt_desc);
     }
 
+    GfxDescriptor MetalDevice::CreateRayTracingTLASSRV(GfxRayTracingTLAS const* tlas)
+    {
+        if (!tlas || !resource_descriptor_allocator)
+        {
+            return {};
+        }
+
+        MetalRayTracingTLAS const* metal_tlas = static_cast<MetalRayTracingTLAS const*>(tlas);
+        GfxBuffer const* gpu_header_buffer = metal_tlas->GetGpuHeaderBuffer();
+
+        if (!gpu_header_buffer)
+        {
+            return {};
+        }
+
+        MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(gpu_header_buffer);
+        Uint64 gpu_address = metal_buffer->GetGpuAddress();
+
+        IRDescriptorTableEntry* entry = nullptr;
+        Uint32 index = UINT32_MAX;
+
+        index = AllocatePersistentResourceDescriptor(&entry);
+        if (index == UINT32_MAX || !entry)
+        {
+            return {};
+        }
+
+        IRDescriptorTableSetAccelerationStructure(entry, gpu_address);
+        MetalDescriptor metal_desc{};
+        metal_desc.index = index;
+        return EncodeFromMetalDescriptor(metal_desc);
+    }
+
     std::unique_ptr<GfxCommandList> MetalDevice::CreateCommandList(GfxCommandListType type)
     {
         return std::make_unique<MetalCommandList>(this, type);
@@ -825,6 +858,17 @@ namespace adria
         if (texture && residency_set)
         {
             [residency_set addAllocation:texture];
+            residency_dirty = true;
+            [residency_set commit];
+            residency_dirty = false;
+        }
+    }
+
+    void MetalDevice::MakeResident(id<MTLAccelerationStructure> acceleration_structure)
+    {
+        if (acceleration_structure && residency_set)
+        {
+            [residency_set addAllocation:acceleration_structure];
             residency_dirty = true;
             [residency_set commit];
             residency_dirty = false;

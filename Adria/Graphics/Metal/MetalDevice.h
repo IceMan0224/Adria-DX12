@@ -130,6 +130,7 @@ namespace adria
         GfxDescriptor CreateTextureUAV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override;
         GfxDescriptor CreateTextureRTV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override;
         GfxDescriptor CreateTextureDSV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override;
+        GfxDescriptor CreateRayTracingTLASSRV(GfxRayTracingTLAS const*) override;
 
         Uint64 GetLinearBufferSize(GfxTexture const* texture) const override { return 0; }
         Uint64 GetLinearBufferSize(GfxBuffer const* buffer) const override { return 0; }
@@ -148,6 +149,7 @@ namespace adria
 
         void MakeResident(id<MTLBuffer> buffer);
         void MakeResident(id<MTLTexture> texture);
+        void MakeResident(id<MTLAccelerationStructure> acceleration_structure);
         void Evict(id<MTLBuffer> buffer);
         void Evict(id<MTLTexture> texture);
 

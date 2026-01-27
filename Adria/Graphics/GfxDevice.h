@@ -155,6 +155,7 @@ namespace adria
 		virtual GfxDescriptor CreateTextureUAV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) = 0;
 		virtual GfxDescriptor CreateTextureRTV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) = 0;
 		virtual GfxDescriptor CreateTextureDSV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) = 0;
+		virtual GfxDescriptor CreateRayTracingTLASSRV(GfxRayTracingTLAS const*) = 0;
 
 		virtual Uint64 GetLinearBufferSize(GfxTexture const* texture) const = 0;
 		virtual Uint64 GetLinearBufferSize(GfxBuffer const* buffer) const = 0;

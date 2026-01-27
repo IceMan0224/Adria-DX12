@@ -9,7 +9,7 @@ namespace adria
     ADRIA_LOG_CHANNEL(Graphics);
     
     MetalRayTracingPipeline::MetalRayTracingPipeline(GfxDevice* gfx, GfxRayTracingPipelineDesc const& desc)
-        : raygen_pipeline(nil), intersection_table(nil)
+        : raygen_pipeline(nil), intersection_table(nil), visible_function_table(nil)
     {
         @autoreleasepool
         {
@@ -227,6 +227,49 @@ namespace adria
                 }
             }
 
+            NSUInteger linkedFunctionCount = linkedFunctions ? linkedFunctions.functions.count : 0;
+            if (linkedFunctionCount > 0)
+            {
+                MTLVisibleFunctionTableDescriptor* visibleFunctionTableDesc = [[MTLVisibleFunctionTableDescriptor alloc] init];
+                visibleFunctionTableDesc.functionCount = linkedFunctionCount;
+
+                visible_function_table = [raygen_pipeline newVisibleFunctionTableWithDescriptor:visibleFunctionTableDesc];
+                Uint32 func_index = 0;
+                for (id<MTLFunction> func in linkedFunctions.functions)
+                {
+                    NSString* funcName = [func name];
+                    std::string funcNameStr = [funcName UTF8String];
+
+                    id<MTLFunctionHandle> handle = [raygen_pipeline functionHandleWithFunction:func];
+                    [visible_function_table setFunction:handle atIndex:func_index];
+
+                    shader_to_index[funcNameStr] = func_index;
+                    func_index++;
+                }
+
+                for (auto const& hit_group : desc.hit_groups)
+                {
+                    std::string shader_to_use;
+                    if (!hit_group.any_hit_shader.empty())
+                    {
+                        shader_to_use = hit_group.any_hit_shader;
+                    }
+                    else if (!hit_group.closest_hit_shader.empty())
+                    {
+                        shader_to_use = hit_group.closest_hit_shader;
+                    }
+
+                    if (!shader_to_use.empty())
+                    {
+                        auto it = shader_to_index.find(shader_to_use);
+                        if (it != shader_to_index.end())
+                        {
+                            shader_to_index[hit_group.name] = it->second;
+                        }
+                    }
+                }
+            }
+
             CacheShaderNames(desc);
         }
     }
@@ -235,6 +278,7 @@ namespace adria
     {
         @autoreleasepool
         {
+            visible_function_table = nil;
             intersection_table = nil;
             raygen_pipeline = nil;
         }
@@ -254,6 +298,17 @@ namespace adria
     {
         ADRIA_ASSERT(name != nullptr);
         return shader_names.find(name) != shader_names.end();
+    }
+
+    Uint32 MetalRayTracingPipeline::GetShaderFunctionIndex(Char const* name) const
+    {
+        ADRIA_ASSERT(name != nullptr);
+        auto it = shader_to_index.find(name);
+        if (it != shader_to_index.end())
+        {
+            return it->second;
+        }
+        return UINT32_MAX;
     }
 
     void MetalRayTracingPipeline::CacheShaderNames(GfxRayTracingPipelineDesc const& desc)

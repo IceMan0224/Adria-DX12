@@ -71,6 +71,7 @@ namespace adria
 		virtual ~GfxRayTracingTLAS() = default;
 		virtual Uint64 GetGpuAddress() const = 0;
 		virtual GfxBuffer const& GetBuffer() const = 0;
+		virtual GfxBuffer const* GetGpuHeaderBuffer() const { return nullptr; } 
 
 		GfxBuffer const& operator*() const { return GetBuffer(); }
 	};

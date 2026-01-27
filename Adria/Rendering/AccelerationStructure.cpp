@@ -60,7 +60,8 @@ namespace adria
 			rt_instance.blas = blases[rt_instance.instance_id].get();
 		}
 		BuildTopLevel();
-		tlas_srv = gfx->CreateBufferSRV(&tlas->GetBuffer());
+
+		tlas_srv = gfx->CreateRayTracingTLASSRV(tlas.get());
 	}
 
 	void AccelerationStructure::Clear()

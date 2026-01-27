@@ -1158,26 +1158,54 @@ namespace adria
                            length:sizeof(TopLevelArgumentBuffer)
                           atIndex:kIRArgumentBufferBindPoint];
 
+        MetalRayTracingShaderBindings* metal_bindings = static_cast<MetalRayTracingShaderBindings*>(current_rt_bindings.get());
+        MetalRayTracingPipeline const* metal_pipeline = metal_bindings->GetPipeline();
+        GfxLinearDynamicAllocator* dynamic_allocator = metal_device->GetDynamicAllocator();
+        MetalShaderTableDescriptors shader_tables = metal_bindings->CommitAndGetShaderTables(*dynamic_allocator);
+
         IRDispatchRaysArgument rt_args = {};
 
         rt_args.DispatchRaysDesc.Width = dispatch_width;
         rt_args.DispatchRaysDesc.Height = dispatch_height;
         rt_args.DispatchRaysDesc.Depth = dispatch_depth;
 
-        // TODO: Fill in shader tables when ray tracing is fully implemented
-        // rt_args.DispatchRaysDesc.RayGenerationShaderRecord = ...
-        // rt_args.DispatchRaysDesc.MissShaderTable = ...
-        // rt_args.DispatchRaysDesc.HitGroupTable = ...
-        // rt_args.DispatchRaysDesc.CallableShaderTable = ...
-        // rt_args.GRS = ...
-        // rt_args.ResDescHeap = ...
-        // rt_args.SmpDescHeap = ...
-        // rt_args.VisibleFunctionTable = ...
-        // rt_args.IntersectionFunctionTable = ...
-        // rt_args.IntersectionFunctionTables = ...
-        // Bind the ray tracing dispatch argument at index 3 for Metal Shader Converter
-        [compute_encoder setBytes:&rt_args length:sizeof(IRDispatchRaysArgument) atIndex:3];
+        rt_args.DispatchRaysDesc.RayGenerationShaderRecord.StartAddress = reinterpret_cast<Uint64>(shader_tables.ray_gen_record_addr);
+        rt_args.DispatchRaysDesc.RayGenerationShaderRecord.SizeInBytes = sizeof(Uint32); 
+        if (shader_tables.miss_shader_table_addr != nullptr)
+        {
+            rt_args.DispatchRaysDesc.MissShaderTable.StartAddress = reinterpret_cast<Uint64>(shader_tables.miss_shader_table_addr);
+            rt_args.DispatchRaysDesc.MissShaderTable.SizeInBytes = shader_tables.miss_shader_size;
+            rt_args.DispatchRaysDesc.MissShaderTable.StrideInBytes = shader_tables.miss_shader_stride;
+        }
 
+        if (shader_tables.hit_group_table_addr != nullptr)
+        {
+            rt_args.DispatchRaysDesc.HitGroupTable.StartAddress = reinterpret_cast<Uint64>(shader_tables.hit_group_table_addr);
+            rt_args.DispatchRaysDesc.HitGroupTable.SizeInBytes = shader_tables.hit_group_size;
+            rt_args.DispatchRaysDesc.HitGroupTable.StrideInBytes = shader_tables.hit_group_stride;
+        }
+
+        if (shader_tables.callable_shader_table_addr != nullptr)
+        {
+            rt_args.DispatchRaysDesc.CallableShaderTable.StartAddress = reinterpret_cast<Uint64>(shader_tables.callable_shader_table_addr);
+            rt_args.DispatchRaysDesc.CallableShaderTable.SizeInBytes = shader_tables.callable_shader_size;
+            rt_args.DispatchRaysDesc.CallableShaderTable.StrideInBytes = shader_tables.callable_shader_stride;
+        }
+
+        id<MTLVisibleFunctionTable> visible_function_table = metal_pipeline->GetVisibleFunctionTable();
+        id<MTLIntersectionFunctionTable> intersection_function_table = metal_pipeline->GetIntersectionTable();
+        if (visible_function_table != nil)
+        {
+            [compute_encoder setVisibleFunctionTable:visible_function_table atBufferIndex:1];
+            rt_args.VisibleFunctionTable = [visible_function_table gpuResourceID];
+        }
+
+        if (intersection_function_table != nil)
+        {
+            rt_args.IntersectionFunctionTable = [intersection_function_table gpuResourceID];
+        }
+
+        [compute_encoder setBytes:&rt_args length:sizeof(IRDispatchRaysArgument) atIndex:3];
         current_rt_bindings->Commit();
 
         MTLSize threadgroupsPerGrid = MTLSizeMake(

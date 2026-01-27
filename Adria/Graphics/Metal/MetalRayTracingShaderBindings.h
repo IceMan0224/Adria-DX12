@@ -9,6 +9,24 @@
 namespace adria
 {
     class MetalRayTracingPipeline;
+    class GfxLinearDynamicAllocator;
+
+    struct MetalShaderTableDescriptors
+    {
+        void const* ray_gen_record_addr = nullptr;
+
+        void const* miss_shader_table_addr = nullptr;
+        Uint32 miss_shader_stride = 0;
+        Uint32 miss_shader_size = 0;
+
+        void const* hit_group_table_addr = nullptr;
+        Uint32 hit_group_stride = 0;
+        Uint32 hit_group_size = 0;
+
+        void const* callable_shader_table_addr = nullptr;
+        Uint32 callable_shader_stride = 0;
+        Uint32 callable_shader_size = 0;
+    };
 
     class MetalRayTracingShaderBindings : public GfxRayTracingShaderBindings
     {
@@ -26,6 +44,9 @@ namespace adria
         virtual Uint32 GetMissShaderIndex(GfxShaderGroupHandle handle) const override;
         virtual Uint32 GetHitGroupIndex(GfxShaderGroupHandle handle) const override;
         virtual Uint32 GetCallableShaderIndex(GfxShaderGroupHandle handle) const override;
+
+        MetalShaderTableDescriptors CommitAndGetShaderTables(GfxLinearDynamicAllocator& allocator);
+        MetalRayTracingPipeline const* GetPipeline() const { return pipeline; }
 
         id<MTLBuffer> GetShaderBindingTable() const { return shader_binding_table; }
         Uint32 GetMissShaderBaseIndex() const { return miss_shader_base_index; }

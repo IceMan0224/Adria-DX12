@@ -807,6 +807,11 @@ namespace adria
 		return EncodeFromD3D12Descriptor(CreateTextureViewImpl(texture, GfxSubresourceType::DSV, _desc));
 	}
 
+	GfxDescriptor D3D12Device::CreateRayTracingTLASSRV(GfxRayTracingTLAS const* tlas)
+	{
+		return CreateBufferSRV(&tlas->GetBuffer());
+	}
+
 	Uint64 D3D12Device::GetLinearBufferSize(GfxTexture const* texture) const
 	{
 		ADRIA_ASSERT(texture);
