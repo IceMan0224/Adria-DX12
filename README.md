@@ -1,6 +1,6 @@
 <img align="center" padding="2" src="Adria/Resources/Icons/adria_logo_wide2.png"/>
 
-Graphics engine written in C++ using DirectX12 and Metal.
+Graphics engine written in C++ with DirectX12 and Metal backends.
 
 ## Backends
 * **DirectX12** - Full feature support (Windows)
