@@ -13,17 +13,17 @@ namespace adria
 
     struct MetalShaderTableDescriptors
     {
-        void const* ray_gen_record_addr = nullptr;
+        Uint64 ray_gen_record_gpu_addr = 0;
 
-        void const* miss_shader_table_addr = nullptr;
+        Uint64 miss_shader_table_gpu_addr = 0;
         Uint32 miss_shader_stride = 0;
         Uint32 miss_shader_size = 0;
 
-        void const* hit_group_table_addr = nullptr;
+        Uint64 hit_group_table_gpu_addr = 0;
         Uint32 hit_group_stride = 0;
         Uint32 hit_group_size = 0;
 
-        void const* callable_shader_table_addr = nullptr;
+        Uint64 callable_shader_table_gpu_addr = 0;
         Uint32 callable_shader_stride = 0;
         Uint32 callable_shader_size = 0;
     };

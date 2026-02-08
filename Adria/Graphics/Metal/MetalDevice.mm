@@ -360,6 +360,11 @@ namespace adria
         Uint64 offset = desc ? desc->offset : 0;
         IRDescriptorTableSetBuffer(entry, buffer_address + offset, 0);
 
+        if (buffer->IsPersistent())
+        {
+            TrackBindlessResource(mtl_buffer, MTLResourceUsageRead);
+        }
+
         MetalDescriptor metal_desc{};
         metal_desc.index = index;
 
@@ -397,6 +402,11 @@ namespace adria
         Uint64 buffer_address = metal_buffer->GetGpuAddress();
         Uint64 offset = desc ? desc->offset : 0;
         IRDescriptorTableSetBuffer(entry, buffer_address + offset, 0);
+
+        if (buffer->IsPersistent())
+        {
+            TrackBindlessResource(metal_buffer->GetMetalBuffer(), MTLResourceUsageRead | MTLResourceUsageWrite);
+        }
 
         MetalDescriptor metal_desc{};
         metal_desc.index = index;
@@ -439,6 +449,12 @@ namespace adria
         }
 
         IRDescriptorTableSetTexture(entry, texture_view, 0.0f, 0);
+
+        if (texture->IsPersistent())
+        {
+            TrackBindlessResource(texture_view, MTLResourceUsageRead);
+        }
+
         MetalDescriptor metal_desc{};
         metal_desc.index = index;
 
@@ -493,6 +509,11 @@ namespace adria
         }
 
         IRDescriptorTableSetTexture(entry, texture_view, 0.0f, 0);
+
+        if (texture->IsPersistent())
+        {
+            TrackBindlessResource(texture_view, MTLResourceUsageRead | MTLResourceUsageWrite);
+        }
 
         MetalDescriptor metal_desc{};
         metal_desc.index = index;
@@ -566,6 +587,10 @@ namespace adria
         }
 
         IRDescriptorTableSetAccelerationStructure(entry, gpu_address);
+
+        TrackBindlessResource(metal_buffer->GetMetalBuffer(), MTLResourceUsageRead);
+        TrackBindlessResource(metal_tlas->GetAccelerationStructure(), MTLResourceUsageRead);
+
         MetalDescriptor metal_desc{};
         metal_desc.index = index;
         return EncodeFromMetalDescriptor(metal_desc);
@@ -904,6 +929,49 @@ namespace adria
             return UINT32_MAX;
         }
         return resource_descriptor_allocator->AllocateTransient(descriptor);
+    }
+
+    void MetalDevice::TrackBindlessResource(id<MTLResource> resource, MTLResourceUsage usage)
+    {
+        if (!resource) return;
+        for (auto& entry : bindless_resources)
+        {
+            if (entry.resource == resource)
+            {
+                entry.usage |= usage;
+                return;
+            }
+        }
+        bindless_resources.push_back({ resource, usage });
+    }
+
+    void MetalDevice::UntrackBindlessResource(id<MTLResource> resource)
+    {
+        if (!resource) 
+        {
+            return;
+        }
+        
+        bindless_resources.erase(
+            std::remove_if(bindless_resources.begin(), bindless_resources.end(),
+                [resource](auto const& entry) { return entry.resource == resource; }),
+            bindless_resources.end());
+    }
+
+    void MetalDevice::BindBindlessResources(id<MTLComputeCommandEncoder> encoder) const
+    {
+        for (auto const& entry : bindless_resources)
+        {
+            [encoder useResource:entry.resource usage:entry.usage];
+        }
+    }
+
+    void MetalDevice::BindBindlessResources(id<MTLRenderCommandEncoder> encoder) const
+    {
+        for (auto const& entry : bindless_resources)
+        {
+            [encoder useResource:entry.resource usage:entry.usage stages:MTLRenderStageFragment | MTLRenderStageVertex];
+        }
     }
 
     Uint32 MetalDevice::AllocatePersistentResourceDescriptor(IRDescriptorTableEntry** descriptor)

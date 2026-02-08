@@ -264,6 +264,8 @@ namespace adria
         std::vector<Uint32> instance_contributions(instance_count, 0);
 
         Uint8* instance_contributions_buffer = header_data + header_size;
+        Uint64 gpu_header_gpu_address = metal_gpu_header->GetGpuAddress();
+        Uint64 instance_contributions_gpu_address = gpu_header_gpu_address + header_size;
         MTLResourceID as_resource_id = acceleration_structure.gpuResourceID;
 
         ADRIA_ASSERT(header_data != nullptr && "GPU header buffer contents is null");
@@ -274,6 +276,7 @@ namespace adria
             header_data,
             as_resource_id,
             instance_contributions_buffer,
+            instance_contributions_gpu_address,
             instance_contributions.data(),
             instance_count
         );

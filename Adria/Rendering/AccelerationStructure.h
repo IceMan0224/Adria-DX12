@@ -19,6 +19,7 @@ namespace adria
 		void Clear();
 
 		Int32 GetTLASIndex() const;
+		GfxRayTracingTLAS const* GetTLAS() const { return tlas.get(); }
 
 	private:
 		GfxDevice* gfx;

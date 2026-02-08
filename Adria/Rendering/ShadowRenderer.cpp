@@ -255,7 +255,7 @@ namespace adria
 				mask_desc.height = height;
 				mask_desc.format = GfxFormat::R8_UNORM;
 				mask_desc.initial_state = GfxResourceState::ComputeUAV;
-				mask_desc.bind_flags = GfxBindFlag::UnorderedAccess | GfxBindFlag::UnorderedAccess;
+				mask_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
 				light_mask_textures[light_id] = gfx->CreateTexture(mask_desc);
 				light_mask_texture_srvs[light_id] = gfx->CreateTextureSRV(light_mask_textures[light_id].get());
 				light_mask_texture_uavs[light_id] = gfx->CreateTextureUAV(light_mask_textures[light_id].get());
@@ -382,6 +382,7 @@ namespace adria
 			Light& light = light_view.get<Light>(e);
 			light.shadow_mask_index = -1;
 			light.shadow_texture_index = -1;
+			light.shadow_matrix_index = -1;
 
 			if (light.ray_traced_shadows && !rt_shadows_supported)
 			{

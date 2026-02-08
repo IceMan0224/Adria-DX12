@@ -2,6 +2,8 @@
 
 namespace adria
 {
+	class GfxRayTracingTLAS;
+
 	struct FrameBlackboardData
 	{
 		DirectX::XMMATRIX			camera_view;
@@ -16,6 +18,7 @@ namespace adria
 		Float						camera_position[4];
 		Float						delta_time;
 		Uint64						frame_cbuffer_address;
+		GfxRayTracingTLAS const*	tlas;
 	};
 
 	struct DoFBlackboardData

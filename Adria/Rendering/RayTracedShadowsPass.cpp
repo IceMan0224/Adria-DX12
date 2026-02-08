@@ -66,6 +66,7 @@ namespace adria
 
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
+				cmd_list->SetRayTracingTLAS(frame_data.tlas);
 				cmd_list->DispatchRays(width, height);
 
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);

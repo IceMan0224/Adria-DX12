@@ -514,6 +514,10 @@ namespace adria
 			frame_data.camera_jitter_y = camera_jitter.y;
 			frame_data.delta_time = frame_cbuf_data.delta_time;
 			frame_data.frame_cbuffer_address = frame_cbuffer.GetGpuAddress(backbuffer_index);
+			if (ray_tracing_supported && reg.view<RayTracing>().size())
+			{
+				frame_data.tlas = accel_structure.GetTLAS();
+			}
 		}
 		rg_blackboard.Add<FrameBlackboardData>(std::move(frame_data));
 		render_graph.ImportTexture(RG_NAME(Backbuffer), gfx->GetBackbuffer());

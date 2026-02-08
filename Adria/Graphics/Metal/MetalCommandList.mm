@@ -9,6 +9,7 @@
 #include "MetalConversions.h"
 #include "MetalRayTracingPipeline.h"
 #include "MetalRayTracingShaderBindings.h"
+#include "MetalRayTracingAS.h"
 #include "MetalDescriptor.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxBufferView.h"
@@ -860,6 +861,7 @@ namespace adria
             [render_encoder setObjectBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
             [render_encoder setMeshBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
         }
+        metal_device->BindBindlessResources(render_encoder);
         SetViewport(0, 0, render_pass_desc.width, render_pass_desc.height);
         SetScissorRect(0, 0, render_pass_desc.width, render_pass_desc.height);
     }
@@ -1144,6 +1146,19 @@ namespace adria
         return current_rt_bindings.get();
     }
 
+    void MetalCommandList::SetRayTracingTLAS(GfxRayTracingTLAS const* tlas)
+    {
+        if (tlas)
+        {
+            MetalRayTracingTLAS const* metal_tlas = static_cast<MetalRayTracingTLAS const*>(tlas);
+            current_tlas = metal_tlas->GetAccelerationStructure();
+        }
+        else
+        {
+            current_tlas = nil;
+        }
+    }
+
     void MetalCommandList::DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth)
     {
         if (dispatch_width == 0 || dispatch_height == 0 || dispatch_depth == 0)
@@ -1169,28 +1184,39 @@ namespace adria
         rt_args.DispatchRaysDesc.Height = dispatch_height;
         rt_args.DispatchRaysDesc.Depth = dispatch_depth;
 
-        rt_args.DispatchRaysDesc.RayGenerationShaderRecord.StartAddress = reinterpret_cast<Uint64>(shader_tables.ray_gen_record_addr);
-        rt_args.DispatchRaysDesc.RayGenerationShaderRecord.SizeInBytes = sizeof(Uint32); 
-        if (shader_tables.miss_shader_table_addr != nullptr)
+        rt_args.DispatchRaysDesc.RayGenerationShaderRecord.StartAddress = shader_tables.ray_gen_record_gpu_addr;
+        rt_args.DispatchRaysDesc.RayGenerationShaderRecord.SizeInBytes = sizeof(IRShaderIdentifier);
+        if (shader_tables.miss_shader_table_gpu_addr != 0)
         {
-            rt_args.DispatchRaysDesc.MissShaderTable.StartAddress = reinterpret_cast<Uint64>(shader_tables.miss_shader_table_addr);
+            rt_args.DispatchRaysDesc.MissShaderTable.StartAddress = shader_tables.miss_shader_table_gpu_addr;
             rt_args.DispatchRaysDesc.MissShaderTable.SizeInBytes = shader_tables.miss_shader_size;
             rt_args.DispatchRaysDesc.MissShaderTable.StrideInBytes = shader_tables.miss_shader_stride;
         }
 
-        if (shader_tables.hit_group_table_addr != nullptr)
+        if (shader_tables.hit_group_table_gpu_addr != 0)
         {
-            rt_args.DispatchRaysDesc.HitGroupTable.StartAddress = reinterpret_cast<Uint64>(shader_tables.hit_group_table_addr);
+            rt_args.DispatchRaysDesc.HitGroupTable.StartAddress = shader_tables.hit_group_table_gpu_addr;
             rt_args.DispatchRaysDesc.HitGroupTable.SizeInBytes = shader_tables.hit_group_size;
             rt_args.DispatchRaysDesc.HitGroupTable.StrideInBytes = shader_tables.hit_group_stride;
         }
 
-        if (shader_tables.callable_shader_table_addr != nullptr)
+        if (shader_tables.callable_shader_table_gpu_addr != 0)
         {
-            rt_args.DispatchRaysDesc.CallableShaderTable.StartAddress = reinterpret_cast<Uint64>(shader_tables.callable_shader_table_addr);
+            rt_args.DispatchRaysDesc.CallableShaderTable.StartAddress = shader_tables.callable_shader_table_gpu_addr;
             rt_args.DispatchRaysDesc.CallableShaderTable.SizeInBytes = shader_tables.callable_shader_size;
             rt_args.DispatchRaysDesc.CallableShaderTable.StrideInBytes = shader_tables.callable_shader_stride;
         }
+
+        GfxDynamicAllocation ab_alloc = dynamic_allocator->Allocate(sizeof(TopLevelArgumentBuffer), 16);
+        ab_alloc.Update(&top_level_ab, sizeof(TopLevelArgumentBuffer));
+        rt_args.GRS = ab_alloc.gpu_address;
+
+        id<MTLBuffer> descriptor_buffer = metal_device->GetResourceDescriptorBuffer();
+        if (descriptor_buffer)
+        {
+            rt_args.ResDescHeap = [descriptor_buffer gpuAddress];
+        }
+        rt_args.SmpDescHeap = metal_device->GetSamplerTableGpuAddress();
 
         id<MTLVisibleFunctionTable> visible_function_table = metal_pipeline->GetVisibleFunctionTable();
         id<MTLIntersectionFunctionTable> intersection_function_table = metal_pipeline->GetIntersectionTable();
@@ -1207,6 +1233,11 @@ namespace adria
 
         [compute_encoder setBytes:&rt_args length:sizeof(IRDispatchRaysArgument) atIndex:3];
         current_rt_bindings->Commit();
+
+        if (current_tlas != nil)
+        {
+            [compute_encoder useResource:current_tlas usage:MTLResourceUsageRead];
+        }
 
         MTLSize threadgroupsPerGrid = MTLSizeMake(
             (dispatch_width + 7) / 8,
@@ -1263,6 +1294,7 @@ namespace adria
             {
                 [compute_encoder setBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
             }
+            metal_device->BindBindlessResources(compute_encoder);
         }
     }
 

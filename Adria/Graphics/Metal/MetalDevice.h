@@ -170,6 +170,11 @@ namespace adria
         id<MTLBuffer> GetSamplerTableBuffer() const { return sampler_table_buffer; }
         Uint64 GetSamplerTableGpuAddress() const { return sampler_table_gpu_address; }
         id<MTLComputePipelineState> GetClearPipeline(MetalClearPipeline pipeline) const { return clear_pipelines[static_cast<Uint32>(pipeline)]; }
+
+        void TrackBindlessResource(id<MTLResource> resource, MTLResourceUsage usage);
+        void UntrackBindlessResource(id<MTLResource> resource);
+        void BindBindlessResources(id<MTLComputeCommandEncoder> encoder) const;
+        void BindBindlessResources(id<MTLRenderCommandEncoder> encoder) const;
 #endif
 
     private:
@@ -215,7 +220,16 @@ namespace adria
             Uint64 base_address;
             Uint64 size;
         };
-        std::map<Uint64, BufferEntry> buffer_map; 
+        std::map<Uint64, BufferEntry> buffer_map;
+
+#ifdef __OBJC__
+        struct BindlessResourceEntry
+        {
+            id<MTLResource> resource;
+            MTLResourceUsage usage;
+        };
+        std::vector<BindlessResourceEntry> bindless_resources;
+#endif
 
     private:
         void AddToReleaseQueue_Internal(ReleasableObject* _obj) override {}

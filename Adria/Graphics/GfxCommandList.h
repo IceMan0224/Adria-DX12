@@ -16,6 +16,7 @@ namespace adria
 	class GfxQueryHeap;
 	class GfxRayTracingPipeline;
 	class GfxRayTracingShaderBindings;
+	class GfxRayTracingTLAS;
 	struct GfxVertexBufferView;
 	struct GfxIndexBufferView;
 	struct GfxRenderPassDesc;
@@ -98,6 +99,7 @@ namespace adria
 
 		virtual void SetPipelineState(GfxPipelineState const* state) = 0;
 		virtual GfxRayTracingShaderBindings* BeginRayTracingShaderBindings(GfxRayTracingPipeline const* pipeline) = 0;
+		virtual void SetRayTracingTLAS(GfxRayTracingTLAS const* tlas) {}
 		virtual void SetStencilReference(Uint8 stencil) = 0;
 		virtual void SetBlendFactor(Float const* blend_factor) = 0;
 		virtual void SetPrimitiveTopology(GfxPrimitiveTopology topology) = 0;

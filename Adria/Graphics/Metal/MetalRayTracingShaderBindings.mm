@@ -1,4 +1,5 @@
 #import <Metal/Metal.h>
+#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 #include "MetalRayTracingShaderBindings.h"
 #include "MetalRayTracingPipeline.h"
 #include "MetalDevice.h"
@@ -118,33 +119,33 @@ namespace adria
         ADRIA_ASSERT(is_committed);
         ADRIA_ASSERT(!ray_gen_record.name.empty() && "Ray generation shader must be set");
 
-        constexpr Uint32 METAL_SHADER_IDENTIFIER_SIZE = sizeof(Uint32);
-        constexpr Uint32 SHADER_RECORD_ALIGNMENT = 64; 
+        constexpr Uint32 SHADER_IDENTIFIER_SIZE = sizeof(IRShaderIdentifier);
+        constexpr Uint32 SHADER_RECORD_ALIGNMENT = 64;
         constexpr Uint32 SHADER_TABLE_ALIGNMENT = 256;
 
-        Uint32 ray_gen_record_size = METAL_SHADER_IDENTIFIER_SIZE + ray_gen_record.local_data_size;
+        Uint32 ray_gen_record_size = SHADER_IDENTIFIER_SIZE + ray_gen_record.local_data_size;
         ray_gen_record_size = static_cast<Uint32>(AlignUp(ray_gen_record_size, SHADER_RECORD_ALIGNMENT));
 
-        Uint32 miss_shader_record_size = METAL_SHADER_IDENTIFIER_SIZE;
+        Uint32 miss_shader_record_size = SHADER_IDENTIFIER_SIZE;
         for (auto const& record : miss_shader_records)
         {
-            Uint32 record_size = METAL_SHADER_IDENTIFIER_SIZE + record.local_data_size;
+            Uint32 record_size = SHADER_IDENTIFIER_SIZE + record.local_data_size;
             miss_shader_record_size = std::max(miss_shader_record_size, record_size);
         }
         miss_shader_record_size = static_cast<Uint32>(AlignUp(miss_shader_record_size, SHADER_RECORD_ALIGNMENT));
 
-        Uint32 hit_group_record_size = METAL_SHADER_IDENTIFIER_SIZE;
+        Uint32 hit_group_record_size = SHADER_IDENTIFIER_SIZE;
         for (auto const& record : hit_group_records)
         {
-            Uint32 record_size = METAL_SHADER_IDENTIFIER_SIZE + record.local_data_size;
+            Uint32 record_size = SHADER_IDENTIFIER_SIZE + record.local_data_size;
             hit_group_record_size = std::max(hit_group_record_size, record_size);
         }
         hit_group_record_size = static_cast<Uint32>(AlignUp(hit_group_record_size, SHADER_RECORD_ALIGNMENT));
 
-        Uint32 callable_shader_record_size = METAL_SHADER_IDENTIFIER_SIZE;
+        Uint32 callable_shader_record_size = SHADER_IDENTIFIER_SIZE;
         for (auto const& record : callable_shader_records)
         {
-            Uint32 record_size = METAL_SHADER_IDENTIFIER_SIZE + record.local_data_size;
+            Uint32 record_size = SHADER_IDENTIFIER_SIZE + record.local_data_size;
             callable_shader_record_size = std::max(callable_shader_record_size, record_size);
         }
         callable_shader_record_size = static_cast<Uint32>(AlignUp(callable_shader_record_size, SHADER_RECORD_ALIGNMENT));
@@ -166,21 +167,23 @@ namespace adria
         ADRIA_ASSERT(allocation.cpu_address != nullptr);
 
         Uint8* p_start = static_cast<Uint8*>(allocation.cpu_address);
+        Uint64 gpu_start = allocation.gpu_address;
         Uint8* p_data = p_start;
         MetalShaderTableDescriptors descriptors{};
 
-        Uint32 raygen_index = 0;
-        memcpy(p_data, &raygen_index, METAL_SHADER_IDENTIFIER_SIZE);
+        IRShaderIdentifier raygen_identifier{};
+        raygen_identifier.shaderHandle = 0;
+        memcpy(p_data, &raygen_identifier, SHADER_IDENTIFIER_SIZE);
         if (ray_gen_record.local_data_size > 0 && ray_gen_record.local_data != nullptr)
         {
-            memcpy(p_data + METAL_SHADER_IDENTIFIER_SIZE, ray_gen_record.local_data.get(), ray_gen_record.local_data_size);
+            memcpy(p_data + SHADER_IDENTIFIER_SIZE, ray_gen_record.local_data.get(), ray_gen_record.local_data_size);
         }
-        descriptors.ray_gen_record_addr = p_data;
+        descriptors.ray_gen_record_gpu_addr = gpu_start + static_cast<Uint64>(p_data - p_start);
         p_data = p_start + ray_gen_section_aligned;
 
         if (!miss_shader_records.empty())
         {
-            descriptors.miss_shader_table_addr = p_data;
+            descriptors.miss_shader_table_gpu_addr = gpu_start + static_cast<Uint64>(p_data - p_start);
             descriptors.miss_shader_stride = miss_shader_record_size;
             descriptors.miss_shader_size = miss_section;
 
@@ -188,10 +191,12 @@ namespace adria
             {
                 Uint32 miss_index = pipeline->GetShaderFunctionIndex(record.name.c_str());
                 ADRIA_ASSERT(miss_index != UINT32_MAX && "Miss shader not found in pipeline");
-                memcpy(p_data, &miss_index, METAL_SHADER_IDENTIFIER_SIZE);
+                IRShaderIdentifier identifier{};
+                identifier.shaderHandle = static_cast<Uint64>(miss_index);
+                memcpy(p_data, &identifier, SHADER_IDENTIFIER_SIZE);
                 if (record.local_data_size > 0 && record.local_data != nullptr)
                 {
-                    memcpy(p_data + METAL_SHADER_IDENTIFIER_SIZE, record.local_data.get(), record.local_data_size);
+                    memcpy(p_data + SHADER_IDENTIFIER_SIZE, record.local_data.get(), record.local_data_size);
                 }
                 p_data += miss_shader_record_size;
             }
@@ -200,7 +205,7 @@ namespace adria
 
         if (!hit_group_records.empty())
         {
-            descriptors.hit_group_table_addr = p_data;
+            descriptors.hit_group_table_gpu_addr = gpu_start + static_cast<Uint64>(p_data - p_start);
             descriptors.hit_group_stride = hit_group_record_size;
             descriptors.hit_group_size = hit_section;
 
@@ -208,10 +213,12 @@ namespace adria
             {
                 Uint32 hit_index = pipeline->GetShaderFunctionIndex(record.name.c_str());
                 ADRIA_ASSERT(hit_index != UINT32_MAX && "Hit group not found in pipeline");
-                memcpy(p_data, &hit_index, METAL_SHADER_IDENTIFIER_SIZE);
+                IRShaderIdentifier identifier{};
+                identifier.shaderHandle = static_cast<Uint64>(hit_index);
+                memcpy(p_data, &identifier, SHADER_IDENTIFIER_SIZE);
                 if (record.local_data_size > 0 && record.local_data != nullptr)
                 {
-                    memcpy(p_data + METAL_SHADER_IDENTIFIER_SIZE, record.local_data.get(), record.local_data_size);
+                    memcpy(p_data + SHADER_IDENTIFIER_SIZE, record.local_data.get(), record.local_data_size);
                 }
                 p_data += hit_group_record_size;
             }
@@ -220,7 +227,7 @@ namespace adria
 
         if (!callable_shader_records.empty())
         {
-            descriptors.callable_shader_table_addr = p_data;
+            descriptors.callable_shader_table_gpu_addr = gpu_start + static_cast<Uint64>(p_data - p_start);
             descriptors.callable_shader_stride = callable_shader_record_size;
             descriptors.callable_shader_size = callable_section;
 
@@ -228,10 +235,12 @@ namespace adria
             {
                 Uint32 callable_index = pipeline->GetShaderFunctionIndex(record.name.c_str());
                 ADRIA_ASSERT(callable_index != UINT32_MAX && "Callable shader not found in pipeline");
-                memcpy(p_data, &callable_index, METAL_SHADER_IDENTIFIER_SIZE);
+                IRShaderIdentifier identifier{};
+                identifier.shaderHandle = static_cast<Uint64>(callable_index);
+                memcpy(p_data, &identifier, SHADER_IDENTIFIER_SIZE);
                 if (record.local_data_size > 0 && record.local_data != nullptr)
                 {
-                    memcpy(p_data + METAL_SHADER_IDENTIFIER_SIZE, record.local_data.get(), record.local_data_size);
+                    memcpy(p_data + SHADER_IDENTIFIER_SIZE, record.local_data.get(), record.local_data_size);
                 }
                 p_data += callable_shader_record_size;
             }
