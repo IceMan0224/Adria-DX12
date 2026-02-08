@@ -371,6 +371,11 @@ namespace adria
 					light_matrices_buffer_srvs[i] = gfx->CreateBufferSRV(light_matrices_buffer.get(), &srv_desc);
 				}
 			}
+			else
+			{
+				light_matrices_buffer.reset();
+				light_matrices_gpu_index = -1;
+			}
 		}
 
 		bounding_objects.clear();

@@ -261,11 +261,11 @@ float CalcShadowFactor_PCF3x3(SamplerComparisonState shadowSampler,
 template<bool UsePCF = true>
 float GetShadowMapFactorWS(LightInfo light, float3 worldPosition)
 {
-	StructuredBuffer<float4x4> lightViewProjections = ResourceDescriptorHeap[FrameCB.lightsMatricesIdx];
 	bool castsShadows = light.shadowTextureIndex >= 0;
 	float shadowFactor = 1.0f;
 	if (castsShadows)
 	{
+		StructuredBuffer<float4x4> lightViewProjections = ResourceDescriptorHeap[FrameCB.lightsMatricesIdx];
 		switch (light.type)
 		{
 		case DIRECTIONAL_LIGHT:
@@ -335,11 +335,11 @@ float GetShadowMapFactorWS(LightInfo light, float3 worldPosition)
 template<bool UsePCF>
 float GetShadowMapFactor(LightInfo light, float3 viewPosition)
 {
-	StructuredBuffer<float4x4> lightViewProjections = ResourceDescriptorHeap[FrameCB.lightsMatricesIdx];
 	bool castsShadows = light.shadowTextureIndex >= 0;
 	float shadowFactor = 1.0f;
 	if (castsShadows)
 	{
+		StructuredBuffer<float4x4> lightViewProjections = ResourceDescriptorHeap[FrameCB.lightsMatricesIdx];
 		switch (light.type)
 		{
 		case DIRECTIONAL_LIGHT:
