@@ -172,7 +172,9 @@ namespace adria
         MetalShaderTableDescriptors descriptors{};
 
         IRShaderIdentifier raygen_identifier{};
-        raygen_identifier.shaderHandle = 0;
+        Uint32 raygen_index = pipeline->GetShaderFunctionIndex(ray_gen_record.name.c_str());
+        ADRIA_ASSERT(raygen_index != UINT32_MAX && "Raygen shader not found in pipeline VFT");
+        raygen_identifier.shaderHandle = static_cast<Uint64>(raygen_index);
         memcpy(p_data, &raygen_identifier, SHADER_IDENTIFIER_SIZE);
         if (ray_gen_record.local_data_size > 0 && ray_gen_record.local_data != nullptr)
         {

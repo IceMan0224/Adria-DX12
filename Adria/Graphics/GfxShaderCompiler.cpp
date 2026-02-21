@@ -744,7 +744,7 @@ namespace adria
 				rt_config = IRRayTracingPipelineConfigurationCreate();
 				IRRayTracingPipelineConfigurationSetMaxAttributeSizeInBytes(rt_config, 8);
 				IRRayTracingPipelineConfigurationSetMaxRecursiveDepth(rt_config, 1);
-				IRRayTracingPipelineConfigurationSetRayGenerationCompilationMode(rt_config, IRRayGenerationCompilationKernel);
+				IRRayTracingPipelineConfigurationSetRayGenerationCompilationMode(rt_config, IRRayGenerationCompilationVisibleFunction);
 				IRCompilerSetRayTracingPipelineConfiguration(metal_ir_compiler, rt_config);
 			}
 
