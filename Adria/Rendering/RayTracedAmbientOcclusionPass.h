@@ -33,16 +33,19 @@ namespace adria
 	private:
 		GfxDevice* gfx;
 		std::unique_ptr<GfxRayTracingPipeline> ray_traced_ambient_occlusion_pso;
+		std::unique_ptr<GfxComputePipelineState> ray_traced_ambient_occlusion_compute_pso;
 		std::unique_ptr<GfxComputePipelineState> rtao_filter_pso;
 		Uint32 width, height;
 		BlurPass blur_pass;
 
 		Bool is_supported;
+		Bool use_inline_rt;
 		RTAOParams params{};
 
 	private:
 		void CreatePSO();
 		void CreateStateObject();
 		void OnLibraryRecompiled(GfxShaderKey const&);
+		void OnShaderRecompiled(GfxShaderKey const&);
 	};
 }

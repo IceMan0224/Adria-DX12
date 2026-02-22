@@ -158,6 +158,7 @@ namespace adria
 			case CS_SVGF_Atrous:
 			case CS_RayTracedShadows:
 			case CS_RayTracedReflections:
+			case CS_RayTracedAmbientOcclusion:
 				return GfxShaderStage::CS;
 			case HS_OceanLOD:
 				return GfxShaderStage::HS;
@@ -347,6 +348,8 @@ namespace adria
 				return "RayTracing/RayTracedReflectionsCS.hlsl";
 			case LIB_AmbientOcclusion:
 				return "RayTracing/RayTracedAmbientOcclusion.hlsl";
+			case CS_RayTracedAmbientOcclusion:
+				return "RayTracing/RayTracedAmbientOcclusionCS.hlsl";
 			case LIB_Reflections:
 				return "RayTracing/RayTracedReflections.hlsl";
 			case LIB_PathTracing:
@@ -625,6 +628,8 @@ namespace adria
 				return "RayTracedShadowsCS";
 			case CS_RayTracedReflections:
 				return "RayTracedReflectionsCS";
+			case CS_RayTracedAmbientOcclusion:
+				return "RayTracedAmbientOcclusionCS";
 			}
 			return "main";
 		}
