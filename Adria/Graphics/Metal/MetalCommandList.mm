@@ -1308,4 +1308,34 @@ namespace adria
             compute_encoder = nil;
         }
     }
+
+    void MetalCommandList::BuildRayTracingBLAS(GfxRayTracingBLAS* blas)
+    {
+        EndRenderPass();
+        EndComputeEncoder();
+        EndBlitEncoder();
+
+        MetalRayTracingBLAS* metal_blas = static_cast<MetalRayTracingBLAS*>(blas);
+        id<MTLAccelerationStructureCommandEncoder> accel_encoder = [command_buffer accelerationStructureCommandEncoder];
+        [accel_encoder buildAccelerationStructure:metal_blas->acceleration_structure
+                                       descriptor:metal_blas->accel_descriptor
+                                    scratchBuffer:metal_blas->scratch_buffer
+                              scratchBufferOffset:0];
+        [accel_encoder endEncoding];
+    }
+
+    void MetalCommandList::BuildRayTracingTLAS(GfxRayTracingTLAS* tlas)
+    {
+        EndRenderPass();
+        EndComputeEncoder();
+        EndBlitEncoder();
+
+        MetalRayTracingTLAS* metal_tlas = static_cast<MetalRayTracingTLAS*>(tlas);
+        id<MTLAccelerationStructureCommandEncoder> accel_encoder = [command_buffer accelerationStructureCommandEncoder];
+        [accel_encoder buildAccelerationStructure:metal_tlas->acceleration_structure
+                                       descriptor:metal_tlas->accel_descriptor
+                                    scratchBuffer:metal_tlas->scratch_buffer
+                              scratchBufferOffset:0];
+        [accel_encoder endEncoding];
+    }
 }

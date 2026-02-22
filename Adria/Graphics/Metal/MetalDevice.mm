@@ -590,6 +590,10 @@ namespace adria
 
         TrackBindlessResource(metal_buffer->GetMetalBuffer(), MTLResourceUsageRead);
         TrackBindlessResource(metal_tlas->GetAccelerationStructure(), MTLResourceUsageRead);
+        for (id<MTLAccelerationStructure> blas : metal_tlas->GetBLASList())
+        {
+            TrackBindlessResource(blas, MTLResourceUsageRead);
+        }
 
         MetalDescriptor metal_desc{};
         metal_desc.index = index;

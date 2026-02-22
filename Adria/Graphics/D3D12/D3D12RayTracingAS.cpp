@@ -92,14 +92,6 @@ namespace adria
 		result_buffer_desc.stride = 4;
 		result_buffer = gfx->CreateBuffer(result_buffer_desc);
 		scratch_buffer->SetName("result buffer");
-
-		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC blas_desc{};
-		blas_desc.Inputs = inputs;
-		blas_desc.DestAccelerationStructureData = result_buffer->GetGpuAddress();
-		blas_desc.ScratchAccelerationStructureData = scratch_buffer->GetGpuAddress();
-
-		ID3D12GraphicsCommandList4* cmd_list = (ID3D12GraphicsCommandList4*)gfx->GetGraphicsCommandList()->GetNative();
-		cmd_list->BuildRaytracingAccelerationStructure(&blas_desc, 0, nullptr);
 	}
 
 	D3D12RayTracingBLAS::~D3D12RayTracingBLAS() = default;
@@ -151,15 +143,6 @@ namespace adria
 			p_instance_desc[i].InstanceMask = instances[i].instance_mask;
 		}
 		instance_buffer->Unmap();
-
-		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC tlas_desc{};
-		tlas_desc.Inputs = inputs;
-		tlas_desc.Inputs.InstanceDescs = instance_buffer->GetGpuAddress();
-		tlas_desc.DestAccelerationStructureData = result_buffer->GetGpuAddress();
-		tlas_desc.ScratchAccelerationStructureData = scratch_buffer->GetGpuAddress();
-
-		ID3D12GraphicsCommandList4* cmd_list = (ID3D12GraphicsCommandList4*)gfx->GetGraphicsCommandList()->GetNative();
-		cmd_list->BuildRaytracingAccelerationStructure(&tlas_desc, 0, nullptr);
 	}
 
 	D3D12RayTracingTLAS::~D3D12RayTracingTLAS() = default;

@@ -1,5 +1,4 @@
 #pragma once
-#include "Graphics/GfxFence.h"
 #include "Graphics/GfxDescriptor.h"
 #include "Graphics/GfxRayTracingAS.h"
 
@@ -29,9 +28,6 @@ namespace adria
 		std::vector<GfxRayTracingInstance> rt_instances;
 		std::unique_ptr<GfxRayTracingTLAS> tlas;
 		GfxDescriptor tlas_srv;
-
-		std::unique_ptr<GfxFence> build_fence;
-		Uint64 build_fence_value = 0;
 
 	private:
 		void BuildBottomLevels();

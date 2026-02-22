@@ -8,9 +8,11 @@
 namespace adria
 {
     class GfxBuffer;
+    class MetalCommandList;
 
     class MetalRayTracingBLAS : public GfxRayTracingBLAS
     {
+        friend class MetalCommandList;
     public:
         MetalRayTracingBLAS(GfxDevice* gfx, std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags);
         virtual ~MetalRayTracingBLAS() override;
@@ -22,12 +24,14 @@ namespace adria
 
     private:
         std::unique_ptr<GfxBuffer> result_buffer;
-        std::unique_ptr<GfxBuffer> scratch_buffer;
         id<MTLAccelerationStructure> acceleration_structure;
+        MTLPrimitiveAccelerationStructureDescriptor* accel_descriptor;
+        id<MTLBuffer> scratch_buffer;
     };
 
     class MetalRayTracingTLAS : public GfxRayTracingTLAS
     {
+        friend class MetalCommandList;
     public:
         MetalRayTracingTLAS(GfxDevice* gfx, std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags);
         virtual ~MetalRayTracingTLAS() override;
@@ -37,13 +41,16 @@ namespace adria
         virtual GfxBuffer const* GetGpuHeaderBuffer() const override { return gpu_header_buffer.get(); }
 
         id<MTLAccelerationStructure> GetAccelerationStructure() const { return acceleration_structure; }
+        std::vector<id<MTLAccelerationStructure>> const& GetBLASList() const { return blas_list; }
 
     private:
         std::unique_ptr<GfxBuffer> result_buffer;
-        std::unique_ptr<GfxBuffer> scratch_buffer;
         std::unique_ptr<GfxBuffer> instance_buffer;
         std::unique_ptr<GfxBuffer> gpu_header_buffer;
         id<MTLAccelerationStructure> acceleration_structure;
+        std::vector<id<MTLAccelerationStructure>> blas_list;
         Uint32 instance_count;
+        MTLInstanceAccelerationStructureDescriptor* accel_descriptor;
+        id<MTLBuffer> scratch_buffer;
     };
 }

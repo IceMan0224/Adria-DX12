@@ -14,6 +14,7 @@
 #include "Graphics/GfxCommon.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Graphics/GfxProfiler.h"
+#include "Graphics/GfxFence.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Utilities/ThreadPool.h"
 #include "Utilities/Random.h"

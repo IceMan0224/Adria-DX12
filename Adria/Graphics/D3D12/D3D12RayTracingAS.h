@@ -3,8 +3,11 @@
 
 namespace adria
 {
+	class D3D12CommandList;
+
 	class D3D12RayTracingBLAS : public GfxRayTracingBLAS
 	{
+		friend class D3D12CommandList;
 	public:
 		D3D12RayTracingBLAS(GfxDevice* gfx, std::span<GfxRayTracingGeometry> geometries, GfxRayTracingASFlags flags);
 		virtual ~D3D12RayTracingBLAS() override;
@@ -19,6 +22,7 @@ namespace adria
 
 	class D3D12RayTracingTLAS : public GfxRayTracingTLAS
 	{
+		friend class D3D12CommandList;
 	public:
 		D3D12RayTracingTLAS(GfxDevice* gfx, std::span<GfxRayTracingInstance> instances, GfxRayTracingASFlags flags);
 		virtual ~D3D12RayTracingTLAS() override;

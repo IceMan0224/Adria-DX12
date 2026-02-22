@@ -9,8 +9,6 @@ namespace adria
 
 	AccelerationStructure::AccelerationStructure(GfxDevice* gfx) : gfx(gfx)
 	{
-		build_fence = gfx->CreateFence("Build Fence");
-		++build_fence_value;
 	}
 
 	void AccelerationStructure::AddInstance(Mesh const& mesh)
@@ -85,30 +83,16 @@ namespace adria
 		for (Uint64 i = 0; i < blases.size(); ++i)
 		{
 			blases[i] = gfx->CreateRayTracingBLAS(geometry_span.subspan(i, 1), GfxRayTracingASFlag_PreferFastTrace);
+			cmd_list->BuildRayTracingBLAS(blases[i].get());
 		}
-		cmd_list->Signal(*build_fence, build_fence_value);
-		cmd_list->End();
-		cmd_list->Submit();
 	}
 
 	void AccelerationStructure::BuildTopLevel()
 	{
 		GfxCommandList* cmd_list = gfx->GetGraphicsCommandList();
-		cmd_list->Begin();
-
-		build_fence->Wait(build_fence_value);
-		++build_fence_value;
 
 		tlas = gfx->CreateRayTracingTLAS(rt_instances, GfxRayTracingASFlag_PreferFastTrace);
-
-		cmd_list->Signal(*build_fence, build_fence_value);
-		cmd_list->End();
-		cmd_list->Submit();
-
-		build_fence->Wait(build_fence_value);
-		++build_fence_value;
-
-		cmd_list->Begin();
+		cmd_list->BuildRayTracingTLAS(tlas.get());
 	}
 }
 

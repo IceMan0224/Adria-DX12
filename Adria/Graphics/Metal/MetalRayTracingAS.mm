@@ -77,11 +77,11 @@ namespace adria
             [geometryDescriptors addObject:triangleGeometry];
         }
 
-        MTLPrimitiveAccelerationStructureDescriptor* accelDescriptor = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
-        accelDescriptor.geometryDescriptors = geometryDescriptors;
-        accelDescriptor.usage = ConvertASFlags(flags);
+        accel_descriptor = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
+        accel_descriptor.geometryDescriptors = geometryDescriptors;
+        accel_descriptor.usage = ConvertASFlags(flags);
 
-        MTLAccelerationStructureSizes sizes = [device accelerationStructureSizesWithDescriptor:accelDescriptor];
+        MTLAccelerationStructureSizes sizes = [device accelerationStructureSizesWithDescriptor:accel_descriptor];
 
         GfxBufferDesc result_buffer_desc{};
         result_buffer_desc.size = sizes.accelerationStructureSize;
@@ -90,38 +90,18 @@ namespace adria
         result_buffer_desc.misc_flags = GfxBufferMiscFlag::AccelStruct;
         result_buffer = gfx->CreateBuffer(result_buffer_desc);
 
-        GfxBufferDesc scratch_buffer_desc{};
-        scratch_buffer_desc.size = sizes.buildScratchBufferSize;
-        scratch_buffer_desc.resource_usage = GfxResourceUsage::Default;
-        scratch_buffer_desc.bind_flags = GfxBindFlag::UnorderedAccess;
-        scratch_buffer = gfx->CreateBuffer(scratch_buffer_desc);
-
-        MetalBuffer* metal_result_buffer = static_cast<MetalBuffer*>(result_buffer.get());
         acceleration_structure = [device newAccelerationStructureWithSize:sizes.accelerationStructureSize];
-
         metal_gfx->MakeResident(acceleration_structure);
-        metal_gfx->MakeResident(metal_result_buffer->GetMetalBuffer());
-        MetalBuffer* metal_scratch_buffer = static_cast<MetalBuffer*>(scratch_buffer.get());
-        metal_gfx->MakeResident(metal_scratch_buffer->GetMetalBuffer());
 
-        id<MTLCommandQueue> commandQueue = metal_gfx->GetMTLCommandQueue();
-        id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-        id<MTLAccelerationStructureCommandEncoder> accelEncoder = [commandBuffer accelerationStructureCommandEncoder];
-
-        [accelEncoder buildAccelerationStructure:acceleration_structure
-                                      descriptor:accelDescriptor
-                                   scratchBuffer:metal_scratch_buffer->GetMetalBuffer()
-                             scratchBufferOffset:0];
-
-        [accelEncoder endEncoding];
-        [commandBuffer commit];
-        [commandBuffer waitUntilCompleted];
+        scratch_buffer = [device newBufferWithLength:sizes.buildScratchBufferSize options:MTLResourceStorageModePrivate];
     }
 
     MetalRayTracingBLAS::~MetalRayTracingBLAS()
     {
         @autoreleasepool
         {
+            accel_descriptor = nil;
+            scratch_buffer = nil;
             acceleration_structure = nil;
         }
     }
@@ -143,9 +123,9 @@ namespace adria
         instance_buffer_desc.bind_flags = GfxBindFlag::None;
         instance_buffer = gfx->CreateBuffer(instance_buffer_desc);
 
-        MTLInstanceAccelerationStructureDescriptor* accelDescriptor = [MTLInstanceAccelerationStructureDescriptor descriptor];
-        accelDescriptor.instancedAccelerationStructures = [NSMutableArray array];
-        accelDescriptor.usage = ConvertASFlags(flags);
+        accel_descriptor = [MTLInstanceAccelerationStructureDescriptor descriptor];
+        accel_descriptor.instancedAccelerationStructures = [NSMutableArray array];
+        accel_descriptor.usage = ConvertASFlags(flags);
 
         NSMutableDictionary* blasToIndexMap = [NSMutableDictionary dictionary];
         for (auto const& inst : instances)
@@ -153,11 +133,12 @@ namespace adria
             MetalRayTracingBLAS* blas = static_cast<MetalRayTracingBLAS*>(inst.blas);
             id<MTLAccelerationStructure> blas_as = blas->GetAccelerationStructure();
 
-            if (![accelDescriptor.instancedAccelerationStructures containsObject:blas_as])
+            if (![accel_descriptor.instancedAccelerationStructures containsObject:blas_as])
             {
-                NSUInteger index = [accelDescriptor.instancedAccelerationStructures count];
-                [(NSMutableArray*)accelDescriptor.instancedAccelerationStructures addObject:blas_as];
+                NSUInteger index = [accel_descriptor.instancedAccelerationStructures count];
+                [(NSMutableArray*)accel_descriptor.instancedAccelerationStructures addObject:blas_as];
                 [blasToIndexMap setObject:@(index) forKey:[NSValue valueWithPointer:blas]];
+                blas_list.push_back(blas_as);
             }
         }
 
@@ -205,12 +186,12 @@ namespace adria
             mtl_inst.accelerationStructureIndex = [index unsignedIntValue];
         }
 
-        accelDescriptor.instanceCount = instances.size();
-        accelDescriptor.instanceDescriptorBuffer = metal_instance_buffer->GetMetalBuffer();
-        accelDescriptor.instanceDescriptorBufferOffset = 0;
-        accelDescriptor.instanceDescriptorType = MTLAccelerationStructureInstanceDescriptorTypeDefault;
+        accel_descriptor.instanceCount = instances.size();
+        accel_descriptor.instanceDescriptorBuffer = metal_instance_buffer->GetMetalBuffer();
+        accel_descriptor.instanceDescriptorBufferOffset = 0;
+        accel_descriptor.instanceDescriptorType = MTLAccelerationStructureInstanceDescriptorTypeDefault;
 
-        MTLAccelerationStructureSizes sizes = [device accelerationStructureSizesWithDescriptor:accelDescriptor];
+        MTLAccelerationStructureSizes sizes = [device accelerationStructureSizesWithDescriptor:accel_descriptor];
 
         GfxBufferDesc result_buffer_desc{};
         result_buffer_desc.size = sizes.accelerationStructureSize;
@@ -219,32 +200,10 @@ namespace adria
         result_buffer_desc.misc_flags = GfxBufferMiscFlag::AccelStruct;
         result_buffer = gfx->CreateBuffer(result_buffer_desc);
 
-        GfxBufferDesc scratch_buffer_desc{};
-        scratch_buffer_desc.size = sizes.buildScratchBufferSize;
-        scratch_buffer_desc.resource_usage = GfxResourceUsage::Default;
-        scratch_buffer_desc.bind_flags = GfxBindFlag::UnorderedAccess;
-        scratch_buffer = gfx->CreateBuffer(scratch_buffer_desc);
-
-        MetalBuffer* metal_result_buffer = static_cast<MetalBuffer*>(result_buffer.get());
         acceleration_structure = [device newAccelerationStructureWithSize:sizes.accelerationStructureSize];
-
         metal_gfx->MakeResident(acceleration_structure);
-        metal_gfx->MakeResident(metal_result_buffer->GetMetalBuffer());
-        MetalBuffer* metal_scratch_buffer = static_cast<MetalBuffer*>(scratch_buffer.get());
-        metal_gfx->MakeResident(metal_scratch_buffer->GetMetalBuffer());
 
-        id<MTLCommandQueue> commandQueue = metal_gfx->GetMTLCommandQueue();
-        id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-        id<MTLAccelerationStructureCommandEncoder> accelEncoder = [commandBuffer accelerationStructureCommandEncoder];
-
-        [accelEncoder buildAccelerationStructure:acceleration_structure
-                                      descriptor:accelDescriptor
-                                   scratchBuffer:metal_scratch_buffer->GetMetalBuffer()
-                             scratchBufferOffset:0];
-
-        [accelEncoder endEncoding];
-        [commandBuffer commit];
-        [commandBuffer waitUntilCompleted];
+        scratch_buffer = [device newBufferWithLength:sizes.buildScratchBufferSize options:MTLResourceStorageModePrivate];
 
         Usize header_size = sizeof(IRRaytracingAccelerationStructureGPUHeader);
         Usize instance_contributions_size = sizeof(Uint32) * instance_count;
@@ -286,6 +245,8 @@ namespace adria
     {
         @autoreleasepool
         {
+            accel_descriptor = nil;
+            scratch_buffer = nil;
             acceleration_structure = nil;
         }
     }

@@ -9,6 +9,7 @@
 #include "D3D12PipelineState.h"
 #include "D3D12RayTracingPipeline.h"
 #include "D3D12RayTracingShaderBindings.h"
+#include "D3D12RayTracingAS.h"
 #include "D3D12RingDescriptorAllocator.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxRenderPass.h"
@@ -380,6 +381,27 @@ namespace adria
 		dispatch_desc.Depth = dispatch_depth;
 		cmd_list->DispatchRays(&dispatch_desc);
 		current_rt_bindings.reset();
+	}
+
+	void D3D12CommandList::BuildRayTracingBLAS(GfxRayTracingBLAS* blas)
+	{
+		D3D12RayTracingBLAS* d3d12_blas = static_cast<D3D12RayTracingBLAS*>(blas);
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
+		desc.DestAccelerationStructureData = d3d12_blas->result_buffer->GetGpuAddress();
+		desc.ScratchAccelerationStructureData = d3d12_blas->scratch_buffer->GetGpuAddress();
+		cmd_list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
+	}
+
+	void D3D12CommandList::BuildRayTracingTLAS(GfxRayTracingTLAS* tlas)
+	{
+		D3D12RayTracingTLAS* d3d12_tlas = static_cast<D3D12RayTracingTLAS*>(tlas);
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
+		desc.DestAccelerationStructureData = d3d12_tlas->result_buffer->GetGpuAddress();
+		desc.ScratchAccelerationStructureData = d3d12_tlas->scratch_buffer->GetGpuAddress();
+		desc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+		desc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+		desc.Inputs.InstanceDescs = d3d12_tlas->instance_buffer->GetGpuAddress();
+		cmd_list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
 	}
 
 	void D3D12CommandList::TextureBarrier(GfxTexture const& texture, GfxResourceState flags_before, GfxResourceState flags_after, Uint32 subresource)
