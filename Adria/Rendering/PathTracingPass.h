@@ -30,9 +30,12 @@ namespace adria
 		GfxDevice* gfx;
 		Uint32 width, height;
 		Bool is_supported;
+		Bool use_inline_rt;
 
 		std::unique_ptr<GfxRayTracingPipeline> path_tracing_pso;
 		std::unique_ptr<GfxRayTracingPipeline> path_tracing_svgf_enabled_pso;
+		std::unique_ptr<GfxComputePipelineState> path_tracing_compute_pso;
+		std::unique_ptr<GfxComputePipelineState> path_tracing_svgf_compute_pso;
 		std::unique_ptr<GfxGraphicsPipelineState> pt_gbuffer_pso;
 
 		std::unique_ptr<GfxTexture> accumulation_texture = nullptr;
@@ -46,6 +49,7 @@ namespace adria
 		void CreateStateObjects();
 		std::unique_ptr<GfxRayTracingPipeline> CreateRayTracingPipelineCommon(GfxShaderKey const&);
 		void OnLibraryRecompiled(GfxShaderKey const&);
+		void OnShaderRecompiled(GfxShaderKey const&);
 
 		void AddPTGBufferPass(RenderGraph&);
 		void AddPathTracingPass(RenderGraph&);

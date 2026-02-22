@@ -29,16 +29,32 @@ namespace adria
 	static TAutoConsoleVariable<Int> Denoiser("r.PathTracing.Denoiser", DenoiserType_None, "What denoiser will path tracer use: 0 - None, 1 - SVGF");
 
 	PathTracingPass::PathTracingPass(entt::registry& reg, GfxDevice* gfx, Uint32 width, Uint32 height)
-		: reg(reg), gfx(gfx), width(width), height(height)
+		: reg(reg), gfx(gfx), width(width), height(height), use_inline_rt(false)
 	{
-		is_supported = gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1);
+		if (gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1))
+		{
+			is_supported = true;
+			use_inline_rt = true;
+		}
+		else if (gfx->GetCapabilities().SupportsRayTracing())
+		{
+			is_supported = true;
+			use_inline_rt = false;
+		}
 		if (is_supported)
 		{
 			CreateStateObjects();
 			CreatePSOs();
 			svgf_denoiser_pass = std::make_unique<SVGFDenoiserPass>(gfx, width, height);
 			OnResize(width, height);
-			ShaderManager::GetLibraryRecompiledEvent().AddMember(&PathTracingPass::OnLibraryRecompiled, *this);
+			if (use_inline_rt)
+			{
+				ShaderManager::GetShaderRecompiledEvent().AddMember(&PathTracingPass::OnShaderRecompiled, *this);
+			}
+			else
+			{
+				ShaderManager::GetLibraryRecompiledEvent().AddMember(&PathTracingPass::OnLibraryRecompiled, *this);
+			}
 		}
 	}
 	PathTracingPass::~PathTracingPass() = default;
@@ -90,11 +106,7 @@ namespace adria
 
 	Bool PathTracingPass::IsSupported() const
 	{
-#if defined(ADRIA_PLATFORM_WINDOWS)
 		return is_supported;
-#else
-		return false;
-#endif
 	}
 
 	void PathTracingPass::Reset()
@@ -156,13 +168,25 @@ namespace adria
 
 	void PathTracingPass::CreateStateObjects()
 	{
-		GfxShaderKey pt_shader_key(LIB_PathTracing);
-		GfxShader const& pt_blob = SM_GetGfxShader(pt_shader_key);
-		path_tracing_pso = CreateRayTracingPipelineCommon(pt_shader_key);
+		if (use_inline_rt)
+		{
+			GfxShaderKey pt_shader_key(CS_PathTracing);
+			GfxComputePipelineStateDesc compute_pso_desc{};
+			compute_pso_desc.CS = pt_shader_key;
+			path_tracing_compute_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 
-		pt_shader_key.AddDefine("SVGF_ENABLED", "1");
-		GfxShader const& pt_blob_write_gbuffer = SM_GetGfxShader(pt_shader_key);
-		path_tracing_svgf_enabled_pso = CreateRayTracingPipelineCommon(pt_shader_key);
+			pt_shader_key.AddDefine("SVGF_ENABLED", "1");
+			compute_pso_desc.CS = pt_shader_key;
+			path_tracing_svgf_compute_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
+		}
+		else
+		{
+			GfxShaderKey pt_shader_key(LIB_PathTracing);
+			path_tracing_pso = CreateRayTracingPipelineCommon(pt_shader_key);
+
+			pt_shader_key.AddDefine("SVGF_ENABLED", "1");
+			path_tracing_svgf_enabled_pso = CreateRayTracingPipelineCommon(pt_shader_key);
+		}
 	}
 
 	std::unique_ptr<GfxRayTracingPipeline> PathTracingPass::CreateRayTracingPipelineCommon(GfxShaderKey const& shader_key)
@@ -190,6 +214,14 @@ namespace adria
 	void PathTracingPass::OnLibraryRecompiled(GfxShaderKey const& key)
 	{
 		if (key.GetShaderID() == LIB_PathTracing)
+		{
+			CreateStateObjects();
+		}
+	}
+
+	void PathTracingPass::OnShaderRecompiled(GfxShaderKey const& key)
+	{
+		if (key.GetShaderID() == CS_PathTracing)
 		{
 			CreateStateObjects();
 		}
@@ -354,10 +386,18 @@ namespace adria
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 					cmd_list->SetRootConstants(1, constants);
 
-					GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(path_tracing_svgf_enabled_pso.get());
-					bindings->SetRayGenShader("PT_RayGen");
-					bindings->Commit();
-					cmd_list->DispatchRays(width, height);
+					if (use_inline_rt)
+					{
+						cmd_list->SetPipelineState(path_tracing_svgf_compute_pso->Get());
+						cmd_list->Dispatch(DivideAndRoundUp(width, 16u), DivideAndRoundUp(height, 16u), 1);
+					}
+					else
+					{
+						GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(path_tracing_svgf_enabled_pso.get());
+						bindings->SetRayGenShader("PT_RayGen");
+						bindings->Commit();
+						cmd_list->DispatchRays(width, height);
+					}
 				}
 				else
 				{
@@ -376,10 +416,19 @@ namespace adria
 
 					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 					cmd_list->SetRootConstants(1, constants);
-					GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(path_tracing_pso.get());
-					bindings->SetRayGenShader("PT_RayGen");
-					bindings->Commit();
-					cmd_list->DispatchRays(width, height);
+
+					if (use_inline_rt)
+					{
+						cmd_list->SetPipelineState(path_tracing_compute_pso->Get());
+						cmd_list->Dispatch(DivideAndRoundUp(width, 16u), DivideAndRoundUp(height, 16u), 1);
+					}
+					else
+					{
+						GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(path_tracing_pso.get());
+						bindings->SetRayGenShader("PT_RayGen");
+						bindings->Commit();
+						cmd_list->DispatchRays(width, height);
+					}
 				}
 
 			}, RGPassType::Compute, RGPassFlags::None);

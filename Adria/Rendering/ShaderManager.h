@@ -132,6 +132,7 @@ namespace adria
 		LIB_Reflections,
 		CS_RayTracedReflections,
 		LIB_PathTracing,
+		CS_PathTracing,
 		CS_TensorToTexture,
 		CS_TextureToTensor,
 		ShaderID_Count
