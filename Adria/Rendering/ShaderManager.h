@@ -125,6 +125,7 @@ namespace adria
 		CS_ReSTIR_DI_SpatialResampling,
 		LIB_DDGIRayTracing,
 		LIB_Shadows,
+		CS_RayTracedShadows,
 		LIB_AmbientOcclusion,
 		LIB_Reflections,
 		LIB_PathTracing,

@@ -1,5 +1,6 @@
 #pragma once
 #include "RenderGraph/RenderGraphResourceName.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 
 namespace adria
 {
@@ -22,11 +23,14 @@ namespace adria
 	private:
 		GfxDevice* gfx;
 		std::unique_ptr<GfxRayTracingPipeline> ray_traced_shadows_pso;
+		std::unique_ptr<GfxComputePipelineState> ray_traced_shadows_compute_pso;
 		Uint32 width, height;
 		Bool is_supported;
+		Bool use_inline_rt;
 
 	private:
 		void CreateStateObject();
 		void OnLibraryRecompiled(GfxShaderKey const&);
+		void OnShaderRecompiled(GfxShaderKey const&);
 	};
 }

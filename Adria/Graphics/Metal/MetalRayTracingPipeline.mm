@@ -1,5 +1,4 @@
 #import <Metal/Metal.h>
-#include <metal_irconverter/metal_irconverter.h>
 #include "MetalRayTracingPipeline.h"
 #include "MetalDevice.h"
 #include "MetalShaderReflection.h"
@@ -8,62 +7,7 @@
 namespace adria
 {
     ADRIA_LOG_CHANNEL(Graphics);
-
-    static constexpr Char const* kRaygenIndirectionKernelName = "RaygenIndirection";
-    static constexpr Char const* kIndirectTriangleIntersectionFunctionName = "irconverter.wrapper.intersection.function.triangle";
-    static id<MTLLibrary> SynthesizeIndirectRayDispatchLibrary(id<MTLDevice> device)
-    {
-        IRCompiler* compiler = IRCompilerCreate();
-        IRCompilerSetMinimumDeploymentTarget(compiler, IROperatingSystem_macOS, "15.0.0");
-        IRMetalLibBinary* metallib = IRMetalLibBinaryCreate();
-        bool success = IRMetalLibSynthesizeIndirectRayDispatchFunction(compiler, metallib);
-        if (!success)
-        {
-            ADRIA_LOG(ERROR, "Failed to synthesize indirect ray dispatch function");
-            IRMetalLibBinaryDestroy(metallib);
-            IRCompilerDestroy(compiler);
-            return nil;
-        }
-        dispatch_data_t data = IRMetalLibGetBytecodeData(metallib);
-        NSError* error = nil;
-        id<MTLLibrary> lib = [device newLibraryWithData:data error:&error];
-        if (error || !lib)
-        {
-            ADRIA_LOG(ERROR, "Failed to create dispatch library: %s",
-                     error ? [[error localizedDescription] UTF8String] : "unknown");
-        }
-        IRMetalLibBinaryDestroy(metallib);
-        IRCompilerDestroy(compiler);
-        return lib;
-    }
-
-    static id<MTLLibrary> SynthesizeIndirectTriangleIntersectionLibrary(id<MTLDevice> device)
-    {
-        IRCompiler* compiler = IRCompilerCreate();
-        IRCompilerSetMinimumDeploymentTarget(compiler, IROperatingSystem_macOS, "15.0.0");
-        IRCompilerSetHitgroupType(compiler, IRHitGroupTypeTriangles);
-        IRMetalLibBinary* metallib = IRMetalLibBinaryCreate();
-        bool success = IRMetalLibSynthesizeIndirectIntersectionFunction(compiler, metallib);
-        if (!success)
-        {
-            ADRIA_LOG(ERROR, "Failed to synthesize indirect intersection function");
-            IRMetalLibBinaryDestroy(metallib);
-            IRCompilerDestroy(compiler);
-            return nil;
-        }
-        dispatch_data_t data = IRMetalLibGetBytecodeData(metallib);
-        NSError* error = nil;
-        id<MTLLibrary> lib = [device newLibraryWithData:data error:&error];
-        if (error || !lib)
-        {
-            ADRIA_LOG(ERROR, "Failed to create intersection library: %s",
-                     error ? [[error localizedDescription] UTF8String] : "unknown");
-        }
-        IRMetalLibBinaryDestroy(metallib);
-        IRCompilerDestroy(compiler);
-        return lib;
-    }
-
+    
     MetalRayTracingPipeline::MetalRayTracingPipeline(GfxDevice* gfx, GfxRayTracingPipelineDesc const& desc)
         : raygen_pipeline(nil), intersection_table(nil), visible_function_table(nil)
     {
@@ -76,28 +20,51 @@ namespace adria
             MetalDevice* metal_gfx = static_cast<MetalDevice*>(gfx);
             id<MTLDevice> device = metal_gfx->GetMTLDevice();
 
-            // 1. Load shader library from compiled metallib
             id<MTLLibrary> library = nil;
             NSError* error = nil;
 
             for (auto const& lib : desc.libraries)
             {
-                if (lib.shader == nullptr) continue;
+                if (lib.shader == nullptr)
+                {
+                    ADRIA_LOG(WARNING, "Skipping null shader in library");
+                    continue;
+                }
 
                 void* shader_data = lib.shader->GetData();
                 Usize shader_size = lib.shader->GetSize();
+                GfxShaderDesc const& shader_desc = lib.shader->GetDesc();
 
                 if (shader_data && shader_size > 0)
                 {
-                    dispatch_data_t data = dispatch_data_create(shader_data, shader_size, dispatch_get_main_queue(), ^{});
+                    dispatch_data_t data = dispatch_data_create(shader_data, shader_size, dispatch_get_main_queue(), ^{
+                    });
+
                     library = [device newLibraryWithData:data error:&error];
                     if (error || !library)
                     {
-                        ADRIA_LOG(ERROR, "Failed to create Metal library from RT shader: %s",
-                                 error ? [[error localizedDescription] UTF8String] : "unknown");
+                        if (error)
+                        {
+                            ADRIA_LOG(ERROR, "Failed to create Metal library from raytracing shader: %s",
+                                     [[error localizedDescription] UTF8String]);
+                        }
+                        else
+                        {
+                            ADRIA_LOG(ERROR, "Failed to create Metal library: library is nil but no error");
+                        }
                         continue;
                     }
+
+                    NSArray<NSString*>* functionNames = [library functionNames];
+                    if (!functionNames)
+                    {
+                        ADRIA_LOG(ERROR, "functionNames is nil!");
+                    }
                     break;
+                }
+                else
+                {
+                    ADRIA_LOG(ERROR, "Shader data is null or size is 0");
                 }
             }
 
@@ -107,113 +74,112 @@ namespace adria
                 return;
             }
 
-            id<MTLLibrary> dispatchLibrary = SynthesizeIndirectRayDispatchLibrary(device);
-            if (!dispatchLibrary)
-            {
-                ADRIA_LOG(ERROR, "Failed to synthesize RaygenIndirection library");
-                return;
-            }
+            NSArray<NSString*>* functionNames = [library functionNames];
 
-            NSString* dispatchKernelName = [NSString stringWithUTF8String:kRaygenIndirectionKernelName];
-            id<MTLFunction> dispatchFunction = [dispatchLibrary newFunctionWithName:dispatchKernelName];
-            if (!dispatchFunction)
-            {
-                ADRIA_LOG(ERROR, "Failed to find RaygenIndirection function in synthesized library");
-                return;
-            }
-
-            id<MTLLibrary> triangleIntersectionLibrary = SynthesizeIndirectTriangleIntersectionLibrary(device);
-            id<MTLFunction> triangleIntersectionFunction = nil;
-            if (triangleIntersectionLibrary)
-            {
-                NSString* intersectionName = [NSString stringWithUTF8String:kIndirectTriangleIntersectionFunctionName];
-                triangleIntersectionFunction = [triangleIntersectionLibrary newFunctionWithName:intersectionName];
-                if (!triangleIntersectionFunction)
-                {
-                    ADRIA_LOG(WARNING, "Failed to find indirect triangle intersection function");
-                }
-            }
-
-            NSMutableArray<id<MTLFunction>>* allFunctions = [NSMutableArray array];
-            Uint32 next_vft_index = 1; // Reserve index 0 as null
-
+            id<MTLFunction> raygenFunction = nil;
             for (auto const& lib : desc.libraries)
             {
-                if (lib.shader == nullptr) continue;
+                if (lib.shader == nullptr)
+                {
+                    continue;
+                }
+
                 for (auto const& export_name : lib.exports)
                 {
-                    NSString* functionName = [NSString stringWithUTF8String:export_name.c_str()];
-                    id<MTLFunction> func = [library newFunctionWithName:functionName];
-                    if (func)
+                    if (raygenFunction == nil)
                     {
-                        [allFunctions addObject:func];
-                        shader_to_index[export_name] = next_vft_index;
-                        shader_names.insert(export_name);
-                        next_vft_index++;
+                        NSString* functionName = [NSString stringWithUTF8String:export_name.c_str()];
+                        raygenFunction = [library newFunctionWithName:functionName];
+                        if (raygenFunction)
+                        {
+                            shader_names.insert(export_name);
+                            break;
+                        }
                     }
                 }
             }
 
-            for (auto const& hit_group : desc.hit_groups)
+            if (raygenFunction == nil)
             {
-                std::string shader_to_use;
-
-                if (!hit_group.closest_hit_shader.empty())
-                {
-                    NSString* chsName = [NSString stringWithUTF8String:hit_group.closest_hit_shader.c_str()];
-                    id<MTLFunction> chsFunc = [library newFunctionWithName:chsName];
-                    if (chsFunc && shader_to_index.find(hit_group.closest_hit_shader) == shader_to_index.end())
-                    {
-                        [allFunctions addObject:chsFunc];
-                        shader_to_index[hit_group.closest_hit_shader] = next_vft_index;
-                        shader_names.insert(hit_group.closest_hit_shader);
-                        next_vft_index++;
-                    }
-                    shader_to_use = hit_group.closest_hit_shader;
-                }
-
-                if (!hit_group.any_hit_shader.empty())
-                {
-                    NSString* ahsName = [NSString stringWithUTF8String:hit_group.any_hit_shader.c_str()];
-                    id<MTLFunction> ahsFunc = [library newFunctionWithName:ahsName];
-                    if (ahsFunc && shader_to_index.find(hit_group.any_hit_shader) == shader_to_index.end())
-                    {
-                        [allFunctions addObject:ahsFunc];
-                        shader_to_index[hit_group.any_hit_shader] = next_vft_index;
-                        shader_names.insert(hit_group.any_hit_shader);
-                        next_vft_index++;
-                    }
-                    shader_to_use = hit_group.any_hit_shader;
-                }
-
-                shader_names.insert(hit_group.name);
-                if (!shader_to_use.empty())
-                {
-                    auto it = shader_to_index.find(shader_to_use);
-                    if (it != shader_to_index.end())
-                    {
-                        shader_to_index[hit_group.name] = it->second;
-                    }
-                }
+                ADRIA_LOG(ERROR, "Failed to find ray generation function in Metal library");
+                return;
             }
 
-            if (triangleIntersectionFunction)
+            MTLLinkedFunctions* linkedFunctions = nil;
+
+            if (!desc.hit_groups.empty() || desc.libraries.size() > 1)
             {
-                [allFunctions addObject:triangleIntersectionFunction];
-            }
+                linkedFunctions = [[MTLLinkedFunctions alloc] init];
+                NSMutableArray<id<MTLFunction>>* functions = [NSMutableArray array];
 
-            MTLLinkedFunctions* linkedFunctions = [[MTLLinkedFunctions alloc] init];
-            linkedFunctions.functions = allFunctions;
+                for (auto const& hit_group : desc.hit_groups)
+                {
+                    if (!hit_group.closest_hit_shader.empty())
+                    {
+                        NSString* chsName = [NSString stringWithUTF8String:hit_group.closest_hit_shader.c_str()];
+                        id<MTLFunction> chsFunc = [library newFunctionWithName:chsName];
+                        if (chsFunc)
+                        {
+                            [functions addObject:chsFunc];
+                            shader_names.insert(hit_group.closest_hit_shader);
+                        }
+                    }
+
+                    if (!hit_group.any_hit_shader.empty())
+                    {
+                        NSString* ahsName = [NSString stringWithUTF8String:hit_group.any_hit_shader.c_str()];
+                        id<MTLFunction> ahsFunc = [library newFunctionWithName:ahsName];
+                        if (ahsFunc)
+                        {
+                            [functions addObject:ahsFunc];
+                            shader_names.insert(hit_group.any_hit_shader);
+                        }
+                    }
+
+                    if (!hit_group.intersection_shader.empty())
+                    {
+                        NSString* isName = [NSString stringWithUTF8String:hit_group.intersection_shader.c_str()];
+                        id<MTLFunction> isFunc = [library newFunctionWithName:isName];
+                        if (isFunc)
+                        {
+                            [functions addObject:isFunc];
+                            shader_names.insert(hit_group.intersection_shader);
+                        }
+                    }
+
+                    shader_names.insert(hit_group.name);
+                }
+
+                for (auto const& lib : desc.libraries)
+                {
+                    for (auto const& export_name : lib.exports)
+                    {
+                        if (shader_names.find(export_name) != shader_names.end())
+                        {
+                            continue;
+                        }
+
+                        NSString* functionName = [NSString stringWithUTF8String:export_name.c_str()];
+                        id<MTLFunction> func = [library newFunctionWithName:functionName];
+                        if (func)
+                        {
+                            [functions addObject:func];
+                            shader_names.insert(export_name);
+                        }
+                    }
+                }
+                linkedFunctions.functions = functions;
+            }
 
             MTLComputePipelineDescriptor* pipelineDescriptor = [[MTLComputePipelineDescriptor alloc] init];
-            pipelineDescriptor.computeFunction = dispatchFunction;
+            pipelineDescriptor.computeFunction = raygenFunction;
             pipelineDescriptor.linkedFunctions = linkedFunctions;
             pipelineDescriptor.maxCallStackDepth = desc.max_recursion_depth;
             pipelineDescriptor.threadGroupSizeIsMultipleOfThreadExecutionWidth = YES;
 
             error = nil;
             raygen_pipeline = [device newComputePipelineStateWithDescriptor:pipelineDescriptor
-                                                                     options:MTLPipelineOptionNone
+                                                                     options:MTLPipelineOptionArgumentInfo | MTLPipelineOptionBufferTypeInfo
                                                                   reflection:nil
                                                                        error:&error];
 
@@ -227,40 +193,80 @@ namespace adria
                 return;
             }
 
+            Bool has_intersection_shaders = false;
+            for (auto const& hit_group : desc.hit_groups)
             {
-                MTLVisibleFunctionTableDescriptor* vftDesc = [[MTLVisibleFunctionTableDescriptor alloc] init];
-                vftDesc.functionCount = next_vft_index;
+                if (!hit_group.intersection_shader.empty())
+                {
+                    has_intersection_shaders = true;
+                    break;
+                }
+            }
 
-                visible_function_table = [raygen_pipeline newVisibleFunctionTableWithDescriptor:vftDesc];
+            if (has_intersection_shaders)
+            {
+                MTLIntersectionFunctionTableDescriptor* intersectionTableDesc = [[MTLIntersectionFunctionTableDescriptor alloc] init];
+                intersectionTableDesc.functionCount = desc.hit_groups.size();
 
-                for (id<MTLFunction> func in allFunctions)
+                intersection_table = [raygen_pipeline newIntersectionFunctionTableWithDescriptor:intersectionTableDesc];
+
+                Uint32 index = 0;
+                for (auto const& hit_group : desc.hit_groups)
+                {
+                    if (!hit_group.intersection_shader.empty())
+                    {
+                        NSString* isName = [NSString stringWithUTF8String:hit_group.intersection_shader.c_str()];
+                        id<MTLFunction> isFunc = [library newFunctionWithName:isName];
+                        if (isFunc)
+                        {
+                            id<MTLFunctionHandle> handle = [raygen_pipeline functionHandleWithFunction:isFunc];
+                            [intersection_table setFunction:handle atIndex:index];
+                        }
+                    }
+                    index++;
+                }
+            }
+
+            NSUInteger linkedFunctionCount = linkedFunctions ? linkedFunctions.functions.count : 0;
+            if (linkedFunctionCount > 0)
+            {
+                MTLVisibleFunctionTableDescriptor* visibleFunctionTableDesc = [[MTLVisibleFunctionTableDescriptor alloc] init];
+                visibleFunctionTableDesc.functionCount = linkedFunctionCount;
+
+                visible_function_table = [raygen_pipeline newVisibleFunctionTableWithDescriptor:visibleFunctionTableDesc];
+                Uint32 func_index = 0;
+                for (id<MTLFunction> func in linkedFunctions.functions)
                 {
                     NSString* funcName = [func name];
                     std::string funcNameStr = [funcName UTF8String];
 
-                    auto it = shader_to_index.find(funcNameStr);
-                    if (it != shader_to_index.end())
+                    id<MTLFunctionHandle> handle = [raygen_pipeline functionHandleWithFunction:func];
+                    [visible_function_table setFunction:handle atIndex:func_index];
+
+                    shader_to_index[funcNameStr] = func_index;
+                    func_index++;
+                }
+
+                for (auto const& hit_group : desc.hit_groups)
+                {
+                    std::string shader_to_use;
+                    if (!hit_group.any_hit_shader.empty())
                     {
-                        id<MTLFunctionHandle> handle = [raygen_pipeline functionHandleWithFunction:func];
-                        if (handle)
+                        shader_to_use = hit_group.any_hit_shader;
+                    }
+                    else if (!hit_group.closest_hit_shader.empty())
+                    {
+                        shader_to_use = hit_group.closest_hit_shader;
+                    }
+
+                    if (!shader_to_use.empty())
+                    {
+                        auto it = shader_to_index.find(shader_to_use);
+                        if (it != shader_to_index.end())
                         {
-                            [visible_function_table setFunction:handle atIndex:it->second];
+                            shader_to_index[hit_group.name] = it->second;
                         }
                     }
-                }
-            }
-
-            if (triangleIntersectionFunction)
-            {
-                MTLIntersectionFunctionTableDescriptor* iftDesc = [[MTLIntersectionFunctionTableDescriptor alloc] init];
-                iftDesc.functionCount = 1;
-
-                intersection_table = [raygen_pipeline newIntersectionFunctionTableWithDescriptor:iftDesc];
-
-                id<MTLFunctionHandle> intersectionHandle = [raygen_pipeline functionHandleWithFunction:triangleIntersectionFunction];
-                if (intersectionHandle)
-                {
-                    [intersection_table setFunction:intersectionHandle atIndex:0];
                 }
             }
 

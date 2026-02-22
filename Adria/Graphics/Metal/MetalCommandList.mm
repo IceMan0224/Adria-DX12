@@ -1239,14 +1239,17 @@ namespace adria
             [compute_encoder useResource:current_tlas usage:MTLResourceUsageRead];
         }
 
-        id<MTLComputePipelineState> rt_pipeline = metal_pipeline->GetRayGenPipeline();
-        NSUInteger threadGroupSize = [rt_pipeline maxTotalThreadsPerThreadgroup];
-        MTLSize threadsPerThreadgroup = MTLSizeMake(threadGroupSize, 1, 1);
-        MTLSize gridSize = MTLSizeMake(dispatch_width, dispatch_height, dispatch_depth);
+        MTLSize threadgroupsPerGrid = MTLSizeMake(
+            (dispatch_width + 7) / 8,
+            (dispatch_height + 7) / 8,
+            dispatch_depth
+        );
+        MTLSize threadsPerThreadgroup = MTLSizeMake(8, 8, 1);
 
-        [compute_encoder dispatchThreads:gridSize
-                   threadsPerThreadgroup:threadsPerThreadgroup];
+        [compute_encoder dispatchThreadgroups:threadgroupsPerGrid
+                        threadsPerThreadgroup:threadsPerThreadgroup];
 
+        EndComputeEncoder();
         current_rt_bindings.reset();
     }
 

@@ -6,18 +6,27 @@
 #include "Graphics/GfxShaderKey.h"
 #include "Graphics/GfxRayTracingPipeline.h"
 #include "Graphics/GfxRayTracingShaderBindings.h"
+#include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"
 
 namespace adria
 {
 	RayTracedShadowsPass::RayTracedShadowsPass(GfxDevice* gfx, Uint32 width, Uint32 height)
-		: gfx(gfx), width(width), height(height)
+		: gfx(gfx), width(width), height(height), use_inline_rt(false)
 	{
 		is_supported = gfx->GetCapabilities().SupportsRayTracing();
 		if (IsSupported())
 		{
+			use_inline_rt = (gfx->GetBackend() == GfxBackend::Metal);
 			CreateStateObject();
-			ShaderManager::GetLibraryRecompiledEvent().AddMember(&RayTracedShadowsPass::OnLibraryRecompiled, *this);
+			if (use_inline_rt)
+			{
+				ShaderManager::GetShaderRecompiledEvent().AddMember(&RayTracedShadowsPass::OnShaderRecompiled, *this);
+			}
+			else
+			{
+				ShaderManager::GetLibraryRecompiledEvent().AddMember(&RayTracedShadowsPass::OnLibraryRecompiled, *this);
+			}
 		}
 	}
 	RayTracedShadowsPass::~RayTracedShadowsPass() = default;
@@ -54,20 +63,30 @@ namespace adria
 					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
 					.light_idx = light_index
 				};
-				
-				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ray_traced_shadows_pso.get());
-				ADRIA_ASSERT(bindings != nullptr);
-				bindings->SetRayGenShader("RTS_RayGen");
-				GfxShaderGroupHandle miss_handle = bindings->AddMissShader("RTS_Miss");
-				ADRIA_ASSERT(miss_handle.IsValid());
-				GfxShaderGroupHandle hit_handle = bindings->AddHitGroup("ShadowAnyHitGroup");
-				ADRIA_ASSERT(hit_handle.IsValid());
-				bindings->Commit();
 
-				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-				cmd_list->SetRootConstants(1, constants);
-				cmd_list->SetRayTracingTLAS(frame_data.tlas);
-				cmd_list->DispatchRays(width, height);
+				if (use_inline_rt)
+				{
+					cmd_list->SetPipelineState(ray_traced_shadows_compute_pso->Get());
+					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
+					cmd_list->SetRootConstants(1, constants);
+					cmd_list->Dispatch(DivideAndRoundUp(width, 16u), DivideAndRoundUp(height, 16u), 1);
+				}
+				else
+				{
+					GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ray_traced_shadows_pso.get());
+					ADRIA_ASSERT(bindings != nullptr);
+					bindings->SetRayGenShader("RTS_RayGen");
+					GfxShaderGroupHandle miss_handle = bindings->AddMissShader("RTS_Miss");
+					ADRIA_ASSERT(miss_handle.IsValid());
+					GfxShaderGroupHandle hit_handle = bindings->AddHitGroup("ShadowAnyHitGroup");
+					ADRIA_ASSERT(hit_handle.IsValid());
+					bindings->Commit();
+
+					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
+					cmd_list->SetRootConstants(1, constants);
+					cmd_list->SetRayTracingTLAS(frame_data.tlas);
+					cmd_list->DispatchRays(width, height);
+				}
 
 			}, RGPassType::Compute, RGPassFlags::ForceNoCull);
 	}
@@ -84,32 +103,41 @@ namespace adria
 
 	void RayTracedShadowsPass::CreateStateObject()
 	{
-		GfxShader const* rt_shader = &SM_GetGfxShader(LIB_Shadows);
-
-		GfxRayTracingPipelineDesc rt_pipeline_desc{};
-		rt_pipeline_desc.max_payload_size = sizeof(Bool32);
-		rt_pipeline_desc.max_attribute_size = 8;
-		rt_pipeline_desc.max_recursion_depth = 1;
-		rt_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
-
-		GfxRayTracingShaderLibrary library(rt_shader,
+		if (use_inline_rt)
 		{
-			"RTS_RayGen",
-			"RTS_Miss",
-			"RTS_AnyHit"
-		});
-		rt_pipeline_desc.libraries.push_back(library);
+			GfxComputePipelineStateDesc compute_pso_desc{};
+			compute_pso_desc.CS = CS_RayTracedShadows;
+			ray_traced_shadows_compute_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
+		}
+		else
+		{
+			GfxShader const* rt_shader = &SM_GetGfxShader(LIB_Shadows);
 
-		GfxRayTracingHitGroup shadow_hit_group = GfxRayTracingHitGroup::Triangle(
-			"ShadowAnyHitGroup",
-			"",
-			"RTS_AnyHit"
-		);
-		rt_pipeline_desc.hit_groups.push_back(shadow_hit_group);
+			GfxRayTracingPipelineDesc rt_pipeline_desc{};
+			rt_pipeline_desc.max_payload_size = sizeof(Bool32);
+			rt_pipeline_desc.max_attribute_size = 8;
+			rt_pipeline_desc.max_recursion_depth = 1;
+			rt_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-		ray_traced_shadows_pso = gfx->CreateRayTracingPipeline(rt_pipeline_desc);
-		ADRIA_ASSERT(ray_traced_shadows_pso != nullptr);
-		ADRIA_ASSERT(ray_traced_shadows_pso->IsValid());
+			GfxRayTracingShaderLibrary library(rt_shader,
+			{
+				"RTS_RayGen",
+				"RTS_Miss",
+				"RTS_AnyHit"
+			});
+			rt_pipeline_desc.libraries.push_back(library);
+
+			GfxRayTracingHitGroup shadow_hit_group = GfxRayTracingHitGroup::Triangle(
+				"ShadowAnyHitGroup",
+				"",
+				"RTS_AnyHit"
+			);
+			rt_pipeline_desc.hit_groups.push_back(shadow_hit_group);
+
+			ray_traced_shadows_pso = gfx->CreateRayTracingPipeline(rt_pipeline_desc);
+			ADRIA_ASSERT(ray_traced_shadows_pso != nullptr);
+			ADRIA_ASSERT(ray_traced_shadows_pso->IsValid());
+		}
 	}
 
 	void RayTracedShadowsPass::OnLibraryRecompiled(GfxShaderKey const& key)
@@ -119,5 +147,12 @@ namespace adria
 			CreateStateObject();
 		}
 	}
-}
 
+	void RayTracedShadowsPass::OnShaderRecompiled(GfxShaderKey const& key)
+	{
+		if (key.GetShaderID() == CS_RayTracedShadows)
+		{
+			CreateStateObject();
+		}
+	}
+}
