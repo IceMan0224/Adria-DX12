@@ -17,6 +17,8 @@ namespace adria
 
 	static TAutoConsoleVariable<Int> Reflection("r.Reflections", ReflectionType_SSR, "0 - No Reflections, 1 - SSR, 2 - RTR");
 
+	static Char const* ReflectionName[] = { "None", "SSR", "RTR" };
+
 	ReflectionPassGroup::ReflectionPassGroup(GfxDevice* gfx, Uint32 width, Uint32 height) : reflection_type(ReflectionType_SSR)
 	{
 		post_effect_idx = static_cast<Uint32>(reflection_type);
@@ -38,10 +40,24 @@ namespace adria
 		QueueGUI([&]()
 			{
 				static Int current_reflection_type = (Int)reflection_type;
-				if (ImGui::Combo("Reflections", &current_reflection_type, "None\0SSR\0RTR\0", 3))
+				if (ImGui::BeginCombo("Reflections", ReflectionName[current_reflection_type]))
 				{
-					if (!is_rtr_supported && current_reflection_type == 2) current_reflection_type = 1;
-					Reflection->Set(current_reflection_type);
+					for (Int i = 0; i < ReflectionType_Count; ++i)
+					{
+						Bool supported = post_effects[i]->IsSupported();
+						ImGui::BeginDisabled(!supported);
+						if (ImGui::Selectable(ReflectionName[i], i == current_reflection_type))
+						{
+							current_reflection_type = i;
+							Reflection->Set(current_reflection_type);
+						}
+						ImGui::EndDisabled();
+						if (!supported && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+						{
+							ImGui::SetTooltip("Not supported on this backend");
+						}
+					}
+					ImGui::EndCombo();
 				}
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_Reflection);
 	}

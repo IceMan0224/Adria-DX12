@@ -4,7 +4,7 @@ Graphics engine written in C++ with DirectX12 and Metal backends.
 
 ## Backends
 * **DirectX12** (Windows) - Full feature support 
-* **Metal** (macOS) - Work in progress, missing: DDGI, GPU driven path, Ocean
+* **Metal** (macOS) - Some features are missing: DDGI, Ocean, GPU-Driven Rendering, GPU Profiler
 
 ## Features
 * Render graph
@@ -15,7 +15,7 @@ Graphics engine written in C++ with DirectX12 and Metal backends.
 * DDGI
 * GPU-Driven Rendering : GPU frustum culling + 2 phase GPU occlusion culling
 * Reference path tracer + SVGF denoiser (wip)
-* Upscalers : FSR2, FSR3, XeSS2, DLSS3.5 
+* Upscalers : FSR2, FSR3, XeSS2, DLSS3.5, MetalFX
 * Ultimate Bindless resource binding
 * Variable Rate Shading (FFX)
 * Volumetric lighting: Raymarching, Fog volumes

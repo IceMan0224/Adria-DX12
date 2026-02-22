@@ -162,6 +162,13 @@ namespace adria
         pending_signals.clear();
     }
 
+    void MetalCommandList::EndAllEncoders()
+    {
+        EndRenderPass();
+        EndComputeEncoder();
+        EndBlitEncoder();
+    }
+
     void MetalCommandList::ResetState()
     {
         current_topology = GfxPrimitiveTopology::Undefined;

@@ -16,6 +16,8 @@ namespace adria
 		Count
 	};
 
+	static Char const* DepthOfFieldName[] = { "None", "Custom", "FFX" };
+
 	DepthOfFieldPassGroup::DepthOfFieldPassGroup(GfxDevice* gfx, Uint32 width, Uint32 height) : depth_of_field_type(DepthOfFieldType::None)
 	{
 		post_effect_idx = static_cast<Uint32>(depth_of_field_type);
@@ -36,10 +38,25 @@ namespace adria
 		QueueGUI([&]()
 			{
 				static Int current_depth_of_field_type = (Int)depth_of_field_type;
-				if (ImGui::Combo("Depth of Field Type", &current_depth_of_field_type, "None\0Custom\0FFX\0", 3))
+				if (ImGui::BeginCombo("Depth of Field Type", DepthOfFieldName[current_depth_of_field_type]))
 				{
-					depth_of_field_type = static_cast<DepthOfFieldType>(current_depth_of_field_type);
-					DepthOfField->Set(current_depth_of_field_type);
+					for (Int i = 0; i < (Int)DepthOfFieldType::Count; ++i)
+					{
+						Bool supported = post_effects[i]->IsSupported();
+						ImGui::BeginDisabled(!supported);
+						if (ImGui::Selectable(DepthOfFieldName[i], i == current_depth_of_field_type))
+						{
+							current_depth_of_field_type = i;
+							depth_of_field_type = static_cast<DepthOfFieldType>(current_depth_of_field_type);
+							DepthOfField->Set(current_depth_of_field_type);
+						}
+						ImGui::EndDisabled();
+						if (!supported && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+						{
+							ImGui::SetTooltip("Not supported on this backend");
+						}
+					}
+					ImGui::EndCombo();
 				}
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_DepthOfField
 		);

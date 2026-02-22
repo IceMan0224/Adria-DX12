@@ -28,7 +28,7 @@ namespace adria
 		virtual void AddPass(RenderGraph&, PostProcessor*) override {}
 		virtual void OnResize(Uint32, Uint32) override {}
 		virtual Bool IsEnabled(PostProcessor const*) const override { return false; }
-		virtual Bool IsSupported() const override { return false; }
+		virtual Bool IsSupported() const override { return true; }
 	};
 
 	template<typename PostEffectT> requires std::is_base_of_v<PostEffect, PostEffectT>

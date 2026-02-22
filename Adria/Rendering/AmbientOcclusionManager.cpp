@@ -14,6 +14,7 @@ namespace adria
 		AmbientOcclusionType_CACAO,
 		AmbientOcclusionType_RTAO
 	};
+	static Char const* AOName[] = { "None", "SSAO", "HBAO", "NNAO", "CACAO", "RTAO" };
 
 	static TAutoConsoleVariable<Int>  AmbientOcclusion("r.AmbientOcclusion", AmbientOcclusionType_SSAO, "0 - No AO, 1 - SSAO, 2 - HBAO, 3 - NNAO, 4 - CACAO, 5 - RTAO");
 
@@ -59,16 +60,32 @@ namespace adria
 	{
 		QueueGUI([&]()
 			{
-				if (ImGui::Combo("Ambient Occlusion Type", AmbientOcclusion.GetPtr(), "None\0SSAO\0HBAO\0NNAO\0CACAO\0RTAO\0", 6))
+				Bool ao_supported[] =
 				{
-					if (!rtao_pass.IsSupported() && AmbientOcclusion.Get() == AmbientOcclusionType_RTAO)
+					true,
+					true,
+					true,
+					true,
+					cacao_pass.IsSupported(),
+					rtao_pass.IsSupported(),
+				};
+				Int current_ao = AmbientOcclusion.Get();
+				if (ImGui::BeginCombo("Ambient Occlusion Type", AOName[current_ao]))
+				{
+					for (Int i = 0; i < 6; ++i)
 					{
-						AmbientOcclusion->Set(AmbientOcclusionType_SSAO);
+						ImGui::BeginDisabled(!ao_supported[i]);
+						if (ImGui::Selectable(AOName[i], i == current_ao))
+						{
+							AmbientOcclusion->Set(i);
+						}
+						ImGui::EndDisabled();
+						if (!ao_supported[i] && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+						{
+							ImGui::SetTooltip("Not supported on this backend");
+						}
 					}
-					else if (!cacao_pass.IsSupported() && AmbientOcclusion.Get() == AmbientOcclusionType_CACAO)
-					{
-						AmbientOcclusion->Set(AmbientOcclusionType_SSAO);
-					}
+					ImGui::EndCombo();
 				}
 			}, GUICommandGroup_PostProcessing, GUICommandSubGroup_AO);
 

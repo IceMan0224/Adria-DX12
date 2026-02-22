@@ -20,11 +20,35 @@ namespace adria
         tex_desc.usage = MTLTextureUsageShaderRead | MTLTextureUsagePixelFormatView;
 
         if (HasFlag(desc.bind_flags, GfxBindFlag::RenderTarget))
+        {
             tex_desc.usage |= MTLTextureUsageRenderTarget;
+        }
         if (HasFlag(desc.bind_flags, GfxBindFlag::DepthStencil))
+        {
             tex_desc.usage |= MTLTextureUsageRenderTarget;
+        }
         if (HasFlag(desc.bind_flags, GfxBindFlag::UnorderedAccess))
-            tex_desc.usage |= MTLTextureUsageShaderWrite;
+        {
+            tex_desc.usage |= MTLTextureUsageShaderWrite | MTLTextureUsageRenderTarget;
+        }
+
+        switch (desc.heap_type)
+        {
+        case GfxResourceUsage::Default:
+            if (HasFlag(desc.bind_flags, GfxBindFlag::RenderTarget) ||
+                HasFlag(desc.bind_flags, GfxBindFlag::DepthStencil) ||
+                HasFlag(desc.bind_flags, GfxBindFlag::UnorderedAccess))
+            {
+                tex_desc.storageMode = MTLStorageModePrivate;
+            }
+            break;
+        case GfxResourceUsage::Readback:
+            tex_desc.storageMode = MTLStorageModeShared;
+            break;
+        case GfxResourceUsage::Upload:
+            tex_desc.storageMode = MTLStorageModeShared;
+            break;
+        }
 
         switch (desc.type)
         {
@@ -87,26 +111,45 @@ namespace adria
     MetalTexture::MetalTexture(GfxDevice* gfx, GfxTextureDesc const& desc, GfxTextureData const& data)
         : MetalTexture(gfx, desc)
     {
+        if (data.sub_data && data.sub_count > 0 && metal_texture.storageMode == MTLStorageModePrivate)
+        {
+            MetalDevice* metal_device = static_cast<MetalDevice*>(gfx);
+            id<MTLDevice> device = metal_device->GetMTLDevice();
+            metal_device->Evict(metal_texture);
+
+            MTLTextureDescriptor* tex_desc = [MTLTextureDescriptor new];
+            tex_desc.textureType    = metal_texture.textureType;
+            tex_desc.pixelFormat    = metal_texture.pixelFormat;
+            tex_desc.width          = metal_texture.width;
+            tex_desc.height         = metal_texture.height;
+            tex_desc.depth          = metal_texture.depth;
+            tex_desc.mipmapLevelCount = metal_texture.mipmapLevelCount;
+            tex_desc.arrayLength    = metal_texture.arrayLength;
+            tex_desc.sampleCount    = metal_texture.sampleCount;
+            tex_desc.usage          = metal_texture.usage;
+            tex_desc.storageMode    = MTLStorageModeShared;
+            metal_texture = [device newTextureWithDescriptor:tex_desc];
+            metal_device->MakeResident(metal_texture);
+        }
+
         if (data.sub_data && data.sub_count > 0)
         {
             Uint32 mip_levels = desc.mip_levels;
             Uint32 array_size = desc.array_size;
-            
             for (Uint32 slice = 0; slice < array_size; ++slice)
             {
                 Uint32 mip_width = desc.width;
                 Uint32 mip_height = desc.height;
                 Uint32 mip_depth = std::max(1u, desc.depth);
-                
                 for (Uint32 mip = 0; mip < mip_levels; ++mip)
                 {
                     Uint32 sub_resource_index = slice * mip_levels + mip;
-                    
                     if (sub_resource_index >= data.sub_count)
+                    {
                         break;
+                    }
                     
                     GfxTextureSubData const& sub_data = data.sub_data[sub_resource_index];
-                    
                     if (sub_data.data)
                     {
                         MTLRegion region;

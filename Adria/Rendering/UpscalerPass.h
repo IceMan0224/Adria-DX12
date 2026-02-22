@@ -9,6 +9,8 @@ namespace adria
 		DECLARE_EVENT(RenderResolutionChanged, UpscalerPass, Uint32, Uint32)
 	public:
 		RenderResolutionChanged& GetRenderResolutionChangedEvent() { return render_resolution_changed_event; }
+		
+		virtual Bool NeedsJitter() const { return true; }
 
 	private:
 		RenderResolutionChanged render_resolution_changed_event;
@@ -27,6 +29,7 @@ namespace adria
 		virtual void AddPass(RenderGraph&, PostProcessor*) override {}
 		virtual void OnResize(Uint32, Uint32) override {}
         virtual Bool IsEnabled(PostProcessor const*) const override { return false; }
-        virtual Bool IsSupported() const override { return false; }
+        virtual Bool IsSupported() const override { return true; }
+        virtual Bool NeedsJitter() const override { return false; }
 	};
 }

@@ -105,6 +105,7 @@ namespace adria
 
         id<MTLCommandBuffer> GetCommandBuffer() const { return command_buffer; }
         id<MTLRenderCommandEncoder> GetRenderEncoder() const { return render_encoder; }
+        void EndAllEncoders();
 
     private:
         struct TopLevelArgumentBuffer

@@ -58,6 +58,7 @@ namespace adria
 	{
     public:
         FSR3Pass(GfxDevice* gfx, Uint32 w, Uint32 h) {}
+        virtual Bool IsSupported() const override { return false; }
 	};
 
 #endif

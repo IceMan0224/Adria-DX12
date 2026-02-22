@@ -42,6 +42,9 @@ namespace adria
 			is_supported = true;
 			use_inline_rt = false;
 		}
+#if defined(ADRIA_PLATFORM_MACOS)
+		is_supported = false;
+#endif
 		DDGI->Set(is_supported);
 		if (is_supported)
 		{

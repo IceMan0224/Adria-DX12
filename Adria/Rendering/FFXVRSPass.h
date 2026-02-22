@@ -59,6 +59,7 @@ namespace adria
 	{
 	public:
 		FFXVRSPass(GfxDevice*, Uint32, Uint32) {}
+		virtual Bool IsSupported() const override { return false; }
 	};
 
 #endif

@@ -251,6 +251,7 @@ set(ADRIA_COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/ToneMapPass.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/TransparentPass.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/TransparentPass.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/MetalFXPass.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/UpscalerPass.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/UpscalerPassGroup.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/UpscalerPassGroup.h"
@@ -417,6 +418,8 @@ set(ADRIA_METAL_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalRayTracingShaderBindings.mm"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalQueryHeap.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Metal/MetalQueryHeap.mm"
+
+	"${CMAKE_CURRENT_SOURCE_DIR}/Rendering/MetalFXPass.mm"
 
 	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Metal/MetalImGuiManager.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Metal/MetalImGuiManager.mm"
@@ -631,6 +634,7 @@ elseif(APPLE)
 		"-framework Cocoa"
 		"-framework Metal"
 		"-framework MetalKit"
+		"-framework MetalFX"
 		"-framework QuartzCore"
 		"-framework GameController"
 		"-framework AppKit"
