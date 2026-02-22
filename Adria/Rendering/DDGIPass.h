@@ -70,7 +70,9 @@ namespace adria
 		entt::registry& reg;
 		Uint32 width, height;
 		Bool is_supported;
+		Bool use_inline_rt;
 		std::unique_ptr<GfxRayTracingPipeline> ddgi_trace_pso;
+		std::unique_ptr<GfxComputePipelineState> ddgi_trace_compute_pso;
 		DDGIVolume ddgi_volume;
 		std::unique_ptr<GfxBuffer>  ddgi_volume_buffer;
 		GfxDescriptor ddgi_volume_buffer_srv;
@@ -84,5 +86,6 @@ namespace adria
 		void CreatePSOs();
 		void CreateStateObject();
 		void OnLibraryRecompiled(GfxShaderKey const&);
+		void OnShaderRecompiled(GfxShaderKey const&);
 	};
 }

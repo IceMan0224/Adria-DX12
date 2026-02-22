@@ -30,19 +30,31 @@ namespace adria
 		return Vector2u(width, height);
 	}
 
-	DDGIPass::DDGIPass(GfxDevice* gfx, entt::registry& reg, Uint32 w, Uint32 h) : gfx(gfx), reg(reg), width(w), height(h)
+	DDGIPass::DDGIPass(GfxDevice* gfx, entt::registry& reg, Uint32 w, Uint32 h) : gfx(gfx), reg(reg), width(w), height(h), use_inline_rt(false)
 	{
-#if defined(ADRIA_PLATFORM_WINDOWS)
-		is_supported = gfx->GetCapabilities().SupportsRayTracing();
-#else 
-		is_supported = false;
-#endif
+		if (gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1))
+		{
+			is_supported = true;
+			use_inline_rt = true;
+		}
+		else if (gfx->GetCapabilities().SupportsRayTracing())
+		{
+			is_supported = true;
+			use_inline_rt = false;
+		}
 		DDGI->Set(is_supported);
 		if (is_supported)
 		{
 			CreatePSOs();
 			CreateStateObject();
-			ShaderManager::GetLibraryRecompiledEvent().AddMember(&DDGIPass::OnLibraryRecompiled, *this);
+			if (use_inline_rt)
+			{
+				ShaderManager::GetShaderRecompiledEvent().AddMember(&DDGIPass::OnShaderRecompiled, *this);
+			}
+			else
+			{
+				ShaderManager::GetLibraryRecompiledEvent().AddMember(&DDGIPass::OnLibraryRecompiled, *this);
+			}
 		}
 	}
 
@@ -178,16 +190,25 @@ namespace adria
 					.ray_buffer_index = ctx.GetReadWriteBufferIndex(data.ray_buffer)
 				};
 
-				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ddgi_trace_pso.get());
-				bindings->SetRayGenShader("DDGI_RayGen");
-				bindings->AddMissShader("DDGI_Miss");
-				bindings->AddHitGroup("DDGI_HitGroup");
-				bindings->Commit();
-
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);
-				
-				cmd_list->DispatchRays(ddgi_volume.num_rays, num_probes_flat);
+
+				if (use_inline_rt)
+				{
+					cmd_list->SetPipelineState(ddgi_trace_compute_pso->Get());
+					cmd_list->Dispatch(DivideAndRoundUp(ddgi_volume.num_rays, 32u), num_probes_flat, 1);
+				}
+				else
+				{
+					GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ddgi_trace_pso.get());
+					bindings->SetRayGenShader("DDGI_RayGen");
+					bindings->AddMissShader("DDGI_Miss");
+					bindings->AddHitGroup("DDGI_HitGroup");
+					bindings->Commit();
+
+					cmd_list->DispatchRays(ddgi_volume.num_rays, num_probes_flat);
+				}
+
 				cmd_list->BufferBarrier(ctx.GetBuffer(*data.ray_buffer), GfxResourceState::ComputeUAV, GfxResourceState::ComputeUAV);
 			}, RGPassType::Compute);
 
@@ -426,35 +447,52 @@ namespace adria
 
 	void DDGIPass::CreateStateObject()
 	{
-		GfxShader const& ddgi_shader = SM_GetGfxShader(LIB_DDGIRayTracing);
-		GfxRayTracingPipelineDesc ddgi_pipeline_desc = {};
-		ddgi_pipeline_desc.max_payload_size = 16;
-		ddgi_pipeline_desc.max_attribute_size = 8;
-		ddgi_pipeline_desc.max_recursion_depth = 1;
-		ddgi_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
-
-		GfxRayTracingShaderLibrary ddgi_library(&ddgi_shader,
+		if (use_inline_rt)
 		{
-			"DDGI_RayGen",
-			"DDGI_Miss",
-			"DDGI_ClosestHit"
-		});
-		ddgi_pipeline_desc.libraries.push_back(ddgi_library);
+			GfxComputePipelineStateDesc compute_pso_desc{};
+			compute_pso_desc.CS = CS_DDGIRayTrace;
+			ddgi_trace_compute_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
+		}
+		else
+		{
+			GfxShader const& ddgi_shader = SM_GetGfxShader(LIB_DDGIRayTracing);
+			GfxRayTracingPipelineDesc ddgi_pipeline_desc = {};
+			ddgi_pipeline_desc.max_payload_size = 16;
+			ddgi_pipeline_desc.max_attribute_size = 8;
+			ddgi_pipeline_desc.max_recursion_depth = 1;
+			ddgi_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-		GfxRayTracingHitGroup ddgi_hit_group = GfxRayTracingHitGroup::Triangle(
-			"DDGI_HitGroup",
-			"DDGI_ClosestHit",
-			""
-		);
-		ddgi_pipeline_desc.hit_groups.push_back(ddgi_hit_group);
-		ddgi_trace_pso = gfx->CreateRayTracingPipeline(ddgi_pipeline_desc);
-		ADRIA_ASSERT(ddgi_trace_pso != nullptr);
-		ADRIA_ASSERT(ddgi_trace_pso->IsValid());
+			GfxRayTracingShaderLibrary ddgi_library(&ddgi_shader,
+			{
+				"DDGI_RayGen",
+				"DDGI_Miss",
+				"DDGI_ClosestHit"
+			});
+			ddgi_pipeline_desc.libraries.push_back(ddgi_library);
+
+			GfxRayTracingHitGroup ddgi_hit_group = GfxRayTracingHitGroup::Triangle(
+				"DDGI_HitGroup",
+				"DDGI_ClosestHit",
+				""
+			);
+			ddgi_pipeline_desc.hit_groups.push_back(ddgi_hit_group);
+			ddgi_trace_pso = gfx->CreateRayTracingPipeline(ddgi_pipeline_desc);
+			ADRIA_ASSERT(ddgi_trace_pso != nullptr);
+			ADRIA_ASSERT(ddgi_trace_pso->IsValid());
+		}
 	}
 
 	void DDGIPass::OnLibraryRecompiled(GfxShaderKey const& key)
 	{
 		if (key.GetShaderID() == LIB_DDGIRayTracing)
+		{
+			CreateStateObject();
+		}
+	}
+
+	void DDGIPass::OnShaderRecompiled(GfxShaderKey const& key)
+	{
+		if (key.GetShaderID() == CS_DDGIRayTrace)
 		{
 			CreateStateObject();
 		}
