@@ -29,7 +29,7 @@ namespace adria
 	static TAutoConsoleVariable<Int> Denoiser("r.PathTracing.Denoiser", DenoiserType_None, "What denoiser will path tracer use: 0 - None, 1 - SVGF");
 
 	PathTracingPass::PathTracingPass(entt::registry& reg, GfxDevice* gfx, Uint32 width, Uint32 height)
-		: reg(reg), gfx(gfx), width(width), height(height), use_inline_rt(false)
+		: reg(reg), gfx(gfx), width(width), height(height), use_inline_rt(false), is_supported(false)
 	{
 		if (gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1))
 		{
@@ -41,6 +41,7 @@ namespace adria
 			is_supported = true;
 			use_inline_rt = false;
 		}
+
 		if (is_supported)
 		{
 			CreateStateObjects();

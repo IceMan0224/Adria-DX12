@@ -21,9 +21,6 @@ void DDGIRayTraceCS(uint3 dispatchThreadId : SV_DispatchThreadID)
 	uint const rayIdx   = dispatchThreadId.x;
 	uint const probeIdx = dispatchThreadId.y;
 
-	if (rayIdx >= (uint)ddgiVolume.raysPerProbe)
-		return;
-
 	float3x3 randomRotation  = AngleAxis3x3(DDGIRayTracePassCB.randomAngle, DDGIRayTracePassCB.randomVector);
 	float3   randomDirection = normalize(mul(SphericalFibonacci(rayIdx, ddgiVolume.raysPerProbe), randomRotation));
 

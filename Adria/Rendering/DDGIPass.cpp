@@ -30,7 +30,7 @@ namespace adria
 		return Vector2u(width, height);
 	}
 
-	DDGIPass::DDGIPass(GfxDevice* gfx, entt::registry& reg, Uint32 w, Uint32 h) : gfx(gfx), reg(reg), width(w), height(h), use_inline_rt(false)
+	DDGIPass::DDGIPass(GfxDevice* gfx, entt::registry& reg, Uint32 w, Uint32 h) : gfx(gfx), reg(reg), width(w), height(h), use_inline_rt(false), is_supported(false)
 	{
 		if (gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1))
 		{

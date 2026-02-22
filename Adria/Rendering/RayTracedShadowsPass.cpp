@@ -12,7 +12,7 @@
 namespace adria
 {
 	RayTracedShadowsPass::RayTracedShadowsPass(GfxDevice* gfx, Uint32 width, Uint32 height)
-		: gfx(gfx), width(width), height(height), use_inline_rt(false)
+		: gfx(gfx), width(width), height(height), use_inline_rt(false), is_supported(false)
 	{
 		if (gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1))
 		{
