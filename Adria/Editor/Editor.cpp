@@ -214,21 +214,21 @@ namespace adria
 				}
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu(ICON_FA_WINDOW_MAXIMIZE " Windows"))
+			if (ImGui::BeginMenu(ICON_FA_TABLE_COLUMNS " Windows"))
 			{
-				if (ImGui::MenuItem(ICON_FA_CLOCK" Profiler", 0, visibility_flags[Flag_Profiler]))			 visibility_flags[Flag_Profiler] = !visibility_flags[Flag_Profiler];
-				if (ImGui::MenuItem(ICON_FA_COMMENT" Log", 0, visibility_flags[Flag_Log]))					 visibility_flags[Flag_Log] = !visibility_flags[Flag_Log];
+				if (ImGui::MenuItem(ICON_FA_GAUGE_HIGH" Profiler", 0, visibility_flags[Flag_Profiler]))			 visibility_flags[Flag_Profiler] = !visibility_flags[Flag_Profiler];
+				if (ImGui::MenuItem(ICON_FA_SCROLL" Log", 0, visibility_flags[Flag_Log]))					 visibility_flags[Flag_Log] = !visibility_flags[Flag_Log];
 				if (ImGui::MenuItem(ICON_FA_TERMINAL" Console ", 0, visibility_flags[Flag_Console]))		 visibility_flags[Flag_Console] = !visibility_flags[Flag_Console];
 				if (ImGui::MenuItem(ICON_FA_CAMERA" Camera", 0, visibility_flags[Flag_Camera]))				 visibility_flags[Flag_Camera] = !visibility_flags[Flag_Camera];
-				if (ImGui::MenuItem(ICON_FA_LIST " Entities", 0, visibility_flags[Flag_Entities]))			 visibility_flags[Flag_Entities] = !visibility_flags[Flag_Entities];
-				if (ImGui::MenuItem(ICON_FA_FIRE" Hot Reload", 0, visibility_flags[Flag_HotReload]))		 visibility_flags[Flag_HotReload] = !visibility_flags[Flag_HotReload];
-				if (ImGui::MenuItem(ICON_FA_GEAR" Settings", 0, visibility_flags[Flag_Settings]))			 visibility_flags[Flag_Settings] = !visibility_flags[Flag_Settings];
+				if (ImGui::MenuItem(ICON_FA_SITEMAP " Entities", 0, visibility_flags[Flag_Entities]))			 visibility_flags[Flag_Entities] = !visibility_flags[Flag_Entities];
+				if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE" Hot Reload", 0, visibility_flags[Flag_HotReload]))		 visibility_flags[Flag_HotReload] = !visibility_flags[Flag_HotReload];
+				if (ImGui::MenuItem(ICON_FA_SLIDERS" Settings", 0, visibility_flags[Flag_Settings]))			 visibility_flags[Flag_Settings] = !visibility_flags[Flag_Settings];
 				if (ImGui::MenuItem(ICON_FA_BUG" Debug", 0, visibility_flags[Flag_Debug]))					 visibility_flags[Flag_Debug] = !visibility_flags[Flag_Debug];
-				if (ImGui::MenuItem(ICON_FA_PLUS "Add Entities", 0, visibility_flags[Flag_AddEntities]))	 visibility_flags[Flag_AddEntities] = !visibility_flags[Flag_AddEntities];
+				if (ImGui::MenuItem(ICON_FA_CIRCLE_PLUS "Add Entities", 0, visibility_flags[Flag_AddEntities]))	 visibility_flags[Flag_AddEntities] = !visibility_flags[Flag_AddEntities];
 
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu(ICON_FA_PAINTBRUSH" Themes"))
+			if (ImGui::BeginMenu(ICON_FA_PALETTE" Themes"))
 			{
 				if (ImGui::MenuItem("Default", 0, theme == EditorTheme_Default))
 				{
@@ -264,7 +264,7 @@ namespace adria
 				}
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu(ICON_FA_QUESTION" Help"))
+			if (ImGui::BeginMenu(ICON_FA_CIRCLE_QUESTION" Help"))
 			{
 				ImGui::Text("TODO");
 				ImGui::Spacing();
@@ -369,7 +369,7 @@ namespace adria
 					engine->scene_loader->LoadOcean(params);
 				}
 
-				if (ImGui::Button(ICON_FA_ERASER" Clear"))
+				if (ImGui::Button(ICON_FA_TRASH" Clear"))
 				{
 					for (auto e : engine->reg.view<Ocean>())
 					{
@@ -433,7 +433,7 @@ namespace adria
 
 					engine->scene_loader->LoadDecal(params);
 				}
-				if (ImGui::Button(ICON_FA_ERASER" Clear Decals"))
+				if (ImGui::Button(ICON_FA_TRASH" Clear Decals"))
 				{
 					for (auto e : engine->reg.view<Decal>())
 					{
@@ -454,7 +454,7 @@ namespace adria
 		}
 
 		auto all_entities = engine->reg.view<Tag>();
-		if (ImGui::Begin(ICON_FA_LIST" Entities ", &visibility_flags[Flag_Entities]))
+		if (ImGui::Begin(ICON_FA_SITEMAP" Entities ", &visibility_flags[Flag_Entities]))
 		{
 			std::vector<entt::entity> deleted_entities{};
 			std::function<void(entt::entity, Bool)> ShowEntity;
@@ -815,7 +815,7 @@ namespace adria
 	}
 	void Editor::Scene(GfxTexture const& final_texture)
 	{
-		ImGui::Begin(ICON_FA_GLOBE" Scene", nullptr, ImGuiWindowFlags_MenuBar);
+		ImGui::Begin(ICON_FA_CUBE" Scene", nullptr, ImGuiWindowFlags_MenuBar);
 		{
 			if (ImGui::BeginMenuBar())
 			{
@@ -894,7 +894,7 @@ namespace adria
 			return;
 		}
 
-		editor_sink->Draw(ICON_FA_COMMENT" Log", &visibility_flags[Flag_Log]);
+		editor_sink->Draw(ICON_FA_SCROLL" Log", &visibility_flags[Flag_Log]);
 	}
 	void Editor::Console()
 	{
@@ -902,7 +902,7 @@ namespace adria
 		{
 			ImGui::SetNextWindowSize(ImVec2(viewport_data.scene_viewport_size_x, 65));
 			ImGui::SetNextWindowPos(ImVec2(viewport_data.scene_viewport_pos_x, viewport_data.scene_viewport_pos_y + viewport_data.scene_viewport_size_y - 65));
-			console->DrawBasic(ICON_FA_TERMINAL "BasicConsole ", nullptr);
+			console->DrawBasic(ICON_FA_TERMINAL " BasicConsole ", nullptr);
 		}
 
 		if (!visibility_flags[Flag_Console]) 
@@ -926,7 +926,7 @@ namespace adria
 			grouped_commands[cmd.group].push_back(&cmd);
 		}
 
-		if (ImGui::Begin(ICON_FA_GEAR" Settings", &visibility_flags[Flag_Settings]))
+		if (ImGui::Begin(ICON_FA_SLIDERS" Settings", &visibility_flags[Flag_Settings]))
 		{
 			for (Uint32 i = 0; i < GUICommandGroup_Count; ++i)
 			{
@@ -978,7 +978,7 @@ namespace adria
 			return;
 		}
 
-		if (ImGui::Begin(ICON_FA_CLOCK" Profiling", &visibility_flags[Flag_Profiler]))
+		if (ImGui::Begin(ICON_FA_GAUGE_HIGH" Profiling", &visibility_flags[Flag_Profiler]))
 		{
 			ImGuiIO io = ImGui::GetIO();
 #if GFX_PROFILING_USE_TRACY
@@ -1248,7 +1248,7 @@ namespace adria
 		{
 			return;
 		}
-		if (ImGui::Begin(ICON_FA_FIRE" Shader Hot Reload", &visibility_flags[Flag_HotReload]))
+		if (ImGui::Begin(ICON_FA_ARROWS_ROTATE" Shader Hot Reload", &visibility_flags[Flag_HotReload]))
 		{
 			if (ImGui::Button("Compile Changed Shaders")) reload_shaders = true;
 		}
