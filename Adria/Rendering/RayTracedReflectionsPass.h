@@ -2,6 +2,7 @@
 #include "PostEffect.h"
 #include "BlurPass.h"
 #include "HelperPasses.h"
+#include "Graphics/GfxPipelineStateFwd.h"
 
 namespace adria
 {
@@ -25,15 +26,18 @@ namespace adria
 	private:
 		GfxDevice* gfx;
 		std::unique_ptr<GfxRayTracingPipeline> ray_traced_reflections_pso;
+		std::unique_ptr<GfxComputePipelineState> ray_traced_reflections_compute_pso;
 		Uint32 width, height;
 		BlurPass blur_pass;
 
 		Bool is_supported;
+		Bool use_inline_rt;
 		Float reflection_roughness_scale = 0.0f;
 		CopyToTexturePass copy_to_texture_pass;
 
 	private:
 		void CreateStateObject();
 		void OnLibraryRecompiled(GfxShaderKey const&);
+		void OnShaderRecompiled(GfxShaderKey const&);
 	};
 }

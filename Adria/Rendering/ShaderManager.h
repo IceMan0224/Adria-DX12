@@ -128,6 +128,7 @@ namespace adria
 		CS_RayTracedShadows,
 		LIB_AmbientOcclusion,
 		LIB_Reflections,
+		CS_RayTracedReflections,
 		LIB_PathTracing,
 		CS_TensorToTexture,
 		CS_TextureToTensor,

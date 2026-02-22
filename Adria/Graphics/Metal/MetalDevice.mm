@@ -41,7 +41,7 @@ namespace adria
 
         if (supports_apple6)
         {
-            ray_tracing_support = RayTracingSupport::Tier1_0;
+            ray_tracing_support = RayTracingSupport::Tier1_1;
         }
         if (supports_apple7)
         {

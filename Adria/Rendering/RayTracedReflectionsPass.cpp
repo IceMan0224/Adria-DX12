@@ -7,6 +7,7 @@
 #include "Graphics/GfxShaderKey.h"
 #include "Graphics/GfxRayTracingPipeline.h"
 #include "Graphics/GfxRayTracingShaderBindings.h"
+#include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
 #include "Core/ConsoleManager.h"
@@ -14,15 +15,31 @@
 namespace adria
 {
 	static TAutoConsoleVariable<Bool> RTR("r.RTR", true, "0 - Disabled, 1 - Enabled");
-	
+
 	RayTracedReflectionsPass::RayTracedReflectionsPass(GfxDevice* gfx, Uint32 width, Uint32 height)
-		: gfx(gfx), width(width), height(height), blur_pass(gfx), copy_to_texture_pass(gfx, width, height)
+		: gfx(gfx), width(width), height(height), blur_pass(gfx), copy_to_texture_pass(gfx, width, height), use_inline_rt(false)
 	{
-		is_supported = gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1);
+		if (gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1))
+		{
+			is_supported = true;
+			use_inline_rt = true;
+		}
+		else if (gfx->GetCapabilities().SupportsRayTracing())
+		{
+			is_supported = true;
+			use_inline_rt = false;
+		}
 		if (IsSupported())
 		{
 			CreateStateObject();
-			ShaderManager::GetLibraryRecompiledEvent().AddMember(&RayTracedReflectionsPass::OnLibraryRecompiled, *this);
+			if (use_inline_rt)
+			{
+				ShaderManager::GetShaderRecompiledEvent().AddMember(&RayTracedReflectionsPass::OnShaderRecompiled, *this);
+			}
+			else
+			{
+				ShaderManager::GetLibraryRecompiledEvent().AddMember(&RayTracedReflectionsPass::OnLibraryRecompiled, *this);
+			}
 		}
 	}
 	RayTracedReflectionsPass::~RayTracedReflectionsPass() = default;
@@ -77,17 +94,28 @@ namespace adria
 					.albedo_idx = ctx.GetReadOnlyTextureIndex(data.diffuse),
 					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
 				};
-				GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ray_traced_reflections_pso.get());
-				bindings->SetRayGenShader("RTR_RayGen");
-				bindings->AddMissShader("RTR_Miss");
-				bindings->AddHitGroup("RTRClosestHitGroupPrimaryRay");
-				bindings->Commit();
 
-				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-				cmd_list->SetRootConstants(1, constants);
-				cmd_list->DispatchRays(width, height);
+				if (use_inline_rt)
+				{
+					cmd_list->SetPipelineState(ray_traced_reflections_compute_pso->Get());
+					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
+					cmd_list->SetRootConstants(1, constants);
+					cmd_list->Dispatch(DivideAndRoundUp(width, 16u), DivideAndRoundUp(height, 16u), 1);
+				}
+				else
+				{
+					GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(ray_traced_reflections_pso.get());
+					bindings->SetRayGenShader("RTR_RayGen");
+					bindings->AddMissShader("RTR_Miss");
+					bindings->AddHitGroup("RTRClosestHitGroupPrimaryRay");
+					bindings->Commit();
+
+					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
+					cmd_list->SetRootConstants(1, constants);
+					cmd_list->DispatchRays(width, height);
+				}
 			}, RGPassType::Compute, RGPassFlags::None);
-		
+
 		blur_pass.AddPass(rg, RG_NAME(RTR_OutputNoisy), RG_NAME(RTR_Output), "RTR Denoise");
 		copy_to_texture_pass.AddPass(rg, postprocessor->GetFinalResource(), RG_NAME(RTR_Output), BlendMode::AdditiveBlend);
 	}
@@ -126,50 +154,46 @@ namespace adria
 
 	Bool RayTracedReflectionsPass::IsSupported() const
 	{
-#if defined(ADRIA_PLATFORM_WINDOWS)
 		return is_supported;
-#else
-		return false;
-#endif
 	}
 
 	void RayTracedReflectionsPass::CreateStateObject()
 	{
-		GfxShader const& rtr_shader = SM_GetGfxShader(LIB_Reflections);
-
-		GfxRayTracingPipelineDesc rtr_pipeline_desc{};
-		rtr_pipeline_desc.max_payload_size = sizeof(Float) * 4; 
-		rtr_pipeline_desc.max_attribute_size = 8;
-		rtr_pipeline_desc.max_recursion_depth = 2;
-		rtr_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
-
-		GfxRayTracingShaderLibrary rtr_library(&rtr_shader,
+		if (use_inline_rt)
 		{
-			"RTR_RayGen",
-			"RTR_Miss",
-			"RTR_ClosestHitPrimaryRay"
-		});
-		rtr_pipeline_desc.libraries.push_back(rtr_library);
+			GfxComputePipelineStateDesc compute_pso_desc{};
+			compute_pso_desc.CS = CS_RayTracedReflections;
+			ray_traced_reflections_compute_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
+		}
+		else
+		{
+			GfxShader const& rtr_shader = SM_GetGfxShader(LIB_Reflections);
 
-		GfxRayTracingHitGroup rtr_primary_hit_group = GfxRayTracingHitGroup::Triangle(
-			"RTRClosestHitGroupPrimaryRay",    
-			"RTR_ClosestHitPrimaryRay",        
-			""                                 
-		);
-		rtr_pipeline_desc.hit_groups.push_back(rtr_primary_hit_group);
+			GfxRayTracingPipelineDesc rtr_pipeline_desc{};
+			rtr_pipeline_desc.max_payload_size = sizeof(Float) * 4;
+			rtr_pipeline_desc.max_attribute_size = 8;
+			rtr_pipeline_desc.max_recursion_depth = 2;
+			rtr_pipeline_desc.global_root_signature = GfxRootSignatureID::Common;
 
-		/*
-		GfxRayTracingHitGroup rtr_reflection_hit_group = GfxRayTracingHitGroup::Triangle(
-			"RTRClosestHitGroupReflectionRay",
-			"RTR_ClosestHitReflectionRay",
-			""
-		);
-		rtr_pipeline_desc.hit_groups.push_back(rtr_reflection_hit_group);
-		*/
+			GfxRayTracingShaderLibrary rtr_library(&rtr_shader,
+			{
+				"RTR_RayGen",
+				"RTR_Miss",
+				"RTR_ClosestHitPrimaryRay"
+			});
+			rtr_pipeline_desc.libraries.push_back(rtr_library);
 
-		ray_traced_reflections_pso = gfx->CreateRayTracingPipeline(rtr_pipeline_desc);
-		ADRIA_ASSERT(ray_traced_reflections_pso != nullptr);
-		ADRIA_ASSERT(ray_traced_reflections_pso->IsValid());
+			GfxRayTracingHitGroup rtr_primary_hit_group = GfxRayTracingHitGroup::Triangle(
+				"RTRClosestHitGroupPrimaryRay",
+				"RTR_ClosestHitPrimaryRay",
+				""
+			);
+			rtr_pipeline_desc.hit_groups.push_back(rtr_primary_hit_group);
+
+			ray_traced_reflections_pso = gfx->CreateRayTracingPipeline(rtr_pipeline_desc);
+			ADRIA_ASSERT(ray_traced_reflections_pso != nullptr);
+			ADRIA_ASSERT(ray_traced_reflections_pso->IsValid());
+		}
 	}
 
 	void RayTracedReflectionsPass::OnLibraryRecompiled(GfxShaderKey const& key)
@@ -180,6 +204,12 @@ namespace adria
 		}
 	}
 
+	void RayTracedReflectionsPass::OnShaderRecompiled(GfxShaderKey const& key)
+	{
+		if (key.GetShaderID() == CS_RayTracedReflections)
+		{
+			CreateStateObject();
+		}
+	}
+
 }
-
-
