@@ -387,6 +387,8 @@ namespace adria
 	{
 		D3D12RayTracingBLAS* d3d12_blas = static_cast<D3D12RayTracingBLAS*>(blas);
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
+		desc.Inputs = d3d12_blas->inputs;
+		desc.Inputs.pGeometryDescs = d3d12_blas->geo_descs.data();
 		desc.DestAccelerationStructureData = d3d12_blas->result_buffer->GetGpuAddress();
 		desc.ScratchAccelerationStructureData = d3d12_blas->scratch_buffer->GetGpuAddress();
 		cmd_list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
@@ -396,11 +398,10 @@ namespace adria
 	{
 		D3D12RayTracingTLAS* d3d12_tlas = static_cast<D3D12RayTracingTLAS*>(tlas);
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
+		desc.Inputs = d3d12_tlas->inputs;
+		desc.Inputs.InstanceDescs = d3d12_tlas->instance_buffer->GetGpuAddress();
 		desc.DestAccelerationStructureData = d3d12_tlas->result_buffer->GetGpuAddress();
 		desc.ScratchAccelerationStructureData = d3d12_tlas->scratch_buffer->GetGpuAddress();
-		desc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-		desc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-		desc.Inputs.InstanceDescs = d3d12_tlas->instance_buffer->GetGpuAddress();
 		cmd_list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
 	}
 

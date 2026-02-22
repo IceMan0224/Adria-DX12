@@ -1,4 +1,5 @@
 #pragma once
+#include <d3d12.h>
 #include "Graphics/GfxRayTracingAS.h"
 
 namespace adria
@@ -18,6 +19,8 @@ namespace adria
 	private:
 		std::unique_ptr<GfxBuffer> result_buffer;
 		std::unique_ptr<GfxBuffer> scratch_buffer;
+		std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geo_descs;
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
 	};
 
 	class D3D12RayTracingTLAS : public GfxRayTracingTLAS
@@ -34,6 +37,6 @@ namespace adria
 		std::unique_ptr<GfxBuffer> result_buffer;
 		std::unique_ptr<GfxBuffer> scratch_buffer;
 		std::unique_ptr<GfxBuffer> instance_buffer;
-		void* instance_buffer_cpu_address = nullptr;
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
 	};
 }
