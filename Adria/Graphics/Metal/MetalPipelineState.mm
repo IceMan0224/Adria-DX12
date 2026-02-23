@@ -215,6 +215,7 @@ namespace adria
     MetalGraphicsPipelineState::MetalGraphicsPipelineState(GfxDevice* gfx, GfxGraphicsPipelineStateDesc const& desc)
         : topology_type(desc.topology_type)
         , cull_mode(desc.rasterizer_state.cull_mode)
+        , fill_mode(desc.rasterizer_state.fill_mode)
         , front_counter_clockwise(desc.rasterizer_state.front_counter_clockwise)
         , depth_bias(static_cast<Float>(desc.rasterizer_state.depth_bias))
         , slope_scaled_depth_bias(desc.rasterizer_state.slope_scaled_depth_bias)

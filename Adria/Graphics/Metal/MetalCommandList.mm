@@ -914,6 +914,13 @@ namespace adria
                     cached_cull_mode = cull_mode;
                 }
 
+                MTLTriangleFillMode fill_mode = metal_pso->GetFillMode() == GfxFillMode::Wireframe ? MTLTriangleFillModeLines : MTLTriangleFillModeFill;
+                if (fill_mode != cached_fill_mode)
+                {
+                    [render_encoder setTriangleFillMode:fill_mode];
+                    cached_fill_mode = fill_mode;
+                }
+
                 MTLWinding winding = metal_pso->GetFrontCounterClockwise() ? MTLWindingCounterClockwise : MTLWindingClockwise;
                 if (winding != cached_front_face_winding)
                 {

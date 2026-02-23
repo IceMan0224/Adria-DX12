@@ -135,6 +135,12 @@ namespace adria
 		CS_PathTracing,
 		CS_TensorToTexture,
 		CS_TextureToTensor,
+		VS_Terrain,
+		PS_Terrain,
+		VS_TerrainLOD,
+		HS_TerrainLOD,
+		DS_TerrainLOD,
+		CS_TerrainNormals,
 		ShaderID_Count
 	};
 

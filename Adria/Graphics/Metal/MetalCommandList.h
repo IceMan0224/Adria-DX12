@@ -130,6 +130,7 @@ namespace adria
         Uint8 current_stencil_ref = 0;
 
         MTLCullMode cached_cull_mode = MTLCullModeNone;
+        MTLTriangleFillMode cached_fill_mode = MTLTriangleFillModeFill;
         MTLWinding cached_front_face_winding = MTLWindingClockwise;
         Float cached_depth_bias = 0.0f;
         Float cached_depth_slope_scale = 0.0f;

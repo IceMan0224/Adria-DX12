@@ -38,7 +38,7 @@ namespace adria
 		explicit Heightmap(HeightmapDesc const& desc);
 		explicit Heightmap(std::string_view heightmap_path);
 
-		Float HeightAt(Uint64 x, Uint64 z);
+		Float HeightAt(Uint64 x, Uint64 z) const;
 		Uint64 Width() const;
 		Uint64 Depth() const;
 

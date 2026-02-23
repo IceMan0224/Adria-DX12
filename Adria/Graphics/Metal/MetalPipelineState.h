@@ -22,6 +22,7 @@ namespace adria
 
         GfxPrimitiveTopologyType GetTopologyType() const { return topology_type; }
         GfxCullMode GetCullMode() const { return cull_mode; }
+        GfxFillMode GetFillMode() const { return fill_mode; }
         Bool GetFrontCounterClockwise() const { return front_counter_clockwise; }
         Float GetDepthBias() const { return depth_bias; }
         Float GetSlopeScaledDepthBias() const { return slope_scaled_depth_bias; }
@@ -32,6 +33,7 @@ namespace adria
         id<MTLDepthStencilState> depth_stencil_state;
         GfxPrimitiveTopologyType topology_type;
         GfxCullMode cull_mode;
+        GfxFillMode fill_mode;
         Bool front_counter_clockwise;
         Float depth_bias;
         Float slope_scaled_depth_bias;

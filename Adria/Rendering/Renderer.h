@@ -19,6 +19,7 @@
 #include "DecalsPass.h"
 #include "RainPass.h"
 #include "OceanRenderer.h"
+#include "TerrainRenderer.h"
 #include "AccelerationStructure.h"
 #include "ShadowRenderer.h"
 #include "PathTracingPass.h"
@@ -121,6 +122,7 @@ namespace adria
 		DecalsPass decals_pass;
 		RainPass rain_pass;
 		OceanRenderer  ocean_renderer;
+		TerrainRenderer terrain_renderer;
 		ShadowRenderer shadow_renderer;
 		PostProcessor postprocessor;
 		DDGIPass 	  ddgi;

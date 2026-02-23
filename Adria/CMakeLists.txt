@@ -190,6 +190,8 @@ set(ADRIA_COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OIDNDenoiserPass.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OceanRenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OceanRenderer.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/TerrainRenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/TerrainRenderer.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/PathTracingPass.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/PathTracingPass.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/PickingPass.cpp"

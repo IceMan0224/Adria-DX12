@@ -379,6 +379,84 @@ namespace adria
 				ImGui::TreePop();
 				ImGui::Separator();
 			}
+			if (ImGui::TreeNodeEx("Terrain", 0))
+			{
+				static TerrainParameters terrain_params{};
+				static Float terrain_dims[2] = { 1024.0f, 1024.0f };
+				static Float height_scale = 100.0f;
+				static Int heightmap_source = 0; 
+
+				ImGui::SliderFloat2("Dimensions", terrain_dims, 64.0f, 4096.0f);
+				ImGui::SliderFloat("Height Scale##terrain", &height_scale, 0.0f, 500.0f);
+
+				terrain_params.terrain_width = terrain_dims[0];
+				terrain_params.terrain_depth = terrain_dims[1];
+				terrain_params.height_scale = height_scale;
+
+				ImGui::Separator();
+				ImGui::Combo("Heightmap Source", &heightmap_source, "Procedural\0File\0", 2);
+
+				if (heightmap_source == 0)
+				{
+					terrain_params.use_procedural = true;
+					HeightmapDesc& desc = terrain_params.procedural_desc;
+
+					static Int resolution[2] = { (Int)desc.width, (Int)desc.depth };
+					ImGui::SliderInt2("Resolution", resolution, 33, 2049);
+					desc.width = (Uint32)resolution[0];
+					desc.depth = (Uint32)resolution[1];
+
+					ImGui::InputInt("Seed", &desc.seed);
+
+					static Char const* noise_types[] = { "OpenSimplex2", "OpenSimplex2S", "Cellular", "Perlin", "ValueCubic", "Value" };
+					Int noise_type_idx = (Int)desc.noise_type;
+					ImGui::Combo("Noise Type", &noise_type_idx, noise_types, IM_ARRAYSIZE(noise_types));
+					desc.noise_type = (NoiseType)noise_type_idx;
+
+					static Char const* fractal_types[] = { "None", "FBM", "Ridged", "PingPong" };
+					Int fractal_type_idx = (Int)desc.fractal_type;
+					ImGui::Combo("Fractal Type", &fractal_type_idx, fractal_types, IM_ARRAYSIZE(fractal_types));
+					desc.fractal_type = (FractalType)fractal_type_idx;
+
+					ImGui::SliderInt("Octaves", &desc.octaves, 1, 10);
+					ImGui::SliderFloat("Noise Scale", &desc.noise_scale, 1.0f, 2000.0f);
+					ImGui::SliderFloat("Persistence", &desc.persistence, 0.0f, 1.0f);
+					ImGui::SliderFloat("Lacunarity", &desc.lacunarity, 1.0f, 4.0f);
+				}
+				else
+				{
+					terrain_params.use_procedural = false;
+					ImGui::Text("Heightmap: %s", terrain_params.heightmap_path.empty() ? "(none)" : terrain_params.heightmap_path.c_str());
+					if (ImGui::Button("Select Heightmap File"))
+					{
+						nfdchar_t* file_path = NULL;
+						nfdchar_t const* filter_list = "png,jpg,jpeg,tga,bmp,dds";
+						nfdresult_t result = NFD_OpenDialog(filter_list, NULL, &file_path);
+						if (result == NFD_OKAY)
+						{
+							terrain_params.heightmap_path = file_path;
+							free(file_path);
+						}
+					}
+				}
+
+				ImGui::Separator();
+				if (ImGui::Button("Load Terrain"))
+				{
+					gfx->WaitForGPU();
+					engine->scene_loader->LoadTerrain(terrain_params);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(ICON_FA_TRASH" Clear Terrain"))
+				{
+					for (auto e : engine->reg.view<Terrain>())
+					{
+						engine->reg.destroy(e);
+					}
+				}
+				ImGui::TreePop();
+				ImGui::Separator();
+			}
 			if (ImGui::TreeNodeEx("Decals", 0))
 			{
 				static DecalParameters params{};

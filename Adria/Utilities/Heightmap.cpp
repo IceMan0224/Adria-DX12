@@ -1,4 +1,5 @@
 #include "Heightmap.h"
+#include "Image.h"
 #include "Cpp/FastNoiseLite.h"
 
 namespace adria
@@ -71,9 +72,39 @@ namespace adria
 	}
 	Heightmap::Heightmap(std::string_view heightmap_path)
 	{
-		ADRIA_TODO("Add support for heightmap files");
+		Image img(heightmap_path);
+		Uint32 w = img.Width();
+		Uint32 h = img.Height();
+
+		heightmap.resize(h);
+		Uint8 const* pixels = img.Data<Uint8>();
+		Bool is_hdr = img.IsHDR();
+
+		for (Uint32 z = 0; z < h; z++)
+		{
+			heightmap[z].resize(w);
+			for (Uint32 x = 0; x < w; x++)
+			{
+				if (is_hdr)
+				{
+					Float const* fp = reinterpret_cast<Float const*>(pixels);
+					heightmap[z][x] = fp[(z * w + x) * 4];
+				}
+				else
+				{
+					Uint32 idx = (z * w + x) * 4;
+					Float value = pixels[idx] / 255.0f;
+					if (img.Format() == GfxFormat::R16_UNORM || img.Format() == GfxFormat::R16_FLOAT)
+					{
+						Uint16 const* p16 = reinterpret_cast<Uint16 const*>(pixels);
+						value = p16[z * w + x] / 65535.0f;
+					}
+					heightmap[z][x] = value;
+				}
+			}
+		}
 	}
-	Float Heightmap::HeightAt(Uint64 x, Uint64 z)
+	Float Heightmap::HeightAt(Uint64 x, Uint64 z) const
 	{
 		return heightmap[z][x];
 	}

@@ -59,6 +59,8 @@ namespace adria
 			case VS_Transparent:
 			case VS_PT_GBuffer:
 			case VS_TriangleTest:
+			case VS_Terrain:
+			case VS_TerrainLOD:
 				return GfxShaderStage::VS;
 			case PS_Sky:
 			case PS_Texture:
@@ -80,6 +82,7 @@ namespace adria
 			case PS_VRSOverlay:
 			case PS_PT_GBuffer:
 			case PS_TriangleTest:
+			case PS_Terrain:
 				return GfxShaderStage::PS;
 			case GS_LensFlare:
 				return GfxShaderStage::GS;
@@ -161,10 +164,13 @@ namespace adria
 			case CS_RayTracedAmbientOcclusion:
 			case CS_DDGIRayTrace:
 			case CS_PathTracing:
+			case CS_TerrainNormals:
 				return GfxShaderStage::CS;
 			case HS_OceanLOD:
+			case HS_TerrainLOD:
 				return GfxShaderStage::HS;
 			case DS_OceanLOD:
+			case DS_TerrainLOD:
 				return GfxShaderStage::DS;
 			case MS_DrawMeshlets:
 				return GfxShaderStage::MS;
@@ -391,6 +397,14 @@ namespace adria
 			case CS_TensorToTexture:
 			case CS_TextureToTensor:
 				return "Other/TensorTextureConversions.hlsl";
+			case VS_Terrain:
+			case VS_TerrainLOD:
+			case HS_TerrainLOD:
+			case DS_TerrainLOD:
+			case PS_Terrain:
+				return "Terrain/TerrainGBuffer.hlsl";
+			case CS_TerrainNormals:
+				return "Terrain/TerrainNormals.hlsl";
 			case ShaderID_Count:
 			default:
 				return "";
@@ -640,6 +654,18 @@ namespace adria
 				return "DDGIRayTraceCS";
 			case CS_PathTracing:
 				return "PathTracerCS";
+			case VS_Terrain:
+				return "TerrainVS";
+			case VS_TerrainLOD:
+				return "TerrainVSLOD";
+			case HS_TerrainLOD:
+				return "TerrainHSLOD";
+			case DS_TerrainLOD:
+				return "TerrainDSLOD";
+			case PS_Terrain:
+				return "TerrainPS";
+			case CS_TerrainNormals:
+				return "TerrainNormalsCS";
 			}
 			return "main";
 		}

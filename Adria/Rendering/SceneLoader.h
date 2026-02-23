@@ -46,6 +46,33 @@ namespace adria
 	{
 		GridParameters ocean_grid;
 	};
+	struct TerrainParameters
+	{
+		Float terrain_width  = 1024.0f;
+		Float terrain_depth  = 1024.0f;
+		Float height_scale   = 100.0f;
+
+		Bool use_procedural = true;
+		HeightmapDesc procedural_desc{
+			.width = 513,
+			.depth = 513,
+			.max_height = 1,
+			.fractal_type = FractalType::FBM,
+			.noise_type = NoiseType::Perlin,
+			.seed = 1337,
+			.persistence = 0.45f,
+			.lacunarity = 2.0f,
+			.octaves = 6,
+			.noise_scale = 500.0f
+		};
+		std::string heightmap_path;
+
+		std::string splatmap_path;
+		std::string layer_albedo_paths[4];
+		std::string layer_normal_paths[4];
+		std::string layer_arm_paths[4];
+		Float layer_tiling[4] = { 32.0f, 32.0f, 32.0f, 32.0f };
+	};
     struct LightParameters
     {
         Light light_data;
@@ -94,6 +121,7 @@ namespace adria
 		ADRIA_MAYBE_UNUSED entt::entity LoadSkybox(SkyboxParameters const&);
         ADRIA_MAYBE_UNUSED entt::entity LoadLight(LightParameters const&);
 		ADRIA_MAYBE_UNUSED std::vector<entt::entity> LoadOcean(OceanParameters const&);
+		ADRIA_MAYBE_UNUSED entt::entity LoadTerrain(TerrainParameters const&);
 		ADRIA_MAYBE_UNUSED entt::entity LoadDecal(DecalParameters const&);
 		ADRIA_MAYBE_UNUSED entt::entity LoadModel(ModelParameters const&);
 	private:
