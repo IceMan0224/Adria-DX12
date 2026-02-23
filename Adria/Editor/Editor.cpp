@@ -224,7 +224,7 @@ namespace adria
 				if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE" Hot Reload", 0, visibility_flags[Flag_HotReload]))		 visibility_flags[Flag_HotReload] = !visibility_flags[Flag_HotReload];
 				if (ImGui::MenuItem(ICON_FA_SLIDERS" Settings", 0, visibility_flags[Flag_Settings]))			 visibility_flags[Flag_Settings] = !visibility_flags[Flag_Settings];
 				if (ImGui::MenuItem(ICON_FA_BUG" Debug", 0, visibility_flags[Flag_Debug]))					 visibility_flags[Flag_Debug] = !visibility_flags[Flag_Debug];
-				if (ImGui::MenuItem(ICON_FA_CIRCLE_PLUS "Add Entities", 0, visibility_flags[Flag_AddEntities]))	 visibility_flags[Flag_AddEntities] = !visibility_flags[Flag_AddEntities];
+				if (ImGui::MenuItem(ICON_FA_WAND_MAGIC_SPARKLES " Spawn", 0, visibility_flags[Flag_Spawn]))	 visibility_flags[Flag_Spawn] = !visibility_flags[Flag_Spawn];
 
 				ImGui::EndMenu();
 			}
@@ -276,12 +276,12 @@ namespace adria
 
 	void Editor::AddEntities()
 	{
-		if (!visibility_flags[Flag_AddEntities])
+		if (!visibility_flags[Flag_Spawn])
 		{
 			return;
 		}
 
-		if (ImGui::Begin("Add Entities", &visibility_flags[Flag_AddEntities]))
+		if (ImGui::Begin(ICON_FA_WAND_MAGIC_SPARKLES " Spawn", &visibility_flags[Flag_Spawn]))
 		{
 			if (ImGui::TreeNodeEx("Point Lights", 0))
 			{

@@ -38,7 +38,7 @@ namespace adria
 			Flag_HotReload,
 			Flag_Debug,
 			Flag_Settings,
-			Flag_AddEntities,
+			Flag_Spawn,
 			Flag_Count
 		};
 
