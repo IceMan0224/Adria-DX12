@@ -106,7 +106,7 @@ namespace adria
         {
             NSPoint mouseLocation = [NSEvent mouseLocation];
             mouse_position_x = static_cast<Float>(mouseLocation.x);
-            mouse_position_y = static_cast<Float>(mouseLocation.y);
+            mouse_position_y = -static_cast<Float>(mouseLocation.y);
         }
     }
 
@@ -123,7 +123,7 @@ namespace adria
             {
                 NSPoint mouseLocation = [NSEvent mouseLocation];
                 mouse_position_x = static_cast<Float>(mouseLocation.x);
-                mouse_position_y = static_cast<Float>(mouseLocation.y);
+                mouse_position_y = -static_cast<Float>(mouseLocation.y);
 
                 using enum KeyCode;
 

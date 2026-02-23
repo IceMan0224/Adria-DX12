@@ -59,7 +59,6 @@ int main(int argc, char* argv[])
         {
             @autoreleasepool
             {
-                g_Input.Tick();
                 g_Editor.Run();
             }
         }
