@@ -60,7 +60,7 @@
 
     adria::WindowEventInfo event_info{};
     event_info.handle = (__bridge void*)nsWindow;
-    event_info.msg = 0; 
+    event_info.msg = 0;
     event_info.wparam = 0;
     event_info.lparam = 0;
     event_info.width = static_cast<adria::Float>(contentRect.size.width);
@@ -98,6 +98,7 @@ namespace adria
 
             AdriaWindowDelegate* delegate = [[AdriaWindowDelegate alloc] initWithWindow:this];
             [nsWindow setDelegate:delegate];
+            window_delegate = (__bridge_retained void*)delegate;
 
             if (init.maximize)
             {
@@ -125,6 +126,12 @@ namespace adria
             @autoreleasepool
             {
                 NSWindow* nsWindow = (__bridge NSWindow*)window_handle;
+                [nsWindow setDelegate:nil];
+                if (window_delegate)
+                {
+                    CFRelease(window_delegate);
+                    window_delegate = nullptr;
+                }
                 [nsWindow close];
                 window_handle = nullptr;
             }
