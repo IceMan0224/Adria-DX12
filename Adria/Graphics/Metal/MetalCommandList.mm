@@ -868,7 +868,6 @@ namespace adria
             [render_encoder setObjectBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
             [render_encoder setMeshBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
         }
-        metal_device->BindBindlessResources(render_encoder);
         SetViewport(0, 0, render_pass_desc.width, render_pass_desc.height);
         SetScissorRect(0, 0, render_pass_desc.width, render_pass_desc.height);
     }
@@ -1309,7 +1308,6 @@ namespace adria
             {
                 [compute_encoder setBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
             }
-            metal_device->BindBindlessResources(compute_encoder);
         }
     }
 

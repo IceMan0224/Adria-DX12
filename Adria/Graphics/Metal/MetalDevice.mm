@@ -355,14 +355,42 @@ namespace adria
             return {};
         }
 
-        // Set the buffer in the descriptor entry using GPU address
+        GfxBufferDesc const& buf_desc = buffer->GetDesc();
         Uint64 buffer_address = metal_buffer->GetGpuAddress();
         Uint64 offset = desc ? desc->offset : 0;
-        IRDescriptorTableSetBuffer(entry, buffer_address + offset, 0);
+        Uint64 view_size = desc ? std::min(desc->size, buf_desc.size - offset) : buf_desc.size - offset;
 
-        if (buffer->IsPersistent())
+        if (buf_desc.format != GfxFormat::UNKNOWN)
         {
-            TrackBindlessResource(mtl_buffer, MTLResourceUsageRead);
+            MTLPixelFormat pixel_format = ToMTLPixelFormat(buf_desc.format);
+            Uint32 element_stride = GetGfxFormatStride(buf_desc.format);
+            Uint64 num_elements = view_size / element_stride;
+
+            MTLTextureDescriptor* tex_desc = [[MTLTextureDescriptor alloc] init];
+            tex_desc.textureType = MTLTextureTypeTextureBuffer;
+            tex_desc.pixelFormat = pixel_format;
+            tex_desc.width = num_elements;
+            tex_desc.height = 1;
+            tex_desc.usage = MTLTextureUsageShaderRead | MTLTextureUsagePixelFormatView;
+            tex_desc.resourceOptions = mtl_buffer.resourceOptions;
+
+            id<MTLTexture> texture_view = [mtl_buffer newTextureWithDescriptor:tex_desc
+                                                                       offset:offset
+                                                                  bytesPerRow:num_elements * element_stride];
+            MakeResident(texture_view);
+
+            IRBufferView buffer_view{};
+            buffer_view.buffer = mtl_buffer;
+            buffer_view.bufferOffset = offset;
+            buffer_view.bufferSize = view_size;
+            buffer_view.textureBufferView = texture_view;
+            buffer_view.textureViewOffsetInElements = 0;
+            buffer_view.typedBuffer = true;
+            IRDescriptorTableSetBufferView(entry, &buffer_view);
+        }
+        else
+        {
+            IRDescriptorTableSetBuffer(entry, buffer_address + offset, 0);
         }
 
         MetalDescriptor metal_desc{};
@@ -379,11 +407,11 @@ namespace adria
         }
 
         MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(buffer);
+        id<MTLBuffer> mtl_buffer = metal_buffer->GetMetalBuffer();
 
         IRDescriptorTableEntry* entry = nullptr;
         Uint32 index = UINT32_MAX;
 
-        // Use persistent or transient allocation based on buffer's persistence flag
         if (buffer->IsPersistent())
         {
             index = AllocatePersistentResourceDescriptor(&entry);
@@ -398,14 +426,42 @@ namespace adria
             return {};
         }
 
-        // Set the buffer in the descriptor entry using GPU address
+        GfxBufferDesc const& buf_desc = buffer->GetDesc();
         Uint64 buffer_address = metal_buffer->GetGpuAddress();
         Uint64 offset = desc ? desc->offset : 0;
-        IRDescriptorTableSetBuffer(entry, buffer_address + offset, 0);
+        Uint64 view_size = desc ? std::min(desc->size, buf_desc.size - offset) : buf_desc.size - offset;
 
-        if (buffer->IsPersistent())
+        if (buf_desc.format != GfxFormat::UNKNOWN)
         {
-            TrackBindlessResource(metal_buffer->GetMetalBuffer(), MTLResourceUsageRead | MTLResourceUsageWrite);
+            MTLPixelFormat pixel_format = ToMTLPixelFormat(buf_desc.format);
+            Uint32 element_stride = GetGfxFormatStride(buf_desc.format);
+            Uint64 num_elements = view_size / element_stride;
+
+            MTLTextureDescriptor* tex_desc = [[MTLTextureDescriptor alloc] init];
+            tex_desc.textureType = MTLTextureTypeTextureBuffer;
+            tex_desc.pixelFormat = pixel_format;
+            tex_desc.width = num_elements;
+            tex_desc.height = 1;
+            tex_desc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite | MTLTextureUsagePixelFormatView;
+            tex_desc.resourceOptions = mtl_buffer.resourceOptions;
+
+            id<MTLTexture> texture_view = [mtl_buffer newTextureWithDescriptor:tex_desc
+                                                                       offset:offset
+                                                                  bytesPerRow:num_elements * element_stride];
+            MakeResident(texture_view);
+
+            IRBufferView buffer_view{};
+            buffer_view.buffer = mtl_buffer;
+            buffer_view.bufferOffset = offset;
+            buffer_view.bufferSize = view_size;
+            buffer_view.textureBufferView = texture_view;
+            buffer_view.textureViewOffsetInElements = 0;
+            buffer_view.typedBuffer = true;
+            IRDescriptorTableSetBufferView(entry, &buffer_view);
+        }
+        else
+        {
+            IRDescriptorTableSetBuffer(entry, buffer_address + offset, 0);
         }
 
         MetalDescriptor metal_desc{};
@@ -449,11 +505,6 @@ namespace adria
         }
 
         IRDescriptorTableSetTexture(entry, texture_view, 0.0f, 0);
-
-        if (texture->IsPersistent())
-        {
-            TrackBindlessResource(texture_view, MTLResourceUsageRead);
-        }
 
         MetalDescriptor metal_desc{};
         metal_desc.index = index;
@@ -509,11 +560,6 @@ namespace adria
         }
 
         IRDescriptorTableSetTexture(entry, texture_view, 0.0f, 0);
-
-        if (texture->IsPersistent())
-        {
-            TrackBindlessResource(texture_view, MTLResourceUsageRead | MTLResourceUsageWrite);
-        }
 
         MetalDescriptor metal_desc{};
         metal_desc.index = index;
@@ -587,13 +633,6 @@ namespace adria
         }
 
         IRDescriptorTableSetAccelerationStructure(entry, gpu_address);
-
-        TrackBindlessResource(metal_buffer->GetMetalBuffer(), MTLResourceUsageRead);
-        TrackBindlessResource(metal_tlas->GetAccelerationStructure(), MTLResourceUsageRead);
-        for (id<MTLAccelerationStructure> blas : metal_tlas->GetBLASList())
-        {
-            TrackBindlessResource(blas, MTLResourceUsageRead);
-        }
 
         MetalDescriptor metal_desc{};
         metal_desc.index = index;
@@ -933,49 +972,6 @@ namespace adria
             return UINT32_MAX;
         }
         return resource_descriptor_allocator->AllocateTransient(descriptor);
-    }
-
-    void MetalDevice::TrackBindlessResource(id<MTLResource> resource, MTLResourceUsage usage)
-    {
-        if (!resource) return;
-        for (auto& entry : bindless_resources)
-        {
-            if (entry.resource == resource)
-            {
-                entry.usage |= usage;
-                return;
-            }
-        }
-        bindless_resources.push_back({ resource, usage });
-    }
-
-    void MetalDevice::UntrackBindlessResource(id<MTLResource> resource)
-    {
-        if (!resource) 
-        {
-            return;
-        }
-        
-        bindless_resources.erase(
-            std::remove_if(bindless_resources.begin(), bindless_resources.end(),
-                [resource](auto const& entry) { return entry.resource == resource; }),
-            bindless_resources.end());
-    }
-
-    void MetalDevice::BindBindlessResources(id<MTLComputeCommandEncoder> encoder) const
-    {
-        for (auto const& entry : bindless_resources)
-        {
-            [encoder useResource:entry.resource usage:entry.usage];
-        }
-    }
-
-    void MetalDevice::BindBindlessResources(id<MTLRenderCommandEncoder> encoder) const
-    {
-        for (auto const& entry : bindless_resources)
-        {
-            [encoder useResource:entry.resource usage:entry.usage stages:MTLRenderStageFragment | MTLRenderStageVertex];
-        }
     }
 
     Uint32 MetalDevice::AllocatePersistentResourceDescriptor(IRDescriptorTableEntry** descriptor)
