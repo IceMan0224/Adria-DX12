@@ -118,7 +118,7 @@ namespace adria
         id<MTLDevice> device = metal_gfx->GetMTLDevice();
 
         GfxBufferDesc instance_buffer_desc{};
-        instance_buffer_desc.size = sizeof(MTLAccelerationStructureInstanceDescriptor) * instances.size();
+        instance_buffer_desc.size = sizeof(MTLAccelerationStructureUserIDInstanceDescriptor) * instances.size();
         instance_buffer_desc.resource_usage = GfxResourceUsage::Default;
         instance_buffer_desc.bind_flags = GfxBindFlag::None;
         instance_buffer = gfx->CreateBuffer(instance_buffer_desc);
@@ -143,13 +143,13 @@ namespace adria
         }
 
         MetalBuffer* metal_instance_buffer = static_cast<MetalBuffer*>(instance_buffer.get());
-        MTLAccelerationStructureInstanceDescriptor* instanceData =
-            (MTLAccelerationStructureInstanceDescriptor*)[metal_instance_buffer->GetMetalBuffer() contents];
+        MTLAccelerationStructureUserIDInstanceDescriptor* instanceData =
+            (MTLAccelerationStructureUserIDInstanceDescriptor*)[metal_instance_buffer->GetMetalBuffer() contents];
 
         for (Uint32 i = 0; i < instances.size(); ++i)
         {
             auto const& inst = instances[i];
-            MTLAccelerationStructureInstanceDescriptor& mtl_inst = instanceData[i];
+            MTLAccelerationStructureUserIDInstanceDescriptor& mtl_inst = instanceData[i];
 
             for (Uint32 row = 0; row < 3; ++row)
             {
@@ -180,7 +180,7 @@ namespace adria
                 mtl_inst.options |= MTLAccelerationStructureInstanceOptionNonOpaque;
             }
 
-            // Set the correct accelerationStructureIndex
+            mtl_inst.userID = inst.instance_id;
             MetalRayTracingBLAS* blas = static_cast<MetalRayTracingBLAS*>(inst.blas);
             NSNumber* index = [blasToIndexMap objectForKey:[NSValue valueWithPointer:blas]];
             mtl_inst.accelerationStructureIndex = [index unsignedIntValue];
@@ -189,7 +189,7 @@ namespace adria
         accel_descriptor.instanceCount = instances.size();
         accel_descriptor.instanceDescriptorBuffer = metal_instance_buffer->GetMetalBuffer();
         accel_descriptor.instanceDescriptorBufferOffset = 0;
-        accel_descriptor.instanceDescriptorType = MTLAccelerationStructureInstanceDescriptorTypeDefault;
+        accel_descriptor.instanceDescriptorType = MTLAccelerationStructureInstanceDescriptorTypeUserID;
 
         MTLAccelerationStructureSizes sizes = [device accelerationStructureSizesWithDescriptor:accel_descriptor];
 
