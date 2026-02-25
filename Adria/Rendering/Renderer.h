@@ -122,11 +122,9 @@ namespace adria
 		DecalsPass decals_pass;
 		RainPass rain_pass;
 		OceanRenderer  ocean_renderer;
-		TerrainRenderer terrain_renderer;
 		ShadowRenderer shadow_renderer;
 		PostProcessor postprocessor;
 		DDGIPass 	  ddgi;
-		ReSTIR_DI	  restir_di;
 		PathTracingPass path_tracer;
 		RendererDebugViewPass renderer_debug_view_pass;
 		GpuPrintf gpu_printf;

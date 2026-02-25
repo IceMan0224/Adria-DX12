@@ -555,7 +555,6 @@ namespace adria
 			Ref<IDxcBlobEncoding> source_blob;
 
 			std::wstring shader_source = ToWideString(input.file);
-			ADRIA_LOG_SYNC(INFO, "Compiling shader: %s, entry: %s, stage: %d", input.file.c_str(), input.entry_point.c_str(), (int)input.stage);
 			HRESULT hr = library->CreateBlobFromFile(shader_source.data(), &code_page, source_blob.GetAddressOf());
 			if (FAILED(hr))
 			{

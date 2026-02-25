@@ -20,6 +20,7 @@ namespace adria
 		Uint32 lod;
 	};
 
+
 	class TerrainRenderer
 	{
 		static constexpr Uint32 PATCH_GRID_SIZE = 32;
