@@ -11,6 +11,7 @@
 #include "MetalRayTracingShaderBindings.h"
 #include "MetalRayTracingAS.h"
 #include "MetalDescriptor.h"
+#include "Graphics/GfxProfiler.h"
 #include "Graphics/GfxRenderPass.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxFence.h"
@@ -187,6 +188,7 @@ namespace adria
     void MetalCommandList::BeginEvent(Char const* event_name)
     {
         [command_buffer pushDebugGroup:[NSString stringWithUTF8String:event_name]];
+        g_GfxProfiler.BeginProfileScope(this, event_name);
     }
 
     void MetalCommandList::BeginEvent(Char const* event_name, Uint32 event_color)
@@ -196,6 +198,7 @@ namespace adria
 
     void MetalCommandList::EndEvent()
     {
+        g_GfxProfiler.EndProfileScope(this);
         [command_buffer popDebugGroup];
     }
 
@@ -856,6 +859,7 @@ namespace adria
             }
         }
 
+        AttachTimestampToRenderPass(pass_desc);
         render_encoder = [command_buffer renderCommandEncoderWithDescriptor:pass_desc];
         [render_encoder waitForFence:encoder_fence beforeStages:MTLRenderStageVertex | MTLRenderStageObject];
 
@@ -1273,7 +1277,17 @@ namespace adria
 
         if (!blit_encoder)
         {
-            blit_encoder = [command_buffer blitCommandEncoder];
+            MTLBlitPassDescriptor* blit_pass_desc = [MTLBlitPassDescriptor new];
+            AttachTimestampToBlitPass(blit_pass_desc);
+            blit_encoder = [command_buffer blitCommandEncoderWithDescriptor:blit_pass_desc];
+            [blit_encoder waitForFence:encoder_fence];
+        }
+        else if (pending_timestamp.has_value())
+        {
+            EndBlitEncoder();
+            MTLBlitPassDescriptor* blit_pass_desc = [MTLBlitPassDescriptor new];
+            AttachTimestampToBlitPass(blit_pass_desc);
+            blit_encoder = [command_buffer blitCommandEncoderWithDescriptor:blit_pass_desc];
             [blit_encoder waitForFence:encoder_fence];
         }
     }
@@ -1300,7 +1314,23 @@ namespace adria
 
         if (!compute_encoder)
         {
-            compute_encoder = [command_buffer computeCommandEncoder];
+            MTLComputePassDescriptor* compute_pass_desc = [MTLComputePassDescriptor computePassDescriptor];
+            AttachTimestampToComputePass(compute_pass_desc);
+            compute_encoder = [command_buffer computeCommandEncoderWithDescriptor:compute_pass_desc];
+            [compute_encoder waitForFence:encoder_fence];
+
+            id<MTLBuffer> descriptor_buffer = metal_device->GetResourceDescriptorBuffer();
+            if (descriptor_buffer && compute_encoder)
+            {
+                [compute_encoder setBuffer:descriptor_buffer offset:0 atIndex:kIRDescriptorHeapBindPoint];
+            }
+        }
+        else if (pending_timestamp.has_value())
+        {
+            EndComputeEncoder();
+            MTLComputePassDescriptor* compute_pass_desc = [MTLComputePassDescriptor computePassDescriptor];
+            AttachTimestampToComputePass(compute_pass_desc);
+            compute_encoder = [command_buffer computeCommandEncoderWithDescriptor:compute_pass_desc];
             [compute_encoder waitForFence:encoder_fence];
 
             id<MTLBuffer> descriptor_buffer = metal_device->GetResourceDescriptorBuffer();
@@ -1349,5 +1379,63 @@ namespace adria
                                     scratchBuffer:metal_tlas->scratch_buffer
                               scratchBufferOffset:0];
         [accel_encoder endEncoding];
+    }
+
+    void MetalCommandList::SetPendingTimestampSample(void* csb, Uint32 begin_index, Uint32 end_index)
+    {
+        pending_timestamp = PendingTimestampSample{ csb, begin_index, end_index };
+    }
+
+    void MetalCommandList::AttachTimestampToRenderPass(MTLRenderPassDescriptor* desc)
+    {
+        if (!pending_timestamp.has_value()) 
+        {
+            return;
+        }
+
+        auto const& sample = pending_timestamp.value();
+
+        id<MTLCounterSampleBuffer> csb = (__bridge id<MTLCounterSampleBuffer>)sample.csb;
+        desc.sampleBufferAttachments[0].sampleBuffer = csb;
+        desc.sampleBufferAttachments[0].startOfVertexSampleIndex = sample.begin_index;
+        desc.sampleBufferAttachments[0].endOfVertexSampleIndex = MTLCounterDontSample;
+        desc.sampleBufferAttachments[0].startOfFragmentSampleIndex = MTLCounterDontSample;
+        desc.sampleBufferAttachments[0].endOfFragmentSampleIndex = sample.end_index;
+
+        pending_timestamp.reset();
+    }
+
+    void MetalCommandList::AttachTimestampToComputePass(MTLComputePassDescriptor* desc)
+    {
+        if (!pending_timestamp.has_value()) 
+        {
+            return;
+        }
+
+        auto const& sample = pending_timestamp.value();
+
+        id<MTLCounterSampleBuffer> csb = (__bridge id<MTLCounterSampleBuffer>)sample.csb;
+        desc.sampleBufferAttachments[0].sampleBuffer = csb;
+        desc.sampleBufferAttachments[0].startOfEncoderSampleIndex = sample.begin_index;
+        desc.sampleBufferAttachments[0].endOfEncoderSampleIndex = sample.end_index;
+
+        pending_timestamp.reset();
+    }
+
+    void MetalCommandList::AttachTimestampToBlitPass(MTLBlitPassDescriptor* desc)
+    {
+        if (!pending_timestamp.has_value()) 
+        {
+            return;
+        }
+        
+        auto const& sample = pending_timestamp.value();
+
+        id<MTLCounterSampleBuffer> csb = (__bridge id<MTLCounterSampleBuffer>)sample.csb;
+        desc.sampleBufferAttachments[0].sampleBuffer = csb;
+        desc.sampleBufferAttachments[0].startOfEncoderSampleIndex = sample.begin_index;
+        desc.sampleBufferAttachments[0].endOfEncoderSampleIndex = sample.end_index;
+
+        pending_timestamp.reset();
     }
 }

@@ -7,7 +7,7 @@
 #include "D3D12/D3D12TracyProfiler.h"
 #endif
 #if defined(ADRIA_PLATFORM_MACOS)
-//#include "Metal/MetalTimestampProfiler.h"
+#include "Metal/MetalTimestampProfiler.h"
 #endif
 
 namespace adria
@@ -44,7 +44,7 @@ namespace adria
 		case GfxBackend::Vulkan: timestamp_profiler = std::make_unique<GfxDummyProfiler>(); break;
 #endif
 #if defined(ADRIA_PLATFORM_MACOS)
-		case GfxBackend::Metal: timestamp_profiler = std::make_unique<GfxDummyProfiler>(); break;
+		case GfxBackend::Metal: timestamp_profiler = std::make_unique<MetalTimestampProfiler>(); break;
 #endif
 		default: timestamp_profiler = std::make_unique<GfxDummyProfiler>(); break;
 		}

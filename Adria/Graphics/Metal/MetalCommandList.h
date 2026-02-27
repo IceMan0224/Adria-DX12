@@ -106,6 +106,7 @@ namespace adria
         id<MTLCommandBuffer> GetCommandBuffer() const { return command_buffer; }
         id<MTLRenderCommandEncoder> GetRenderEncoder() const { return render_encoder; }
         void EndAllEncoders();
+        void SetPendingTimestampSample(void* csb, Uint32 begin_index, Uint32 end_index);
 
     private:
         struct TopLevelArgumentBuffer
@@ -136,13 +137,21 @@ namespace adria
         Float cached_depth_slope_scale = 0.0f;
         Float cached_depth_bias_clamp = 0.0f;
         id<MTLDepthStencilState> cached_depth_stencil_state = nil;
-        
+
         std::unique_ptr<GfxRayTracingShaderBindings> current_rt_bindings;
         std::vector<std::pair<GfxFence&, Uint64>> pending_signals;
 
         TopLevelArgumentBuffer top_level_ab;
         Bool top_level_ab_dirty = true;
-        id<MTLAccelerationStructure> current_tlas = nil;  
+        id<MTLAccelerationStructure> current_tlas = nil;
+
+        struct PendingTimestampSample
+        {
+            void* csb;
+            Uint32 begin_index;
+            Uint32 end_index;
+        };
+        std::optional<PendingTimestampSample> pending_timestamp;
 
     private:
         void BeginBlitEncoder();
@@ -150,5 +159,8 @@ namespace adria
         void BeginComputeEncoder();
         void EndComputeEncoder();
         void UpdateTopLevelArgumentBuffer();
+        void AttachTimestampToRenderPass(MTLRenderPassDescriptor* desc);
+        void AttachTimestampToComputePass(MTLComputePassDescriptor* desc);
+        void AttachTimestampToBlitPass(MTLBlitPassDescriptor* desc);
     };
 }
