@@ -8,52 +8,6 @@ namespace adria
 
 	namespace
 	{
-		constexpr RayTracingSupport ConvertRayTracingTier(D3D12_RAYTRACING_TIER tier)
-		{
-			switch (tier)
-			{
-			case D3D12_RAYTRACING_TIER_NOT_SUPPORTED:
-				return RayTracingSupport::TierNotSupported;
-			case D3D12_RAYTRACING_TIER_1_0:
-				return RayTracingSupport::Tier1_0;
-			case D3D12_RAYTRACING_TIER_1_1:
-				return RayTracingSupport::Tier1_1;
-			}
-			return RayTracingSupport::TierNotSupported;
-		}
-		constexpr VRSSupport ConvertVRSTier(D3D12_VARIABLE_SHADING_RATE_TIER tier)
-		{
-			switch (tier)
-			{
-			case D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED:
-				return VRSSupport::TierNotSupported;
-			case D3D12_VARIABLE_SHADING_RATE_TIER_1:
-				return VRSSupport::Tier1;
-			case D3D12_VARIABLE_SHADING_RATE_TIER_2:
-				return VRSSupport::Tier2;
-			}
-			return VRSSupport::TierNotSupported;
-		}
-		constexpr MeshShaderSupport ConvertMeshShaderTier(D3D12_MESH_SHADER_TIER tier)
-		{
-			switch (tier)
-			{
-			case D3D12_MESH_SHADER_TIER_NOT_SUPPORTED:
-				return MeshShaderSupport::TierNotSupported;
-			case D3D12_MESH_SHADER_TIER_1:
-				return MeshShaderSupport::Tier1;
-			}
-			return MeshShaderSupport::TierNotSupported;
-		}
-		constexpr WorkGraphSupport ConvertWorkGraphTier(D3D12_WORK_GRAPHS_TIER work_graph_tier)
-		{
-			switch (work_graph_tier)
-			{
-			case D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED: return WorkGraphSupport::TierNotSupported;
-			case D3D12_WORK_GRAPHS_TIER_1_0:		   return WorkGraphSupport::Tier1_0;
-			}
-			return WorkGraphSupport::TierNotSupported;
-		}
 		constexpr GfxShaderModel ConvertShaderModel(D3D_SHADER_MODEL shader_model)
 		{
 			switch (shader_model)
@@ -78,10 +32,12 @@ namespace adria
 		CD3DX12FeatureSupport feature_support;
 		feature_support.Init((ID3D12Device*)gfx->GetNative());
 
-		ray_tracing_support = ConvertRayTracingTier(feature_support.RaytracingTier());
-		vrs_support = ConvertVRSTier(feature_support.VariableShadingRateTier());
-		mesh_shader_support = ConvertMeshShaderTier(feature_support.MeshShaderTier());
-		work_graph_support = ConvertWorkGraphTier(feature_support.WorkGraphsTier());
+		hardware_ray_tracing_supported = feature_support.RaytracingTier() >= D3D12_RAYTRACING_TIER_1_0;
+		inline_ray_tracing_supported = feature_support.RaytracingTier() >= D3D12_RAYTRACING_TIER_1_1;
+		variable_rate_shading_supported = feature_support.VariableShadingRateTier() >= D3D12_VARIABLE_SHADING_RATE_TIER_1;
+		variable_rate_shading_image_supported = feature_support.VariableShadingRateTier() >= D3D12_VARIABLE_SHADING_RATE_TIER_2;
+		mesh_shaders_supported = feature_support.MeshShaderTier() >= D3D12_MESH_SHADER_TIER_1;
+		work_graphs_supported = feature_support.WorkGraphsTier() >= D3D12_WORK_GRAPHS_TIER_1_0;
 		shader_model = ConvertShaderModel(feature_support.HighestShaderModel());
 		enhanced_barriers_supported = feature_support.EnhancedBarriersSupported();
 		typed_uav_additional_formats_supported = feature_support.TypedUAVLoadAdditionalFormats();
@@ -97,4 +53,3 @@ namespace adria
 		return true;
 	}
 }
-

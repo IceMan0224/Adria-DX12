@@ -69,7 +69,7 @@ namespace adria
 		engine->RegisterEditorEventCallbacks(editor_events);
 
 		console = std::make_unique<EditorConsole>();
-		ray_tracing_supported = gfx->GetCapabilities().SupportsRayTracing();
+		ray_tracing_supported = gfx->GetCapabilities().SupportsHardwareRayTracing();
 		selected_entity = entt::null;
 		SetStyle_Default();
 		fs::create_directory(paths::PixCapturesDir);

@@ -32,12 +32,12 @@ namespace adria
 
 	DDGIPass::DDGIPass(GfxDevice* gfx, entt::registry& reg, Uint32 w, Uint32 h) : gfx(gfx), reg(reg), width(w), height(h), use_inline_rt(false), is_supported(false)
 	{
-		if (gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1))
+		if (gfx->GetCapabilities().SupportsInlineRayTracing())
 		{
 			is_supported = true;
 			use_inline_rt = true;
 		}
-		else if (gfx->GetCapabilities().SupportsRayTracing())
+		else if (gfx->GetCapabilities().SupportsHardwareRayTracing())
 		{
 			is_supported = true;
 			use_inline_rt = false;

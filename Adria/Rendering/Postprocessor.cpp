@@ -37,7 +37,7 @@ namespace adria
 		: gfx(gfx), reg(reg), display_width(width), display_height(height), render_width(width), render_height(height),
 		ambient_occlusion_manager(gfx, width, height)
 	{
-		ray_tracing_supported = gfx->GetCapabilities().SupportsRayTracing();
+		ray_tracing_supported = gfx->GetCapabilities().SupportsHardwareRayTracing();
 		InitializePostEffects();
 		CreateHistoryResources();
 	}

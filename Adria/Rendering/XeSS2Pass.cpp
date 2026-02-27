@@ -37,7 +37,7 @@ namespace adria
 	XeSS2Pass::XeSS2Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
 		: gfx(gfx), display_width(), display_height(), render_width(), render_height()
 	{
-		if (!gfx->GetCapabilities().SupportsRayTracing()) 
+		if (!gfx->GetCapabilities().SupportsHardwareRayTracing())
 		{
 			ADRIA_LOG(ERROR, "XeSS2 is not supported on this GPU!");
 			return;

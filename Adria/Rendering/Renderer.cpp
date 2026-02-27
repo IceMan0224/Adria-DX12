@@ -43,7 +43,7 @@ namespace adria
 		decals_pass(reg, gfx, width, height), rain_pass(reg, gfx, width, height), ocean_renderer(reg, gfx, width, height),
 		shadow_renderer(reg, gfx, width, height), renderer_debug_view_pass(gfx, width, height),
 		path_tracer(reg, gfx, width, height), ddgi(gfx, reg, width, height),  gpu_printf(gfx), gpu_assert(gfx),
-		transparent_pass(reg, gfx, width, height), ray_tracing_supported(gfx->GetCapabilities().SupportsRayTracing()), 
+		transparent_pass(reg, gfx, width, height), ray_tracing_supported(gfx->GetCapabilities().SupportsHardwareRayTracing()),
 		volumetric_fog_manager(gfx, reg, width, height)
 	{
 		g_DebugRenderer.Initialize(gfx, width, height);

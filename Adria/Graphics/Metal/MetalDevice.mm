@@ -41,17 +41,19 @@ namespace adria
 
         if (supports_apple6)
         {
-            ray_tracing_support = RayTracingSupport::Tier1_1;
+            hardware_ray_tracing_supported = true;
+            inline_ray_tracing_supported = true;
         }
         if (supports_apple7)
         {
-            mesh_shader_support = MeshShaderSupport::Tier1;
+            mesh_shaders_supported = true;
         }
 
-        vrs_support = VRSSupport::TierNotSupported;
+        variable_rate_shading_supported = false;
+        variable_rate_shading_image_supported = false;
         additional_shading_rates_supported = false;
         shading_rate_image_tile_size = 0;
-        work_graph_support = WorkGraphSupport::TierNotSupported;
+        work_graphs_supported = false;
 
         if (supports_apple9)
         {
@@ -79,8 +81,8 @@ namespace adria
 
         ADRIA_LOG(INFO, "Metal Capabilities:");
         ADRIA_LOG(INFO, "  GPU: %s", [device.name UTF8String]);
-        ADRIA_LOG(INFO, "  Ray Tracing: %s", ray_tracing_support != RayTracingSupport::TierNotSupported ? "Supported" : "Not Supported");
-        ADRIA_LOG(INFO, "  Mesh Shaders: %s", mesh_shader_support != MeshShaderSupport::TierNotSupported ? "Supported" : "Not Supported");
+        ADRIA_LOG(INFO, "  Ray Tracing: %s", hardware_ray_tracing_supported ? "Supported" : "Not Supported");
+        ADRIA_LOG(INFO, "  Mesh Shaders: %s", mesh_shaders_supported ? "Supported" : "Not Supported");
         ADRIA_LOG(INFO, "  Shader Model Equivalent: SM_%d_%d",
             (shader_model - SM_6_0) / 10 + 6,
             (shader_model - SM_6_0) % 10);

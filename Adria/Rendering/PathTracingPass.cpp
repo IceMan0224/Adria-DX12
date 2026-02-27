@@ -31,12 +31,12 @@ namespace adria
 	PathTracingPass::PathTracingPass(entt::registry& reg, GfxDevice* gfx, Uint32 width, Uint32 height)
 		: reg(reg), gfx(gfx), width(width), height(height), use_inline_rt(false), is_supported(false)
 	{
-		if (gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1))
+		if (gfx->GetCapabilities().SupportsInlineRayTracing())
 		{
 			is_supported = true;
 			use_inline_rt = true;
 		}
-		else if (gfx->GetCapabilities().SupportsRayTracing())
+		else if (gfx->GetCapabilities().SupportsHardwareRayTracing())
 		{
 			is_supported = true;
 			use_inline_rt = false;

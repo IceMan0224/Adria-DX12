@@ -783,7 +783,7 @@ namespace adria
 		reg.emplace<Mesh>(mesh_entity, mesh);
 		reg.emplace<Tag>(mesh_entity, model_name + " mesh");
 
-		if (gfx->GetCapabilities().SupportsRayTracing()) 
+		if (gfx->GetCapabilities().SupportsHardwareRayTracing())
 		{
 			reg.emplace<RayTracing>(mesh_entity);
 		}
@@ -949,7 +949,7 @@ namespace adria
 
 		reg.emplace<Mesh>(mesh_entity, mesh);
 		reg.emplace<Tag>(mesh_entity, model_name + " mesh");
-		if (gfx->GetCapabilities().SupportsRayTracing()) reg.emplace<RayTracing>(mesh_entity);
+		if (gfx->GetCapabilities().SupportsHardwareRayTracing()) reg.emplace<RayTracing>(mesh_entity);
 
 		ADRIA_LOG(INFO, "GLTF Model %s successfully loaded!", params.model_path.c_str());
 		return mesh_entity;

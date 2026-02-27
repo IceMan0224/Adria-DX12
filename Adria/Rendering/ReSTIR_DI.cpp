@@ -22,7 +22,7 @@ namespace adria
 
 	ReSTIR_DI::ReSTIR_DI(GfxDevice* gfx, Uint32 width, Uint32 height) : gfx(gfx), width(width), height(height)
 	{
-		if (!gfx->GetCapabilities().CheckRayTracingSupport(RayTracingSupport::Tier1_1))
+		if (!gfx->GetCapabilities().SupportsInlineRayTracing())
 		{
 			return;
 		}

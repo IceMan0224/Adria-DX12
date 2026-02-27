@@ -5,30 +5,6 @@ namespace adria
 {
 	class GfxDevice;
 
-	enum class RayTracingSupport : Uint8
-	{
-		TierNotSupported,
-		Tier1_0,
-		Tier1_1
-	};
-	enum class VRSSupport : Uint8
-	{
-		TierNotSupported,
-		Tier1,
-		Tier2
-	};
-	enum class MeshShaderSupport : Uint8
-	{
-		TierNotSupported,
-		Tier1
-	};
-
-	enum class WorkGraphSupport : Uint8
-	{
-		TierNotSupported,
-		Tier1_0
-	};
-
 	class GfxCapabilities
 	{
 	public:
@@ -36,45 +12,36 @@ namespace adria
 		virtual ~GfxCapabilities() = default;
 		virtual Bool Initialize(GfxDevice* gfx) = 0;
 
-		Bool SupportsRayTracing() const
+		Bool SupportsHardwareRayTracing() const
 		{
-			return CheckRayTracingSupport(RayTracingSupport::Tier1_0);
+			return hardware_ray_tracing_supported;
+		}
+		Bool SupportsInlineRayTracing() const
+		{
+			return inline_ray_tracing_supported;
 		}
 		Bool SupportsMeshShaders() const
 		{
-			return CheckMeshShaderSupport(MeshShaderSupport::Tier1);
+			return mesh_shaders_supported;
 		}
-		Bool SupportsVRS() const
+		Bool SupportsVariableRateShading() const
 		{
-			return CheckVRSSupport(VRSSupport::Tier1);
+			return variable_rate_shading_supported;
+		}
+		Bool SupportsVariableRateShadingImage() const
+		{
+			return variable_rate_shading_image_supported;
 		}
 		Bool SupportsWorkGraphs() const
 		{
-			return CheckWorkGraphSupport(WorkGraphSupport::Tier1_0);
-		}
-
-		Bool CheckRayTracingSupport(RayTracingSupport rts) const
-		{
-			return ray_tracing_support >= rts;
-		}
-		Bool CheckVRSSupport(VRSSupport vsrs) const
-		{
-			return vrs_support >= vsrs;
-		}
-		Bool CheckMeshShaderSupport(MeshShaderSupport mss) const
-		{
-			return mesh_shader_support >= mss;
-		}
-		Bool CheckWorkGraphSupport(WorkGraphSupport wgs) const
-		{
-			return work_graph_support >= wgs;
+			return work_graphs_supported;
 		}
 
 		Bool SupportsShaderModel(GfxShaderModel sm) const
 		{
 			return shader_model >= sm;
 		}
-		Bool SupportsEnhancedBarriers() const 
+		Bool SupportsEnhancedBarriers() const
 		{
 			return enhanced_barriers_supported;
 		}
@@ -87,10 +54,12 @@ namespace adria
 		Uint32 GetShadingRateImageTileSize() const { return shading_rate_image_tile_size; }
 
 	protected:
-		RayTracingSupport ray_tracing_support = RayTracingSupport::TierNotSupported;
-		VRSSupport vrs_support = VRSSupport::TierNotSupported;
-		MeshShaderSupport mesh_shader_support = MeshShaderSupport::TierNotSupported;
-		WorkGraphSupport work_graph_support = WorkGraphSupport::TierNotSupported;
+		Bool hardware_ray_tracing_supported = false;
+		Bool inline_ray_tracing_supported = false;
+		Bool mesh_shaders_supported = false;
+		Bool variable_rate_shading_supported = false;
+		Bool variable_rate_shading_image_supported = false;
+		Bool work_graphs_supported = false;
 		GfxShaderModel shader_model = SM_Unknown;
 		Bool enhanced_barriers_supported = false;
 		Bool typed_uav_additional_formats_supported = false;
