@@ -83,8 +83,10 @@ void CullMeshletsCS(uint ThreadId : SV_DispatchThreadID)
 	if (isVisible && !wasOccluded)
 	{
 		uint elementOffset;
+#if !SECOND_PHASE
 		InterlockedAdd(visibleMeshletsCounter[COUNTER_PHASE1_VISIBLE_MESHLETS], 1, elementOffset);
-#if SECOND_PHASE
+#else
+		InterlockedAdd(visibleMeshletsCounter[COUNTER_PHASE2_VISIBLE_MESHLETS], 1, elementOffset);
 		elementOffset += visibleMeshletsCounter[COUNTER_PHASE1_VISIBLE_MESHLETS];
 #endif
 		visibleMeshletsBuffer[elementOffset] = candidate;

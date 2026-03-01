@@ -1302,6 +1302,7 @@ kernel void ClearTexture3DInt(texture3d<int, access::write> tex [[texture(10)]],
                                                                       textureType:base_texture.textureType
                                                                            levels:mip_range
                                                                            slices:slice_range];
+        MakeResident(texture_view);
         return texture_view;
     }
 }

@@ -910,7 +910,7 @@ namespace adria
 					mips - 1);
 
 				GfxBuffer& spd_counter = ctx.GetBuffer(*data.spd_counter);
-				Uint32 clear[] = { 0u };
+				Uint32 clear[4] = { 0u, 0u, 0u, 0u };
 				cmd_list->ClearBuffer(spd_counter, clear);
 				cmd_list->GlobalBarrier(GfxResourceState::ComputeUAV, GfxResourceState::ComputeUAV);
 

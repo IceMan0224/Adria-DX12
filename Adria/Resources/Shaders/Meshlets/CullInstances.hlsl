@@ -92,10 +92,11 @@ void CullInstancesCS(uint ThreadId : SV_DispatchThreadID)
 		uint numMeshletsToAdd = max(clampedNumMeshlets - globalMeshletIndex, 0);
 
 		uint elementOffset;
+#if !SECOND_PHASE
 		InterlockedAdd(candidateMeshletsCounter[COUNTER_PHASE1_CANDIDATE_MESHLETS], numMeshletsToAdd, elementOffset);
-
-#if SECOND_PHASE
-		elementOffset += candidateMeshletsCounter[COUNTER_PHASE1_VISIBLE_MESHLETS];
+#else
+		InterlockedAdd(candidateMeshletsCounter[COUNTER_PHASE2_CANDIDATE_MESHLETS], numMeshletsToAdd, elementOffset);
+		elementOffset += candidateMeshletsCounter[COUNTER_PHASE1_CANDIDATE_MESHLETS];
 #endif
 		for (uint i = 0; i < numMeshletsToAdd; ++i)
 		{
