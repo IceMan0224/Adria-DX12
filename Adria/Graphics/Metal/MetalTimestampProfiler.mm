@@ -223,6 +223,17 @@ namespace adria
         Float frequency = Float(gpu_frequency);
         current_profiler_tree->TraversePostOrder([&scope_times, frequency](GfxProfilerTreeNode* node)
             {
+                auto const& children = node->GetChildren();
+                if (!children.empty())
+                {
+                    Float64 sum = 0.0;
+                    for (auto const& child : children)
+                    {
+                        sum += child->GetData().time;
+                    }
+                    node->GetData().time = sum;
+                    return;
+                }
                 Uint32 const index = node->GetData().index;
                 if (index >= scope_times.size())
                 {
@@ -237,12 +248,7 @@ namespace adria
                 }
                 else
                 {
-                    Float64 sum = 0.0;
-                    for (auto const& child : node->GetChildren())
-                    {
-                        sum += child->GetData().time;
-                    }
-                    node->GetData().time = sum;
+                    node->GetData().time = 0.0f;
                 }
             });
         return current_profiler_tree;

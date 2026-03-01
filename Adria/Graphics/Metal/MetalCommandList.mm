@@ -648,8 +648,11 @@ namespace adria
 
             Uint32 thread_group_size = 256;
             Uint32 thread_groups = (params.element_count + thread_group_size - 1) / thread_group_size;
-            [compute_encoder dispatchThreadgroups:MTLSizeMake(thread_groups, 1, 1)
-                            threadsPerThreadgroup:MTLSizeMake(thread_group_size, 1, 1)];
+            if(thread_groups > 0)
+            {
+                [compute_encoder dispatchThreadgroups:MTLSizeMake(thread_groups, 1, 1)
+                                threadsPerThreadgroup:MTLSizeMake(thread_group_size, 1, 1)];
+            }
         }
     }
 
