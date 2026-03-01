@@ -48,10 +48,10 @@ namespace adria
         virtual void DrawIndexed(Uint32 index_count, Uint32 instance_count = 1, Uint32 index_offset = 0, Uint32 base_vertex_location = 0, Uint32 start_instance_location = 0) override;
         virtual void Dispatch(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z = 1) override;
         virtual void DispatchMesh(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z = 1) override;
-        virtual void DrawIndirect(GfxBuffer const& buffer, Uint32 offset) override {}
-        virtual void DrawIndexedIndirect(GfxBuffer const& buffer, Uint32 offset) override {}
-        virtual void DispatchIndirect(GfxBuffer const& buffer, Uint32 offset) override {}
-        virtual void DispatchMeshIndirect(GfxBuffer const& buffer, Uint32 offset) override {}
+        virtual void DrawIndirect(GfxBuffer const& buffer, Uint32 offset) override;
+        virtual void DrawIndexedIndirect(GfxBuffer const& buffer, Uint32 offset) override;
+        virtual void DispatchIndirect(GfxBuffer const& buffer, Uint32 offset) override;
+        virtual void DispatchMeshIndirect(GfxBuffer const& buffer, Uint32 offset) override;
         virtual void DispatchRays(Uint32 dispatch_width, Uint32 dispatch_height, Uint32 dispatch_depth = 1) override;
 
         virtual void TextureBarrier(GfxTexture const& texture, GfxResourceState flags_before, GfxResourceState flags_after, Uint32 subresource = 0) override {}

@@ -240,6 +240,43 @@ namespace adria
         }
     }
 
+    void MetalCommandList::DrawIndirect(GfxBuffer const& buffer, Uint32 offset)
+    {
+        if (render_encoder)
+        {
+            [render_encoder setVertexBytes:&top_level_ab
+                                    length:sizeof(TopLevelArgumentBuffer)
+                                   atIndex:kIRArgumentBufferBindPoint];
+            [render_encoder setFragmentBytes:&top_level_ab
+                                      length:sizeof(TopLevelArgumentBuffer)
+                                     atIndex:kIRArgumentBufferBindPoint];
+
+            MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(&buffer);
+            IRRuntimeDrawPrimitives(render_encoder, ConvertTopology(current_topology), metal_buffer->GetMetalBuffer(), offset);
+        }
+    }
+
+    void MetalCommandList::DrawIndexedIndirect(GfxBuffer const& buffer, Uint32 offset)
+    {
+        if (render_encoder && current_index_buffer_view)
+        {
+            [render_encoder setVertexBytes:&top_level_ab
+                                    length:sizeof(TopLevelArgumentBuffer)
+                                   atIndex:kIRArgumentBufferBindPoint];
+            [render_encoder setFragmentBytes:&top_level_ab
+                                      length:sizeof(TopLevelArgumentBuffer)
+                                     atIndex:kIRArgumentBufferBindPoint];
+
+            MetalDevice::BufferLookupResult lookup = metal_device->LookupBuffer(current_index_buffer_view->buffer_location);
+            if (lookup.buffer != nil)
+            {
+                MTLIndexType index_type = ConvertIndexFormat(current_index_buffer_view->format);
+                MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(&buffer);
+                IRRuntimeDrawIndexedPrimitives(render_encoder, ConvertTopology(current_topology), index_type, lookup.buffer, lookup.offset, metal_buffer->GetMetalBuffer(), offset);
+            }
+        }
+    }
+
     void MetalCommandList::Dispatch(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z)
     {
         if (compute_encoder && current_pipeline_state && current_pipeline_state->GetType() == GfxPipelineStateType::Compute)
@@ -277,6 +314,49 @@ namespace adria
             [render_encoder drawMeshThreadgroups:threadgroups
                           threadsPerObjectThreadgroup:threadsPerObjectThreadgroup
                            threadsPerMeshThreadgroup:threadsPerMeshThreadgroup];
+        }
+    }
+
+    void MetalCommandList::DispatchIndirect(GfxBuffer const& buffer, Uint32 offset)
+    {
+        if (compute_encoder && current_pipeline_state && current_pipeline_state->GetType() == GfxPipelineStateType::Compute)
+        {
+            [compute_encoder setBytes:&top_level_ab
+                               length:sizeof(TopLevelArgumentBuffer)
+                              atIndex:kIRArgumentBufferBindPoint];
+
+            MetalComputePipelineState const* metal_pso = static_cast<MetalComputePipelineState const*>(current_pipeline_state);
+            MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(&buffer);
+            MTLSize threadsPerThreadgroup = metal_pso->GetThreadsPerThreadgroup();
+            [compute_encoder dispatchThreadgroupsWithIndirectBuffer:metal_buffer->GetMetalBuffer()
+                                              indirectBufferOffset:offset
+                                             threadsPerThreadgroup:threadsPerThreadgroup];
+        }
+    }
+
+    void MetalCommandList::DispatchMeshIndirect(GfxBuffer const& buffer, Uint32 offset)
+    {
+        if (render_encoder && current_pipeline_state && current_pipeline_state->GetType() == GfxPipelineStateType::MeshShader)
+        {
+            [render_encoder setObjectBytes:&top_level_ab
+                                    length:sizeof(TopLevelArgumentBuffer)
+                                   atIndex:kIRArgumentBufferBindPoint];
+            [render_encoder setMeshBytes:&top_level_ab
+                                  length:sizeof(TopLevelArgumentBuffer)
+                                 atIndex:kIRArgumentBufferBindPoint];
+            [render_encoder setFragmentBytes:&top_level_ab
+                                      length:sizeof(TopLevelArgumentBuffer)
+                                     atIndex:kIRArgumentBufferBindPoint];
+
+            MetalMeshShadingPipelineState const* metal_pso = static_cast<MetalMeshShadingPipelineState const*>(current_pipeline_state);
+            MetalBuffer const* metal_buffer = static_cast<MetalBuffer const*>(&buffer);
+            MTLSize threadsPerObjectThreadgroup = metal_pso->GetThreadsPerObjectThreadgroup();
+            MTLSize threadsPerMeshThreadgroup = metal_pso->GetThreadsPerMeshThreadgroup();
+
+            [render_encoder drawMeshThreadgroupsWithIndirectBuffer:metal_buffer->GetMetalBuffer()
+                                             indirectBufferOffset:offset
+                                      threadsPerObjectThreadgroup:threadsPerObjectThreadgroup
+                                       threadsPerMeshThreadgroup:threadsPerMeshThreadgroup];
         }
     }
 

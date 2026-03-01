@@ -64,7 +64,7 @@ namespace adria
 		Uint32 hzb_width = 0;
 		Uint32 hzb_height = 0;
 
-		Bool occlusion_culling = true;
+		Bool occlusion_culling = false;
 		Bool skip_alpha_blended = false;
 
 		std::unique_ptr<GfxBuffer> debug_buffer;
