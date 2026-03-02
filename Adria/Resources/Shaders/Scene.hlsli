@@ -65,7 +65,8 @@ struct Instance
 
 	uint materialIdx;
 	uint meshIndex;
-	uint2 pad2;
+	uint entityId;
+	uint pad2;
 };
 
 Instance GetInstanceData(uint instanceId)

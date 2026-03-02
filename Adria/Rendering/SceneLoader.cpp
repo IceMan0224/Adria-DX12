@@ -760,24 +760,26 @@ namespace adria
 				auto const& prim_indices = mesh_primitives_map[gltf_node.mesh];
 				for (Uint32 j = 0; j < (Uint32)prim_indices.size(); ++j)
 				{
-					Uint32 const instance_index = (Uint32)mesh.instances.size();
-					SubMeshInstance& instance = mesh.instances.emplace_back();
-					instance.submesh_index = prim_indices[j];
-					instance.world_transform = Matrix::Identity;
-					instance.parent = model_root;
-
-					entt::entity prim_entity = reg.create();
 					cgltf_primitive const& gltf_prim = gltf_node.mesh->primitives[j];
 					std::string prim_name = (gltf_prim.material && gltf_prim.material->name)
 						? gltf_prim.material->name
 						: ("Primitive_" + std::to_string(j));
 					Int32 submesh_idx = prim_indices[j];
 					Material prim_material = mesh.materials[mesh.submeshes[submesh_idx].material_index];
+
+					entt::entity prim_entity = reg.create();
 					reg.emplace<Transform>(prim_entity);
 					reg.emplace<Tag>(prim_entity, prim_name);
 					reg.emplace<Material>(prim_entity, prim_material);
 					reg.emplace<Relationship>(prim_entity);
 					SetParent(reg, prim_entity, node_entity);
+
+					Uint32 const instance_index = (Uint32)mesh.instances.size();
+					SubMeshInstance& instance = mesh.instances.emplace_back();
+					instance.submesh_index = prim_indices[j];
+					instance.world_transform = Matrix::Identity;
+					instance.parent = prim_entity;
+
 					reg.emplace<NodeMeshRef>(prim_entity, NodeMeshRef{model_root, instance_index, 1});
 				}
 			}
@@ -997,7 +999,6 @@ namespace adria
 			submesh.topology = mesh_data.topology;
 			submesh.material_index = mesh_data.material_index;
 
-			mesh.instances.emplace_back(model_root, i, Matrix::Identity);
 		}
 		mesh.geometry_buffer_handle = g_GeometryBufferCache.CreateAndInitializeGeometryBuffer(staging_buffer.buffer, total_buffer_size, staging_buffer.offset);
 
@@ -1007,6 +1008,7 @@ namespace adria
 			reg.emplace<Transform>(shape_entity);
 			reg.emplace<Tag>(shape_entity, shapes[i].name.empty() ? ("Shape_" + std::to_string(i)) : shapes[i].name);
 			SetParent(reg, shape_entity, model_root);
+			mesh.instances.emplace_back(shape_entity, i, Matrix::Identity);
 			reg.emplace<NodeMeshRef>(shape_entity, NodeMeshRef{model_root, i, 1});
 		}
 

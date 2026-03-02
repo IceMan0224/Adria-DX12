@@ -1044,6 +1044,13 @@ namespace adria
 			viewport_data.scene_viewport_pos_y = v_min.y;
 			viewport_data.scene_viewport_size_x = size.x;
 			viewport_data.scene_viewport_size_y = size.y;
+
+			if (scene_focused && g_Input.IsKeyDown(KeyCode::MouseRight))
+			{
+				PickingData const& pd = engine->renderer->GetPickingData();
+				entt::entity picked = static_cast<entt::entity>(pd.entity_id);
+				selected_entity = engine->reg.valid(picked) ? picked : entt::null;
+			}
 		}
 		ImGui::End();
 	}

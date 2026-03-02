@@ -7,6 +7,7 @@
 struct GBufferConstants
 {
     uint instanceId;
+    uint entityId;
 };
 ConstantBuffer<GBufferConstants> GBufferPassCB : register(b1);
 
@@ -155,7 +156,7 @@ PSOutput GBufferPS(VSToPS input)
 	output.DiffuseRT = float4(albedoColor.xyz * materialData.baseColorFactor, roughness);
 	output.EmissiveRT = float4(emissive.rgb, emissive.a / 256);
 	output.CustomRT = customData;
-	output.EntityIDRT = GBufferPassCB.instanceId;
+	output.EntityIDRT = GBufferPassCB.entityId;
 
 #if TRIANGLE_OVERDRAW
 	RWTexture2D<uint> triangleOverdrawTexture = ResourceDescriptorHeap[FrameCB.triangleOverdrawIdx];

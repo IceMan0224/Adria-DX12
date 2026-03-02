@@ -140,6 +140,7 @@ namespace adria
 		Uint32 instance_id;
 		Uint32 material_idx;
 		Uint32 mesh_index;
-		PAD[2];
+		Uint32 entity_id;
+		PAD;
 	};
 }

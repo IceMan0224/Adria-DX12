@@ -224,6 +224,7 @@ namespace adria
 	struct COMPONENT Batch
 	{
 		Uint32   instance_id;
+		Uint32   entity_id;
 		SubMeshGPU*  submesh;
 		ShadingExtension shading_extension;
 		MaterialAlphaMode alpha_mode;

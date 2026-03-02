@@ -171,7 +171,7 @@ PSOutput DrawMeshletsPS(MSToPS input)
 	output.DiffuseRT = float4(albedoColor.xyz * material.baseColorFactor, roughness);
 	output.EmissiveRT = float4(emissive.rgb, emissive.a / 256);
 	output.CustomRT = customData;
-	output.EntityIDRT = candidate.instanceID;
+	output.EntityIDRT = instance.entityId;
 
 #if TRIANGLE_OVERDRAW
 	RWTexture2D<uint> triangleOverdrawTexture = ResourceDescriptorHeap[FrameCB.triangleOverdrawIdx];

@@ -175,7 +175,8 @@ namespace adria
 			struct GBufferConstants
 			{
 				Uint32 instance_id;
-			} constants{ .instance_id = batch.instance_id };
+				Uint32 entity_id;
+			} constants{ .instance_id = batch.instance_id, .entity_id = batch.entity_id };
 			cmd_list->SetRootConstants(1, constants);
 
 			GfxIndexBufferView ibv(batch.submesh->buffer_address + batch.submesh->indices_offset, batch.submesh->indices_count);

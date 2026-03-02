@@ -309,6 +309,7 @@ namespace adria
 				}
 				Batch& batch = reg.emplace<Batch>(batch_entity);
 				batch.instance_id = instanceID;
+				batch.entity_id = entt::to_integral(instance.parent);
 				batch.alpha_mode = material.alpha_mode;
 				batch.shading_extension = material.shading_extension;
 				batch.submesh = &submesh;
@@ -317,6 +318,7 @@ namespace adria
 				
 				InstanceGPU& instance_gpu = instances.emplace_back();
 				instance_gpu.instance_id = instanceID;
+				instance_gpu.entity_id = entt::to_integral(instance.parent);
 				instance_gpu.material_idx = static_cast<Uint32>(materials.size() + submesh.material_index);
 				instance_gpu.mesh_index = static_cast<Uint32>(meshes.size() + instance.submesh_index);
 				instance_gpu.world_matrix = instance.world_transform;
