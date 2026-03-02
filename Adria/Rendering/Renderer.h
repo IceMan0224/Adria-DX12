@@ -63,7 +63,7 @@ namespace adria
 		void OnTakeScreenshot(Char const*);
 		void OnLightChanged();
 
-		PickingData const& GetPickingData() const { return picking_data; }
+		PickingData GetPickingData() const { return picking_pass.GetPickingData(); }
 		Vector2u GetDisplayResolution() const { return Vector2u(display_width, display_height); }
 
 		void SetLightingPath(LightingPath path);
@@ -138,8 +138,6 @@ namespace adria
 		GfxDescriptor tlas_srv;
 
 		//picking
-		Bool update_picking_data = false;
-		PickingData picking_data;
 
 		LightingPath		lighting_path = LightingPath::Deferred;
 

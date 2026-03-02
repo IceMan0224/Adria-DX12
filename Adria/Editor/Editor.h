@@ -76,6 +76,7 @@ namespace adria
 
 		Bool scene_focused = false;
 		entt::entity selected_entity;
+		Bool scroll_to_selected = false;
 
 		Bool reload_shaders = false;
 		Bool visibility_flags[Flag_Count] = {false};

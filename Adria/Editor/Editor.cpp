@@ -534,14 +534,30 @@ namespace adria
 		auto& reg = engine->reg;
 		if (ImGui::Begin(ICON_FA_SITEMAP" Entities ", &visibility_flags[Flag_Entities]))
 		{
+			std::unordered_set<entt::entity> ancestors;
+			if (scroll_to_selected && selected_entity != entt::null)
+			{
+				entt::entity current = selected_entity;
+				while (current != entt::null)
+				{
+					Relationship const* rel = reg.try_get<Relationship>(current);
+					if (!rel) break;
+					current = rel->parent;
+					if (current != entt::null) ancestors.insert(current);
+				}
+			}
+
 			std::function<void(entt::entity)> ShowEntity;
 			ShowEntity = [&](entt::entity e)
 			{
 				Tag* tag = reg.try_get<Tag>(e);
-				if (!tag) 
+				if (!tag)
 				{
 					return;
 				}
+
+				if (ancestors.contains(e))
+					ImGui::SetNextItemOpen(true, ImGuiCond_Always);
 
 				Relationship const* rel = reg.try_get<Relationship>(e);
 				Bool has_children = rel && !rel->children.empty();
@@ -550,6 +566,9 @@ namespace adria
 				if (selected_entity == e) flags |= ImGuiTreeNodeFlags_Selected;
 				if (!has_children) flags |= ImGuiTreeNodeFlags_Leaf;
 				Bool opened = ImGui::TreeNodeEx((void*)(uintptr_t)entt::to_integral(e), flags, "%s", tag->name.c_str());
+
+				if (selected_entity == e && scroll_to_selected)
+					ImGui::SetScrollHereY(0.5f);
 
 				if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 				{
@@ -594,6 +613,7 @@ namespace adria
 				if (rel && rel->parent != entt::null) continue;
 				ShowEntity(e);
 			}
+			scroll_to_selected = false;
 		}
 		ImGui::End();
 	}
@@ -1045,11 +1065,12 @@ namespace adria
 			viewport_data.scene_viewport_size_x = size.x;
 			viewport_data.scene_viewport_size_y = size.y;
 
-			if (scene_focused && g_Input.IsKeyDown(KeyCode::MouseRight))
+			if (ImGui::IsWindowHovered() && g_Input.IsKeyDown(KeyCode::MouseRight))
 			{
-				PickingData const& pd = engine->renderer->GetPickingData();
+				PickingData const pd = engine->renderer->GetPickingData();
 				entt::entity picked = static_cast<entt::entity>(pd.entity_id);
 				selected_entity = engine->reg.valid(picked) ? picked : entt::null;
+				scroll_to_selected = true;
 			}
 		}
 		ImGui::End();
@@ -1502,10 +1523,12 @@ namespace adria
 
 			if (ImGui::TreeNode("Picking"))
 			{
-				PickingData const& picking_data = engine->renderer->GetPickingData();
+				PickingData const picking_data = engine->renderer->GetPickingData();
 				ImGui::Text("Position : %.3f  %.3f  %.3f", picking_data.position.x, picking_data.position.y, picking_data.position.z);
 				ImGui::Text("Normal   : %.3f  %.3f  %.3f", picking_data.normal.x, picking_data.normal.y, picking_data.normal.z);
-				ImGui::Text("Entity ID: %u", picking_data.entity_id);
+				entt::entity picked = static_cast<entt::entity>(picking_data.entity_id);
+				Tag* tag = engine->reg.try_get<Tag>(picked);
+				ImGui::Text("Entity   : %s", tag ? tag->name.c_str() : "none");
 				ImGui::TreePop();
 			}
 

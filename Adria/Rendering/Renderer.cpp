@@ -161,7 +161,6 @@ namespace adria
 
 	void Renderer::OnRightMouseClicked(Int32 x, Int32 y)
 	{
-		update_picking_data = true;
 	}
 	void Renderer::OnTakeScreenshot(Char const* filename)
 	{
@@ -559,11 +558,6 @@ namespace adria
 	void Renderer::Render_Deferred(RenderGraph& render_graph)
 	{
 		ZoneScopedN("Renderer::Render_Deferred");
-		if (update_picking_data)
-		{
-			picking_data = picking_pass.GetPickingData();
-			update_picking_data = false;
-		}
 		if(renderer_debug_view_pass.GetDebugView() == RendererDebugView::TriangleOverdraw)
 		{
 			ClearTriangleOverdrawTexture(render_graph);
