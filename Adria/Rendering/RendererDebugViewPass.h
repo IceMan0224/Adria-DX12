@@ -22,6 +22,7 @@ namespace adria
 		ViewMipMaps,
 		TriangleOverdraw,
 		MotionVectors,
+		EntityID,
 		Count
 	};
 

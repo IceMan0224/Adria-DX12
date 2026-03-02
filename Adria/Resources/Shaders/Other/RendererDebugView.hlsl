@@ -19,6 +19,7 @@ struct RendererDebugViewIndices
 struct RendererDebugViewConstants
 {
 	float triangleOverdrawScale;
+	uint  entityIdIdx;
 };
 
 ConstantBuffer<RendererDebugViewIndices>   RendererDebugViewPassCB  : register(b1);
@@ -149,6 +150,10 @@ void RendererDebugViewCS(CSInput input)
 	Texture2D motionVectorsTexture = ResourceDescriptorHeap[RendererDebugViewPassCB.motionVectorsIdx];
 	float4    motionVectors	= motionVectorsTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	outputTexture[input.DispatchThreadId.xy] = float4(motionVectors.xy * 100, 0.0f, 1.0f);
+#elif OUTPUT_ENTITY_ID
+	Texture2D<uint> entityIdTexture = ResourceDescriptorHeap[RendererDebugViewPassCB2.entityIdIdx];
+	uint entityId = entityIdTexture.Load(int3(input.DispatchThreadId.xy, 0));
+	outputTexture[input.DispatchThreadId.xy] = float4(UintToColor(entityId), 1.0f);
 #else 
 	outputTexture[input.DispatchThreadId.xy] = float4(1.0f, 0.0f, 0.0f, 1.0f); 
 #endif

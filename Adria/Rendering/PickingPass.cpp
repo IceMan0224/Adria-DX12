@@ -31,6 +31,7 @@ namespace adria
 			RGBufferReadWriteId pick_buffer;
 			RGTextureReadOnlyId depth;
 			RGTextureReadOnlyId normal;
+			RGTextureReadOnlyId entity_id;
 		};
 
 		rg.AddPass<PickingPassDispatchData>("Picking Pass Dispatch",
@@ -46,6 +47,7 @@ namespace adria
 				data.pick_buffer = builder.WriteBuffer(RG_NAME(PickBuffer));
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 				data.normal = builder.ReadTexture(RG_NAME(GBufferNormal), ReadAccess_NonPixelShader);
+				data.entity_id = builder.ReadTexture(RG_NAME(GBufferEntityID), ReadAccess_NonPixelShader);
 			},
 			[=, this](PickingPassDispatchData const& data, RenderGraphContext& context)
 			{
@@ -56,11 +58,13 @@ namespace adria
 				{
 					Uint32 depth_idx;
 					Uint32 normal_idx;
+					Uint32 entity_id_idx;
 					Uint32 buffer_idx;
 				} constants =
 				{
 					.depth_idx  = context.GetReadOnlyTextureIndex(data.depth),
 					.normal_idx = context.GetReadOnlyTextureIndex(data.normal),
+					.entity_id_idx = context.GetReadOnlyTextureIndex(data.entity_id),
 					.buffer_idx = context.GetReadWriteBufferIndex(data.pick_buffer)
 				};
 				

@@ -503,8 +503,6 @@ namespace adria
 				ImGui::Checkbox("Modify GBuffer Normals", &params.modify_gbuffer_normals);
 
 				PickingData const& picking_data = engine->renderer->GetPickingData();
-				ImGui::Text("Picked Position: %f %f %f", picking_data.position.x, picking_data.position.y, picking_data.position.z);
-				ImGui::Text("Picked Normal: %f %f %f", picking_data.normal.x, picking_data.normal.y, picking_data.normal.z);
 				if (ImGui::Button("Load Decal"))
 				{
 					params.position = Vector3(picking_data.position);
@@ -1021,6 +1019,7 @@ namespace adria
 					AddDebugViewMenuItem(ViewMipMaps);
 					AddDebugViewMenuItem(TriangleOverdraw);
 					AddDebugViewMenuItem(MotionVectors);
+					AddDebugViewMenuItem(EntityID);
 					#undef AddDebugViewMenuItem
 					ImGui::EndMenu();
 				}
@@ -1038,9 +1037,8 @@ namespace adria
 
 			scene_focused = ImGui::IsWindowFocused();
 
-			ImVec2 mouse_pos = ImGui::GetMousePos();
-			viewport_data.mouse_position_x = mouse_pos.x;
-			viewport_data.mouse_position_y = mouse_pos.y;
+			viewport_data.mouse_position_x = g_Input.GetMousePositionX();
+			viewport_data.mouse_position_y = g_Input.GetMousePositionY();
 			viewport_data.scene_viewport_focused = scene_focused;
 			viewport_data.scene_viewport_pos_x = v_min.x;
 			viewport_data.scene_viewport_pos_y = v_min.y;
@@ -1492,6 +1490,15 @@ namespace adria
 			if (ImGui::TreeNode("Render Graph"))
 			{
 				g_DumpRenderGraph = ImGui::Button("Dump render graph");
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("Picking"))
+			{
+				PickingData const& picking_data = engine->renderer->GetPickingData();
+				ImGui::Text("Position : %.3f  %.3f  %.3f", picking_data.position.x, picking_data.position.y, picking_data.position.z);
+				ImGui::Text("Normal   : %.3f  %.3f  %.3f", picking_data.normal.x, picking_data.normal.y, picking_data.normal.z);
+				ImGui::Text("Entity ID: %u", picking_data.entity_id);
 				ImGui::TreePop();
 			}
 

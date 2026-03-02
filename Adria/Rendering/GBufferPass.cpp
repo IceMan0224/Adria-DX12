@@ -45,6 +45,14 @@ namespace adria
 				builder.WriteRenderTarget(RG_NAME(GBufferEmissive), RGLoadStoreAccessOp::Clear_Preserve);
 				builder.WriteRenderTarget(RG_NAME(GBufferCustom), RGLoadStoreAccessOp::Clear_Preserve);
 
+				RGTextureDesc entity_id_desc{};
+				entity_id_desc.width = width;
+				entity_id_desc.height = height;
+				entity_id_desc.format = GfxFormat::R32_UINT;
+				entity_id_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
+				builder.DeclareTexture(RG_NAME(GBufferEntityID), entity_id_desc);
+				builder.WriteRenderTarget(RG_NAME(GBufferEntityID), RGLoadStoreAccessOp::Clear_Preserve);
+
 				RGTextureDesc depth_desc{};
 				depth_desc.width = width;
 				depth_desc.height = height;
@@ -115,11 +123,12 @@ namespace adria
 		gbuffer_pso_desc.depth_state.depth_enable = true;
 		gbuffer_pso_desc.depth_state.depth_write_mask = GfxDepthWriteMask::All;
 		gbuffer_pso_desc.depth_state.depth_func = GfxComparisonFunc::GreaterEqual;
-		gbuffer_pso_desc.num_render_targets = 4u;
+		gbuffer_pso_desc.num_render_targets = 5u;
 		gbuffer_pso_desc.rtv_formats[0] = GfxFormat::R8G8B8A8_UNORM;
 		gbuffer_pso_desc.rtv_formats[1] = GfxFormat::R8G8B8A8_UNORM;
 		gbuffer_pso_desc.rtv_formats[2] = GfxFormat::R8G8B8A8_UNORM;
 		gbuffer_pso_desc.rtv_formats[3] = GfxFormat::R8G8B8A8_UNORM;
+		gbuffer_pso_desc.rtv_formats[4] = GfxFormat::R32_UINT;
 		gbuffer_pso_desc.dsv_format = GfxFormat::D32_FLOAT;
 
 		gbuffer_psos = std::make_unique<GfxGraphicsPipelineStatePermutations>(gfx, gbuffer_pso_desc);

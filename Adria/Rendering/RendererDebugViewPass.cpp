@@ -37,6 +37,7 @@ namespace adria
 			RGTextureReadOnlyId  depth;
 			RGTextureReadOnlyId  ambient_occlusion;
 			RGTextureReadOnlyId  motion_vectors;
+			RGTextureReadOnlyId  entity_id;
 			RGTextureReadWriteId output;
 		};
 
@@ -68,6 +69,8 @@ namespace adria
 				{
 					data.motion_vectors.Invalidate();
 				}
+
+				data.entity_id = builder.ReadTexture(RG_NAME(GBufferEntityID), ReadAccess_NonPixelShader);
 			},
 			[=, this](RendererDebugViewPassData const& data, RenderGraphContext& context)
 			{
@@ -101,10 +104,12 @@ namespace adria
 
 				struct RendererDebugViewConstants
 				{
-					Float triangle_overdraw_scale;
-				} constants = 
+					Float  triangle_overdraw_scale;
+					Uint32 entity_id_idx;
+				} constants =
 				{
-					.triangle_overdraw_scale = (Float)triangle_overdraw_scale
+					.triangle_overdraw_scale = (Float)triangle_overdraw_scale,
+					.entity_id_idx = context.GetReadOnlyTextureIndex(data.entity_id)
 				};
 
 				static std::array<Char const*, (Uint32)RendererDebugView::Count> OutputDefines =
@@ -124,7 +129,8 @@ namespace adria
 					"OUTPUT_CUSTOM",
 					"OUTPUT_MIPMAPS",
 					"OUTPUT_OVERDRAW",
-					"OUTPUT_MOTION_VECTORS"
+					"OUTPUT_MOTION_VECTORS",
+					"OUTPUT_ENTITY_ID"
 				};
 				renderer_output_psos->AddDefine(OutputDefines[(Uint32)debug_view], "1");
 

@@ -26,6 +26,7 @@ struct PSOutput
 	float4 DiffuseRT : SV_TARGET1;
 	float4 EmissiveRT : SV_TARGET2;
 	float4 CustomRT	 : SV_TARGET3;
+	uint   EntityIDRT : SV_TARGET4;
 };
 
 VSToPS GBufferVS(uint vertexId : SV_VertexID)
@@ -154,6 +155,7 @@ PSOutput GBufferPS(VSToPS input)
 	output.DiffuseRT = float4(albedoColor.xyz * materialData.baseColorFactor, roughness);
 	output.EmissiveRT = float4(emissive.rgb, emissive.a / 256);
 	output.CustomRT = customData;
+	output.EntityIDRT = GBufferPassCB.instanceId;
 
 #if TRIANGLE_OVERDRAW
 	RWTexture2D<uint> triangleOverdrawTexture = ResourceDescriptorHeap[FrameCB.triangleOverdrawIdx];

@@ -7,6 +7,8 @@ namespace adria
 	{
 		Vector4 position;
 		Vector4 normal;
+		Uint32  entity_id;
+		Uint32  _pad[3];
 	};
 
 	class GfxDevice;

@@ -5,12 +5,15 @@ struct PickingData
 {
 	float4 position;
 	float4 normal;
+	uint   entityId;
+	uint3  pad;
 };
 
 struct PickingConstants
 {
 	uint depthIdx;
 	uint normalIdx;
+	uint entityIdIdx;
 	uint bufferIdx;
 };
 ConstantBuffer<PickingConstants> PickingPassCB : register(b1);
@@ -22,6 +25,7 @@ void PickingCS()
 
 	Texture2D<float> depthTexture = ResourceDescriptorHeap[PickingPassCB.depthIdx];
 	Texture2D<float4> normalRT = ResourceDescriptorHeap[PickingPassCB.normalIdx];
+	Texture2D<uint> entityIdTexture = ResourceDescriptorHeap[PickingPassCB.entityIdIdx];
 	RWStructuredBuffer<PickingData> pickingBuffer = ResourceDescriptorHeap[PickingPassCB.bufferIdx];
 
 	uint2 mouseCoords = uint2(FrameCB.mouseNormalizedCoords * FrameCB.renderResolution);
@@ -36,5 +40,7 @@ void PickingCS()
 	PickingData pickingData;
 	pickingData.position = worldPosition / worldPosition.w;
 	pickingData.normal = float4(normalize(mul(viewNormal, (float3x3) transpose(FrameCB.view))), 0.0f);
+	pickingData.entityId = entityIdTexture.Load(int3(mouseCoords, 0));
+	pickingData.pad = uint3(0, 0, 0);
 	pickingBuffer[0] = pickingData;
 }

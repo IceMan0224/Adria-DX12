@@ -85,6 +85,7 @@ struct PSOutput
 	float4 DiffuseRT		: SV_TARGET1;
 	float4 EmissiveRT		: SV_TARGET2;
 	float4 CustomRT			: SV_TARGET3;
+	uint   EntityIDRT		: SV_TARGET4;
 };
 
 PSOutput DrawMeshletsPS(MSToPS input)
@@ -170,6 +171,7 @@ PSOutput DrawMeshletsPS(MSToPS input)
 	output.DiffuseRT = float4(albedoColor.xyz * material.baseColorFactor, roughness);
 	output.EmissiveRT = float4(emissive.rgb, emissive.a / 256);
 	output.CustomRT = customData;
+	output.EntityIDRT = candidate.instanceID;
 
 #if TRIANGLE_OVERDRAW
 	RWTexture2D<uint> triangleOverdrawTexture = ResourceDescriptorHeap[FrameCB.triangleOverdrawIdx];
