@@ -102,12 +102,6 @@ namespace adria
 
     Input::Input() : keys{}, prev_keys{}, input_events{}
     {
-        @autoreleasepool
-        {
-            NSPoint mouseLocation = [NSEvent mouseLocation];
-            mouse_position_x = static_cast<Float>(mouseLocation.x);
-            mouse_position_y = -static_cast<Float>(mouseLocation.y);
-        }
     }
 
     void Input::Tick()
@@ -121,9 +115,14 @@ namespace adria
 
             if (window->IsActive())
             {
-                NSPoint mouseLocation = [NSEvent mouseLocation];
-                mouse_position_x = static_cast<Float>(mouseLocation.x);
-                mouse_position_y = -static_cast<Float>(mouseLocation.y);
+                NSWindow* nsWindow = (__bridge NSWindow*)window->Handle();
+                NSView* contentView = [nsWindow contentView];
+                NSPoint screenPoint = [NSEvent mouseLocation];
+                NSPoint windowPoint = [nsWindow convertPointFromScreen:screenPoint];
+                NSPoint viewPoint = [contentView convertPoint:windowPoint fromView:nil];
+                NSRect bounds = [contentView bounds];
+                mouse_position_x = static_cast<Float>(viewPoint.x);
+                mouse_position_y = static_cast<Float>(bounds.size.height - viewPoint.y);
 
                 using enum KeyCode;
 
@@ -215,6 +214,13 @@ namespace adria
                 keys[(Uint64)Home] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_Home);
                 keys[(Uint64)End] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_End);
                 keys[(Uint64)Tilde] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_ANSI_Grave);
+
+                if (keys[(Uint64)MouseRight] && !prev_keys[(Uint64)MouseRight])
+                {
+                    input_events.right_mouse_clicked.Broadcast(
+                        static_cast<Int32>(mouse_position_x),
+                        static_cast<Int32>(mouse_position_y));
+                }
 
                 if (GetKey(KeyCode::Esc))
                 {
