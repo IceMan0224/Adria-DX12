@@ -375,9 +375,9 @@ namespace adria
 						for (entt::entity e : ocean_view)
 						{
 							Transform& transform = ocean_view.get<Transform>(e);
-							Vector3 const& current_translation = transform.current_transform.Translation();
+							Vector3 const& current_translation = transform.local_transform.Translation();
 							Vector3 new_translation(current_translation.x, OceanHeight.Get(), current_translation.z);
-							transform.current_transform.Translation(new_translation);
+							transform.local_transform.Translation(new_translation);
 						}
 					}
 					ImGui::TreePop();

@@ -229,6 +229,8 @@ set(ADRIA_COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SVGFDenoiserPass.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SceneConfig.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SceneConfig.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/HierarchySystem.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/HierarchySystem.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SceneLoader.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SceneLoader.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/ShaderManager.cpp"

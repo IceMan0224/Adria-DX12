@@ -43,7 +43,21 @@ namespace adria
 
 	struct COMPONENT Transform
 	{
+		Matrix local_transform   = Matrix::Identity;
 		Matrix current_transform = Matrix::Identity;
+		Transform() = default;
+		explicit Transform(Matrix const& m) : local_transform(m), current_transform(m) {}
+	};
+	struct COMPONENT Relationship
+	{
+		entt::entity parent = entt::null;
+		std::vector<entt::entity> children;
+	};
+	struct COMPONENT NodeMeshRef
+	{
+		entt::entity mesh_entity;
+		Uint32 first_instance_index;
+		Uint32 instance_count;
 	};
 	struct COMPONENT SubMesh
 	{

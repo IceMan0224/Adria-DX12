@@ -2,6 +2,7 @@
 #include "BlackboardData.h"
 #include "Camera.h"
 #include "Components.h"
+#include "HierarchySystem.h"
 #include "ShaderManager.h"
 #include "SkyModel.h"
 #include "TextureManager.h"
@@ -87,6 +88,7 @@ namespace adria
 	}
 	void Renderer::Update(Float dt)
 	{
+		PropagateTransforms(reg);
 		shadow_renderer.SetupShadows(camera);
 		UpdateSceneBuffers();
 		UpdateFrameConstants(dt);
@@ -142,6 +144,7 @@ namespace adria
 
 	void Renderer::OnSceneInitialized()
 	{
+		PropagateTransforms(reg);
 		sheenE_texture = g_TextureManager.LoadTexture(paths::TexturesDir + "SheenE.dds");
 		sky_pass.OnSceneInitialized();
 		decals_pass.OnSceneInitialized();
@@ -698,7 +701,7 @@ namespace adria
 							sun_light->direction = ConvertElevationAndAzimuthToDirection(sun_elevation, sun_azimuth);
 							sun_light->position = 1e3 * sun_light->direction;
 							sun_light->direction = -sun_light->direction;
-							sun_transform->current_transform = XMMatrixTranslationFromVector(sun_light->position);
+							sun_transform->local_transform = XMMatrixTranslationFromVector(sun_light->position);
 						}
 						ImGui::TreePop();
 					}

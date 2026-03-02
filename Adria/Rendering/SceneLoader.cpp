@@ -6,6 +6,7 @@
 #include "meshoptimizer.h"
 #include "SceneLoader.h"
 #include "Components.h"
+#include "HierarchySystem.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxLinearDynamicAllocator.h"
 #include "Math/BoundingVolumeUtil.h"
@@ -466,7 +467,10 @@ namespace adria
 		}
 
 		std::string model_name = GetFilename(params.model_path);
-		entt::entity mesh_entity = reg.create();
+		entt::entity model_root = reg.create();
+		reg.emplace<Transform>(model_root, params.model_matrix);
+		reg.emplace<Tag>(model_root, model_name);
+		reg.emplace<Relationship>(model_root);
 		Mesh mesh{};
 
 		mesh.materials.reserve(gltf_data->materials_count);
@@ -713,31 +717,80 @@ namespace adria
 		}
 		mesh.geometry_buffer_handle = g_GeometryBufferCache.CreateAndInitializeGeometryBuffer(staging_buffer.buffer, total_buffer_size, staging_buffer.offset);
 
-		for (Uint64 i = 0; i < gltf_data->nodes_count; ++i)
+		std::unordered_map<cgltf_node const*, entt::entity> node_entity_map;
+		node_entity_map.reserve(gltf_data->nodes_count);
+		for (Uint32 i = 0; i < gltf_data->nodes_count; ++i)
 		{
 			cgltf_node const& gltf_node = gltf_data->nodes[i];
+			entt::entity node_entity = reg.create();
 
-			Matrix local_to_world;
-			cgltf_node_transform_world(&gltf_node, &local_to_world.m[0][0]);
+			Matrix local_matrix;
+			cgltf_node_transform_local(&gltf_node, &local_matrix.m[0][0]);
+
+			std::string node_name = gltf_node.name ? gltf_node.name : ("Node_" + std::to_string(i));
+			reg.emplace<Transform>(node_entity, local_matrix);
+			reg.emplace<Tag>(node_entity, node_name);
+			reg.emplace<Relationship>(node_entity);
+
+			node_entity_map[&gltf_node] = node_entity;
+		}
+
+		for (Uint32 i = 0; i < gltf_data->nodes_count; ++i)
+		{
+			cgltf_node const& gltf_node = gltf_data->nodes[i];
+			entt::entity node_entity = node_entity_map[&gltf_node];
+
+			if (gltf_node.parent != nullptr)
+			{
+				SetParent(reg, node_entity, node_entity_map[gltf_node.parent]);
+			}
+			else
+			{
+				SetParent(reg, node_entity, model_root);
+			}
+		}
+
+		for (Uint32 i = 0; i < gltf_data->nodes_count; ++i)
+		{
+			cgltf_node const& gltf_node = gltf_data->nodes[i];
+			entt::entity node_entity = node_entity_map[&gltf_node];
 
 			if (gltf_node.mesh)
 			{
-				for (Int32 primitive : mesh_primitives_map[gltf_node.mesh])
+				auto const& prim_indices = mesh_primitives_map[gltf_node.mesh];
+				for (Uint32 j = 0; j < (Uint32)prim_indices.size(); ++j)
 				{
+					Uint32 const instance_index = (Uint32)mesh.instances.size();
 					SubMeshInstance& instance = mesh.instances.emplace_back();
-					instance.submesh_index = primitive;
-					instance.world_transform = local_to_world * params.model_matrix;
-					instance.parent = mesh_entity;
+					instance.submesh_index = prim_indices[j];
+					instance.world_transform = Matrix::Identity;
+					instance.parent = model_root;
+
+					entt::entity prim_entity = reg.create();
+					cgltf_primitive const& gltf_prim = gltf_node.mesh->primitives[j];
+					std::string prim_name = (gltf_prim.material && gltf_prim.material->name)
+						? gltf_prim.material->name
+						: ("Primitive_" + std::to_string(j));
+					Int32 submesh_idx = prim_indices[j];
+					Material prim_material = mesh.materials[mesh.submeshes[submesh_idx].material_index];
+					reg.emplace<Transform>(prim_entity);
+					reg.emplace<Tag>(prim_entity, prim_name);
+					reg.emplace<Material>(prim_entity, prim_material);
+					reg.emplace<Relationship>(prim_entity);
+					SetParent(reg, prim_entity, node_entity);
+					reg.emplace<NodeMeshRef>(prim_entity, NodeMeshRef{model_root, instance_index, 1});
 				}
 			}
 
 			if (params.load_model_lights && gltf_node.light)
 			{
 				cgltf_light const& gltf_light = *gltf_node.light;
-			
+
+				Matrix local_to_world;
+				cgltf_node_transform_world(&gltf_node, &local_to_world.m[0][0]);
 				Vector3 translation, scale;
 				Quaternion rotation;
-				local_to_world.Decompose(scale, rotation,translation);
+				local_to_world.Decompose(scale, rotation, translation);
 
 				LightParameters light_params{};
 				light_params.mesh_size = 150;
@@ -756,22 +809,21 @@ namespace adria
 
 				switch (gltf_light.type)
 				{
-				case cgltf_light_type_directional: 
+				case cgltf_light_type_directional:
 					light_params.light_data.type = LightType::Directional;
 					light_params.light_data.casts_shadows = true;
 					light_params.light_data.use_cascades = true;
 					break;
-				case cgltf_light_type_point:	   
+				case cgltf_light_type_point:
 					light_params.light_data.type = LightType::Point;
 					light_params.light_data.intensity /= 10;
 					break;
-				case cgltf_light_type_spot:		   
+				case cgltf_light_type_spot:
 					light_params.light_data.type = LightType::Spot;
 					light_params.light_data.intensity /= 100;
 					break;
 				}
 
-				//modify some light data using model matrix
 				light_params.light_data.position = Vector4::Transform(light_params.light_data.position, params.model_matrix);
 				params.model_matrix.Decompose(scale, rotation, translation);
 				light_params.light_data.range *= (scale.x + scale.y + scale.z) / 3;
@@ -780,17 +832,16 @@ namespace adria
 			}
 		}
 
-		reg.emplace<Mesh>(mesh_entity, mesh);
-		reg.emplace<Tag>(mesh_entity, model_name + " mesh");
+		reg.emplace<Mesh>(model_root, mesh);
 
 		if (gfx->GetCapabilities().SupportsHardwareRayTracing())
 		{
-			reg.emplace<RayTracing>(mesh_entity);
+			reg.emplace<RayTracing>(model_root);
 		}
 
 		ADRIA_LOG(INFO, "GLTF Model %s successfully loaded!", params.model_path.c_str());
 		cgltf_free(gltf_data);
-		return mesh_entity;
+		return model_root;
 	}
 
 	entt::entity SceneLoader::LoadModel_OBJ(ModelParameters const& params)
@@ -814,7 +865,10 @@ namespace adria
 		std::vector<tinyobj::material_t> const& obj_materials = reader.GetMaterials();
 
 		std::string model_name = GetFilename(params.model_path);
-		entt::entity mesh_entity = reg.create();
+		entt::entity model_root = reg.create();
+		reg.emplace<Transform>(model_root);
+		reg.emplace<Tag>(model_root, model_name);
+		reg.emplace<Relationship>(model_root);
 		Mesh mesh;
 		mesh.materials.reserve(obj_materials.size());
 		for (tinyobj::material_t const& obj_material : obj_materials)
@@ -943,16 +997,24 @@ namespace adria
 			submesh.topology = mesh_data.topology;
 			submesh.material_index = mesh_data.material_index;
 
-			mesh.instances.emplace_back(mesh_entity, i, Matrix::Identity);
+			mesh.instances.emplace_back(model_root, i, Matrix::Identity);
 		}
 		mesh.geometry_buffer_handle = g_GeometryBufferCache.CreateAndInitializeGeometryBuffer(staging_buffer.buffer, total_buffer_size, staging_buffer.offset);
 
-		reg.emplace<Mesh>(mesh_entity, mesh);
-		reg.emplace<Tag>(mesh_entity, model_name + " mesh");
-		if (gfx->GetCapabilities().SupportsHardwareRayTracing()) reg.emplace<RayTracing>(mesh_entity);
+		for (Uint32 i = 0; i < (Uint32)shapes.size(); ++i)
+		{
+			entt::entity shape_entity = reg.create();
+			reg.emplace<Transform>(shape_entity);
+			reg.emplace<Tag>(shape_entity, shapes[i].name.empty() ? ("Shape_" + std::to_string(i)) : shapes[i].name);
+			SetParent(reg, shape_entity, model_root);
+			reg.emplace<NodeMeshRef>(shape_entity, NodeMeshRef{model_root, i, 1});
+		}
 
-		ADRIA_LOG(INFO, "GLTF Model %s successfully loaded!", params.model_path.c_str());
-		return mesh_entity;
+		reg.emplace<Mesh>(model_root, mesh);
+		if (gfx->GetCapabilities().SupportsHardwareRayTracing()) reg.emplace<RayTracing>(model_root);
+
+		ADRIA_LOG(INFO, "OBJ Model %s successfully loaded!", params.model_path.c_str());
+		return model_root;
 	}
 
 	Uint64 SceneLoader::CalculateTotalBufferSize(std::vector<MeshData>& mesh_datas)

@@ -12,6 +12,8 @@
 #include "Rendering/SceneLoader.h"
 #include "Rendering/ShaderManager.h"
 #include "Rendering/DebugRenderer.h"
+#include "Rendering/HierarchySystem.h"
+#include "Rendering/Components.h"
 #include "Rendering/HelperPasses.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
@@ -526,44 +528,73 @@ namespace adria
 	}
 	void Editor::ListEntities()
 	{
-		if (!visibility_flags[Flag_Entities]) 
+		if (!visibility_flags[Flag_Entities])
 		{
 			return;
 		}
 
-		auto all_entities = engine->reg.view<Tag>();
+		auto& reg = engine->reg;
 		if (ImGui::Begin(ICON_FA_SITEMAP" Entities ", &visibility_flags[Flag_Entities]))
 		{
-			std::vector<entt::entity> deleted_entities{};
-			std::function<void(entt::entity, Bool)> ShowEntity;
-			ShowEntity = [&](entt::entity e, Bool first_iteration)
+			std::function<void(entt::entity)> ShowEntity;
+			ShowEntity = [&](entt::entity e)
 			{
-				Tag& tag = all_entities.get<Tag>(e);
-
-				ImGuiTreeNodeFlags flags = ((selected_entity == e) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
-				flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-				Bool opened = ImGui::TreeNodeEx(tag.name.c_str(), flags);
-
-				if (ImGui::IsItemClicked())
+				Tag* tag = reg.try_get<Tag>(e);
+				if (!tag) 
 				{
-					if (e == selected_entity)
+					return;
+				}
+
+				Relationship const* rel = reg.try_get<Relationship>(e);
+				Bool has_children = rel && !rel->children.empty();
+
+				ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+				if (selected_entity == e) flags |= ImGuiTreeNodeFlags_Selected;
+				if (!has_children) flags |= ImGuiTreeNodeFlags_Leaf;
+				Bool opened = ImGui::TreeNodeEx((void*)(uintptr_t)entt::to_integral(e), flags, "%s", tag->name.c_str());
+
+				if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+				{
+					selected_entity = (e == selected_entity) ? entt::null : e;
+				}
+
+				if (ImGui::BeginPopupContextItem())
+				{
+					if (selected_entity != entt::null && selected_entity != e)
 					{
-						selected_entity = entt::null;
+						Tag* sel_tag = reg.try_get<Tag>(selected_entity);
+						std::string label = "Parent to " + (sel_tag ? sel_tag->name : std::string("Selected"));
+						if (ImGui::MenuItem(label.c_str()))
+							SetParent(reg, e, selected_entity);
 					}
-					else
+					if (rel && rel->parent != entt::null)
 					{
-						selected_entity = e;
+						if (ImGui::MenuItem("Unparent"))
+						{
+							UnsetParent(reg, e);
+						}
 					}
+					ImGui::EndPopup();
 				}
 
 				if (opened)
 				{
+					if (has_children)
+					{
+						for (entt::entity child : rel->children)
+						{
+							ShowEntity(child);
+						}
+					}
 					ImGui::TreePop();
 				}
 			};
-			for (auto e : all_entities)
+
+			for (entt::entity e : reg.view<Tag>())
 			{
-				ShowEntity(e, true);
+				Relationship const* rel = reg.try_get<Relationship>(e);
+				if (rel && rel->parent != entt::null) continue;
+				ShowEntity(e);
 			}
 		}
 		ImGui::End();
@@ -646,7 +677,7 @@ namespace adria
 					{
 						Transform& tr = engine->reg.get<Transform>(selected_entity);
 						Vector3 translation(light->position.x, light->position.y, light->position.z);
-						tr.current_transform = Matrix::CreateTranslation(translation);
+						tr.local_transform = Matrix::CreateTranslation(translation);
 					}
 					ImGui::Checkbox("Active", &light->active);
 					if (light->active && changed)
@@ -704,7 +735,10 @@ namespace adria
 					if (material->albedo_texture != INVALID_TEXTURE_HANDLE)
 					{
 						GfxTexture* tex_handle = g_TextureManager.GetTexture(material->albedo_texture);
-						gui->ShowImage(*tex_handle);
+						if (tex_handle) 
+						{
+							gui->ShowImage(*tex_handle);
+						}
 					}
 
 					ImGui::PushID(0);
@@ -729,7 +763,10 @@ namespace adria
 					if (material->metallic_roughness_texture != INVALID_TEXTURE_HANDLE)
 					{
 						GfxTexture* tex_handle = g_TextureManager.GetTexture(material->metallic_roughness_texture);
-						gui->ShowImage(*tex_handle);
+						if (tex_handle) 
+						{
+							gui->ShowImage(*tex_handle);
+						}
 					}
 
 
@@ -755,7 +792,10 @@ namespace adria
 					if (material->emissive_texture != INVALID_TEXTURE_HANDLE)
 					{
 						GfxTexture* tex_handle = g_TextureManager.GetTexture(material->emissive_texture);
-						gui->ShowImage(*tex_handle);
+						if (tex_handle) 
+						{
+							gui->ShowImage(*tex_handle);
+						}
 					}
 
 					ImGui::PushID(2);
@@ -785,19 +825,31 @@ namespace adria
 				Transform* transform = engine->reg.try_get<Transform>(selected_entity);
 				if (transform && ImGui::CollapsingHeader("Transform"))
 				{
-					Matrix tr = transform->current_transform;
-					
+					Matrix tr = transform->local_transform;
+
 					Vector3 translation, scale;
 					Quaternion rotation;
 					Matrix(tr.m[0]).Decompose(scale, rotation, translation);
-					Bool change = ImGui::InputFloat3("Translation", &translation.x);
-					change &= ImGui::InputFloat3("Rotation", &rotation.x);
-					change &= ImGui::InputFloat3("Scale", &scale.x);
-					
-					Matrix scale_matrix = Matrix::CreateScale(scale);
-					Matrix rotation_matrix = Matrix::CreateFromQuaternion(rotation);
-					Matrix translation_matrix = Matrix::CreateTranslation(translation);
-					transform->current_transform = translation_matrix * rotation_matrix * scale_matrix;
+					Vector3 euler = rotation.ToEuler();
+					euler.x = XMConvertToDegrees(euler.x);
+					euler.y = XMConvertToDegrees(euler.y);
+					euler.z = XMConvertToDegrees(euler.z);
+					Bool change = ImGui::DragFloat3("Translation", &translation.x, 0.1f);
+					change |= ImGui::DragFloat3("Rotation (deg)", &euler.x, 0.5f);
+					change |= ImGui::DragFloat3("Scale", &scale.x, 0.01f);
+					if (change)
+					{
+						Quaternion new_rotation = Quaternion::CreateFromYawPitchRoll(
+							XMConvertToRadians(euler.y),
+							XMConvertToRadians(euler.x),
+							XMConvertToRadians(euler.z));
+						Matrix scale_matrix = Matrix::CreateScale(scale);
+						Matrix rotation_matrix = Matrix::CreateFromQuaternion(new_rotation);
+						Matrix translation_matrix = Matrix::CreateTranslation(translation);
+						transform->local_transform = translation_matrix * rotation_matrix * scale_matrix;
+					}
+					Vector3 world_pos = transform->current_transform.Translation();
+					ImGui::Text("World Position: %.2f, %.2f, %.2f", world_pos.x, world_pos.y, world_pos.z);
 				}
 
 				Decal* decal = engine->reg.try_get<Decal>(selected_entity);
@@ -863,6 +915,38 @@ namespace adria
 					}
 				}
 			}
+
+				Mesh* mesh = engine->reg.try_get<Mesh>(selected_entity);
+				if (mesh && ImGui::CollapsingHeader("Mesh"))
+				{
+					ImGui::Text("Submeshes: %d", (Int32)mesh->submeshes.size());
+					ImGui::Text("Instances: %d", (Int32)mesh->instances.size());
+					ImGui::Text("Materials: %d", (Int32)mesh->materials.size());
+				}
+
+				NodeMeshRef* node_ref = engine->reg.try_get<NodeMeshRef>(selected_entity);
+				if (node_ref && ImGui::CollapsingHeader("Mesh Reference"))
+				{
+					Tag* mesh_tag = engine->reg.try_get<Tag>(node_ref->mesh_entity);
+					ImGui::Text("Mesh: %s", mesh_tag ? mesh_tag->name.c_str() : "Unknown");
+					ImGui::Text("Instance index: %u  count: %u", node_ref->first_instance_index, node_ref->instance_count);
+				}
+
+				Relationship* rel_comp = engine->reg.try_get<Relationship>(selected_entity);
+				if (rel_comp && ImGui::CollapsingHeader("Relationship"))
+				{
+					if (rel_comp->parent != entt::null)
+					{
+						Tag* parent_tag = engine->reg.try_get<Tag>(rel_comp->parent);
+						ImGui::Text("Parent: %s", parent_tag ? parent_tag->name.c_str() : "Unknown");
+					}
+					ImGui::Text("Children: %d", (Int32)rel_comp->children.size());
+				}
+
+				if (engine->reg.all_of<RayTracing>(selected_entity) && ImGui::CollapsingHeader("Ray Tracing"))
+				{
+					ImGui::Text("Ray tracing enabled");
+				}
 		}
 		ImGui::End();
 	}
