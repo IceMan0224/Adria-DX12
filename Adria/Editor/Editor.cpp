@@ -1069,7 +1069,8 @@ namespace adria
 			{
 				PickingData const pd = engine->renderer->GetPickingData();
 				entt::entity picked = static_cast<entt::entity>(pd.entity_id);
-				selected_entity = engine->reg.valid(picked) ? picked : entt::null;
+				entt::entity resolved = engine->reg.valid(picked) ? picked : entt::null;
+				selected_entity = (resolved != entt::null && resolved == selected_entity) ? entt::null : resolved;
 				scroll_to_selected = true;
 			}
 		}
