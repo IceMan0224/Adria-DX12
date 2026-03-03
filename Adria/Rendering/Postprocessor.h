@@ -29,6 +29,7 @@ namespace adria
 			PostEffectType_GodRays,
 			PostEffectType_Clouds,
 			PostEffectType_Reflection,
+			PostEffectType_Silhouette,
 			PostEffectType_FilmEffects,
 			PostEffectType_Fog,
 			PostEffectType_DepthOfField,

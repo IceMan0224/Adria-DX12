@@ -1,33 +1,35 @@
 #include "SilhouettePass.h"
 #include "BlackboardData.h"
 #include "ShaderManager.h"
+#include "Postprocessor.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Core/ConsoleManager.h"
 #include "Editor/GUICommand.h"
+#include "Editor/Editor.h"
 
 namespace adria
 {
 	static TAutoConsoleVariable<Int>   SilhouetteOutlineWidth("r.Silhouette.OutlineWidth", 2,    "Width of the selection silhouette outline in pixels");
-	static TAutoConsoleVariable<Float> SilhouetteOutlineR("r.Silhouette.OutlineR",         1.0f, "Red channel of the silhouette outline color");
-	static TAutoConsoleVariable<Float> SilhouetteOutlineG("r.Silhouette.OutlineG",         0.5f, "Green channel of the silhouette outline color");
-	static TAutoConsoleVariable<Float> SilhouetteOutlineB("r.Silhouette.OutlineB",         0.0f, "Blue channel of the silhouette outline color");
+	static TAutoConsoleVariable<Float> SilhouetteOutlineR("r.Silhouette.OutlineR",1.0f, "Red channel of the silhouette outline color");
+	static TAutoConsoleVariable<Float> SilhouetteOutlineG("r.Silhouette.OutlineG",0.5f, "Green channel of the silhouette outline color");
+	static TAutoConsoleVariable<Float> SilhouetteOutlineB("r.Silhouette.OutlineB",0.0f, "Blue channel of the silhouette outline color");
 
 	SilhouettePass::SilhouettePass(GfxDevice* gfx, Uint32 w, Uint32 h) : gfx(gfx), width(w), height(h)
 	{
 		CreatePSO();
 	}
 
-	void SilhouettePass::AddPass(RenderGraph& rg, Uint32 selected_entity_id)
+	void SilhouettePass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
 		RG_SCOPE(rg, "Silhouette");
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
-
+		Uint32 selected_entity_id = (Uint32)entt::to_integral(g_Editor.GetSelectedEntity());
 		struct SilhouettePassData
 		{
-			RGTextureReadOnlyId  hdr;
+			RGTextureReadOnlyId  input;
 			RGTextureReadOnlyId  entity_id;
 			RGTextureReadWriteId output;
 		};
@@ -35,8 +37,8 @@ namespace adria
 		rg.AddPass<SilhouettePassData>("Silhouette Pass",
 			[=, this](SilhouettePassData& data, RenderGraphBuilder& builder)
 			{
-				data.hdr       = builder.ReadTexture(RG_NAME(HDR_RenderTarget), ReadAccess_NonPixelShader);
-				data.entity_id = builder.ReadTexture(RG_NAME(GBufferEntityID),  ReadAccess_NonPixelShader);
+				data.input     = builder.ReadTexture(postprocessor->GetFinalResource(), ReadAccess_NonPixelShader);
+				data.entity_id = builder.ReadTexture(RG_NAME(GBufferEntityID), ReadAccess_NonPixelShader);
 
 				RGTextureDesc output_desc{};
 				output_desc.width  = width;
@@ -56,7 +58,7 @@ namespace adria
 					Float  outline_r;
 					Float  outline_g;
 					Float  outline_b;
-					Uint32 hdr_idx;
+					Uint32 input_idx;
 					Uint32 entity_id_idx;
 					Uint32 output_idx;
 				} constants =
@@ -66,7 +68,7 @@ namespace adria
 					.outline_r          = SilhouetteOutlineR.Get(),
 					.outline_g          = SilhouetteOutlineG.Get(),
 					.outline_b          = SilhouetteOutlineB.Get(),
-					.hdr_idx            = ctx.GetReadOnlyTextureIndex(data.hdr),
+					.input_idx          = ctx.GetReadOnlyTextureIndex(data.input),
 					.entity_id_idx      = ctx.GetReadOnlyTextureIndex(data.entity_id),
 					.output_idx         = ctx.GetReadWriteTextureIndex(data.output)
 				};
@@ -76,11 +78,18 @@ namespace adria
 				cmd_list->SetRootConstants(1, constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 8), DivideAndRoundUp(height, 8), 1);
 			}, RGPassType::Compute, RGPassFlags::None);
+
+		postprocessor->SetFinalResource(RG_NAME(SilhouetteOutput));
 	}
 
 	void SilhouettePass::OnResize(Uint32 w, Uint32 h)
 	{
 		width = w, height = h;
+	}
+
+	Bool SilhouettePass::IsEnabled(PostProcessor const*) const
+	{
+		return g_Editor.IsActive() && g_Editor.GetSelectedEntity() != entt::null;
 	}
 
 	void SilhouettePass::GUI()
@@ -100,7 +109,7 @@ namespace adria
 					ImGui::TreePop();
 					ImGui::Separator();
 				}
-			}, GUICommandGroup_Renderer
+			}, GUICommandGroup_PostProcessing
 		);
 	}
 

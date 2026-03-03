@@ -45,7 +45,7 @@ namespace adria
 		shadow_renderer(reg, gfx, width, height), renderer_debug_view_pass(gfx, width, height),
 		path_tracer(reg, gfx, width, height), ddgi(gfx, reg, width, height),  gpu_printf(gfx), gpu_assert(gfx),
 		transparent_pass(reg, gfx, width, height), ray_tracing_supported(gfx->GetCapabilities().SupportsHardwareRayTracing()),
-		volumetric_fog_manager(gfx, reg, width, height), silhouette_pass(gfx, width, height)
+		volumetric_fog_manager(gfx, reg, width, height)
 	{
 		g_DebugRenderer.Initialize(gfx, width, height);
 		g_GfxProfiler.Initialize(gfx);
@@ -133,7 +133,6 @@ namespace adria
 			copy_to_texture_pass.OnResize(w, h);
 			add_textures_pass.OnResize(w, h);
 			picking_pass.OnResize(w, h);
-			silhouette_pass.OnResize(w, h);
 			decals_pass.OnResize(w, h);
 			ocean_renderer.OnResize(w, h);
 			shadow_renderer.OnResize(w, h);
@@ -612,15 +611,6 @@ namespace adria
 				sky_pass.AddPasses(render_graph, sun_direction);
 				transparent_pass.AddPass(render_graph);
 				picking_pass.AddPass(render_graph);
-				if (g_Editor.IsActive())
-				{
-					entt::entity sel = g_Editor.GetSelectedEntity();
-					if (sel != entt::null)
-					{
-						silhouette_pass.AddPass(render_graph, (Uint32)entt::to_integral(sel));
-						copy_to_texture_pass.AddPass(render_graph, RG_NAME(HDR_RenderTarget), RG_NAME(SilhouetteOutput));
-					}
-				}
 				if (rain_pass.IsEnabled())
 				{
 					rain_pass.AddPass(render_graph);
@@ -719,7 +709,6 @@ namespace adria
 			}, GUICommandGroup_Renderer);
 		renderer_debug_view_pass.GUI();
 		postprocessor.GUI();
-		silhouette_pass.GUI();
 	}
 
 	void Renderer::ClearTriangleOverdrawTexture(RenderGraph& rg)

@@ -8,6 +8,7 @@
 #include "LensFlarePass.h"
 #include "VolumetricCloudsPass.h"
 #include "ReflectionPassGroup.h"
+#include "SilhouettePass.h"
 #include "DepthOfFieldPassGroup.h"
 #include "ExponentialHeightFogPass.h"
 #include "BloomPass.h"
@@ -198,6 +199,7 @@ namespace adria
 		post_effects[PostEffectType_GodRays]		= std::make_unique<GodRaysPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_Clouds]			= std::make_unique<VolumetricCloudsPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_Reflection]		= std::make_unique<ReflectionPassGroup>(gfx, render_width, render_height);
+		post_effects[PostEffectType_Silhouette]		= std::make_unique<SilhouettePass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_FilmEffects]	= std::make_unique<FilmEffectsPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_Fog]			= std::make_unique<ExponentialHeightFogPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_DepthOfField]	= std::make_unique<DepthOfFieldPassGroup>(gfx, render_width, render_height);

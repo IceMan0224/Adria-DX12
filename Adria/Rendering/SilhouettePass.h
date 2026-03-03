@@ -1,19 +1,20 @@
 #pragma once
+#include "PostEffect.h"
 #include "Graphics/GfxPipelineStateFwd.h"
 
 namespace adria
 {
 	class GfxDevice;
-	class RenderGraph;
 
-	class SilhouettePass
+	class SilhouettePass : public PostEffect
 	{
 	public:
 		SilhouettePass(GfxDevice* gfx, Uint32 w, Uint32 h);
 
-		void AddPass(RenderGraph& rg, Uint32 selected_entity_id);
-		void OnResize(Uint32 w, Uint32 h);
-		void GUI();
+		virtual void AddPass(RenderGraph&, PostProcessor*) override;
+		virtual void OnResize(Uint32, Uint32) override;
+		virtual Bool IsEnabled(PostProcessor const*) const override;
+		virtual void GUI() override;
 
 	private:
 		GfxDevice* gfx;
