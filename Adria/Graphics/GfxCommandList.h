@@ -103,6 +103,7 @@ namespace adria
 		virtual void SetRayTracingTLAS(GfxRayTracingTLAS const* tlas) {}
 		virtual void BuildRayTracingBLAS(GfxRayTracingBLAS* blas) {}
 		virtual void BuildRayTracingTLAS(GfxRayTracingTLAS* tlas) {}
+		virtual void UpdateRayTracingTLAS(GfxRayTracingTLAS* tlas) {}
 		virtual void SetStencilReference(Uint8 stencil) = 0;
 		virtual void SetBlendFactor(Float const* blend_factor) = 0;
 		virtual void SetPrimitiveTopology(GfxPrimitiveTopology topology) = 0;

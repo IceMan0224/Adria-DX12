@@ -77,6 +77,7 @@ namespace adria
 		virtual GfxRayTracingShaderBindings* BeginRayTracingShaderBindings(GfxRayTracingPipeline const* pipeline) override;
 		virtual void BuildRayTracingBLAS(GfxRayTracingBLAS* blas) override;
 		virtual void BuildRayTracingTLAS(GfxRayTracingTLAS* tlas) override;
+		virtual void UpdateRayTracingTLAS(GfxRayTracingTLAS* tlas) override;
 		virtual void SetStencilReference(Uint8 stencil) override;
 		virtual void SetBlendFactor(Float const* blend_factor) override;
 		virtual void SetPrimitiveTopology(GfxPrimitiveTopology topology) override;

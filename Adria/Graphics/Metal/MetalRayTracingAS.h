@@ -39,6 +39,7 @@ namespace adria
         virtual Uint64 GetGpuAddress() const override;
         virtual GfxBuffer const& GetBuffer() const override { return *result_buffer; }
         virtual GfxBuffer const* GetGpuHeaderBuffer() const override { return gpu_header_buffer.get(); }
+        virtual void UpdateInstances(std::span<GfxRayTracingInstance> instances) override;
 
         id<MTLAccelerationStructure> GetAccelerationStructure() const { return acceleration_structure; }
         std::vector<id<MTLAccelerationStructure>> const& GetBLASList() const { return blas_list; }

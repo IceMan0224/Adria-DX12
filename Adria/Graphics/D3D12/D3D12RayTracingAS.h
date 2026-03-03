@@ -32,6 +32,7 @@ namespace adria
 
 		virtual Uint64 GetGpuAddress() const override;
 		virtual GfxBuffer const& GetBuffer() const override { return *result_buffer; }
+		virtual void UpdateInstances(std::span<GfxRayTracingInstance> instances) override;
 
 	private:
 		std::unique_ptr<GfxBuffer> result_buffer;

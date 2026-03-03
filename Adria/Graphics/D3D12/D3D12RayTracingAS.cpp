@@ -114,7 +114,7 @@ namespace adria
 
 		GfxBufferDesc scratch_buffer_desc{};
 		scratch_buffer_desc.bind_flags = GfxBindFlag::UnorderedAccess;
-		scratch_buffer_desc.size = tl_prebuild_info.ScratchDataSizeInBytes;
+		scratch_buffer_desc.size = std::max(tl_prebuild_info.ScratchDataSizeInBytes, tl_prebuild_info.UpdateScratchDataSizeInBytes);
 		scratch_buffer = gfx->CreateBuffer(scratch_buffer_desc);
 
 		GfxBufferDesc result_buffer_desc{};
@@ -139,10 +139,22 @@ namespace adria
 			p_instance_desc[i].AccelerationStructure = instances[i].blas->GetGpuAddress();
 			p_instance_desc[i].InstanceMask = instances[i].instance_mask;
 		}
-		instance_buffer->Unmap();
 	}
 
-	D3D12RayTracingTLAS::~D3D12RayTracingTLAS() = default;
+	void D3D12RayTracingTLAS::UpdateInstances(std::span<GfxRayTracingInstance> instances)
+	{
+		D3D12_RAYTRACING_INSTANCE_DESC* p_instance_desc = instance_buffer->GetMappedData<D3D12_RAYTRACING_INSTANCE_DESC>();
+		ADRIA_ASSERT(p_instance_desc);
+		for (Uint64 i = 0; i < instances.size(); ++i)
+		{
+			memcpy(p_instance_desc[i].Transform, &instances[i].transform, sizeof(p_instance_desc->Transform));
+		}
+	}
+
+	D3D12RayTracingTLAS::~D3D12RayTracingTLAS() 
+	{
+		instance_buffer->Unmap();
+	}
 
 	Uint64 D3D12RayTracingTLAS::GetGpuAddress() const
 	{

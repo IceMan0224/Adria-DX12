@@ -72,6 +72,7 @@ namespace adria
 		virtual Uint64 GetGpuAddress() const = 0;
 		virtual GfxBuffer const& GetBuffer() const = 0;
 		virtual GfxBuffer const* GetGpuHeaderBuffer() const { return nullptr; }
+		virtual void UpdateInstances(std::span<GfxRayTracingInstance> instances) {}
 
 		GfxBuffer const& operator*() const { return GetBuffer(); }
 	};

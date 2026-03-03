@@ -252,6 +252,15 @@ namespace adria
 		accel_structure.Build();
 	}
 
+	void Renderer::UpdateAS()
+	{
+		if (!ray_tracing_supported || reg.view<RayTracing>().size() == 0) 
+		{
+			return;
+		}
+		accel_structure.Update();
+	}
+
 	void Renderer::UpdateSceneBuffers()
 	{
 		for (entt::entity e : reg.view<Batch>()) reg.destroy(e);
@@ -530,6 +539,16 @@ namespace adria
 
 		gpu_printf.AddClearPass(render_graph);
 		gpu_assert.AddClearPass(render_graph);
+		if (ray_tracing_supported && reg.view<RayTracing>().size())
+		{
+			render_graph.AddPass<void>("Acceleration Structure Update",
+				[](RenderGraphBuilder&) {},
+				[this](RenderGraphContext&)
+				{
+					accel_structure.Update();
+				},
+				RGPassType::Compute, RGPassFlags::ForceNoCull);
+		}
 		if (lighting_path == LightingPath::PathTracing)
 		{
 			Render_PathTracing(render_graph);

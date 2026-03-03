@@ -167,6 +167,7 @@ namespace adria
 		void CreateDisplaySizeDependentResources();
 		void CreateRenderSizeDependentResources();
 		void CreateAS();
+		void UpdateAS();
 
 		void GUI();
 		void UpdateSceneBuffers();

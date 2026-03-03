@@ -30,17 +30,22 @@ namespace adria
     static MTLAccelerationStructureUsage ConvertASFlags(GfxRayTracingASFlags flags)
     {
         MTLAccelerationStructureUsage usage = MTLAccelerationStructureUsageNone;
-
         if (flags & GfxRayTracingASFlag_AllowUpdate)
         {
             usage |= MTLAccelerationStructureUsageRefit;
         }
-
         if (flags & GfxRayTracingASFlag_PreferFastBuild)
         {
             usage |= MTLAccelerationStructureUsagePreferFastBuild;
         }
-
+        if (flags & GfxRayTracingASFlag_PreferFastTrace)
+        {
+            usage |= MTLAccelerationStructureUsagePreferFastIntersection;
+        }
+        if (flags & GfxRayTracingASFlag_MinimizeMemory)
+        {
+            usage |= MTLAccelerationStructureUsageMinimizeMemory;
+        }
         return usage;
     }
 
@@ -203,7 +208,8 @@ namespace adria
         acceleration_structure = [device newAccelerationStructureWithSize:sizes.accelerationStructureSize];
         metal_gfx->MakeResident(acceleration_structure);
 
-        scratch_buffer = [device newBufferWithLength:sizes.buildScratchBufferSize options:MTLResourceStorageModePrivate];
+        NSUInteger scratch_size = std::max(sizes.buildScratchBufferSize, sizes.refitScratchBufferSize);
+        scratch_buffer = [device newBufferWithLength:scratch_size options:MTLResourceStorageModePrivate];
 
         Usize header_size = sizeof(IRRaytracingAccelerationStructureGPUHeader);
         Usize instance_contributions_size = sizeof(Uint32) * instance_count;
@@ -254,5 +260,25 @@ namespace adria
     Uint64 MetalRayTracingTLAS::GetGpuAddress() const
     {
         return acceleration_structure.gpuResourceID._impl;
+    }
+
+    void MetalRayTracingTLAS::UpdateInstances(std::span<GfxRayTracingInstance> instances)
+    {
+        MetalBuffer* metal_instance_buffer = static_cast<MetalBuffer*>(instance_buffer.get());
+        MTLAccelerationStructureUserIDInstanceDescriptor* instanceData =
+            (MTLAccelerationStructureUserIDInstanceDescriptor*)[metal_instance_buffer->GetMetalBuffer() contents];
+
+        for (Uint32 i = 0; i < (Uint32)instances.size(); ++i)
+        {
+            auto const& inst = instances[i];
+            MTLAccelerationStructureUserIDInstanceDescriptor& mtl_inst = instanceData[i];
+            for (Uint32 row = 0; row < 3; ++row)
+            {
+                for (Uint32 col = 0; col < 4; ++col)
+                {
+                    mtl_inst.transformationMatrix.columns[col][row] = inst.transform[row][col];
+                }
+            }
+        }
     }
 }

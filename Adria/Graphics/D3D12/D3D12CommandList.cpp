@@ -405,6 +405,19 @@ namespace adria
 		cmd_list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
 	}
 
+	void D3D12CommandList::UpdateRayTracingTLAS(GfxRayTracingTLAS* tlas)
+	{
+		D3D12RayTracingTLAS* d3d12_tlas = static_cast<D3D12RayTracingTLAS*>(tlas);
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
+		desc.Inputs = d3d12_tlas->inputs;
+		desc.Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+		desc.Inputs.InstanceDescs = d3d12_tlas->instance_buffer->GetGpuAddress();
+		desc.SourceAccelerationStructureData = d3d12_tlas->result_buffer->GetGpuAddress();
+		desc.DestAccelerationStructureData = d3d12_tlas->result_buffer->GetGpuAddress();
+		desc.ScratchAccelerationStructureData = d3d12_tlas->scratch_buffer->GetGpuAddress();
+		cmd_list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
+	}
+
 	void D3D12CommandList::TextureBarrier(GfxTexture const& texture, GfxResourceState flags_before, GfxResourceState flags_after, Uint32 subresource)
 	{
 		if (use_legacy_barriers)

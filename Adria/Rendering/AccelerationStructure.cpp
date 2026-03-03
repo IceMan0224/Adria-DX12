@@ -43,6 +43,7 @@ namespace adria
 			auto const T = XMMatrixTranspose(instance.world_transform);
 			memcpy(rt_instance.transform, &T, sizeof(T));
 		}
+		tracked_meshes.push_back(&mesh);
 	}
 
 	void AccelerationStructure::Build()
@@ -68,6 +69,7 @@ namespace adria
 		rt_geometries.clear();
 		rt_instances.clear();
 		tlas = nullptr;
+		tracked_meshes.clear();
 	}
 
 	Int32 AccelerationStructure::GetTLASIndex() const
@@ -91,8 +93,42 @@ namespace adria
 	{
 		GfxCommandList* cmd_list = gfx->GetGraphicsCommandList();
 
-		tlas = gfx->CreateRayTracingTLAS(rt_instances, GfxRayTracingASFlag_PreferFastTrace);
+		tlas = gfx->CreateRayTracingTLAS(rt_instances, GfxRayTracingASFlag_PreferFastTrace | GfxRayTracingASFlag_AllowUpdate);
 		cmd_list->BuildRayTracingTLAS(tlas.get());
+	}
+
+	void AccelerationStructure::Update()
+	{
+		if (!tlas || tracked_meshes.empty())
+		{
+			return;
+		}
+
+		Bool dirty = false;
+		Uint32 instance_idx = 0;
+		for (Mesh const* mesh : tracked_meshes)
+		{
+			for (SubMeshInstance const& instance : mesh->instances)
+			{
+				auto const T = XMMatrixTranspose(instance.world_transform);
+				if (memcmp(rt_instances[instance_idx].transform, &T, sizeof(T)) != 0)
+				{
+					memcpy(rt_instances[instance_idx].transform, &T, sizeof(T));
+					dirty = true;
+				}
+				++instance_idx;
+			}
+		}
+
+		if (!dirty) 
+		{
+			return;
+		}
+
+		tlas->UpdateInstances(rt_instances);
+		GfxCommandList* cmd_list = gfx->GetGraphicsCommandList();
+		cmd_list->UpdateRayTracingTLAS(tlas.get());
+		cmd_list->BufferBarrier(tlas->GetBuffer(), GfxResourceState::ASWrite, GfxResourceState::ASRead);
 	}
 }
 

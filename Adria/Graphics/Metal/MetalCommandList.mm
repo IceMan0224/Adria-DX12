@@ -1464,6 +1464,22 @@ namespace adria
         [accel_encoder endEncoding];
     }
 
+    void MetalCommandList::UpdateRayTracingTLAS(GfxRayTracingTLAS* tlas)
+    {
+        EndRenderPass();
+        EndComputeEncoder();
+        EndBlitEncoder();
+
+        MetalRayTracingTLAS* metal_tlas = static_cast<MetalRayTracingTLAS*>(tlas);
+        id<MTLAccelerationStructureCommandEncoder> accel_encoder = [command_buffer accelerationStructureCommandEncoder];
+        [accel_encoder refitAccelerationStructure:metal_tlas->acceleration_structure
+                                       descriptor:metal_tlas->accel_descriptor
+                                      destination:nil
+                                     scratchBuffer:metal_tlas->scratch_buffer
+                               scratchBufferOffset:0];
+        [accel_encoder endEncoding];
+    }
+
     void MetalCommandList::SetPendingTimestampSample(void* csb, Uint32 begin_index, Uint32 end_index)
     {
         pending_timestamp = PendingTimestampSample{ csb, begin_index, end_index };

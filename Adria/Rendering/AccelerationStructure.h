@@ -15,6 +15,7 @@ namespace adria
 
 		void AddInstance(Mesh const& mesh);
 		void Build();
+		void Update();
 		void Clear();
 
 		Int32 GetTLASIndex() const;
@@ -28,6 +29,8 @@ namespace adria
 		std::vector<GfxRayTracingInstance> rt_instances;
 		std::unique_ptr<GfxRayTracingTLAS> tlas;
 		GfxDescriptor tlas_srv;
+
+		std::vector<Mesh const*> tracked_meshes;
 
 	private:
 		void BuildBottomLevels();
