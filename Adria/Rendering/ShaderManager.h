@@ -141,6 +141,7 @@ namespace adria
 		HS_TerrainLOD,
 		DS_TerrainLOD,
 		CS_TerrainNormals,
+		CS_Silhouette,
 		ShaderID_Count
 	};
 

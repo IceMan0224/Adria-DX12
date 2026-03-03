@@ -240,6 +240,8 @@ set(ADRIA_COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/ShadowRenderer.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SkyModel.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SkyModel.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SilhouettePass.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SilhouettePass.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SkyPass.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SkyPass.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SunPass.cpp"

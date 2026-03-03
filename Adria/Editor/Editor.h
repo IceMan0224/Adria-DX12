@@ -64,6 +64,7 @@ namespace adria
 		void AddRenderPass(RenderGraph& rg);
 
 		Engine*		GetEngine() const { return engine.get(); }
+		entt::entity GetSelectedEntity() const { return selected_entity; }
 
 	private:
 		std::unique_ptr<Engine> engine;

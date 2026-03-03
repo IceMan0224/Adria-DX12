@@ -16,6 +16,7 @@
 #include "GpuAssert.h"
 #include "HelperPasses.h"
 #include "PickingPass.h"
+#include "SilhouettePass.h"
 #include "DecalsPass.h"
 #include "RainPass.h"
 #include "OceanRenderer.h"
@@ -119,6 +120,7 @@ namespace adria
 		CopyToTexturePass copy_to_texture_pass;
 		AddTexturesPass add_textures_pass;
 		PickingPass picking_pass;
+		SilhouettePass silhouette_pass;
 		DecalsPass decals_pass;
 		RainPass rain_pass;
 		OceanRenderer  ocean_renderer;

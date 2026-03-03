@@ -165,6 +165,7 @@ namespace adria
 			case CS_DDGIRayTrace:
 			case CS_PathTracing:
 			case CS_TerrainNormals:
+			case CS_Silhouette:
 				return GfxShaderStage::CS;
 			case HS_OceanLOD:
 			case HS_TerrainLOD:
@@ -405,6 +406,8 @@ namespace adria
 				return "Terrain/TerrainGBuffer.hlsl";
 			case CS_TerrainNormals:
 				return "Terrain/TerrainNormals.hlsl";
+			case CS_Silhouette:
+				return "Other/Silhouette.hlsl";
 			case ShaderID_Count:
 			default:
 				return "";
@@ -666,6 +669,8 @@ namespace adria
 				return "TerrainPS";
 			case CS_TerrainNormals:
 				return "TerrainNormalsCS";
+			case CS_Silhouette:
+				return "SilhouetteCS";
 			}
 			return "main";
 		}
