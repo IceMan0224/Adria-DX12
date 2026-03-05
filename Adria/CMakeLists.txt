@@ -484,6 +484,8 @@ set(EXTERNAL_SOURCES
 	"${EXTERNAL_DIR}/ImPlot/implot.cpp"
 	"${EXTERNAL_DIR}/ImPlot/implot_items.cpp"
 
+	"${EXTERNAL_DIR}/ImGuizmo/ImGuizmo.cpp"
+
 	"${EXTERNAL_DIR}/meshoptimizer/allocator.cpp"
     "${EXTERNAL_DIR}/meshoptimizer/clusterizer.cpp"
     "${EXTERNAL_DIR}/meshoptimizer/indexcodec.cpp"
@@ -544,6 +546,7 @@ target_include_directories(Adria PRIVATE
     "${EXTERNAL_DIR}/DirectXMath/Inc"
     "${EXTERNAL_DIR}/SimpleMath"
     "${EXTERNAL_DIR}/ImPlot"
+    "${EXTERNAL_DIR}/ImGuizmo"
     "${EXTERNAL_DIR}/renderdoc"
     "${EXTERNAL_DIR}/dxc/include"
 )

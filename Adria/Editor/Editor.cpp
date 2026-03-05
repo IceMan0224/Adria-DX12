@@ -1,5 +1,6 @@
 #include "nfd.h"
 #include "IconsFontAwesome6.h"
+#include "ImGuizmo.h"
 #include "Editor.h"
 #include "ImGuiManager.h"
 #include "EditorSink.h"
@@ -182,6 +183,26 @@ namespace adria
 		if (g_Input.IsKeyDown(KeyCode::Tilde))
 		{
 			show_basic_console = !show_basic_console;
+		}
+
+		if (scene_focused && !ImGuizmo::IsUsing())
+		{
+			if (g_Input.IsKeyDown(KeyCode::Alpha1))
+			{
+				gizmo_operation = ImGuizmo::TRANSLATE;
+			}
+			if (g_Input.IsKeyDown(KeyCode::Alpha2))
+			{
+				gizmo_operation = ImGuizmo::ROTATE;
+			}
+			if (g_Input.IsKeyDown(KeyCode::Alpha3))
+			{
+				gizmo_operation = ImGuizmo::SCALE;
+			}
+			if (g_Input.IsKeyDown(KeyCode::Alpha4))
+			{
+				gizmo_mode = (gizmo_mode == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
+			}
 		}
 
 		if (gui->IsVisible())
@@ -1043,6 +1064,37 @@ namespace adria
 					#undef AddDebugViewMenuItem
 					ImGui::EndMenu();
 				}
+				if (ImGui::BeginMenu("Gizmo"))
+				{
+					if (ImGui::MenuItem("Translate (1)", nullptr, gizmo_operation == ImGuizmo::TRANSLATE))
+					{
+						gizmo_operation = ImGuizmo::TRANSLATE;
+					}
+					if (ImGui::MenuItem("Rotate (2)", nullptr, gizmo_operation == ImGuizmo::ROTATE))
+					{
+						gizmo_operation = ImGuizmo::ROTATE;
+					}
+					if (ImGui::MenuItem("Scale (3)", nullptr, gizmo_operation == ImGuizmo::SCALE))
+					{
+						gizmo_operation = ImGuizmo::SCALE;
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem("World (4)", nullptr, gizmo_mode == ImGuizmo::WORLD))
+					{
+						gizmo_mode = ImGuizmo::WORLD;
+					}
+					if (ImGui::MenuItem("Local (4)", nullptr, gizmo_mode == ImGuizmo::LOCAL))
+					{
+						gizmo_mode = ImGuizmo::LOCAL;
+					}
+					ImGui::Separator();
+					ImGui::MenuItem("Snap", nullptr, &use_snap);
+					if (use_snap)
+					{
+						ImGui::InputFloat3("Snap Value", snap_value);
+					}
+					ImGui::EndMenu();
+				}
 				ImGui::EndMenuBar();
 			}
 
@@ -1055,6 +1107,67 @@ namespace adria
 			ImVec2 size(v_max.x - v_min.x, v_max.y - v_min.y);
 			gui->ShowImage(final_texture, size);
 
+			ImGuizmo::BeginFrame();
+			ImGuizmo::SetDrawlist();
+			ImGuizmo::SetRect(v_min.x, v_min.y, size.x, size.y);
+
+			if (selected_entity != entt::null && engine->reg.valid(selected_entity) && engine->reg.all_of<Transform>(selected_entity))
+			{
+				Matrix view = engine->camera->View();
+				Matrix proj = XMMatrixPerspectiveFovLH(engine->camera->Fov(), engine->camera->AspectRatio(), engine->camera->Far(), engine->camera->Near());
+
+				Transform& transform = engine->reg.get<Transform>(selected_entity);
+				Matrix world = transform.current_transform;
+
+				// Compute bounding box center as gizmo pivot for entities with mesh references
+				Vector3 pivot = Vector3::Zero;
+				NodeMeshRef const* node_ref = engine->reg.try_get<NodeMeshRef>(selected_entity);
+				if (node_ref)
+				{
+					Mesh const* mesh = engine->reg.try_get<Mesh>(node_ref->mesh_entity);
+					if (mesh && node_ref->first_instance_index < (Uint32)mesh->instances.size())
+					{
+						Uint32 submesh_idx = mesh->instances[node_ref->first_instance_index].submesh_index;
+						if (submesh_idx < (Uint32)mesh->submeshes.size())
+						{
+							pivot = Vector3(mesh->submeshes[submesh_idx].bounding_box.Center.x,
+											mesh->submeshes[submesh_idx].bounding_box.Center.y,
+											mesh->submeshes[submesh_idx].bounding_box.Center.z);
+						}
+					}
+				}
+
+				// Build gizmo matrix positioned at pivot point (bounding box center in world space)
+				Vector3 world_pivot = Vector3::Transform(pivot, world);
+				Matrix gizmo_world = world;
+				gizmo_world._41 = world_pivot.x;
+				gizmo_world._42 = world_pivot.y;
+				gizmo_world._43 = world_pivot.z;
+
+				Matrix delta = Matrix::Identity;
+				if (ImGuizmo::Manipulate(&view._11, &proj._11, gizmo_operation, gizmo_mode, &gizmo_world._11, &delta._11, use_snap ? snap_value : nullptr))
+				{
+					Matrix new_world = world * delta;
+					if (engine->reg.all_of<Relationship>(selected_entity))
+					{
+						Relationship const& rel = engine->reg.get<Relationship>(selected_entity);
+						if (rel.parent != entt::null && engine->reg.all_of<Transform>(rel.parent))
+						{
+							Matrix parent_world = engine->reg.get<Transform>(rel.parent).current_transform;
+							transform.local_transform = new_world * parent_world.Invert();
+						}
+						else
+						{
+							transform.local_transform = new_world;
+						}
+					}
+					else
+					{
+						transform.local_transform = new_world;
+					}
+				}
+			}
+
 			scene_focused = ImGui::IsWindowFocused();
 
 			viewport_data.mouse_position_x = g_Input.GetMousePositionX();
@@ -1065,7 +1178,7 @@ namespace adria
 			viewport_data.scene_viewport_size_x = size.x;
 			viewport_data.scene_viewport_size_y = size.y;
 
-			if (ImGui::IsWindowHovered() && g_Input.IsKeyDown(KeyCode::MouseRight))
+			if (ImGui::IsWindowHovered() && !ImGuizmo::IsUsing() && g_Input.IsKeyDown(KeyCode::MouseRight))
 			{
 				PickingData const pd = engine->renderer->GetPickingData();
 				entt::entity picked = static_cast<entt::entity>(pd.entity_id);

@@ -1,6 +1,7 @@
 #pragma once
 #include "GUICommand.h"
 #include "EditorEvents.h"
+#include "ImGuizmo.h"
 #include "Graphics/GfxTimestampProfilerFwd.h"
 #include "Rendering/ViewportData.h"
 #include "Utilities/Singleton.h"
@@ -90,6 +91,11 @@ namespace adria
 		Bool show_basic_console = false;
 
 		GfxProfilerTree const* profiler_tree = nullptr;
+
+		ImGuizmo::OPERATION gizmo_operation = ImGuizmo::TRANSLATE;
+		ImGuizmo::MODE gizmo_mode = ImGuizmo::WORLD;
+		Bool use_snap = false;
+		Float snap_value[3] = {1.0f, 1.0f, 1.0f};
 
 	private:
 		Editor();
