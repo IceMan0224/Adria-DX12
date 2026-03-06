@@ -7,9 +7,27 @@
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxPipelineState.h"
 #include "Editor/GUICommand.h"
+#include "Core/ConsoleManager.h"
 
 namespace adria
 {
+	enum class ResamplingMode : Uint8
+	{
+		None = 0,
+		Temporal = 1,
+		Spatial = 2,
+		TemporalAndSpatial = 3,
+		FusedTemporalSpatial = 4
+	};
+
+	static TAutoConsoleVariable<Bool>  ReSTIR_DI_Enable("r.ReSTIR_DI.Enable", false, "Enables or disables ReSTIR DI");
+	static TAutoConsoleVariable<Int>   ReSTIR_DI_ResamplingMode("r.ReSTIR_DI.ResamplingMode", (Int)ResamplingMode::TemporalAndSpatial, "Resampling mode for ReSTIR DI: 0 - None, 1 - Temporal, 2 - Spatial, 3 - TemporalAndSpatial, 4 - FusedTemporalSpatial");
+	static TAutoConsoleVariable<Float> ReSTIR_DI_MaxTemporalM("r.ReSTIR_DI.MaxTemporalM", 20.0f, "Maximum temporal M clamp value for ReSTIR DI");
+	static TAutoConsoleVariable<Float> ReSTIR_DI_TemporalDepthThreshold("r.ReSTIR_DI.TemporalDepthThreshold", 0.1f, "Temporal depth rejection threshold for ReSTIR DI");
+	static TAutoConsoleVariable<Float> ReSTIR_DI_TemporalNormalThreshold("r.ReSTIR_DI.TemporalNormalThreshold", 0.5f, "Temporal normal rejection threshold for ReSTIR DI");
+	static TAutoConsoleVariable<Int>   ReSTIR_DI_SpatialSampleCount("r.ReSTIR_DI.SpatialSampleCount", 5, "Number of spatial neighbour samples for ReSTIR DI");
+	static TAutoConsoleVariable<Float> ReSTIR_DI_SpatialRadius("r.ReSTIR_DI.SpatialRadius", 30.0f, "Spatial sampling search radius for ReSTIR DI");
+
 	struct ReSTIR_DI_Reservoir
 	{
 		Uint32 light_index;
@@ -19,6 +37,8 @@ namespace adria
 		Float  M;
 	};
 
+
+	Bool ReSTIR_DI::IsEnabled() const { return supported && ReSTIR_DI_Enable.Get(); }
 
 	ReSTIR_DI::ReSTIR_DI(GfxDevice* gfx, Uint32 width, Uint32 height) : gfx(gfx), width(width), height(height)
 	{
@@ -46,7 +66,7 @@ namespace adria
 
 	void ReSTIR_DI::GUI()
 	{
-		if (!supported) 
+		if (!supported)
 		{
 			return;
 		}
@@ -55,17 +75,13 @@ namespace adria
 			{
 				if (ImGui::TreeNode("ReSTIR DI"))
 				{
-					ImGui::Checkbox("Enable", &enable);
-					static Int current_resampling_mode = static_cast<Int>(resampling_mode);
-					if (ImGui::Combo("Resampling mode", &current_resampling_mode, "None\0Temporal\0Spatial\0TemporalAndSpatial\0FusedTemporalSpatial", 5))
-					{
-						resampling_mode = static_cast<ResamplingMode>(current_resampling_mode);
-					}
-					ImGui::SliderFloat("Max Temporal M", &max_temporal_M, 1.0f, 50.0f);
-					ImGui::SliderFloat("Temporal Depth Threshold", &temporal_depth_threshold, 0.01f, 0.5f);
-					ImGui::SliderFloat("Temporal Normal Threshold", &temporal_normal_threshold, 0.0f, 1.0f);
-					ImGui::SliderInt("Spatial Samples", (Int*)&spatial_sample_count, 1, 16);
-					ImGui::SliderFloat("Spatial Radius", &spatial_radius, 1.0f, 100.0f);
+					ImGui::Checkbox("Enable", ReSTIR_DI_Enable.GetPtr());
+					ImGui::Combo("Resampling mode", ReSTIR_DI_ResamplingMode.GetPtr(), "None\0Temporal\0Spatial\0TemporalAndSpatial\0FusedTemporalSpatial", 4);
+					ImGui::SliderFloat("Max Temporal M", ReSTIR_DI_MaxTemporalM.GetPtr(), 1.0f, 50.0f);
+					ImGui::SliderFloat("Temporal Depth Threshold", ReSTIR_DI_TemporalDepthThreshold.GetPtr(), 0.01f, 0.5f);
+					ImGui::SliderFloat("Temporal Normal Threshold", ReSTIR_DI_TemporalNormalThreshold.GetPtr(), 0.0f, 1.0f);
+					ImGui::SliderInt("Spatial Samples", ReSTIR_DI_SpatialSampleCount.GetPtr(), 1, 16);
+					ImGui::SliderFloat("Spatial Radius", ReSTIR_DI_SpatialRadius.GetPtr(), 1.0f, 100.0f);
 					ImGui::TreePop();
 				}
 			}, GUICommandGroup_Renderer);
@@ -73,7 +89,7 @@ namespace adria
 
 	void ReSTIR_DI::AddPasses(RenderGraph& rg)
 	{
-		if (!supported || !enable)
+		if (!supported || !ReSTIR_DI_Enable.Get())
 		{
 			history_valid = false;
 			return;
@@ -84,6 +100,7 @@ namespace adria
 
 		AddInitialSamplingPass(rg);
 
+		ResamplingMode resampling_mode = static_cast<ResamplingMode>(ReSTIR_DI_ResamplingMode.Get());
 		Bool uses_temporal = (resampling_mode == ResamplingMode::Temporal || resampling_mode == ResamplingMode::TemporalAndSpatial);
 		Bool uses_spatial  = (resampling_mode == ResamplingMode::Spatial  || resampling_mode == ResamplingMode::TemporalAndSpatial);
 
@@ -189,9 +206,9 @@ namespace adria
 					.albedo_idx = ctx.GetReadOnlyTextureIndex(data.albedo),
 					.reservoir_idx = ctx.GetReadWriteBufferIndex(data.reservoir),
 					.prev_reservoir_idx = ctx.GetReadOnlyBufferIndex(data.prev_reservoir),
-					.max_temporal_M = max_temporal_M,
-					.depth_threshold = temporal_depth_threshold,
-					.normal_threshold = temporal_normal_threshold,
+					.max_temporal_M = ReSTIR_DI_MaxTemporalM.Get(),
+					.depth_threshold = ReSTIR_DI_TemporalDepthThreshold.Get(),
+					.normal_threshold = ReSTIR_DI_TemporalNormalThreshold.Get(),
 				};
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);
@@ -242,8 +259,8 @@ namespace adria
 					.albedo_idx = ctx.GetReadOnlyTextureIndex(data.albedo),
 					.input_reservoir_idx = ctx.GetReadOnlyBufferIndex(data.input_reservoir),
 					.output_reservoir_idx = ctx.GetReadWriteBufferIndex(data.output_reservoir),
-					.spatial_sample_count = spatial_sample_count,
-					.spatial_radius = spatial_radius,
+					.spatial_sample_count = (Uint32)ReSTIR_DI_SpatialSampleCount.Get(),
+					.spatial_radius = ReSTIR_DI_SpatialRadius.Get(),
 				};
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, parameters);
