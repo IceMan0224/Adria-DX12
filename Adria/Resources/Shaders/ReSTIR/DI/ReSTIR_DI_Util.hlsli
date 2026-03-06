@@ -16,6 +16,7 @@ struct ReSTIR_DI_Reservoir
 ReSTIR_DI_Reservoir ReSTIR_DI_EmptyDIReservoir()
 {
     ReSTIR_DI_Reservoir r = (ReSTIR_DI_Reservoir)0;
+    r.lightIndex = ReSTIR_InvalidLightIndex;
     return r;
 }
 
@@ -200,7 +201,7 @@ ReSTIR_DI_Reservoir ReSTIR_DI_SampleLocalLights(inout RNG rng, Surface surface, 
     }
 
     ReSTIR_DI_Reservoir state = ReSTIR_DI_EmptyDIReservoir();
-    const uint localLightSamples = 4;
+    const uint localLightSamples = 8;
     for (uint i = 0; i < localLightSamples; i++)
     {
         uint lightIndex;
@@ -211,7 +212,7 @@ ReSTIR_DI_Reservoir ReSTIR_DI_SampleLocalLights(inout RNG rng, Surface surface, 
         ReSTIR_DI_StreamLocalLightAtUVIntoReservoir(rng, surface, lightIndex, uv, invSourcePdf, lightInfo, state, lightSample);
     }
 
-    ReSTIR_DI_FinalizeResampling(state, 1.0, 1); // sampleParams.numMisSamples
+    ReSTIR_DI_FinalizeResampling(state, 1.0, localLightSamples);
     state.M = 1;
     return state;
 }
