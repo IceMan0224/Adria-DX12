@@ -125,6 +125,7 @@ namespace adria
 		ShadowRenderer shadow_renderer;
 		PostProcessor postprocessor;
 		DDGIPass 	  ddgi;
+		ReSTIR_DI     restir_di;
 		PathTracingPass path_tracer;
 		RendererDebugViewPass renderer_debug_view_pass;
 		GpuPrintf gpu_printf;

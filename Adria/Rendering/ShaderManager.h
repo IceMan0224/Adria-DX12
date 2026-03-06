@@ -123,6 +123,7 @@ namespace adria
 		CS_ReSTIR_DI_InitialSampling,
 		CS_ReSTIR_DI_TemporalResampling,
 		CS_ReSTIR_DI_SpatialResampling,
+		CS_ReSTIR_DI_Output,
 		LIB_DDGIRayTracing,
 		CS_DDGIRayTrace,
 		LIB_Shadows,

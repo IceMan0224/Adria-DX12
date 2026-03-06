@@ -140,9 +140,14 @@ void ReSTIR_DI_RandomlySelectLight(
 {
     lightIndex = 0;
     invSourcePdf = 0.0f;
+    lightInfo = (LightInfo)0;
+    if (lightCount == 0) 
+    {
+        return;
+    }
     float rnd = RNG_GetNext(rng);
     invSourcePdf = float(lightCount);
-    lightIndex = 1 + min(uint(floor(rnd * lightCount)), lightCount - 1);
+    lightIndex = min(uint(floor(rnd * lightCount)), lightCount - 1);
     lightInfo = LoadLightInfo(lightIndex);
 }
 
@@ -157,15 +162,10 @@ bool ReSTIR_DI_StreamLocalLightAtUVIntoReservoir(
     inout LightSample selectedSample)
 {
     LightSample candidateSample = ReSTIR_SampleLight(lightInfo, surface, uv);
-    float blendedSourcePdf = 0.5f; //LightBrdfMisWeight();
-    float targetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(candidateSample, surface);
+    float targetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(candidateSample, lightInfo, surface);
     float risRnd = RNG_GetNext(rng);
-    if (blendedSourcePdf == 0)
-    {
-        return false;
-    }
-    bool selected = ReSTIR_DI_StreamSample(state, lightIndex, uv, risRnd, targetPdf, 1.0 / blendedSourcePdf);
-    if (selected) 
+    bool selected = ReSTIR_DI_StreamSample(state, lightIndex, uv, risRnd, targetPdf, invSourcePdf);
+    if (selected)
     {
         selectedSample = candidateSample;
     }
@@ -183,7 +183,7 @@ void ReSTIR_DI_StreamInfiniteLightAtUVIntoReservoir(
     inout LightSample selectedSample)
 {
     LightSample candidateSample = ReSTIR_SampleLight(lightInfo, surface, uv);
-    float targetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(candidateSample, surface);
+    float targetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(candidateSample, lightInfo, surface);
     float risRnd = RNG_GetNext(rng);
     bool selected = ReSTIR_DI_StreamSample(state, lightIndex, uv, risRnd, targetPdf, invSourcePdf);
     if (selected)
@@ -194,11 +194,10 @@ void ReSTIR_DI_StreamInfiniteLightAtUVIntoReservoir(
 
 ReSTIR_DI_Reservoir ReSTIR_DI_SampleLocalLights(inout RNG rng, Surface surface, out LightSample lightSample)
 {
-    if (FrameCB.lightCount <= 1) //we assume that the only directional light is at 0, and all others are locals
+    if (FrameCB.lightCount == 0)
     {
         return ReSTIR_DI_EmptyDIReservoir();
     }
-    const uint localLightCount = FrameCB.lightCount - 1;
 
     ReSTIR_DI_Reservoir state = ReSTIR_DI_EmptyDIReservoir();
     const uint localLightSamples = 4;
@@ -207,7 +206,7 @@ ReSTIR_DI_Reservoir ReSTIR_DI_SampleLocalLights(inout RNG rng, Surface surface, 
         uint lightIndex;
         LightInfo lightInfo;
         float invSourcePdf;
-        ReSTIR_DI_RandomlySelectLight(rng, localLightCount, lightInfo, lightIndex, invSourcePdf);
+        ReSTIR_DI_RandomlySelectLight(rng, FrameCB.lightCount, lightInfo, lightIndex, invSourcePdf);
         float2 uv = ReSTIR_RandomlySelectLocalLightUV(rng);
         ReSTIR_DI_StreamLocalLightAtUVIntoReservoir(rng, surface, lightIndex, uv, invSourcePdf, lightInfo, state, lightSample);
     }
@@ -222,94 +221,31 @@ ReSTIR_DI_Reservoir ReSTIR_DI_SampleInfiniteLights(inout RNG rng, Surface surfac
     lightSample = EmptyLightSample();
 
     if (FrameCB.lightCount == 0)
-        return state;
-
-    const uint infiniteLightSamples = 1;
-    for (uint i = 0; i < infiniteLightSamples; i++)
     {
-        float invSourcePdf;
-        uint lightIndex;
-        LightInfo lightInfo;
-
-        ReSTIR_DI_RandomlySelectLight(rng, 1, lightInfo, lightIndex, invSourcePdf);
-        float2 uv = ReSTIR_RandomlySelectInfiniteLightUV(rng);
-        ReSTIR_DI_StreamInfiniteLightAtUVIntoReservoir(rng, lightInfo, surface, lightIndex, uv, invSourcePdf, state, lightSample);
+        return state;
     }
 
+    LightInfo lightInfo = LoadLightInfo(0);
+    if (lightInfo.type != DIRECTIONAL_LIGHT)
+    {
+        return state;
+    }
+
+    float invSourcePdf = 1.0f;
+    float2 uv = ReSTIR_RandomlySelectInfiniteLightUV(rng);
+    ReSTIR_DI_StreamInfiniteLightAtUVIntoReservoir(rng, lightInfo, surface, 0, uv, invSourcePdf, state, lightSample);
     ReSTIR_DI_FinalizeResampling(state, 1.0, state.M);
     state.M = 1;
     return state;
 }
+// BRDF sampling: traces a ray in a BRDF-importance-sampled direction to find emissive geometry.
+// This is only useful with emissive mesh lights (triangle lights) or environment maps.
+// With analytic lights only (point/spot/directional), the target PDF already handles BRDF weighting
+// during initial light sampling, so this returns an empty reservoir.
 ReSTIR_DI_Reservoir ReSTIR_DI_SampleBrdf(inout RNG rng, Surface surface, out LightSample lightSample)
 {
+    lightSample = EmptyLightSample();
     ReSTIR_DI_Reservoir state = ReSTIR_DI_EmptyDIReservoir();
-    const uint brdfLightSamples = 1;
-    for (uint i = 0; i < brdfLightSamples; ++i)
-    {
-        float lightSourcePdf = 0;
-        float3 sampleDir;
-        uint lightIndex = ReSTIR_InvalidLightIndex;
-        float2 randXY = float2(0, 0);
-        LightSample candidateSample = EmptyLightSample();
-        
-        //if (GetSurfaceBrdfSample(surface, rng, sampleDir))
-        //{
-        //    float brdfPdf = RAB_GetSurfaceBrdfPdf(surface, sampleDir);
-        //    float maxDistance = RTXDI_BrdfMaxDistanceFromPdf(sampleParams.brdfCutoff, brdfPdf);
-        //    
-        //    bool hitAnything = RAB_TraceRayForLocalLight(RAB_GetSurfaceWorldPos(surface), sampleDir,
-        //        sampleParams.brdfRayMinT, maxDistance, lightIndex, randXY);
-        //
-        //    if (lightIndex != ReSTIR_InvalidLightIndex)
-        //    {
-        //        LightInfo lightInfo = LoadLightInfo(lightIndex);
-        //        candidateSample = RAB_SamplePolymorphicLight(lightInfo, surface, randXY);
-        //            
-        //        if (sampleParams.brdfCutoff > 0.f)
-        //        {
-        //            // If Mis cutoff is used, we need to evaluate the sample and make sure it actually could have been
-        //            // generated by the area sampling technique. This is due to numerical precision.
-        //            float3 lightDir;
-        //            float lightDistance;
-        //            RAB_GetLightDirDistance(surface, candidateSample, lightDir, lightDistance);
-        //
-        //            float brdfPdf = RAB_GetSurfaceBrdfPdf(surface, lightDir);
-        //            float maxDistance = RTXDI_BrdfMaxDistanceFromPdf(sampleParams.brdfCutoff, brdfPdf);
-        //            if (lightDistance > maxDistance)
-        //                lightIndex = RTXDI_InvalidLightIndex;
-        //        }
-        //
-        //        if (lightIndex != ReSTIR_InvalidLightIndex)
-        //        {
-        //            lightSourcePdf = RAB_EvaluateLocalLightSourcePdf(lightIndex);
-        //        }
-        //    }
-        //    else if (!hitAnything && (lightBufferParams.environmentLightParams.lightPresent != 0))
-        //    {
-        //        // sample environment light
-        //        //TODO
-        //    }
-        //}
-        //
-        //if (lightSourcePdf == 0)
-        //{
-        //    // Did not hit a visible light
-        //    continue;
-        //}
-        //
-        //bool isEnvMapSample = lightIndex == lightBufferParams.environmentLightParams.lightIndex;
-        //float targetPdf = RAB_GetLightSampleTargetPdfForSurface(candidateSample, surface);
-        //float blendedSourcePdf = RTXDI_LightBrdfMisWeight(surface, candidateSample, lightSourcePdf,
-        //    isEnvMapSample ? sampleParams.environmentMapMisWeight : sampleParams.localLightMisWeight, 
-        //    isEnvMapSample,
-        //    sampleParams);
-        //float risRnd = RNG_GetNext(rng);
-        //bool selected = ReSTIR_DI_StreamSample(state, lightIndex, randXY, risRnd, targetPdf, 1.0f / blendedSourcePdf);
-        //if (selected) 
-        //{
-        //    lightSample = candidateSample;
-        //}
-    }
     ReSTIR_DI_FinalizeResampling(state, 1.0, 1.0);
     state.M = 1;
     return state;
@@ -320,20 +256,20 @@ ReSTIR_DI_Reservoir ReSTIR_DI_SampleLightsForSurface(inout RNG rng, Surface surf
     lightSample = EmptyLightSample();
 
     LightSample localSample = EmptyLightSample();
-    ReSTIR_DI_Reservoir localReservoir = ReSTIR_DI_SampleLocalLights(rng, surface, lightSample);
+    ReSTIR_DI_Reservoir localReservoir = ReSTIR_DI_SampleLocalLights(rng, surface, localSample);
 
-    LightSample infiniteSample = EmptyLightSample();  
-    ReSTIR_DI_Reservoir infiniteReservoir = ReSTIR_DI_SampleInfiniteLights(rng, surface, lightSample);
+    LightSample infiniteSample = EmptyLightSample();
+    ReSTIR_DI_Reservoir infiniteReservoir = ReSTIR_DI_SampleInfiniteLights(rng, surface, infiniteSample);
 
     LightSample brdfSample = EmptyLightSample();
-    ReSTIR_DI_Reservoir brdfReservoir = ReSTIR_DI_SampleBrdf(rng, surface, lightSample);
+    ReSTIR_DI_Reservoir brdfReservoir = ReSTIR_DI_SampleBrdf(rng, surface, brdfSample);
 
     ReSTIR_DI_Reservoir state = ReSTIR_DI_EmptyDIReservoir();
-    ReSTIR_DI_CombineReservoirs(state, localReservoir, 0.5, localReservoir.targetPdf);
+    ReSTIR_DI_CombineReservoirs(state, localReservoir, RNG_GetNext(rng), localReservoir.targetPdf);
 
     bool selectInfinite = ReSTIR_DI_CombineReservoirs(state, infiniteReservoir, RNG_GetNext(rng), infiniteReservoir.targetPdf);
     bool selectBrdf = ReSTIR_DI_CombineReservoirs(state, brdfReservoir, RNG_GetNext(rng), brdfReservoir.targetPdf);
-    
+
     ReSTIR_DI_FinalizeResampling(state, 1.0, 1.0);
     state.M = 1;
 
@@ -347,14 +283,21 @@ void ReSTIR_DI_StoreReservoir(
     const ReSTIR_DI_Reservoir reservoir,
     uint2 pixelPosition, uint reservoirBufferIdx)
 {
-    uint flattenIndex = pixelPosition.x * FrameCB.renderResolution.x + pixelPosition.y;
+    uint flattenIndex = pixelPosition.y * (uint)FrameCB.renderResolution.x + pixelPosition.x;
     RWStructuredBuffer<ReSTIR_DI_Reservoir> reservoirBuffer = ResourceDescriptorHeap[reservoirBufferIdx];
     reservoirBuffer[flattenIndex] = reservoir;
 }
 
 ReSTIR_DI_Reservoir ReSTIR_DI_LoadReservoir(uint2 pixelPosition, uint reservoirBufferIdx)
 {
-    uint flattenIndex = pixelPosition.x * FrameCB.renderResolution.x + pixelPosition.y;
+    uint flattenIndex = pixelPosition.y * (uint)FrameCB.renderResolution.x + pixelPosition.x;
     StructuredBuffer<ReSTIR_DI_Reservoir> reservoirBuffer = ResourceDescriptorHeap[reservoirBufferIdx];
+    return reservoirBuffer[flattenIndex];
+}
+
+ReSTIR_DI_Reservoir ReSTIR_DI_LoadReservoirRW(uint2 pixelPosition, uint reservoirBufferIdx)
+{
+    uint flattenIndex = pixelPosition.y * (uint)FrameCB.renderResolution.x + pixelPosition.x;
+    RWStructuredBuffer<ReSTIR_DI_Reservoir> reservoirBuffer = ResourceDescriptorHeap[reservoirBufferIdx];
     return reservoirBuffer[flattenIndex];
 }

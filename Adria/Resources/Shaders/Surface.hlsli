@@ -55,9 +55,8 @@ Surface GetSurface(uint2 pixelCoords, uint albedoIdx, uint normalIdx, uint depth
 	float4 normalRTData = normalRT[pixelCoords];
 	DecodeGBufferNormalRT(normalRTData, viewNormal, metallic, shadingExtension);
 
-    viewNormal = 2.0f * viewNormal - 1.0f;
-    surface.worldNormal = normalize(mul(viewNormal, (float3x3)FrameCB.view));
-    surface.worldPos = GetWorldPosition(FullScreenPosition(pixelCoords), surface.depth);
+    surface.worldNormal = normalize(mul(viewNormal, (float3x3)transpose(FrameCB.view)));
+    surface.worldPos = GetWorldPosition(pixelCoords, surface.depth);
     surface.viewDir = normalize(FrameCB.cameraPosition - surface.worldPos);
 
     float4 albedoRoughness = albedoRT[pixelCoords];

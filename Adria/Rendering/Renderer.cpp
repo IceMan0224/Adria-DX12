@@ -43,7 +43,7 @@ namespace adria
 		postprocessor(gfx, reg, width, height), picking_pass(gfx, width, height), clustered_deferred_lighting_pass(reg, gfx, width, height),
 		decals_pass(reg, gfx, width, height), rain_pass(reg, gfx, width, height), ocean_renderer(reg, gfx, width, height),
 		shadow_renderer(reg, gfx, width, height), renderer_debug_view_pass(gfx, width, height),
-		path_tracer(reg, gfx, width, height), ddgi(gfx, reg, width, height),  gpu_printf(gfx), gpu_assert(gfx),
+		path_tracer(reg, gfx, width, height), ddgi(gfx, reg, width, height), restir_di(gfx, width, height), gpu_printf(gfx), gpu_assert(gfx),
 		transparent_pass(reg, gfx, width, height), ray_tracing_supported(gfx->GetCapabilities().SupportsHardwareRayTracing()),
 		volumetric_fog_manager(gfx, reg, width, height)
 	{
@@ -137,6 +137,7 @@ namespace adria
 			ocean_renderer.OnResize(w, h);
 			shadow_renderer.OnResize(w, h);
 			ddgi.OnResize(w, h);
+			restir_di.OnResize(w, h);
 			rain_pass.OnResize(w, h);
 			volumetric_fog_manager.OnResize(w, h);
 		}
@@ -601,6 +602,8 @@ namespace adria
 		}
 		decals_pass.AddPass(render_graph);
 		postprocessor.AddAmbientOcclusionPass(render_graph);
+		restir_di.AddPasses(render_graph);
+		if (!restir_di.IsEnabled())
 		{
 			RG_SCOPE(render_graph, "Shadows");
 			shadow_renderer.AddShadowMapPasses(render_graph);
@@ -673,6 +676,7 @@ namespace adria
 			path_tracer.GUI();
 		}
 		shadow_renderer.GUI();
+		restir_di.GUI();
 		ocean_renderer.GUI();
 		sky_pass.GUI();
 		rain_pass.GUI();

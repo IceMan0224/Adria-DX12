@@ -642,10 +642,11 @@ namespace adria
 					skip_batch = !bounding_objects[matrix_index].GetBox().Intersects(batch->bounding_box);
 					break;
 				case LightType::Spot:
-				case LightType::Point:
 					ADRIA_ASSERT(bounding_objects[matrix_index].type == BoundingObject::Frustum);
 					skip_batch = !bounding_objects[matrix_index].GetFrustum().Intersects(batch->bounding_box);
 					break;
+				case LightType::Point:
+					break; 
 				default:
 					ADRIA_ASSERT(false);
 				}

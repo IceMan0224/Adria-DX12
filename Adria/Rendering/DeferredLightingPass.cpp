@@ -29,6 +29,7 @@ namespace adria
 			RGTextureReadOnlyId  gbuffer_custom;
 			RGTextureReadOnlyId  depth;
 			RGTextureReadOnlyId  ambient_occlusion;
+			RGTextureReadOnlyId  restir_di_output;
 			RGTextureReadWriteId output;
 		};
 
@@ -59,6 +60,15 @@ namespace adria
 					data.ambient_occlusion.Invalidate();
 				}
 
+				if (builder.IsTextureDeclared(RG_NAME(ReSTIR_DI_Output)))
+				{
+					data.restir_di_output = builder.ReadTexture(RG_NAME(ReSTIR_DI_Output), ReadAccess_NonPixelShader);
+				}
+				else
+				{
+					data.restir_di_output.Invalidate();
+				}
+
 				for (RGResourceName shadow_texture : shadow_textures)
 				{
 					std::ignore = builder.ReadTexture(shadow_texture);
@@ -81,6 +91,7 @@ namespace adria
 					Uint32 depth_idx;
 					Uint32 ao_idx;
 					Uint32 output_idx;
+					Int32  restir_di_output_idx;
 				} constants =
 				{
 					.normal_metallic_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_normal),
@@ -89,7 +100,8 @@ namespace adria
 					.custom_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_custom),
 					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
 					.ao_idx = data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTextureIndex(data.ambient_occlusion) : GfxCommon::GetCommonViewBindlessIndex(GfxCommonViewType::WhiteTexture2D_SRV),
-					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output),
+					.restir_di_output_idx = data.restir_di_output.IsValid() ? (Int32)ctx.GetReadOnlyTextureIndex(data.restir_di_output) : -1
 				};
 
 				cmd_list->SetPipelineState(deferred_lighting_pso->Get());

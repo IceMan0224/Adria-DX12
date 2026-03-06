@@ -93,8 +93,16 @@ LightSample CalculateLightSample(in const LightInfo lightInfo, in float2 randomU
     LightSample lightSample = EmptyLightSample();
     switch (lightInfo.type)
     {
-    case DIRECTIONAL_LIGHT:      break;
-    case POINT_LIGHT:            
+    case DIRECTIONAL_LIGHT:
+    {
+        float3 lightDir = normalize(-lightInfo.direction.xyz);
+        lightSample.position = viewerPosition + lightDir * 100000.0f;
+        lightSample.normal = -lightDir;
+        lightSample.radiance = lightInfo.color.rgb;
+        lightSample.solidAnglePdf = 1.0f;
+        break;
+    }
+    case POINT_LIGHT:
     case SPOT_LIGHT:             lightSample = PointLight::Create(lightInfo).CalculateSample(viewerPosition); break;
     }
 

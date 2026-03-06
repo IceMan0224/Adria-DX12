@@ -15,6 +15,11 @@ ConstantBuffer<IntialSamplingConstants> IntialSamplingCB : register(b1);
 [numthreads(16, 16, 1)]
 void InitialSamplingCS( uint3 DTid : SV_DispatchThreadID )
 {
+    if (any(DTid.xy >= (uint2)FrameCB.renderResolution)) 
+    {
+        return;
+    }
+
     Surface surface = GetSurface(DTid.xy, IntialSamplingCB.albedoIdx, IntialSamplingCB.normalIdx, IntialSamplingCB.depthIdx);
     if (surface.depth == 0.0f) 
     {
@@ -22,7 +27,7 @@ void InitialSamplingCS( uint3 DTid : SV_DispatchThreadID )
         ReSTIR_DI_StoreReservoir(emptyReservoir, DTid.xy, IntialSamplingCB.reservoirBufferIdx);
         return;
     }
-    RNG rng = RNG_Initialize(DTid.x + DTid.y * 16, 0, 16);
+    RNG rng = RNG_Initialize(DTid.x + DTid.y * (uint)FrameCB.renderResolution.x, FrameCB.frameCount, 16);
     
     LightSample lightSample = EmptyLightSample();
     ReSTIR_DI_Reservoir finalReservoir = ReSTIR_DI_SampleLightsForSurface(rng, surface, lightSample);

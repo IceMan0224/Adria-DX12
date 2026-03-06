@@ -12,6 +12,7 @@ struct DeferredLightingConstants
 	uint depthIdx;
 	uint aoIdx;
 	uint outputIdx;
+	int  restirDIOutputIdx;
 };
 ConstantBuffer<DeferredLightingConstants> DeferredLightingPassCB : register(b1);
 
@@ -52,12 +53,21 @@ void DeferredLightingCS(CSInput input)
 	
 	BrdfData brdfData = GetBrdfData(albedo, metallic, roughness);
 	float3 directLighting = 0.0f;
-	for (uint i = 0; i < FrameCB.lightCount; ++i)
+	if (DeferredLightingPassCB.restirDIOutputIdx >= 0)
 	{
-		LightInfo lightInfo = LoadLightInfo(i); 
-		if (!lightInfo.active) continue;
-        directLighting += DoLight(shadingExtension, lightInfo, brdfData, viewPosition, viewNormal, V, uv, customData);
-    }
+		// ReSTIR DI handles all light types (point, spot, directional)
+		Texture2D<float4> restirDIOutput = ResourceDescriptorHeap[DeferredLightingPassCB.restirDIOutputIdx];
+		directLighting += restirDIOutput[input.DispatchThreadId.xy].rgb;
+	}
+	else
+	{
+		for (uint i = 0; i < FrameCB.lightCount; ++i)
+		{
+			LightInfo lightInfo = LoadLightInfo(i);
+			if (!lightInfo.active) continue;
+			directLighting += DoLight(shadingExtension, lightInfo, brdfData, viewPosition, viewNormal, V, uv, customData);
+		}
+	}
 
 	float ambientOcclusion = ambientOcclusionTexture.SampleLevel(LinearWrapSampler, uv, 0);
 	float3 indirectLighting = GetIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion);

@@ -94,6 +94,9 @@ namespace adria
 		void PushEvent(Char const* name);
 		void PopEvent();
 
+		Bool IsTextureDeclared(RGResourceName);
+		Bool IsBufferDeclared(RGResourceName);
+
 		void Dump(Char const* graph_file_name);
 		void DumpDebugData();
 
@@ -143,9 +146,6 @@ namespace adria
 		
 		RGTextureId DeclareTexture(RGResourceName name, RGTextureDesc const& desc);
 		RGBufferId DeclareBuffer(RGResourceName name, RGBufferDesc const& desc);
-
-		Bool IsTextureDeclared(RGResourceName);
-		Bool IsBufferDeclared(RGResourceName);
 
 		Bool IsValidTextureHandle(RGTextureId) const;
 		Bool IsValidBufferHandle(RGBufferId) const;
