@@ -103,6 +103,10 @@ namespace adria
 		TextureHandle point_light_icon = INVALID_TEXTURE_HANDLE;
 		TextureHandle spot_light_icon = INVALID_TEXTURE_HANDLE;
 
+		TextureHandle translate_icon = INVALID_TEXTURE_HANDLE;
+		TextureHandle rotate_icon = INVALID_TEXTURE_HANDLE;
+		TextureHandle scale_icon = INVALID_TEXTURE_HANDLE;
+
 	private:
 		Editor();
 		~Editor();

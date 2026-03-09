@@ -82,6 +82,10 @@ namespace adria
 		directional_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/directional_light.png");
 		point_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/point_light.png");
 		spot_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/spot_light.png");
+
+		translate_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/translate.png");
+		rotate_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/rotate.png");
+		scale_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/scale.png");
 	}
 	void Editor::Shutdown()
 	{
@@ -1112,6 +1116,60 @@ namespace adria
 			v_max.y += ImGui::GetWindowPos().y;
 			ImVec2 size(v_max.x - v_min.x, v_max.y - v_min.y);
 			gui->ShowImage(final_texture, size);
+
+			{
+				static constexpr Float GIZMO_ICON_SIZE = 32.0f;
+				static constexpr Float GIZMO_ICON_PADDING = 4.0f;
+				ImVec2 toolbar_pos(v_min.x + 8.0f, v_min.y + 8.0f);
+
+				ImGui::SetCursorScreenPos(toolbar_pos);
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(GIZMO_ICON_PADDING, 0));
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 0.85f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.9f));
+
+				struct { TextureHandle handle; ImGuizmo::OPERATION op; Char const* tooltip; } gizmo_buttons[] =
+				{
+					{ translate_icon, ImGuizmo::TRANSLATE, "Translate (1)" },
+					{ rotate_icon,    ImGuizmo::ROTATE,    "Rotate (2)" },
+					{ scale_icon,     ImGuizmo::SCALE,     "Scale (3)" },
+				};
+
+				for (auto const& btn : gizmo_buttons)
+				{
+					GfxTexture* tex = g_TextureManager.GetTexture(btn.handle);
+					if (!tex) 
+					{
+						continue;
+					}
+
+					ImTextureID tex_id = gui->GetImTextureID(*tex);
+					Bool is_active = (gizmo_operation == btn.op);
+					if (is_active)
+					{
+						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.7f, 0.9f));
+					}
+
+					if (ImGui::ImageButton(btn.tooltip, tex_id, ImVec2(GIZMO_ICON_SIZE, GIZMO_ICON_SIZE)))
+					{
+						gizmo_operation = btn.op;
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("%s", btn.tooltip);
+					}
+
+					if (is_active)
+					{
+						ImGui::PopStyleColor();
+					}
+
+					ImGui::SameLine();
+				}
+
+				ImGui::PopStyleColor(2);
+				ImGui::PopStyleVar(2);
+			}
 
 			Matrix view = engine->camera->View();
 			Matrix proj = XMMatrixPerspectiveFovLH(engine->camera->Fov(), engine->camera->AspectRatio(), engine->camera->Far(), engine->camera->Near());
