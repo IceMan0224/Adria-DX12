@@ -79,6 +79,10 @@ namespace adria
 		ImGui_ImplOSX_NewFrame(content_view);
 		ImGui_ImplMetal_NewFrame(render_pass_desc);
 
+		ImGuiIO& io = ImGui::GetIO();
+		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+		io.DisplaySize = ImVec2((Float)backbuffer->GetWidth(), (Float)backbuffer->GetHeight());
+
 		ImGui::NewFrame();
 	}
 

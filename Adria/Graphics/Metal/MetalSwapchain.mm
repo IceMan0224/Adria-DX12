@@ -15,22 +15,21 @@ namespace adria
             NSWindow* nsWindow = (__bridge NSWindow*)window_handle;
             NSView* contentView = [nsWindow contentView];
 
-            CGFloat scale = [nsWindow backingScaleFactor];
-
             metal_layer = [CAMetalLayer layer];
             metal_layer.device = (__bridge id<MTLDevice>)gfx->GetNative();
-            metal_layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+            metal_layer.pixelFormat = MTLPixelFormatRGBA8Unorm;
             metal_layer.framebufferOnly = NO;
 
-            metal_layer.drawableSize = CGSizeMake(w * scale, h * scale);
+            metal_layer.drawableSize = CGSizeMake(w, h);
+            metal_layer.contentsScale = 1.0;
 
             [contentView setLayer:metal_layer];
             [contentView setWantsLayer:YES];
 
             GfxTextureDesc texture_desc{};
-            texture_desc.width = static_cast<Uint32>(w * scale);
-            texture_desc.height = static_cast<Uint32>(h * scale);
-            texture_desc.format = GfxFormat::B8G8R8A8_UNORM;
+            texture_desc.width = w;
+            texture_desc.height = h;
+            texture_desc.format = GfxFormat::R8G8B8A8_UNORM;
             texture_desc.bind_flags = GfxBindFlag::RenderTarget;
 
             for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
@@ -65,17 +64,16 @@ namespace adria
             height = h;
 
             NSWindow* nsWindow = (__bridge NSWindow*)gfx->GetWindowHandle();
-            CGFloat scale = nsWindow ? [nsWindow backingScaleFactor] : 1.0;
-
             NSView* contentView = [nsWindow contentView];
             metal_layer.frame = [contentView bounds];
 
-            metal_layer.drawableSize = CGSizeMake(w * scale, h * scale);
+            metal_layer.drawableSize = CGSizeMake(w, h);
+            metal_layer.contentsScale = 1.0;
 
             GfxTextureDesc texture_desc{};
-            texture_desc.width = static_cast<Uint32>(w * scale);
-            texture_desc.height = static_cast<Uint32>(h * scale);
-            texture_desc.format = GfxFormat::B8G8R8A8_UNORM;
+            texture_desc.width = w;
+            texture_desc.height = h;
+            texture_desc.format = GfxFormat::R8G8B8A8_UNORM;
             texture_desc.bind_flags = GfxBindFlag::RenderTarget;
 
             for (Uint32 i = 0; i < GFX_BACKBUFFER_COUNT; ++i)
