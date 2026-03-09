@@ -87,6 +87,8 @@ namespace adria
 			blases[i] = gfx->CreateRayTracingBLAS(geometry_span.subspan(i, 1), GfxRayTracingASFlag_PreferFastTrace);
 			cmd_list->BuildRayTracingBLAS(blases[i].get());
 		}
+		cmd_list->GlobalBarrier(GfxResourceState::ASWrite, GfxResourceState::ASRead);
+		cmd_list->FlushBarriers();
 	}
 
 	void AccelerationStructure::BuildTopLevel()
