@@ -57,6 +57,7 @@ namespace adria
 		void Shutdown();
 
 		void OnWindowEvent(WindowEventInfo const& msg_data);
+		void OnSceneInitialized();
 		void Run();
 		void EndFrame();
 		Bool IsActive() const;

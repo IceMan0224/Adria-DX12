@@ -78,14 +78,6 @@ namespace adria
 		SetStyle_Default();
 		fs::create_directory(paths::PixCapturesDir);
 		fs::create_directory(paths::RenderDocCapturesDir);
-
-		directional_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/directional_light.png");
-		point_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/point_light.png");
-		spot_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/spot_light.png");
-
-		translate_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/translate.png");
-		rotate_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/rotate.png");
-		scale_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/scale.png");
 	}
 	void Editor::Shutdown()
 	{
@@ -97,6 +89,17 @@ namespace adria
 	{
 		if(engine) engine->OnWindowEvent(msg_data);
 		if(gui) gui->OnWindowEvent(msg_data);
+	}
+
+	void Editor::OnSceneInitialized()
+	{
+		directional_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/directional_light.png");
+		point_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/point_light.png");
+		spot_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/spot_light.png");
+
+		translate_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/translate.png");
+		rotate_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/rotate.png");
+		scale_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/scale.png");
 	}
 
 	void Editor::Run()

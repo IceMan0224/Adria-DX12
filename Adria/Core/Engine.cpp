@@ -16,6 +16,7 @@
 #include "Utilities/Timer.h"
 #include "Utilities/StringConversions.h"
 #include "Editor/EditorEvents.h"
+#include "Editor/Editor.h"
 
 
 namespace adria
@@ -164,6 +165,7 @@ namespace adria
 			}
 
 			renderer->OnSceneInitialized();
+			g_Editor.OnSceneInitialized();
 		}
 		cmd_list->End();
 		cmd_list->Submit();
