@@ -81,6 +81,12 @@ void SpatialResamplingCS( uint3 DTid : SV_DispatchThreadID )
 			float2 neighborSampleUV = ReSTIR_DI_GetSampleUV(neighborReservoir);
 			LightSample neighborLightSample = ReSTIR_SampleLight(neighborLightInfo, surface, neighborSampleUV);
 			neighborTargetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(neighborLightSample, neighborLightInfo, surface);
+
+			if (neighborTargetPdf > 0.0f && neighborLightInfo.shadowMaskIndex >= 0
+				&& !TraceShadowRay(neighborLightInfo, surface.worldPos, FrameCB.inverseView))
+			{
+				neighborTargetPdf = 0.0f;
+			}
 		}
 		ReSTIR_DI_CombineReservoirs(combined, neighborReservoir, RNG_GetNext(rng), neighborTargetPdf);
 	}

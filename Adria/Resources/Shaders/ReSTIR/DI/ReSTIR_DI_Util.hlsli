@@ -271,7 +271,7 @@ ReSTIR_DI_Reservoir ReSTIR_DI_SampleLightsForSurface(inout RNG rng, Surface surf
     bool selectInfinite = ReSTIR_DI_CombineReservoirs(state, infiniteReservoir, RNG_GetNext(rng), infiniteReservoir.targetPdf);
     bool selectBrdf = ReSTIR_DI_CombineReservoirs(state, brdfReservoir, RNG_GetNext(rng), brdfReservoir.targetPdf);
 
-    ReSTIR_DI_FinalizeResampling(state, 1.0, 1.0);
+    ReSTIR_DI_FinalizeResampling(state, 1.0, state.M);
     state.M = 1;
 
     if (selectBrdf) lightSample = brdfSample;

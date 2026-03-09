@@ -20,13 +20,13 @@ Graphics engine written in C++ with DirectX12 and Metal backends.
 * Variable Rate Shading (FFX)
 * Volumetric lighting: Raymarching, Fog volumes
 * Tiled/Clustered deferred rendering 
+* ReSTIR DI 
 * Shadows
     - PCF shadows for directional, spot and point lights and cascade shadow maps for directional lights
     - Ray traced shadows (DXR)
 * Volumetric clouds
 * Hosek-Wilkie sky
 * FFT Ocean
-* ReSTIR DI (wip)
 * Automatic exposure
 * Bloom
 * Rain
