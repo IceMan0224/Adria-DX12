@@ -26,7 +26,7 @@ Graphics engine written in C++ with DirectX12 and Metal backends.
 * Volumetric clouds
 * Hosek-Wilkie sky
 * FFT Ocean
-* Terrain (wip)
+* ReSTIR DI (wip)
 * Automatic exposure
 * Bloom
 * Rain
