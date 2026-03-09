@@ -22,6 +22,7 @@ namespace adria
 		virtual void OnWindowEvent(WindowEventInfo const&) const = 0;
 
 		virtual void ShowImage(GfxTexture const& final_texture, ImVec2 image_size = ImVec2(48.0f, 48.0f)) = 0;
+		virtual ImTextureID GetImTextureID(GfxTexture const& texture) = 0;
 	};
 
 	std::unique_ptr<ImGuiManager> CreateImguiManager(GfxDevice* gfx);

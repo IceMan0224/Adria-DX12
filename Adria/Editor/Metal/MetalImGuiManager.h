@@ -20,6 +20,7 @@ namespace adria
 		virtual Bool IsVisible() const override;
 
 		virtual void ShowImage(GfxTexture const& final_texture, ImVec2 image_size) override;
+		virtual ImTextureID GetImTextureID(GfxTexture const& texture) override;
 		virtual void OnWindowEvent(WindowEventInfo const&) const override;
 
 	private:

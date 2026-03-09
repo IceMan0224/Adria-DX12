@@ -15,6 +15,7 @@
 #include "Rendering/DebugRenderer.h"
 #include "Rendering/HierarchySystem.h"
 #include "Rendering/Components.h"
+#include "Rendering/TextureManager.h"
 #include "Rendering/HelperPasses.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxCommandList.h"
@@ -77,6 +78,10 @@ namespace adria
 		SetStyle_Default();
 		fs::create_directory(paths::PixCapturesDir);
 		fs::create_directory(paths::RenderDocCapturesDir);
+
+		directional_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/directional_light.png");
+		point_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/point_light.png");
+		spot_light_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/spot_light.png");
 	}
 	void Editor::Shutdown()
 	{
@@ -1095,6 +1100,7 @@ namespace adria
 					}
 					ImGui::EndMenu();
 				}
+				ImGui::MenuItem("Light Icons", nullptr, &show_light_icons);
 				ImGui::EndMenuBar();
 			}
 
@@ -1107,63 +1113,197 @@ namespace adria
 			ImVec2 size(v_max.x - v_min.x, v_max.y - v_min.y);
 			gui->ShowImage(final_texture, size);
 
+			Matrix view = engine->camera->View();
+			Matrix proj = XMMatrixPerspectiveFovLH(engine->camera->Fov(), engine->camera->AspectRatio(), engine->camera->Far(), engine->camera->Near());
+			entt::entity icon_hovered_entity = entt::null;
+			if (show_light_icons)
+			{
+				static constexpr Float LIGHT_ICON_SIZE = 48.0f;
+				static constexpr Float LIGHT_ICON_HALF = LIGHT_ICON_SIZE * 0.5f;
+
+				Matrix view_proj = view * proj;
+				ImDrawList* draw_list = ImGui::GetWindowDrawList();
+				ImVec2 mouse_pos = ImGui::GetMousePos();
+
+				auto light_view = engine->reg.view<Light>();
+				for (entt::entity entity : light_view)
+				{
+					Light const& light = light_view.get<Light>(entity);
+					if (!light.active) continue;
+
+					Vector3 light_pos(light.position.x, light.position.y, light.position.z);
+
+					Vector4 clip = Vector4::Transform(Vector4(light_pos.x, light_pos.y, light_pos.z, 1.0f), view_proj);
+					if (clip.w <= 0.0f) 
+					{
+						continue; 
+					}
+
+					Float ndc_x = clip.x / clip.w;
+					Float ndc_y = clip.y / clip.w;
+					Float screen_x = v_min.x + (ndc_x * 0.5f + 0.5f) * size.x;
+					Float screen_y = v_min.y + (-ndc_y * 0.5f + 0.5f) * size.y;
+					if (screen_x < v_min.x - LIGHT_ICON_HALF || screen_x > v_max.x + LIGHT_ICON_HALF ||
+						screen_y < v_min.y - LIGHT_ICON_HALF || screen_y > v_max.y + LIGHT_ICON_HALF)
+					{
+						continue;
+					}
+
+					TextureHandle icon_handle = INVALID_TEXTURE_HANDLE;
+					switch (light.type)
+					{
+					case LightType::Directional: icon_handle = directional_light_icon; break;
+					case LightType::Point:       icon_handle = point_light_icon; break;
+					case LightType::Spot:        icon_handle = spot_light_icon; break;
+					}
+
+					GfxTexture* icon_texture = g_TextureManager.GetTexture(icon_handle);
+					if (!icon_texture) 
+					{
+						continue;
+					}
+
+					ImTextureID tex_id = gui->GetImTextureID(*icon_texture);
+					ImVec2 icon_min(screen_x - LIGHT_ICON_HALF, screen_y - LIGHT_ICON_HALF);
+					ImVec2 icon_max(screen_x + LIGHT_ICON_HALF, screen_y + LIGHT_ICON_HALF);
+
+					ImU32 tint = (entity == selected_entity) ? IM_COL32(255, 200, 50, 255) : IM_COL32(255, 255, 255, 200);
+					draw_list->AddImage(tex_id, icon_min, icon_max, ImVec2(0, 0), ImVec2(1, 1), tint);
+
+					if (mouse_pos.x >= icon_min.x && mouse_pos.x <= icon_max.x &&
+						mouse_pos.y >= icon_min.y && mouse_pos.y <= icon_max.y)
+					{
+						icon_hovered_entity = entity;
+					}
+				}
+			}
+
 			ImGuizmo::BeginFrame();
 			ImGuizmo::SetDrawlist();
 			ImGuizmo::SetRect(v_min.x, v_min.y, size.x, size.y);
 
 			if (selected_entity != entt::null && engine->reg.valid(selected_entity) && engine->reg.all_of<Transform>(selected_entity))
 			{
-				Matrix view = engine->camera->View();
-				Matrix proj = XMMatrixPerspectiveFovLH(engine->camera->Fov(), engine->camera->AspectRatio(), engine->camera->Far(), engine->camera->Near());
-
+				Light* light = engine->reg.try_get<Light>(selected_entity);
 				Transform& transform = engine->reg.get<Transform>(selected_entity);
 				Matrix world = transform.current_transform;
 
-				// Compute bounding box center as gizmo pivot for entities with mesh references
-				Vector3 pivot = Vector3::Zero;
-				NodeMeshRef const* node_ref = engine->reg.try_get<NodeMeshRef>(selected_entity);
-				if (node_ref)
+				if (light)
 				{
-					Mesh const* mesh = engine->reg.try_get<Mesh>(node_ref->mesh_entity);
-					if (mesh && node_ref->first_instance_index < (Uint32)mesh->instances.size())
+					Vector3 light_pos(light->position.x, light->position.y, light->position.z);
+					Matrix gizmo_world = Matrix::Identity;
+
+					if (light->type == LightType::Point)
 					{
-						Uint32 submesh_idx = mesh->instances[node_ref->first_instance_index].submesh_index;
-						if (submesh_idx < (Uint32)mesh->submeshes.size())
+						gizmo_world = Matrix::CreateTranslation(light_pos);
+					}
+					else
+					{
+						Vector3 dir(light->direction.x, light->direction.y, light->direction.z);
+						dir.Normalize();
+						Vector3 up = (fabsf(dir.y) < 0.99f) ? Vector3::UnitY : Vector3::UnitX;
+						Vector3 right = up.Cross(dir);
+						right.Normalize();
+						up = dir.Cross(right);
+						up.Normalize();
+
+						Matrix rot;
+						rot._11 = right.x; rot._12 = right.y; rot._13 = right.z; rot._14 = 0.0f;
+						rot._21 = up.x;    rot._22 = up.y;    rot._23 = up.z;    rot._24 = 0.0f;
+						rot._31 = dir.x;   rot._32 = dir.y;   rot._33 = dir.z;   rot._34 = 0.0f;
+						rot._41 = 0.0f;    rot._42 = 0.0f;    rot._43 = 0.0f;    rot._44 = 1.0f;
+
+						gizmo_world = rot * Matrix::CreateTranslation(light_pos);
+					}
+
+					Matrix delta = Matrix::Identity;
+					if (ImGuizmo::Manipulate(&view._11, &proj._11, gizmo_operation, gizmo_mode, &gizmo_world._11, &delta._11, use_snap ? snap_value : nullptr))
+					{
+						Vector3 new_pos(gizmo_world._41, gizmo_world._42, gizmo_world._43);
+						if (light->type == LightType::Directional)
 						{
-							pivot = Vector3(mesh->submeshes[submesh_idx].bounding_box.Center.x,
-											mesh->submeshes[submesh_idx].bounding_box.Center.y,
-											mesh->submeshes[submesh_idx].bounding_box.Center.z);
+							if (gizmo_operation == ImGuizmo::TRANSLATE)
+							{
+								Vector3 dir = -new_pos;
+								dir.Normalize();
+								light->direction = Vector4(dir.x, dir.y, dir.z, 0.0f);
+								light->position = -light->direction * 1e3;
+							}
+							else if (gizmo_operation == ImGuizmo::ROTATE)
+							{
+								Vector3 new_dir(gizmo_world._31, gizmo_world._32, gizmo_world._33);
+								new_dir.Normalize();
+								light->direction = Vector4(new_dir.x, new_dir.y, new_dir.z, 0.0f);
+								light->position = -light->direction * 1e3;
+							}
 						}
+						else if (light->type == LightType::Spot)
+						{
+							light->position = Vector4(new_pos.x, new_pos.y, new_pos.z, 1.0f);
+							if (gizmo_operation == ImGuizmo::ROTATE)
+							{
+								Vector3 new_dir(gizmo_world._31, gizmo_world._32, gizmo_world._33);
+								new_dir.Normalize();
+								light->direction = Vector4(new_dir.x, new_dir.y, new_dir.z, 0.0f);
+							}
+						}
+						else 
+						{
+							light->position = Vector4(new_pos.x, new_pos.y, new_pos.z, 1.0f);
+						}
+
+						transform.local_transform = Matrix::CreateTranslation(Vector3(light->position.x, light->position.y, light->position.z));
+						editor_events.light_changed_event.Broadcast();
 					}
 				}
-
-				// Build gizmo matrix positioned at pivot point (bounding box center in world space)
-				Vector3 world_pivot = Vector3::Transform(pivot, world);
-				Matrix gizmo_world = world;
-				gizmo_world._41 = world_pivot.x;
-				gizmo_world._42 = world_pivot.y;
-				gizmo_world._43 = world_pivot.z;
-
-				Matrix delta = Matrix::Identity;
-				if (ImGuizmo::Manipulate(&view._11, &proj._11, gizmo_operation, gizmo_mode, &gizmo_world._11, &delta._11, use_snap ? snap_value : nullptr))
+				else
 				{
-					Matrix new_world = world * delta;
-					if (engine->reg.all_of<Relationship>(selected_entity))
+					// Compute bounding box center as gizmo pivot for entities with mesh references
+					Vector3 pivot = Vector3::Zero;
+					NodeMeshRef const* node_ref = engine->reg.try_get<NodeMeshRef>(selected_entity);
+					if (node_ref)
 					{
-						Relationship const& rel = engine->reg.get<Relationship>(selected_entity);
-						if (rel.parent != entt::null && engine->reg.all_of<Transform>(rel.parent))
+						Mesh const* mesh = engine->reg.try_get<Mesh>(node_ref->mesh_entity);
+						if (mesh && node_ref->first_instance_index < (Uint32)mesh->instances.size())
 						{
-							Matrix parent_world = engine->reg.get<Transform>(rel.parent).current_transform;
-							transform.local_transform = new_world * parent_world.Invert();
+							Uint32 submesh_idx = mesh->instances[node_ref->first_instance_index].submesh_index;
+							if (submesh_idx < (Uint32)mesh->submeshes.size())
+							{
+								pivot = Vector3(mesh->submeshes[submesh_idx].bounding_box.Center.x,
+												mesh->submeshes[submesh_idx].bounding_box.Center.y,
+												mesh->submeshes[submesh_idx].bounding_box.Center.z);
+							}
+						}
+					}
+
+					// Build gizmo matrix positioned at pivot point (bounding box center in world space)
+					Vector3 world_pivot = Vector3::Transform(pivot, world);
+					Matrix gizmo_world = world;
+					gizmo_world._41 = world_pivot.x;
+					gizmo_world._42 = world_pivot.y;
+					gizmo_world._43 = world_pivot.z;
+
+					Matrix delta = Matrix::Identity;
+					if (ImGuizmo::Manipulate(&view._11, &proj._11, gizmo_operation, gizmo_mode, &gizmo_world._11, &delta._11, use_snap ? snap_value : nullptr))
+					{
+						Matrix new_world = world * delta;
+						if (engine->reg.all_of<Relationship>(selected_entity))
+						{
+							Relationship const& rel = engine->reg.get<Relationship>(selected_entity);
+							if (rel.parent != entt::null && engine->reg.all_of<Transform>(rel.parent))
+							{
+								Matrix parent_world = engine->reg.get<Transform>(rel.parent).current_transform;
+								transform.local_transform = new_world * parent_world.Invert();
+							}
+							else
+							{
+								transform.local_transform = new_world;
+							}
 						}
 						else
 						{
 							transform.local_transform = new_world;
 						}
-					}
-					else
-					{
-						transform.local_transform = new_world;
 					}
 				}
 			}
@@ -1180,11 +1320,19 @@ namespace adria
 
 			if (ImGui::IsWindowHovered() && !ImGuizmo::IsUsing() && g_Input.IsKeyDown(KeyCode::MouseRight))
 			{
-				PickingData const pd = engine->renderer->GetPickingData();
-				entt::entity picked = static_cast<entt::entity>(pd.entity_id);
-				entt::entity resolved = engine->reg.valid(picked) ? picked : entt::null;
-				selected_entity = (resolved != entt::null && resolved == selected_entity) ? entt::null : resolved;
-				scroll_to_selected = true;
+				if (icon_hovered_entity != entt::null)
+				{
+					selected_entity = (icon_hovered_entity == selected_entity) ? entt::null : icon_hovered_entity;
+					scroll_to_selected = true;
+				}
+				else
+				{
+					PickingData const pd = engine->renderer->GetPickingData();
+					entt::entity picked = static_cast<entt::entity>(pd.entity_id);
+					entt::entity resolved = engine->reg.valid(picked) ? picked : entt::null;
+					selected_entity = (resolved != entt::null && resolved == selected_entity) ? entt::null : resolved;
+					scroll_to_selected = true;
+				}
 			}
 		}
 		ImGui::End();

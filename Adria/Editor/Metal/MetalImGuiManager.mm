@@ -113,12 +113,18 @@ namespace adria
 
 	void MetalImGuiManager::ShowImage(GfxTexture const& final_texture, ImVec2 image_size)
 	{
-		MetalTexture const* metal_texture = static_cast<MetalTexture const*>(&final_texture);
-		id<MTLTexture> mtl_texture = metal_texture->GetMetalTexture();
-		if (mtl_texture)
+		ImTextureID tex_id = GetImTextureID(final_texture);
+		if (tex_id != (ImTextureID)0)
 		{
-			ImGui::Image((ImTextureID)(Intptr)mtl_texture, image_size);
+			ImGui::Image(tex_id, image_size);
 		}
+	}
+
+	ImTextureID MetalImGuiManager::GetImTextureID(GfxTexture const& texture)
+	{
+		MetalTexture const* metal_texture = static_cast<MetalTexture const*>(&texture);
+		id<MTLTexture> mtl_texture = metal_texture->GetMetalTexture();
+		return mtl_texture ? (ImTextureID)(Intptr)mtl_texture : (ImTextureID)0;
 	}
 
 	void MetalImGuiManager::OnWindowEvent(WindowEventInfo const& msg_data) const

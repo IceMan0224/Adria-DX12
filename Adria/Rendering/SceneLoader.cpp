@@ -145,6 +145,13 @@ namespace adria
             reg.emplace<Tag>(light, "Point Light");
             break;
         }
+
+		if (!reg.all_of<Transform>(light))
+		{
+			Matrix translation_matrix = Matrix::CreateTranslation(Vector3(&params.light_data.position.x));
+			reg.emplace<Transform>(light, translation_matrix);
+		}
+
         return light;
     }
 

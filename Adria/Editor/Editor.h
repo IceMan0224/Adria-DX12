@@ -3,6 +3,7 @@
 #include "EditorEvents.h"
 #include "ImGuizmo.h"
 #include "Graphics/GfxTimestampProfilerFwd.h"
+#include "Rendering/TextureHandle.h"
 #include "Rendering/ViewportData.h"
 #include "Utilities/Singleton.h"
 #include "entt/entity/fwd.hpp"
@@ -96,6 +97,11 @@ namespace adria
 		ImGuizmo::MODE gizmo_mode = ImGuizmo::WORLD;
 		Bool use_snap = false;
 		Float snap_value[3] = {1.0f, 1.0f, 1.0f};
+
+		Bool show_light_icons = true;
+		TextureHandle directional_light_icon = INVALID_TEXTURE_HANDLE;
+		TextureHandle point_light_icon = INVALID_TEXTURE_HANDLE;
+		TextureHandle spot_light_icon = INVALID_TEXTURE_HANDLE;
 
 	private:
 		Editor();

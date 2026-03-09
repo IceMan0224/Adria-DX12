@@ -104,9 +104,14 @@ namespace adria
 
 	void D3D12ImGuiManager::ShowImage(GfxTexture const& final_texture, ImVec2 image_size)
 	{
-		D3D12Descriptor dst_descriptor = imgui_allocator->Allocate(); 
-		d3d12_gfx->GetD3D12Device()->CreateShaderResourceView((ID3D12Resource*)final_texture.GetNative(), nullptr, ToD3D12CPUHandle(dst_descriptor));
-		ImGui::Image((ImTextureID)ToD3D12GPUHandle(dst_descriptor).ptr, image_size);
+		ImGui::Image(GetImTextureID(final_texture), image_size);
+	}
+
+	ImTextureID D3D12ImGuiManager::GetImTextureID(GfxTexture const& texture)
+	{
+		D3D12Descriptor dst_descriptor = imgui_allocator->Allocate();
+		d3d12_gfx->GetD3D12Device()->CreateShaderResourceView((ID3D12Resource*)texture.GetNative(), nullptr, ToD3D12CPUHandle(dst_descriptor));
+		return (ImTextureID)ToD3D12GPUHandle(dst_descriptor).ptr;
 	}
 
 	void D3D12ImGuiManager::OnWindowEvent(WindowEventInfo const& msg_data) const
