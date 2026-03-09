@@ -315,66 +315,6 @@ namespace adria
 
 		if (ImGui::Begin(ICON_FA_WAND_MAGIC_SPARKLES " Spawn", &visibility_flags[Flag_Spawn]))
 		{
-			if (ImGui::TreeNodeEx("Point Lights", 0))
-			{
-				static Int light_count_to_add = 1;
-				ImGui::SliderInt("Light Count", &light_count_to_add, 1, 128);
-				if (ImGui::Button("Create Random Point Lights"))
-				{
-					static RealRandomGenerator real(0.0f, 1.0f);
-
-					for (Int32 i = 0; i < light_count_to_add; ++i)
-					{
-						LightParameters light_params{};
-						light_params.light_data.casts_shadows = false;
-						light_params.light_data.color = Vector4(real() * 2, real() * 2, real() * 2, 1.0f);
-						light_params.light_data.direction = Vector4(0.5f, -1.0f, 0.1f, 0.0f);
-						light_params.light_data.position = Vector4(real() * 200 - 100, real() * 200.0f, real() * 200 - 100, 1.0f);
-						light_params.light_data.type = LightType::Point;
-						light_params.mesh_type = LightMesh::NoMesh;
-						light_params.light_data.range = real() * 100.0f + 40.0f;
-						light_params.light_data.active = true;
-						light_params.light_data.volumetric = false;
-						light_params.light_data.volumetric_strength = 0.004f;
-						engine->scene_loader->LoadLight(light_params);
-					}
-				}
-				ImGui::TreePop();
-				ImGui::Separator();
-			}
-			if (ImGui::TreeNodeEx("Spot Lights", 0))
-			{
-				static Int light_count_to_add = 1;
-				ImGui::SliderInt("Light Count", &light_count_to_add, 1, 128);
-				if (ImGui::Button("Create Random Spot Lights"))
-				{
-					static RealRandomGenerator real(0.0f, 1.0f);
-
-					for (Int32 i = 0; i < light_count_to_add; ++i)
-					{
-						LightParameters light_params{};
-						light_params.light_data.casts_shadows = false;
-						light_params.light_data.inner_cosine = real();
-						light_params.light_data.outer_cosine = real();
-						light_params.light_data.color = Vector4(real() * 2, real() * 2, real() * 2, 1.0f);
-						light_params.light_data.direction = Vector4(0.5f, -1.0f, 0.1f, 0.0f);
-						light_params.light_data.position = Vector4(real() * 200 - 100, real() * 200.0f, real() * 200 - 100, 1.0f);
-						light_params.light_data.type = LightType::Spot;
-						light_params.mesh_type = LightMesh::NoMesh;
-						light_params.light_data.range = real() * 100.0f + 40.0f;
-						light_params.light_data.active = true;
-						light_params.light_data.volumetric = false;
-						light_params.light_data.volumetric_strength = 0.004f;
-						if (light_params.light_data.inner_cosine > light_params.light_data.outer_cosine)
-						{
-							std::swap(light_params.light_data.inner_cosine, light_params.light_data.outer_cosine);
-						}
-						engine->scene_loader->LoadLight(light_params);
-					}
-				}
-				ImGui::TreePop();
-				ImGui::Separator();
-			}
 			if (ImGui::TreeNodeEx("Ocean", 0))
 			{
 				static GridParameters ocean_params{};
@@ -416,7 +356,7 @@ namespace adria
 				static TerrainParameters terrain_params{};
 				static Float terrain_dims[2] = { 1024.0f, 1024.0f };
 				static Float height_scale = 100.0f;
-				static Int heightmap_source = 0; 
+				static Int heightmap_source = 0;
 
 				ImGui::SliderFloat2("Dimensions", terrain_dims, 64.0f, 4096.0f);
 				ImGui::SliderFloat("Height Scale##terrain", &height_scale, 0.0f, 500.0f);
@@ -551,6 +491,60 @@ namespace adria
 				ImGui::TreePop();
 				ImGui::Separator();
 			}
+
+			if (ImGui::TreeNodeEx("Stress Test", 0))
+			{
+				static Int point_light_count = 1;
+				ImGui::SliderInt("Point Light Count", &point_light_count, 1, 128);
+				if (ImGui::Button("Spawn Random Point Lights"))
+				{
+					static RealRandomGenerator real(0.0f, 1.0f);
+					for (Int32 i = 0; i < point_light_count; ++i)
+					{
+						LightParameters light_params{};
+						light_params.light_data.casts_shadows = false;
+						light_params.light_data.color = Vector4(real() * 2, real() * 2, real() * 2, 1.0f);
+						light_params.light_data.direction = Vector4(0.5f, -1.0f, 0.1f, 0.0f);
+						light_params.light_data.position = Vector4(real() * 200 - 100, real() * 200.0f, real() * 200 - 100, 1.0f);
+						light_params.light_data.type = LightType::Point;
+						light_params.mesh_type = LightMesh::NoMesh;
+						light_params.light_data.range = real() * 100.0f + 40.0f;
+						light_params.light_data.active = true;
+						light_params.light_data.volumetric = false;
+						light_params.light_data.volumetric_strength = 0.004f;
+						engine->scene_loader->LoadLight(light_params);
+					}
+				}
+
+				static Int spot_light_count = 1;
+				ImGui::SliderInt("Spot Light Count", &spot_light_count, 1, 128);
+				if (ImGui::Button("Spawn Random Spot Lights"))
+				{
+					static RealRandomGenerator real(0.0f, 1.0f);
+					for (Int32 i = 0; i < spot_light_count; ++i)
+					{
+						LightParameters light_params{};
+						light_params.light_data.casts_shadows = false;
+						light_params.light_data.inner_cosine = real();
+						light_params.light_data.outer_cosine = real();
+						light_params.light_data.color = Vector4(real() * 2, real() * 2, real() * 2, 1.0f);
+						light_params.light_data.direction = Vector4(0.5f, -1.0f, 0.1f, 0.0f);
+						light_params.light_data.position = Vector4(real() * 200 - 100, real() * 200.0f, real() * 200 - 100, 1.0f);
+						light_params.light_data.type = LightType::Spot;
+						light_params.mesh_type = LightMesh::NoMesh;
+						light_params.light_data.range = real() * 100.0f + 40.0f;
+						light_params.light_data.active = true;
+						light_params.light_data.volumetric = false;
+						light_params.light_data.volumetric_strength = 0.004f;
+						if (light_params.light_data.inner_cosine > light_params.light_data.outer_cosine)
+						{
+							std::swap(light_params.light_data.inner_cosine, light_params.light_data.outer_cosine);
+						}
+						engine->scene_loader->LoadLight(light_params);
+					}
+				}
+				ImGui::TreePop();
+			}
 		}
 		ImGui::End();
 	}
@@ -564,6 +558,66 @@ namespace adria
 		auto& reg = engine->reg;
 		if (ImGui::Begin(ICON_FA_SITEMAP" Entities ", &visibility_flags[Flag_Entities]))
 		{
+			if (ImGui::Button(ICON_FA_PLUS " Add"))
+			{
+				ImGui::OpenPopup("AddEntityPopup");
+			}
+			if (ImGui::BeginPopup("AddEntityPopup"))
+			{
+				Vector3 cam_pos = engine->camera->Position();
+				Vector3 cam_fwd = engine->camera->Forward();
+				Vector3 spawn_pos = cam_pos + cam_fwd * 20.0f;
+
+				if (ImGui::MenuItem(ICON_FA_SUN " Directional Light"))
+				{
+					LightParameters params{};
+					params.light_data.type = LightType::Directional;
+					params.light_data.color = Vector4(1.0f, 1.0f, 0.9f, 1.0f);
+					params.light_data.direction = Vector4(0.0f, -1.0f, 0.3f, 0.0f);
+					params.light_data.intensity = 5.0f;
+					params.light_data.active = true;
+					params.light_data.casts_shadows = true;
+					params.light_data.use_cascades = true;
+					params.mesh_type = LightMesh::NoMesh;
+					entt::entity e = engine->scene_loader->LoadLight(params);
+					selected_entity = e;
+					scroll_to_selected = true;
+				}
+				if (ImGui::MenuItem(ICON_FA_LIGHTBULB " Point Light"))
+				{
+					LightParameters params{};
+					params.light_data.type = LightType::Point;
+					params.light_data.color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+					params.light_data.position = Vector4(spawn_pos.x, spawn_pos.y, spawn_pos.z, 1.0f);
+					params.light_data.intensity = 5.0f;
+					params.light_data.range = 100.0f;
+					params.light_data.active = true;
+					params.mesh_type = LightMesh::NoMesh;
+					entt::entity e = engine->scene_loader->LoadLight(params);
+					selected_entity = e;
+					scroll_to_selected = true;
+				}
+				if (ImGui::MenuItem(ICON_FA_BOLT " Spot Light"))
+				{
+					LightParameters params{};
+					params.light_data.type = LightType::Spot;
+					params.light_data.color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+					params.light_data.position = Vector4(spawn_pos.x, spawn_pos.y, spawn_pos.z, 1.0f);
+					params.light_data.direction = Vector4(cam_fwd.x, cam_fwd.y, cam_fwd.z, 0.0f);
+					params.light_data.intensity = 5.0f;
+					params.light_data.range = 100.0f;
+					params.light_data.inner_cosine = 0.9f;
+					params.light_data.outer_cosine = 0.8f;
+					params.light_data.active = true;
+					params.mesh_type = LightMesh::NoMesh;
+					entt::entity e = engine->scene_loader->LoadLight(params);
+					selected_entity = e;
+					scroll_to_selected = true;
+				}
+				ImGui::EndPopup();
+			}
+
+			ImGui::Separator();
 			std::unordered_set<entt::entity> ancestors;
 			if (scroll_to_selected && selected_entity != entt::null)
 			{
@@ -620,6 +674,12 @@ namespace adria
 						{
 							UnsetParent(reg, e);
 						}
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem(ICON_FA_TRASH " Delete"))
+					{
+						if (selected_entity == e) selected_entity = entt::null;
+						reg.destroy(e);
 					}
 					ImGui::EndPopup();
 				}
