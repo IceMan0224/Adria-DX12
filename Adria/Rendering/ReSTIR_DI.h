@@ -21,7 +21,10 @@ namespace adria
 		void OnResize(Uint32 w, Uint32 h)
 		{
 			width = w, height = h;
+			prev_reservoir_buffer.reset();
+			reservoir_buffer.reset();
 			CreateBuffers();
+			history_valid = false;
 		}
 		Bool IsSupported() const { return supported; }
 		Bool IsEnabled() const;
