@@ -75,6 +75,12 @@ void TemporalResamplingCS( uint3 DTid : SV_DispatchThreadID )
 		float2 prevSampleUV = ReSTIR_DI_GetSampleUV(prevReservoir);
 		LightSample prevLightSample = ReSTIR_SampleLight(prevLightInfo, surface, prevSampleUV);
 		prevTargetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(prevLightSample, prevLightInfo, surface);
+
+		if (prevTargetPdf > 0.0f && prevLightInfo.shadowMaskIndex >= 0
+			&& !TraceShadowRay(prevLightInfo, surface.worldPos, FrameCB.inverseView))
+		{
+			prevTargetPdf = 0.0f;
+		}
 	}
 
 	RNG rng = RNG_Initialize(DTid.x + DTid.y * (uint)FrameCB.renderResolution.x, FrameCB.frameCount * 3 + 1, 16);
@@ -83,7 +89,28 @@ void TemporalResamplingCS( uint3 DTid : SV_DispatchThreadID )
 	float currentTargetPdf = currentReservoir.targetPdf;
 	ReSTIR_DI_CombineReservoirs(combined, currentReservoir, RNG_GetNext(rng), currentTargetPdf);
 	ReSTIR_DI_CombineReservoirs(combined, prevReservoir, RNG_GetNext(rng), prevTargetPdf);
+
+#ifdef RESTIR_DI_BIAS_CORRECTION_OFF
 	ReSTIR_DI_FinalizeResampling(combined, 1.0, combined.M);
+#else
+	// basic bias correction from rtxdi: count M only from surfaces where selected sample has non-zero target PDF
+	float selectedMDenom = 0.0f;
+	uint selectedLight = ReSTIR_DI_GetLightIndex(combined);
+	if (selectedLight != ReSTIR_InvalidLightIndex && selectedLight < (uint)FrameCB.lightCount)
+	{
+		LightInfo selectedLightInfo = LoadLightInfo(selectedLight);
+		float2 selectedUV = ReSTIR_DI_GetSampleUV(combined);
+
+		LightSample lsAtCurrent = ReSTIR_SampleLight(selectedLightInfo, surface, selectedUV);
+		if (ReSTIR_GetLightSampleTargetPdfForSurface(lsAtCurrent, selectedLightInfo, surface) > 0.0f)
+			selectedMDenom += currentReservoir.M;
+
+		LightSample lsAtPrev = ReSTIR_SampleLight(selectedLightInfo, prevSurface, selectedUV);
+		if (ReSTIR_GetLightSampleTargetPdfForSurface(lsAtPrev, selectedLightInfo, prevSurface) > 0.0f)
+			selectedMDenom += prevReservoir.M;
+	}
+	ReSTIR_DI_FinalizeResampling(combined, 1.0, max(selectedMDenom, 0.001f));
+#endif
 
 	ReSTIR_DI_StoreReservoir(combined, DTid.xy, TemporalResamplingCB.reservoirIdx);
 }
