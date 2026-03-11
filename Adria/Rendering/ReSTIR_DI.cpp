@@ -16,8 +16,7 @@ namespace adria
 		None = 0,
 		Temporal = 1,
 		Spatial = 2,
-		TemporalAndSpatial = 3,
-		FusedTemporalSpatial = 4
+		TemporalAndSpatial = 3
 	};
 
 	static TAutoConsoleVariable<Bool>  ReSTIR_DI_Enable("r.ReSTIR_DI.Enable", false, "Enables or disables ReSTIR DI");
@@ -76,7 +75,7 @@ namespace adria
 				if (ImGui::TreeNode("ReSTIR DI"))
 				{
 					ImGui::Checkbox("Enable", ReSTIR_DI_Enable.GetPtr());
-					ImGui::Combo("Resampling mode", ReSTIR_DI_ResamplingMode.GetPtr(), "None\0Temporal\0Spatial\0TemporalAndSpatial\0FusedTemporalSpatial", 4);
+					ImGui::Combo("Resampling mode", ReSTIR_DI_ResamplingMode.GetPtr(), "None\0Temporal\0Spatial\0TemporalAndSpatial\0", 4);
 					ImGui::SliderFloat("Max Temporal M", ReSTIR_DI_MaxTemporalM.GetPtr(), 1.0f, 50.0f);
 					ImGui::SliderFloat("Temporal Depth Threshold", ReSTIR_DI_TemporalDepthThreshold.GetPtr(), 0.01f, 0.5f);
 					ImGui::SliderFloat("Temporal Normal Threshold", ReSTIR_DI_TemporalNormalThreshold.GetPtr(), 0.0f, 1.0f);
@@ -99,20 +98,22 @@ namespace adria
 		rg.ImportBuffer(RG_NAME(ReSTIR_DI_PrevReservoir), prev_reservoir_buffer.get());
 
 		AddInitialSamplingPass(rg);
-
 		ResamplingMode resampling_mode = static_cast<ResamplingMode>(ReSTIR_DI_ResamplingMode.Get());
 		Bool uses_temporal = (resampling_mode == ResamplingMode::Temporal || resampling_mode == ResamplingMode::TemporalAndSpatial);
 		Bool uses_spatial  = (resampling_mode == ResamplingMode::Spatial  || resampling_mode == ResamplingMode::TemporalAndSpatial);
-
 		if (resampling_mode != ResamplingMode::None)
 		{
-			if (uses_temporal && history_valid) AddTemporalResamplingPass(rg);
-			if (uses_spatial) AddSpatialResamplingPass(rg);
-			if (resampling_mode == ResamplingMode::FusedTemporalSpatial) AddFusedTemporalSpatialResamplingPass(rg);
+			if (uses_temporal && history_valid) 
+			{
+				AddTemporalResamplingPass(rg);
+			}
+			if (uses_spatial) 
+			{
+				AddSpatialResamplingPass(rg);
+			}
 		}
 
-		Bool spatial_ran = uses_spatial || resampling_mode == ResamplingMode::FusedTemporalSpatial;
-		AddOutputPass(rg, spatial_ran);
+		AddOutputPass(rg, uses_spatial);
 		if (!uses_spatial)
 		{
 			std::swap(prev_reservoir_buffer, reservoir_buffer);
@@ -267,16 +268,6 @@ namespace adria
 				cmd_list->SetPipelineState(spatial_resampling_pso->Get());
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::Compute);
-	}
-
-	void ReSTIR_DI::AddFusedTemporalSpatialResamplingPass(RenderGraph& rg)
-	{
-		// No dedicated fused shader exists; fall back to temporal + spatial
-		if (history_valid) 
-		{
-			AddTemporalResamplingPass(rg);
-		}
-		AddSpatialResamplingPass(rg);
 	}
 
 	void ReSTIR_DI::AddOutputPass(RenderGraph& rg, Bool spatial_ran)

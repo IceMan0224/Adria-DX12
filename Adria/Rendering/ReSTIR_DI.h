@@ -48,7 +48,6 @@ namespace adria
 		void AddInitialSamplingPass(RenderGraph& rg);
 		void AddTemporalResamplingPass(RenderGraph& rg);
 		void AddSpatialResamplingPass(RenderGraph& rg);
-		void AddFusedTemporalSpatialResamplingPass(RenderGraph& rg);
 		void AddOutputPass(RenderGraph& rg, Bool spatial_ran);
 
 		void CreateBuffers();
