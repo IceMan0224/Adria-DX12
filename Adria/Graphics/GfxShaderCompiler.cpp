@@ -13,9 +13,7 @@
 #include "Utilities/Hash.h"
 #include "Utilities/Ref.h"
 #include "Utilities/DynamicLibrary.h"
-#include "cereal/archives/binary.hpp"
-#include "cereal/types/string.hpp"
-#include "cereal/types/vector.hpp"
+#include "Utilities/BinarySerializer.h"
 
 namespace adria
 {
@@ -221,17 +219,20 @@ namespace adria
 				return false;
 			}
 
-			std::ifstream is(cache_metadata, std::ios::binary);
-			cereal::BinaryInputArchive metadata_archive(is);
+			BinaryFileReader metadata_reader(cache_metadata);
+			if (!metadata_reader.IsValid()) 
+			{
+				return false;
+			}
 
-			metadata_archive(output.shader_hash);
-			metadata_archive(output.includes);
 			Uint64 binary_size = 0;
-			metadata_archive(binary_size);
+			metadata_reader.Read(output.shader_hash);
+			metadata_reader.Read(output.includes);
+			metadata_reader.Read(binary_size);
 
 #if defined(ADRIA_PLATFORM_MACOS)
 			Uint64 reflection_size = 0;
-			metadata_archive(reflection_size);
+			metadata_reader.Read(reflection_size);
 #endif
 
 			for (std::string const& include : output.includes)
@@ -242,11 +243,14 @@ namespace adria
 				}
 			}
 
-			std::ifstream is2(cache_binary, std::ios::binary);
-			cereal::BinaryInputArchive binary_archive(is2);
+			BinaryFileReader binary_reader(cache_binary);
+			if (!binary_reader.IsValid()) 
+			{
+				return false;
+			}
 
 			std::unique_ptr<Char[]> binary_data(new Char[binary_size]);
-			binary_archive.loadBinary(binary_data.get(), binary_size);
+			binary_reader.ReadBlob(binary_data.get(), binary_size);
 			output.shader.SetShaderData(binary_data.get(), binary_size);
 			output.shader.SetDesc(input);
 
@@ -254,7 +258,7 @@ namespace adria
 			if (reflection_size > 0)
 			{
 				std::unique_ptr<Char[]> reflection_data(new Char[reflection_size]);
-				binary_archive.loadBinary(reflection_data.get(), reflection_size);
+				binary_reader.ReadBlob(reflection_data.get(), reflection_size);
 				output.shader.SetReflectionData(reflection_data.get(), reflection_size);
 			}
 #endif
@@ -264,26 +268,34 @@ namespace adria
 		static Bool SaveToCache(Char const* cache_path, GfxShaderCompileOutput const& output)
 		{
 			std::string cache_metadata(cache_path); cache_metadata += ".meta";
-			std::ofstream os(cache_metadata, std::ios::binary);
-			cereal::BinaryOutputArchive metadata_archive(os);
-			metadata_archive(output.shader_hash);
-			metadata_archive(output.includes);
-			metadata_archive(output.shader.GetSize());
+			BinaryFileWriter metadata_writer(cache_metadata);
+			if (!metadata_writer.IsValid()) 
+			{
+				return false;
+			}
+
+			metadata_writer.Write(output.shader_hash);
+			metadata_writer.Write(output.includes);
+			metadata_writer.Write(output.shader.GetSize());
 
 #if defined(ADRIA_PLATFORM_MACOS)
 			Uint64 reflection_size = output.shader.GetReflectionSize();
-			metadata_archive(reflection_size);
+			metadata_writer.Write(reflection_size);
 #endif
 
 			std::string cache_binary(cache_path); cache_binary += ".bin";
-			std::ofstream os2(cache_binary, std::ios::binary);
-			cereal::BinaryOutputArchive binary_archive(os2);
-			binary_archive.saveBinary(output.shader.GetData(), output.shader.GetSize());
+			BinaryFileWriter binary_writer(cache_binary);
+			if (!binary_writer.IsValid()) 
+			{
+				return false;
+			}
+
+			binary_writer.WriteBlob(output.shader.GetData(), output.shader.GetSize());
 
 #if defined(ADRIA_PLATFORM_MACOS)
 			if (reflection_size > 0)
 			{
-				binary_archive.saveBinary(output.shader.GetReflectionData(), reflection_size);
+				binary_writer.WriteBlob(output.shader.GetReflectionData(), reflection_size);
 			}
 #endif
 

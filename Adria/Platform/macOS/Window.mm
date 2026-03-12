@@ -22,8 +22,10 @@
 
 - (void)close
 {
-    //ADRIA_HACK("Closing window doesnt terminate the app for now, this is a hacky bypass");
-    _exit(0);  
+    if (adriaWindow) 
+    {
+        adriaWindow->Quit(0);
+    }
 }
 
 @end

@@ -66,6 +66,7 @@ set(ADRIA_COMMON_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/RenderGraph/RenderGraphResourcePool.h"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/Utilities/Align.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/BinarySerializer.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/BufferReader.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/CLIParser.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/CLIParser.h"

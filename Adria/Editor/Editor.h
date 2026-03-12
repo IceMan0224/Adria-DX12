@@ -130,6 +130,9 @@ namespace adria
 		void SetStyle_Cherry();
 		void SetStyle_Photoshop();
 		void SetStyle_ClassicSteam();
+
+		void SaveState();
+		void LoadState();
 	};
 	#define g_Editor Editor::Get()
 

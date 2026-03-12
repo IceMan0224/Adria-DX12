@@ -26,6 +26,10 @@ namespace adria
 		{
 			return position;
 		}
+		Quaternion Orientation() const
+		{
+			return orientation;
+		}
 		Vector3 Forward() const;
 
 		Vector2 Jitter(Uint32 frame_index) const;
@@ -35,6 +39,7 @@ namespace adria
 		Float AspectRatio() const;
 
 		void SetPosition(Vector3 const& pos);
+		void SetOrientation(Quaternion const& q);
 		void SetNearAndFar(Float n, Float f);
 		void SetAspectRatio(Float ar);
 		void SetFov(Float fov);

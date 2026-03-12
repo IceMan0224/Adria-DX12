@@ -124,6 +124,10 @@ namespace adria
 	{
 		position = pos;
 	}
+	void Camera::SetOrientation(Quaternion const& q)
+	{
+		orientation = q;
+	}
 
 	Matrix Camera::View() const
 	{

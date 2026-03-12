@@ -31,6 +31,7 @@
 #include "Utilities/StringConversions.h"
 #include "Utilities/Random.h"
 #include "Utilities/Tree.h"
+#include "Utilities/BinarySerializer.h"
 #include "Math/BoundingVolumeUtil.h"
 
 
@@ -75,12 +76,13 @@ namespace adria
 		console = std::make_unique<EditorConsole>();
 		ray_tracing_supported = gfx->GetCapabilities().SupportsHardwareRayTracing();
 		selected_entity = entt::null;
-		SetStyle_Default();
+		LoadState();
 		fs::create_directory(paths::PixCapturesDir);
 		fs::create_directory(paths::RenderDocCapturesDir);
 	}
 	void Editor::Shutdown()
 	{
+		SaveState();
 		gui.reset();
 		engine.reset();
 		console.reset();
@@ -2325,5 +2327,113 @@ namespace adria
 		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 
+	}
+
+	static constexpr Uint32 EditorStateVersion = 1;
+
+	void Editor::SaveState()
+	{
+		std::string state_path = paths::IniDir + "editor_state.bin";
+		BinaryFileWriter writer(state_path);
+		if (!writer.IsValid()) 
+		{
+			return;
+		}
+
+		writer.Write(EditorStateVersion);
+
+		writer.Write(static_cast<Int>(theme));
+		writer.Write(show_light_icons);
+		for (Uint32 i = 0; i < Flag_Count; ++i) 
+		{
+			writer.Write(visibility_flags[i]);
+		}
+		writer.Write(static_cast<Int>(gizmo_operation));
+		writer.Write(static_cast<Int>(gizmo_mode));
+		writer.Write(use_snap);
+		writer.Write(snap_value[0], snap_value[1], snap_value[2]);
+
+		Bool has_camera = engine && engine->camera;
+		writer.Write(has_camera);
+		if (has_camera)
+		{
+			auto& camera = *engine->camera;
+			writer.Write(camera.Position());
+			writer.Write(camera.Orientation());
+			writer.Write(camera.Fov());
+			writer.Write(camera.Near());
+			writer.Write(camera.Far());
+		}
+	}
+
+	void Editor::LoadState()
+	{
+		std::string state_path = paths::IniDir + "editor_state.bin";
+		BinaryFileReader reader(state_path);
+		if (!reader.IsValid())
+		{
+			SetStyle_Default();
+			return;
+		}
+
+		try
+		{
+			Uint32 version = 0;
+			reader.Read(version);
+			if (version != EditorStateVersion)
+			{
+				SetStyle_Default();
+				return;
+			}
+
+			Int theme_int = 0;
+			reader.Read(theme_int);
+			theme = static_cast<EditorTheme>(theme_int);
+			reader.Read(show_light_icons);
+			for (Uint32 i = 0; i < Flag_Count; ++i) 
+			{
+				reader.Read(visibility_flags[i]);
+			}
+			Int gizmo_op_int = 0, gizmo_mode_int = 0;
+			reader.Read(gizmo_op_int);
+			reader.Read(gizmo_mode_int);
+			gizmo_operation = static_cast<ImGuizmo::OPERATION>(gizmo_op_int);
+			gizmo_mode = static_cast<ImGuizmo::MODE>(gizmo_mode_int);
+
+			reader.Read(use_snap);
+			reader.Read(snap_value[0], snap_value[1], snap_value[2]);
+
+			Bool has_camera = false;
+			reader.Read(has_camera);
+			if (has_camera && engine && engine->camera)
+			{
+				auto& camera = *engine->camera;
+				Vector3 pos;
+				Quaternion ori;
+				Float fov, near_plane, far_plane;
+
+				reader.Read(pos);
+				reader.Read(ori);
+				reader.Read(fov);
+				reader.Read(near_plane);
+				reader.Read(far_plane);
+
+				camera.SetPosition(pos);
+				camera.SetOrientation(ori);
+				camera.SetFov(fov);
+				camera.SetNearAndFar(near_plane, far_plane);
+			}
+		}
+		catch (...)
+		{
+		}
+
+		switch (theme)
+		{
+		case EditorTheme_Cherry:       SetStyle_Cherry();       break;
+		case EditorTheme_Photoshop:    SetStyle_Photoshop();    break;
+		case EditorTheme_ClassicSteam: SetStyle_ClassicSteam(); break;
+		default:                       SetStyle_Default();      break;
+		}
 	}
 }
