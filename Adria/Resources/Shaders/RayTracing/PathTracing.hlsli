@@ -3,7 +3,7 @@
 #include "RayTracingUtil.hlsli"
 #include "Tonemapping.hlsli"
 
-#define MIN_BOUNCES 3
+#define MIN_BOUNCES 2
 #define RIS_CANDIDATES_LIGHTS 8
 
 struct Reservoir

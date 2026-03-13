@@ -157,6 +157,14 @@ void PathTracerCS(uint3 dispatchThreadId : SV_DispatchThreadID)
 
             if (bounce == PathTracingPassCB.bounceCount - 1) break;
 
+            if (bounce >= MIN_BOUNCES)
+            {
+                float survivalProb = min(max(throughput.r, max(throughput.g, throughput.b)), 0.95f);
+                if (RNG_GetNext(rng) > survivalProb)
+                    break;
+                throughput /= survivalProb;
+            }
+
             float pDiffuse = ProbabilityToSampleDiffuse(brdf.Diffuse, brdf.Specular);
             float3 bounceDir;
             if (RNG_GetNext(rng) < pDiffuse)
