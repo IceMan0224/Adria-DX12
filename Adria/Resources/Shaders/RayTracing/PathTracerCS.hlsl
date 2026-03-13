@@ -195,6 +195,7 @@ void PathTracerCS(uint3 dispatchThreadId : SV_DispatchThreadID)
 
             float3 bounceBrdf = DefaultBRDF(bounceDir, V, worldNormal, brdf.Diffuse, brdf.Specular, brdf.Roughness);
             throughput *= bounceBrdf * NdotL / combinedPdf;
+            throughput = min(throughput, 10.0f);
 
             ray.Origin    = OffsetRay(worldPosition, worldNormal);
             ray.Direction = bounceDir;

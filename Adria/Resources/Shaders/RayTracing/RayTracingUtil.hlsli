@@ -49,7 +49,7 @@ float3 GetConeSample(inout RNG rng, float3 direction, float coneAngle)
 float3 OffsetRay(const float3 p, const float3 n)
 {
 	/* A Fast and Robust Method for Avoiding
-	Self-Intersection by Carsten Wächter and Nikolaus Binder
+	Self-Intersection by Carsten Wï¿½chter and Nikolaus Binder
 	Chapter 6. Ray Tracing Gems NVIDIA */
 
 	static const float origin = 1.0f / 32.0f;
@@ -158,8 +158,8 @@ bool TraceShadowRay(LightInfo light, float3 worldPos)
 		maxT = length(direction);
 		break;
 	case SPOT_LIGHT:
-		direction = -light.direction.xyz;
-		maxT = length(light.position.xyz - worldPos);
+		direction = light.position.xyz - worldPos;
+		maxT = length(direction);
 		break;
 	}
 

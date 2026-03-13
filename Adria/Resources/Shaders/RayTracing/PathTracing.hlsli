@@ -54,7 +54,9 @@ bool SampleLightRIS(inout RNG rng, float3 position, float3 N, out int lightIndex
         float sourcePdf = 1.0f;
         SampleSourceLight(FrameCB.lightCount, rng, lightIndex, sourcePdf);
 
-        LightInfo lightInfo = LoadLightInfo(lightIndex); 
+        LightInfo lightInfo = LoadLightInfo(lightIndex);
+        if (!lightInfo.active) continue;
+
         float3 positionDifference = lightInfo.position.xyz - position;
         float distance = length(positionDifference);
         float3 L = positionDifference / distance;
@@ -90,17 +92,5 @@ float ProbabilityToSampleDiffuse(float3 diffuse, float3 specular)
     return lumDiffuse / max(lumDiffuse + lumSpecular, 0.0001);
 }
 
-
-float3 SampleGGX(float2 randVal, float roughness, float3 N)
-{
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float cosThetaH = sqrt(max(0.0f, (1.0 - randVal.x) / ((a2 - 1.0) * randVal.x + 1)));
-    float sinThetaH = sqrt(max(0.0f, 1.0f - cosThetaH * cosThetaH));
-    float phiH = randVal.y * M_PI * 2.0f;
-
-    float3 v = float3(sinThetaH * cos(phiH), sinThetaH * sin(phiH), cosThetaH);
-    return TangentToWorld(v, N);
-}
 
 #endif
