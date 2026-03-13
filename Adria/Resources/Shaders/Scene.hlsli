@@ -101,6 +101,14 @@ struct VertexData
 	float3 nor;
 };
 
+struct VertexDataEx
+{
+	float3 pos;
+	float2 uv;
+	float3 nor;
+	float4 tan;
+};
+
 float3 Interpolate(in float3 x0, in float3 x1, in float3 x2, float2 bary)
 {
 	return x0 * (1.0f - bary.x - bary.y) + bary.x * x1 + bary.y * x2;
@@ -135,6 +143,39 @@ VertexData LoadVertexData(Mesh meshData, uint triangleIndex, float2 barycentrics
 	vertex.pos = pos;
 	vertex.uv  = uv;
 	vertex.nor = nor;
+	return vertex;
+}
+
+VertexDataEx LoadVertexDataEx(Mesh meshData, uint triangleIndex, float2 barycentrics)
+{
+	uint i0 = LoadMeshBuffer<uint>(meshData.bufferIdx, meshData.indicesOffset, 3 * triangleIndex + 0);
+	uint i1 = LoadMeshBuffer<uint>(meshData.bufferIdx, meshData.indicesOffset, 3 * triangleIndex + 1);
+	uint i2 = LoadMeshBuffer<uint>(meshData.bufferIdx, meshData.indicesOffset, 3 * triangleIndex + 2);
+
+	float3 pos0 = LoadMeshBuffer<float3>(meshData.bufferIdx, meshData.positionsOffset, i0);
+	float3 pos1 = LoadMeshBuffer<float3>(meshData.bufferIdx, meshData.positionsOffset, i1);
+	float3 pos2 = LoadMeshBuffer<float3>(meshData.bufferIdx, meshData.positionsOffset, i2);
+	float3 pos = Interpolate(pos0, pos1, pos2, barycentrics);
+
+	float2 uv0 = LoadMeshBuffer<float2>(meshData.bufferIdx, meshData.uvsOffset, i0);
+	float2 uv1 = LoadMeshBuffer<float2>(meshData.bufferIdx, meshData.uvsOffset, i1);
+	float2 uv2 = LoadMeshBuffer<float2>(meshData.bufferIdx, meshData.uvsOffset, i2);
+	float2 uv = Interpolate(uv0, uv1, uv2, barycentrics);
+
+	float3 nor0 = LoadMeshBuffer<float3>(meshData.bufferIdx, meshData.normalsOffset, i0);
+	float3 nor1 = LoadMeshBuffer<float3>(meshData.bufferIdx, meshData.normalsOffset, i1);
+	float3 nor2 = LoadMeshBuffer<float3>(meshData.bufferIdx, meshData.normalsOffset, i2);
+	float3 nor = normalize(Interpolate(nor0, nor1, nor2, barycentrics));
+
+	float4 tan0 = LoadMeshBuffer<float4>(meshData.bufferIdx, meshData.tangentsOffset, i0);
+	float4 tan1 = LoadMeshBuffer<float4>(meshData.bufferIdx, meshData.tangentsOffset, i1);
+	float4 tan2 = LoadMeshBuffer<float4>(meshData.bufferIdx, meshData.tangentsOffset, i2);
+
+	VertexDataEx vertex = (VertexDataEx)0;
+	vertex.pos = pos;
+	vertex.uv  = uv;
+	vertex.nor = nor;
+	vertex.tan = float4(normalize(Interpolate(tan0.xyz, tan1.xyz, tan2.xyz, barycentrics)), tan0.w);
 	return vertex;
 }
 

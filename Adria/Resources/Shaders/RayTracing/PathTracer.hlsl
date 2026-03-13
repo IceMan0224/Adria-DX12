@@ -64,7 +64,6 @@ void PT_RayGen()
 #endif
 
     float3 throughput = 1.0f;
-    float pdf = 1.0f;
     for (int bounce = 0; bounce < PathTracingPassCB.bounceCount; ++bounce)
     {
         HitInfo hit = (HitInfo)0;
@@ -73,13 +72,28 @@ void PT_RayGen()
             Instance instanceData = GetInstanceData(hit.instanceIndex);
             Mesh meshData = GetMeshData(instanceData.meshIndex);
             Material materialData = GetMaterialData(instanceData.materialIdx);
-            VertexData vert = LoadVertexData(meshData, hit.primitiveIndex, hit.barycentricCoordinates);
+            VertexDataEx vert = LoadVertexDataEx(meshData, hit.primitiveIndex, hit.barycentricCoordinates);
 
             float3 worldPosition = mul(vert.pos, hit.objectToWorldMatrix).xyz;
             float3 worldNormal   = normalize(mul(vert.nor, (float3x3)transpose(hit.worldToObjectMatrix)));
             float3 V             = -ray.Direction;
 
             MaterialProperties matProps = GetMaterialProperties(materialData, vert.uv, 0);
+
+            // Normal mapping - only apply when material has a normal map and tangent data is valid
+            if (materialData.normalIdx >= 0)
+            {
+                float3 rawTangent = mul(vert.tan.xyz, (float3x3)hit.objectToWorldMatrix);
+                float tangentLenSq = dot(rawTangent, rawTangent);
+                if (tangentLenSq > 1e-6f)
+                {
+                    float3 worldTangent = rawTangent * rsqrt(tangentLenSq);
+                    float3 worldBitangent = cross(worldNormal, worldTangent) * sign(vert.tan.w);
+                    float3 normalTS = matProps.normalTS * 2.0f - 1.0f;
+                    worldNormal = normalize(normalTS.x * worldTangent + normalTS.y * worldBitangent + normalTS.z * worldNormal);
+                }
+            }
+
             BrdfData brdf = GetBrdfData(matProps);
 
 #if SVGF_ENABLED
@@ -95,42 +109,89 @@ void PT_RayGen()
             if (SampleLightRIS(rng, worldPosition, worldNormal, lightIndex, lightWeight))
             {
                 LightInfo lightInfo = LoadLightInfo(lightIndex);
+
+                float3 wi;
+                float attenuation = 1.0f;
+                if (lightInfo.type == DIRECTIONAL_LIGHT)
+                {
+                    wi = normalize(-lightInfo.direction.xyz);
+                }
+                else
+                {
+                    float3 toLight = lightInfo.position.xyz - worldPosition;
+                    float dist = length(toLight);
+                    wi = toLight / dist;
+                    attenuation = DoAttenuation(dist, lightInfo.range);
+                    if (lightInfo.type == SPOT_LIGHT)
+                    {
+                        float cosAng = dot(-normalize(lightInfo.direction.xyz), wi);
+                        float conAtt = saturate((cosAng - lightInfo.outerCosine) / (lightInfo.innerCosine - lightInfo.outerCosine));
+                        attenuation *= conAtt * conAtt;
+                    }
+                }
+
                 float vis = TraceShadowRay(lightInfo, worldPosition.xyz);
-                float3 wi = normalize(-lightInfo.direction.xyz);
                 float NdotL = saturate(dot(worldNormal, wi));
-                float3 lightContribution = vis * lightInfo.color.rgb * NdotL;
+                float3 lightRadiance = lightInfo.color.rgb * attenuation;
 
 #if SVGF_ENABLED
-                float3 diffuseBRDF_White = DiffuseBRDF(float3(1.0, 1.0, 1.0));
-                float3 illumination = lightWeight * (diffuseBRDF_White * lightContribution) * throughput / pdf;
-
+                float3 F;
+                float3 specBRDF = SpecularBRDF(worldNormal, V, wi, brdf.Specular, brdf.Roughness, F);
+                float3 diffBRDF_white = DiffuseBRDF(float3(1.0, 1.0, 1.0)) * (1.0 - F);
+                float3 illumination = lightWeight * (diffBRDF_white + specBRDF) * lightRadiance * NdotL * vis * throughput;
                 if (bounce == 0) radianceDirect += illumination;
                 else             radianceIndirect += illumination;
 #else
-                float3 diffuseBRDF = DiffuseBRDF(brdf.Diffuse);
-                float3 Ftmp;
-                float3 specularBRDF = SpecularBRDF(worldNormal, V, wi, brdf.Specular, brdf.Roughness, Ftmp);
-                radiance += lightWeight * (diffuseBRDF * lightContribution + specularBRDF * lightContribution) * throughput / pdf;
+                float3 brdfValue = DefaultBRDF(wi, V, worldNormal, brdf.Diffuse, brdf.Specular, brdf.Roughness);
+                radiance += lightWeight * brdfValue * lightRadiance * NdotL * vis * throughput;
 #endif
             }
 
 #if SVGF_ENABLED
-            if (bounce == 0) radianceDirect += matProps.emissive * throughput / pdf;
-            else             radianceIndirect += matProps.emissive * throughput / pdf;
+            if (bounce == 0) radianceDirect += matProps.emissive * throughput;
+            else             radianceIndirect += matProps.emissive * throughput;
 #else
-            radiance += matProps.emissive * throughput / pdf;
+            radiance += matProps.emissive * throughput;
 #endif
 
             if (bounce == PathTracingPassCB.bounceCount - 1) break;
 
-            float3 wi = GetCosHemisphereSample(rng, worldNormal);
-            float3 diffBRDF = DiffuseBRDF(brdf.Diffuse);
-            float NdotL = saturate(dot(worldNormal, wi));
-            throughput *= diffBRDF * NdotL;
-            pdf *= (NdotL / PI);
+            float pDiffuse = ProbabilityToSampleDiffuse(brdf.Diffuse, brdf.Specular);
+            float3 bounceDir;
+            if (RNG_GetNext(rng) < pDiffuse)
+            {
+                bounceDir = GetCosHemisphereSample(rng, worldNormal);
+            }
+            else
+            {
+                float2 Xi = float2(RNG_GetNext(rng), RNG_GetNext(rng));
+                float4 hPdf = ImportanceSampleGGX(Xi, max(brdf.Roughness, MIN_ROUGHNESS));
+                float3 H = TangentToWorld(hPdf.xyz, worldNormal);
+                bounceDir = reflect(-V, H);
+            }
+
+            float NdotL = saturate(dot(worldNormal, bounceDir));
+            if (NdotL <= 0.0f) break;
+
+            float diffPdf = NdotL * (1.0f / PI);
+            float3 H = normalize(V + bounceDir);
+            float NdotH = saturate(dot(worldNormal, H));
+            float VdotH = saturate(dot(V, H));
+            float a = max(brdf.Roughness, MIN_ROUGHNESS) * max(brdf.Roughness, MIN_ROUGHNESS);
+            float D = D_GGX(worldNormal, H, a);
+            float specPdf = D * NdotH / max(4.0f * VdotH, 0.001f);
+            float combinedPdf = pDiffuse * diffPdf + (1.0f - pDiffuse) * specPdf;
+
+            if (combinedPdf < 1e-6f) 
+            {
+                break;
+            }
+
+            float3 bounceBrdf = DefaultBRDF(bounceDir, V, worldNormal, brdf.Diffuse, brdf.Specular, brdf.Roughness);
+            throughput *= bounceBrdf * NdotL / combinedPdf;
 
             ray.Origin = OffsetRay(worldPosition, worldNormal);
-            ray.Direction = wi;
+            ray.Direction = bounceDir;
             ray.TMin = 1e-2f;
             ray.TMax = FLT_MAX;
         }
@@ -141,18 +202,18 @@ void PT_RayGen()
 #if SVGF_ENABLED
             if (bounce == 0)
             {
-                radianceDirect += envVal * throughput / pdf;
-                directAlbedo = 1.0f; 
+                radianceDirect += envVal * throughput;
+                directAlbedo = 1.0f;
             }
             else
             {
-                radianceIndirect += envVal * throughput / pdf;
-                indirectAlbedo = 1.0f; 
+                radianceIndirect += envVal * throughput;
+                indirectAlbedo = 1.0f;
             }
 #else
-            radiance += envVal * throughput / pdf;
+            radiance += envVal * throughput;
 #endif
-            break; 
+            break;
         }
     } 
 
