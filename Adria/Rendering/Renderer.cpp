@@ -278,6 +278,12 @@ namespace adria
 
 			LightGPU& hlsl_light = hlsl_lights.emplace_back();
 			hlsl_light.color = light.color * light.intensity;
+			if (light.type == LightType::Directional)
+			{
+				Float sun_elevation = -light.direction.y;
+				Float sun_fade = Clamp(sun_elevation * 5.0f, 0.0f, 1.0f);
+				hlsl_light.color *= sun_fade;
+			}
 			hlsl_light.position = Vector4::Transform(light.position, light_transform);
 			hlsl_light.direction = Vector4::Transform(light.direction, light_transform);
 			hlsl_light.range = light.range;
@@ -476,8 +482,11 @@ namespace adria
 			if (light_data.type == LightType::Directional && light_data.active)
 			{
 				frame_cbuf_data.sun_direction = -light_data.direction;
-				frame_cbuf_data.sun_color = light_data.color * light_data.intensity;
 				sun_direction = Vector3(light_data.direction);
+
+				Float sun_elevation = -light_data.direction.y;
+				Float sun_fade = Clamp(sun_elevation * 5.0f, 0.0f, 1.0f);
+				frame_cbuf_data.sun_color = light_data.color * light_data.intensity * sun_fade;
 				break;
 			}
 		}
@@ -684,52 +693,52 @@ namespace adria
 		volumetric_fog_manager.GUI();
 		QueueGUI([&]()
 			{
-				if (ImGui::TreeNode("Weather Settings"))
+				if (ImGui::TreeNode("Sun"))
 				{
-					if (ImGui::TreeNode("Sun Settings"))
+					auto lights = reg.view<Light, Transform>();
+					Light* sun_light = nullptr;
+					Transform* sun_transform = nullptr;
+					for (entt::entity light : lights)
 					{
-						auto lights = reg.view<Light, Transform>();
-						Light* sun_light = nullptr;
-						Transform* sun_transform = nullptr;
-						for (entt::entity light : lights)
+						Light& light_data = lights.get<Light>(light);
+						if (light_data.type == LightType::Directional && light_data.active)
 						{
-							Light& light_data = lights.get<Light>(light);
-							if (light_data.type == LightType::Directional && light_data.active)
-							{
-								sun_light = &light_data;
-								sun_transform = &lights.get<Transform>(light);
-								break;
-							}
+							sun_light = &light_data;
+							sun_transform = &lights.get<Transform>(light);
+							break;
 						}
-						if (sun_light)
-						{
-							static Float sun_elevation = 75.0f;
-							static Float sun_azimuth = 260.0f;
-							ConvertDirectionToAzimuthAndElevation(-sun_light->direction, sun_elevation, sun_azimuth);
-
-							Bool changed = false;
-							changed |= ImGui::ColorEdit3("Sun Color", &sun_light->color.x);
-							changed |= ImGui::SliderFloat("Sun Energy", &sun_light->intensity, 0.0f, 50.0f);
-							changed |= ImGui::SliderFloat("Sun Elevation", &sun_elevation, -90.0f, 90.0f);
-							changed |= ImGui::SliderFloat("Sun Azimuth", &sun_azimuth, 0.0f, 360.0f);
-
-							if (changed)
-							{
-								path_tracer.Reset();
-							}
-							sun_light->direction = ConvertElevationAndAzimuthToDirection(sun_elevation, sun_azimuth);
-							sun_light->position = 1e3 * sun_light->direction;
-							sun_light->direction = -sun_light->direction;
-							sun_transform->local_transform = XMMatrixTranslationFromVector(sun_light->position);
-						}
-						ImGui::TreePop();
 					}
+					if (sun_light)
+					{
+						static Float sun_elevation = 75.0f;
+						static Float sun_azimuth = 260.0f;
+						ConvertDirectionToAzimuthAndElevation(-sun_light->direction, sun_elevation, sun_azimuth);
+
+						Bool changed = false;
+						changed |= ImGui::ColorEdit3("Sun Color", &sun_light->color.x);
+						changed |= ImGui::SliderFloat("Sun Energy", &sun_light->intensity, 0.0f, 50.0f);
+						changed |= ImGui::SliderFloat("Sun Elevation", &sun_elevation, -90.0f, 90.0f);
+						changed |= ImGui::SliderFloat("Sun Azimuth", &sun_azimuth, 0.0f, 360.0f);
+
+						if (changed)
+						{
+							path_tracer.Reset();
+						}
+						sun_light->direction = ConvertElevationAndAzimuthToDirection(sun_elevation, sun_azimuth);
+						sun_light->position = 1e3 * sun_light->direction;
+						sun_light->direction = -sun_light->direction;
+						sun_transform->local_transform = XMMatrixTranslationFromVector(sun_light->position);
+					}
+					ImGui::TreePop();
+				}
+				if (ImGui::TreeNode("Weather"))
+				{
 					ImGui::ColorEdit3("Ambient Color", ambient_color);
 					ImGui::SliderFloat3("Wind Direction", wind_dir, -1.0f, 1.0f);
 					ImGui::SliderFloat("Wind Speed", &wind_speed, 0.0f, 32.0f);
 					ImGui::TreePop();
 				}
-			}, GUICommandGroup_Renderer);
+			}, GUICommandGroup_Renderer, GUICommandSubGroup_Environment);
 		renderer_debug_view_pass.GUI();
 		postprocessor.GUI();
 	}
