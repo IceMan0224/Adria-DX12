@@ -151,7 +151,7 @@ namespace adria
 				ImGui::Checkbox("Enable Reflections", EnableTransparentReflections.GetPtr());
 			}
 			ImGui::TreePop();
-		}}, GUICommandGroup_Renderer);
+		}}, GUICommandGroup_Renderer, GUICommandSubGroup_SceneRendering);
 	}
 
 	void TransparentPass::CreatePSOs()

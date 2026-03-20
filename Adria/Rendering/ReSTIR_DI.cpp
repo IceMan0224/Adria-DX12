@@ -83,7 +83,7 @@ namespace adria
 					ImGui::SliderFloat("Spatial Radius", ReSTIR_DI_SpatialRadius.GetPtr(), 1.0f, 100.0f);
 					ImGui::TreePop();
 				}
-			}, GUICommandGroup_Renderer);
+			}, GUICommandGroup_Renderer, GUICommandSubGroup_Lighting);
 	}
 
 	void ReSTIR_DI::AddPasses(RenderGraph& rg)

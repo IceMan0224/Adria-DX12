@@ -19,7 +19,6 @@
 #include "DecalsPass.h"
 #include "RainPass.h"
 #include "OceanRenderer.h"
-#include "TerrainRenderer.h"
 #include "AccelerationStructure.h"
 #include "ShadowRenderer.h"
 #include "PathTracingPass.h"

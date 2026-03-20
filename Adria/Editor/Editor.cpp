@@ -104,8 +104,23 @@ namespace adria
 		scale_icon = g_TextureManager.LoadTexture(paths::TexturesDir + "Editor/scale.png");
 	}
 
+	void Editor::FlushPendingDeletions()
+	{
+		if (pending_deletions.empty())
+		{
+			return;
+		}
+		gfx->WaitForGPU();
+		for (entt::entity e : pending_deletions)
+		{
+			if (engine->reg.valid(e)) engine->reg.destroy(e);
+		}
+		pending_deletions.clear();
+	}
+
 	void Editor::Run()
 	{
+		FlushPendingDeletions();
 		HandleInput();
 		if (gui->IsVisible())
 		{
@@ -217,6 +232,14 @@ namespace adria
 			{
 				gizmo_mode = (gizmo_mode == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
 			}
+			if (g_Input.IsKeyDown(KeyCode::Alpha5))
+			{
+				selection_mode = !selection_mode;
+				if (!selection_mode)
+				{
+					selected_entity = entt::null;
+				}
+			}
 		}
 
 		if (gui->IsVisible())
@@ -261,7 +284,6 @@ namespace adria
 				if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE" Hot Reload", 0, visibility_flags[Flag_HotReload]))		 visibility_flags[Flag_HotReload] = !visibility_flags[Flag_HotReload];
 				if (ImGui::MenuItem(ICON_FA_SLIDERS" Settings", 0, visibility_flags[Flag_Settings]))			 visibility_flags[Flag_Settings] = !visibility_flags[Flag_Settings];
 				if (ImGui::MenuItem(ICON_FA_BUG" Debug", 0, visibility_flags[Flag_Debug]))					 visibility_flags[Flag_Debug] = !visibility_flags[Flag_Debug];
-				if (ImGui::MenuItem(ICON_FA_WAND_MAGIC_SPARKLES " Spawn", 0, visibility_flags[Flag_Spawn]))	 visibility_flags[Flag_Spawn] = !visibility_flags[Flag_Spawn];
 
 				ImGui::EndMenu();
 			}
@@ -350,85 +372,7 @@ namespace adria
 				{
 					for (auto e : engine->reg.view<Ocean>())
 					{
-						engine->reg.destroy(e);
-					}
-				}
-				ImGui::TreePop();
-				ImGui::Separator();
-			}
-			if (ImGui::TreeNodeEx("Terrain", 0))
-			{
-				static TerrainParameters terrain_params{};
-				static Float terrain_dims[2] = { 1024.0f, 1024.0f };
-				static Float height_scale = 100.0f;
-				static Int heightmap_source = 0;
-
-				ImGui::SliderFloat2("Dimensions", terrain_dims, 64.0f, 4096.0f);
-				ImGui::SliderFloat("Height Scale##terrain", &height_scale, 0.0f, 500.0f);
-
-				terrain_params.terrain_width = terrain_dims[0];
-				terrain_params.terrain_depth = terrain_dims[1];
-				terrain_params.height_scale = height_scale;
-
-				ImGui::Separator();
-				ImGui::Combo("Heightmap Source", &heightmap_source, "Procedural\0File\0", 2);
-
-				if (heightmap_source == 0)
-				{
-					terrain_params.use_procedural = true;
-					HeightmapDesc& desc = terrain_params.procedural_desc;
-
-					static Int resolution[2] = { (Int)desc.width, (Int)desc.depth };
-					ImGui::SliderInt2("Resolution", resolution, 33, 2049);
-					desc.width = (Uint32)resolution[0];
-					desc.depth = (Uint32)resolution[1];
-
-					ImGui::InputInt("Seed", &desc.seed);
-
-					static Char const* noise_types[] = { "OpenSimplex2", "OpenSimplex2S", "Cellular", "Perlin", "ValueCubic", "Value" };
-					Int noise_type_idx = (Int)desc.noise_type;
-					ImGui::Combo("Noise Type", &noise_type_idx, noise_types, IM_ARRAYSIZE(noise_types));
-					desc.noise_type = (NoiseType)noise_type_idx;
-
-					static Char const* fractal_types[] = { "None", "FBM", "Ridged", "PingPong" };
-					Int fractal_type_idx = (Int)desc.fractal_type;
-					ImGui::Combo("Fractal Type", &fractal_type_idx, fractal_types, IM_ARRAYSIZE(fractal_types));
-					desc.fractal_type = (FractalType)fractal_type_idx;
-
-					ImGui::SliderInt("Octaves", &desc.octaves, 1, 10);
-					ImGui::SliderFloat("Noise Scale", &desc.noise_scale, 1.0f, 2000.0f);
-					ImGui::SliderFloat("Persistence", &desc.persistence, 0.0f, 1.0f);
-					ImGui::SliderFloat("Lacunarity", &desc.lacunarity, 1.0f, 4.0f);
-				}
-				else
-				{
-					terrain_params.use_procedural = false;
-					ImGui::Text("Heightmap: %s", terrain_params.heightmap_path.empty() ? "(none)" : terrain_params.heightmap_path.c_str());
-					if (ImGui::Button("Select Heightmap File"))
-					{
-						nfdchar_t* file_path = NULL;
-						nfdchar_t const* filter_list = "png,jpg,jpeg,tga,bmp,dds";
-						nfdresult_t result = NFD_OpenDialog(filter_list, NULL, &file_path);
-						if (result == NFD_OKAY)
-						{
-							terrain_params.heightmap_path = file_path;
-							free(file_path);
-						}
-					}
-				}
-
-				ImGui::Separator();
-				if (ImGui::Button("Load Terrain"))
-				{
-					gfx->WaitForGPU();
-					engine->scene_loader->LoadTerrain(terrain_params);
-				}
-				ImGui::SameLine();
-				if (ImGui::Button(ICON_FA_TRASH" Clear Terrain"))
-				{
-					for (auto e : engine->reg.view<Terrain>())
-					{
-						engine->reg.destroy(e);
+						QueueEntityDestruction(e);
 					}
 				}
 				ImGui::TreePop();
@@ -490,7 +434,7 @@ namespace adria
 				{
 					for (auto e : engine->reg.view<Decal>())
 					{
-						engine->reg.destroy(e);
+						QueueEntityDestruction(e);
 					}
 				}
 				ImGui::TreePop();
@@ -684,7 +628,12 @@ namespace adria
 					if (ImGui::MenuItem(ICON_FA_TRASH " Delete"))
 					{
 						if (selected_entity == e) selected_entity = entt::null;
-						reg.destroy(e);
+						QueueEntityDestruction(e);
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem(ICON_FA_WAND_MAGIC_SPARKLES " Spawn..."))
+					{
+						visibility_flags[Flag_Spawn] = true;
 					}
 					ImGui::EndPopup();
 				}
@@ -1203,7 +1152,7 @@ namespace adria
 				for (auto const& btn : gizmo_buttons)
 				{
 					GfxTexture* tex = g_TextureManager.GetTexture(btn.handle);
-					if (!tex) 
+					if (!tex)
 					{
 						continue;
 					}
@@ -1230,6 +1179,31 @@ namespace adria
 					}
 
 					ImGui::SameLine();
+				}
+
+				// Selection mode toggle
+				{
+					Bool was_active = selection_mode;
+					if (was_active)
+					{
+						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.4f, 0.2f, 0.9f));
+					}
+					if (ImGui::Button(ICON_FA_ARROW_POINTER, ImVec2(GIZMO_ICON_SIZE + 8.0f, GIZMO_ICON_SIZE + 8.0f)))
+					{
+						selection_mode = !selection_mode;
+						if (!selection_mode)
+						{
+							selected_entity = entt::null;
+						}
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Selection Mode (5)");
+					}
+					if (was_active)
+					{
+						ImGui::PopStyleColor();
+					}
 				}
 
 				ImGui::PopStyleColor(2);
@@ -1441,7 +1415,7 @@ namespace adria
 			viewport_data.scene_viewport_size_x = size.x;
 			viewport_data.scene_viewport_size_y = size.y;
 
-			if (ImGui::IsWindowHovered() && !ImGuizmo::IsUsing() && g_Input.IsKeyDown(KeyCode::MouseRight))
+			if (selection_mode && ImGui::IsWindowHovered() && !ImGuizmo::IsUsing() && g_Input.IsKeyDown(KeyCode::MouseRight))
 			{
 				if (icon_hovered_entity != entt::null)
 				{

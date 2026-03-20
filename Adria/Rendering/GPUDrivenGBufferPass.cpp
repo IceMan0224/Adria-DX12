@@ -160,7 +160,7 @@ namespace adria
 				}
 
 
-			}, GUICommandGroup_Renderer
+			}, GUICommandGroup_Renderer, GUICommandSubGroup_SceneRendering
 		);
 	}
 

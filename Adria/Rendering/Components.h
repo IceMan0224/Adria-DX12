@@ -4,7 +4,6 @@
 #include "Graphics/GfxVertexFormat.h"
 #include "Graphics/GfxBuffer.h"
 #include "Graphics/GfxStates.h"
-#include "Utilities/Heightmap.h"
 #include "entt/entity/entity.hpp"
 
 #define COMPONENT
@@ -167,22 +166,6 @@ namespace adria
 
 	struct COMPONENT RayTracing {};
 	struct COMPONENT Ocean {};
-	struct COMPONENT Terrain
-	{
-		Float terrain_width  = 1024.0f;
-		Float terrain_depth  = 1024.0f;
-		Float height_scale   = 100.0f;
-
-		std::string heightmap_path;
-		HeightmapDesc procedural_desc{};
-
-		TextureHandle layer_albedo[4] = { INVALID_TEXTURE_HANDLE, INVALID_TEXTURE_HANDLE, INVALID_TEXTURE_HANDLE, INVALID_TEXTURE_HANDLE };
-		TextureHandle layer_normal[4] = { INVALID_TEXTURE_HANDLE, INVALID_TEXTURE_HANDLE, INVALID_TEXTURE_HANDLE, INVALID_TEXTURE_HANDLE };
-		TextureHandle layer_arm[4]    = { INVALID_TEXTURE_HANDLE, INVALID_TEXTURE_HANDLE, INVALID_TEXTURE_HANDLE, INVALID_TEXTURE_HANDLE };
-		Float layer_tiling[4] = { 32.0f, 32.0f, 32.0f, 32.0f };
-
-		std::string splatmap_path;
-	};
 	struct COMPONENT Transparent {};
 
 	struct SubMeshGPU

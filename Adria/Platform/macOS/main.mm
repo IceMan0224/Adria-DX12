@@ -33,6 +33,23 @@ int main(int argc, char* argv[])
         [NSApp setDelegate:appDelegate];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
+        NSMenu* menuBar = [[NSMenu alloc] init];
+
+        NSMenuItem* appMenuItem = [[NSMenuItem alloc] init];
+        [menuBar addItem:appMenuItem];
+        NSMenu* appMenu = [[NSMenu alloc] initWithTitle:@"Adria"];
+        [appMenuItem setSubmenu:appMenu];
+        [appMenu addItemWithTitle:@"Quit Adria" action:@selector(terminate:) keyEquivalent:@"q"];
+
+        NSMenuItem* viewMenuItem = [[NSMenuItem alloc] init];
+        [menuBar addItem:viewMenuItem];
+        NSMenu* viewMenu = [[NSMenu alloc] initWithTitle:@"View"];
+        [viewMenuItem setSubmenu:viewMenu];
+        NSMenuItem* fullScreenItem = [viewMenu addItemWithTitle:@"Toggle Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"];
+        [fullScreenItem setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
+
+        [NSApp setMainMenu:menuBar];
+
         CommandLineOptions::Initialize(argc, argv);
 
         std::string log_file = CommandLineOptions::GetLogFile();

@@ -71,6 +71,38 @@
     window->BroadcastEvent(event_info);
 }
 
+- (void)windowDidEnterFullScreen:(NSNotification*)notification
+{
+    NSWindow* nsWindow = [notification object];
+    NSRect contentRect = [[nsWindow contentView] frame];
+
+    adria::WindowEventInfo event_info{};
+    event_info.handle = (__bridge void*)nsWindow;
+    event_info.msg = 0;
+    event_info.wparam = 0;
+    event_info.lparam = 0;
+    event_info.width = static_cast<adria::Float>(contentRect.size.width);
+    event_info.height = static_cast<adria::Float>(contentRect.size.height);
+
+    window->BroadcastEvent(event_info);
+}
+
+- (void)windowDidExitFullScreen:(NSNotification*)notification
+{
+    NSWindow* nsWindow = [notification object];
+    NSRect contentRect = [[nsWindow contentView] frame];
+
+    adria::WindowEventInfo event_info{};
+    event_info.handle = (__bridge void*)nsWindow;
+    event_info.msg = 0;
+    event_info.wparam = 0;
+    event_info.lparam = 0;
+    event_info.width = static_cast<adria::Float>(contentRect.size.width);
+    event_info.height = static_cast<adria::Float>(contentRect.size.height);
+
+    window->BroadcastEvent(event_info);
+}
+
 @end
 
 namespace adria
@@ -83,6 +115,7 @@ namespace adria
 
             NSWindowStyleMask styleMask = NSWindowStyleMaskTitled |
                                           NSWindowStyleMaskClosable |
+                                          NSWindowStyleMaskMiniaturizable |
                                           NSWindowStyleMaskResizable;
 
             AdriaWindow* nsWindow = [[AdriaWindow alloc] initWithContentRect:frame
@@ -97,6 +130,7 @@ namespace adria
             [nsWindow setContentView:contentView];
 
             [nsWindow center];
+            [nsWindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
 
             AdriaWindowDelegate* delegate = [[AdriaWindowDelegate alloc] initWithWindow:this];
             [nsWindow setDelegate:delegate];

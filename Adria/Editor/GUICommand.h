@@ -24,6 +24,10 @@ namespace adria
 		GUICommandSubGroup_DepthOfField,
 		GUICommandSubGroup_Upscaler,
 		GUICommandSubGroup_Antialiasing,
+		GUICommandSubGroup_Environment,
+		GUICommandSubGroup_Lighting,
+		GUICommandSubGroup_SceneRendering,
+		GUICommandSubGroup_Misc,
 		GUICommandSubGroup_Count
 	};
 	static Char const* GUICommandSubGroupNames[] =
@@ -34,7 +38,10 @@ namespace adria
 		"Depth Of Field",
 		"Upscaler",
 		"Antialiasing",
-		""
+		"Environment",
+		"Lighting",
+		"Rendering",
+		"Misc",
 	};
 
 	struct GUICommand

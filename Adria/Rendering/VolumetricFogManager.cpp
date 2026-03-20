@@ -61,6 +61,6 @@ namespace adria
 			}
 			ImGui::TreePop();
 		}
-		}, GUICommandGroup_Renderer);
+		}, GUICommandGroup_Renderer, GUICommandSubGroup_Environment);
 	}
 }

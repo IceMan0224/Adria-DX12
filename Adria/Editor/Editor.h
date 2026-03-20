@@ -68,6 +68,7 @@ namespace adria
 
 		Engine*		GetEngine() const { return engine.get(); }
 		entt::entity GetSelectedEntity() const { return selected_entity; }
+		void QueueEntityDestruction(entt::entity e) { pending_deletions.push_back(e); }
 
 	private:
 		std::unique_ptr<Engine> engine;
@@ -81,6 +82,7 @@ namespace adria
 		Bool scene_focused = false;
 		entt::entity selected_entity;
 		Bool scroll_to_selected = false;
+		Bool selection_mode = false;
 
 		Bool reload_shaders = false;
 		Bool visibility_flags[Flag_Count] = {false};
@@ -91,6 +93,7 @@ namespace adria
 		EditorEvents editor_events;
 		ViewportData viewport_data;
 		Bool show_basic_console = false;
+		std::vector<entt::entity> pending_deletions;
 
 		GfxProfilerTree const* profiler_tree = nullptr;
 
@@ -133,6 +136,7 @@ namespace adria
 
 		void SaveState();
 		void LoadState();
+		void FlushPendingDeletions();
 	};
 	#define g_Editor Editor::Get()
 

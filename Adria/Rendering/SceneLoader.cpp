@@ -340,44 +340,6 @@ namespace adria
 		return ocean_chunks;
 	}
 
-	entt::entity SceneLoader::LoadTerrain(TerrainParameters const& params)
-	{
-		entt::entity terrain_entity = reg.create();
-
-		Terrain terrain{};
-		terrain.terrain_width = params.terrain_width;
-		terrain.terrain_depth = params.terrain_depth;
-		terrain.height_scale = params.height_scale;
-		terrain.heightmap_path = params.heightmap_path;
-		terrain.splatmap_path = params.splatmap_path;
-
-		for (Uint32 i = 0; i < 4; ++i)
-		{
-			terrain.layer_tiling[i] = params.layer_tiling[i];
-			if (!params.layer_albedo_paths[i].empty())
-			{
-				terrain.layer_albedo[i] = g_TextureManager.LoadTexture(params.layer_albedo_paths[i], true);
-			}
-			if (!params.layer_normal_paths[i].empty())
-			{
-				terrain.layer_normal[i] = g_TextureManager.LoadTexture(params.layer_normal_paths[i]);
-			}
-			if (!params.layer_arm_paths[i].empty())
-			{
-				terrain.layer_arm[i] = g_TextureManager.LoadTexture(params.layer_arm_paths[i]);
-			}
-		}
-
-		terrain.procedural_desc = params.procedural_desc;
-		if (params.use_procedural)
-		{
-			terrain.heightmap_path.clear();
-		}
-		reg.emplace<Terrain>(terrain_entity, std::move(terrain));
-		reg.emplace<Tag>(terrain_entity, "Terrain");
-		return terrain_entity;
-	}
-
 	entt::entity SceneLoader::LoadDecal(DecalParameters const& params)
 	{
 		Decal decal{};

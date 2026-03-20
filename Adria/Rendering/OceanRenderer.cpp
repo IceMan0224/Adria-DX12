@@ -383,7 +383,7 @@ namespace adria
 					ImGui::TreePop();
 					ImGui::Separator();
 				}
-			}, GUICommandGroup_Renderer);
+			}, GUICommandGroup_Renderer, GUICommandSubGroup_SceneRendering);
 	}
 
 	void OceanRenderer::OnResize(Uint32 w, Uint32 h)
