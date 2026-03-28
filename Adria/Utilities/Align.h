@@ -56,15 +56,15 @@ namespace adria
 		value |= (value >> 2);
 		value |= (value >> 4);
 
-		if constexpr (sizeof(T) >= 16)
+		if constexpr (sizeof(T) >= 2)
 		{
 			value |= (value >> 8);
 		}
-		if constexpr (sizeof(T) >= 32)
+		if constexpr (sizeof(T) >= 4)
 		{
 			value |= (value >> 16);
 		}
-		if constexpr (sizeof(T) >= 64)
+		if constexpr (sizeof(T) >= 8)
 		{
 			value |= (value >> 32);
 		}
@@ -84,15 +84,15 @@ namespace adria
 		value |= (value >> 2);
 		value |= (value >> 4);
 
-		if constexpr (sizeof(T) >= 16)
+		if constexpr (sizeof(T) >= 2)
 		{
 			value |= (value >> 8);
 		}
-		if constexpr (sizeof(T) >= 32)
+		if constexpr (sizeof(T) >= 4)
 		{
 			value |= (value >> 16);
 		}
-		if constexpr (sizeof(T) >= 64)
+		if constexpr (sizeof(T) >= 8)
 		{
 			value |= (value >> 32);
 		}
