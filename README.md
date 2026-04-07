@@ -12,33 +12,28 @@ Graphics engine written in C++ with DirectX12 and Metal backends.
     - Resource reuse using resource pool
     - Automatic resource bind flags and initial state deduction
     - Async Compute
+* Ultimate Bindless resource binding
 * DDGI
 * GPU-Driven Rendering : GPU frustum culling + 2 phase GPU occlusion culling
-* Reference path tracer + SVGF denoiser (wip)
+* Reference path tracer
 * Upscalers : FSR2, FSR3, XeSS2, DLSS3.5, MetalFX
-* Ultimate Bindless resource binding
-* Variable Rate Shading (FFX)
 * Volumetric lighting: Raymarching, Fog volumes
 * Tiled/Clustered deferred rendering 
-* ReSTIR DI 
+* ReSTIR DI (wip)
 * Shadows
-    - PCF shadows for directional, spot and point lights and cascade shadow maps for directional lights
+    - PCF shadow maps for directional, spot and point lights
+	- Cascade shadow maps for directional lights
     - Ray traced shadows (DXR)
-* Volumetric clouds
-* Hosek-Wilkie sky
+* Volumetric clouds, Hosek-Wilkie sky, Rain
 * FFT Ocean
 * Automatic exposure
 * Bloom
-* Rain
-* Tony McMapface tonemapping
-* Depth of field + Bokeh: Custom, FFX
-* Ambient occlusion: SSAO, HBAO, NNAO, RTAO (DXR), CACAO (FFX)
+* Ambient occlusion: SSAO, HBAO, RTAO (DXR)
 * Reflections: SSR, RTR (DXR)
 * Antialiasing: FXAA, TAA
-* Contrast Adaptive Sharpening (FFX)
+* FFX: Variable Rate Shading, Contrast Adaptive Sharpening, Depth of Field 
 * Entity picking with selection silhouettes and transform gizmos
 * Film effects: Lens distortion, Chromatic aberration, Vignette, Film grain, CRT filter
-* Screen-space god rays
 * Lens flare: texture-based and procedural
 * Profiler: custom and tracy profiler
 * Debug tools

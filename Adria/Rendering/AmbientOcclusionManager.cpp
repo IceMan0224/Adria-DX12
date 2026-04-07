@@ -10,17 +10,14 @@ namespace adria
 		AmbientOcclusionType_None,
 		AmbientOcclusionType_SSAO,
 		AmbientOcclusionType_HBAO,
-		AmbientOcclusionType_NNAO,
-		AmbientOcclusionType_CACAO,
 		AmbientOcclusionType_RTAO
 	};
-	static Char const* AOName[] = { "None", "SSAO", "HBAO", "NNAO", "CACAO", "RTAO" };
+	static Char const* AOName[] = { "None", "SSAO", "HBAO", "RTAO" };
 
-	static TAutoConsoleVariable<Int>  AmbientOcclusion("r.AmbientOcclusion", AmbientOcclusionType_SSAO, "0 - No AO, 1 - SSAO, 2 - HBAO, 3 - NNAO, 4 - CACAO, 5 - RTAO");
+	static TAutoConsoleVariable<Int>  AmbientOcclusion("r.AmbientOcclusion", AmbientOcclusionType_SSAO, "0 - No AO, 1 - SSAO, 2 - HBAO, 3 - RTAO");
 
 	AmbientOcclusionManager::AmbientOcclusionManager(GfxDevice* gfx, Uint32 width, Uint32 height)
-		: gfx(gfx), ssao_pass(gfx, width, height), hbao_pass(gfx, width, height), nnao_pass(gfx, width, height),
-		  rtao_pass(gfx, width, height), cacao_pass(gfx, width, height)
+		: gfx(gfx), ssao_pass(gfx, width, height), hbao_pass(gfx, width, height), rtao_pass(gfx, width, height)
 	{
 	}
 
@@ -32,8 +29,6 @@ namespace adria
 	{
 		ssao_pass.OnResize(w, h);
 		hbao_pass.OnResize(w, h);
-		nnao_pass.OnResize(w, h);
-		cacao_pass.OnResize(w, h);
 		rtao_pass.OnResize(w, h);
 	}
 
@@ -41,7 +36,6 @@ namespace adria
 	{
 		ssao_pass.OnSceneInitialized();
 		hbao_pass.OnSceneInitialized();
-		nnao_pass.OnSceneInitialized();
 	}
 
 	void AmbientOcclusionManager::AddPass(RenderGraph& rg)
@@ -50,8 +44,6 @@ namespace adria
 		{
 		case AmbientOcclusionType_SSAO:  ssao_pass.AddPass(rg); break;
 		case AmbientOcclusionType_HBAO:  hbao_pass.AddPass(rg); break;
-		case AmbientOcclusionType_NNAO:  nnao_pass.AddPass(rg); break;
-		case AmbientOcclusionType_CACAO: cacao_pass.AddPass(rg); break;
 		case AmbientOcclusionType_RTAO:  rtao_pass.AddPass(rg); break;
 		}
 	}
@@ -65,14 +57,12 @@ namespace adria
 					true,
 					true,
 					true,
-					true,
-					cacao_pass.IsSupported(),
 					rtao_pass.IsSupported(),
 				};
 				Int current_ao = AmbientOcclusion.Get();
 				if (ImGui::BeginCombo("Ambient Occlusion Type", AOName[current_ao]))
 				{
-					for (Int i = 0; i < 6; ++i)
+					for (Int i = 0; i < 4; ++i)
 					{
 						ImGui::BeginDisabled(!ao_supported[i]);
 						if (ImGui::Selectable(AOName[i], i == current_ao))
@@ -93,8 +83,6 @@ namespace adria
 		{
 		case AmbientOcclusionType_SSAO:  ssao_pass.GUI();  break;
 		case AmbientOcclusionType_HBAO:  hbao_pass.GUI();  break;
-		case AmbientOcclusionType_NNAO:  nnao_pass.GUI();  break;
-		case AmbientOcclusionType_CACAO: cacao_pass.GUI(); break;
 		case AmbientOcclusionType_RTAO:  rtao_pass.GUI();  break;
 		}
 	}

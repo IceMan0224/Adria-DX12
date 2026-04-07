@@ -2,8 +2,6 @@
 #include "BlackboardData.h"
 #include "ShaderManager.h"
 #include "Components.h"
-#include "SVGFDenoiserPass.h"
-#include "OIDNDenoiserPass.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxShader.h"
 #include "Graphics/GfxShaderKey.h"
@@ -22,11 +20,11 @@ namespace adria
 	enum DenoiserType : Uint8
 	{
 		DenoiserType_None,
-		DenoiserType_SVGF
+		DenoiserType_Count
 	};
 	static TAutoConsoleVariable<Bool> AccumulateRadiance("r.PathTracing.AccumulateRadiance", true, "Should we accumulate radiance in path tracer or no");
 	static TAutoConsoleVariable<Int> MaxBounces("r.PathTracing.MaxBounces", 3, "Maximum number of bounces in a path tracer");
-	static TAutoConsoleVariable<Int> Denoiser("r.PathTracing.Denoiser", DenoiserType_None, "What denoiser will path tracer use: 0 - None, 1 - SVGF");
+	//static TAutoConsoleVariable<Int> Denoiser("r.PathTracing.Denoiser", DenoiserType_None, "What denoiser will path tracer use: 0 - None, 1 - SVGF");
 
 	PathTracingPass::PathTracingPass(entt::registry& reg, GfxDevice* gfx, Uint32 width, Uint32 height)
 		: reg(reg), gfx(gfx), width(width), height(height), use_inline_rt(false), is_supported(false)
@@ -46,7 +44,6 @@ namespace adria
 		{
 			CreateStateObjects();
 			CreatePSOs();
-			svgf_denoiser_pass = std::make_unique<SVGFDenoiserPass>(gfx, width, height);
 			OnResize(width, height);
 			if (use_inline_rt)
 			{
@@ -72,22 +69,11 @@ namespace adria
 			accumulated_frames = 1;
 		}
 
-		denoiser_active = Denoiser.Get() != DenoiserType_None;
-		if (denoiser_active)
+		AddPathTracingPass(rg);
+		if (AccumulateRadiance.Get())
 		{
-			AddPTGBufferPass(rg);
-			AddPathTracingPass(rg);
-			svgf_denoiser_pass->AddPass(rg);
+			++accumulated_frames;
 		}
-		else
-		{
-			AddPathTracingPass(rg);
-			if (AccumulateRadiance.Get())
-			{
-				++accumulated_frames;
-			}
-		}
-
 	}
 
 	void PathTracingPass::OnResize(Uint32 w, Uint32 h)
@@ -98,10 +84,6 @@ namespace adria
 		}
 
 		width = w, height = h;
-		if (svgf_denoiser_pass)
-		{
-			svgf_denoiser_pass->OnResize(w, h);
-		}
 		CreateAccumulationTexture();
 	}
 
@@ -113,10 +95,6 @@ namespace adria
 	void PathTracingPass::Reset()
 	{
 		accumulated_frames = 0;
-		if (svgf_denoiser_pass)
-		{
-			svgf_denoiser_pass->Reset();
-		}
 	}
 
 	void PathTracingPass::GUI()
@@ -126,26 +104,17 @@ namespace adria
 				if (ImGui::TreeNodeEx("Path Tracing Settings", ImGuiTreeNodeFlags_None))
 				{
 					ImGui::SliderInt("Max Bounces", MaxBounces.GetPtr(), 1, 8);
-					if (!denoiser_active)
-					{
-						ImGui::Checkbox("Accumulate Radiance", AccumulateRadiance.GetPtr());
-					}
-					ImGui::Combo("Denoiser Type", Denoiser.GetPtr(), "None\0SVGF\0", 2);
+					ImGui::Checkbox("Accumulate Radiance", AccumulateRadiance.GetPtr());
 
 					ImGui::TreePop();
 					ImGui::Separator();
 				}
 			}, GUICommandGroup_Renderer);
-
-		if (denoiser_active && svgf_denoiser_pass)
-		{
-			svgf_denoiser_pass->GUI();
-		}
 	}
 
 	RGResourceName PathTracingPass::GetFinalOutput() const
 	{
-		return denoiser_active ? RG_NAME(PT_Denoised) : RG_NAME(PT_Output);
+		return RG_NAME(PT_Output);
 	}
 
 	void PathTracingPass::CreatePSOs()
@@ -175,18 +144,11 @@ namespace adria
 			GfxComputePipelineStateDesc compute_pso_desc{};
 			compute_pso_desc.CS = pt_shader_key;
 			path_tracing_compute_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
-
-			pt_shader_key.AddDefine("SVGF_ENABLED", "1");
-			compute_pso_desc.CS = pt_shader_key;
-			path_tracing_svgf_compute_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 		}
 		else
 		{
 			GfxShaderKey pt_shader_key(LIB_PathTracing);
 			path_tracing_pso = CreateRayTracingPipelineCommon(pt_shader_key);
-
-			pt_shader_key.AddDefine("SVGF_ENABLED", "1");
-			path_tracing_svgf_enabled_pso = CreateRayTracingPipelineCommon(pt_shader_key);
 		}
 	}
 
@@ -336,100 +298,42 @@ namespace adria
 				render_target_desc.height = height;
 				render_target_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
 
-				if (denoiser_active)
-				{
-					RGTextureDesc denoiser_texture_desc{};
-					denoiser_texture_desc.format = GfxFormat::R16G16B16A16_FLOAT;
-					denoiser_texture_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
-					denoiser_texture_desc.width = width;
-					denoiser_texture_desc.height = height;
-					builder.DeclareTexture(RG_NAME(PT_DirectRadiance), denoiser_texture_desc);
-					builder.DeclareTexture(RG_NAME(PT_IndirectRadiance), denoiser_texture_desc);
-					builder.DeclareTexture(RG_NAME(PT_DirectAlbedo), denoiser_texture_desc);
-					builder.DeclareTexture(RG_NAME(PT_IndirectAlbedo), denoiser_texture_desc);
-
-					data.direct_radiance = builder.WriteTexture(RG_NAME(PT_DirectRadiance));
-					data.indirect_radiance = builder.WriteTexture(RG_NAME(PT_IndirectRadiance));
-					data.direct_albedo = builder.WriteTexture(RG_NAME(PT_DirectAlbedo));
-					data.indirect_albedo = builder.WriteTexture(RG_NAME(PT_IndirectAlbedo));
-				}
-				else
-				{
-					builder.DeclareTexture(RG_NAME(PT_Output), render_target_desc);
-					data.accumulation = builder.WriteTexture(RG_NAME(PT_AccumulationTexture));
-					data.output = builder.WriteTexture(RG_NAME(PT_Output));
-				}
+				builder.DeclareTexture(RG_NAME(PT_Output), render_target_desc);
+				data.accumulation = builder.WriteTexture(RG_NAME(PT_AccumulationTexture));
+				data.output = builder.WriteTexture(RG_NAME(PT_Output));
 			},
 			[=, this](PathTracingPassData const& data, RenderGraphContext& ctx)
 			{
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				if (denoiser_active)
+				struct PathTracingConstants
 				{
-					struct PathTracingConstants
-					{
-						Int32   bounce_count;
-						Int32   accumulated_frames;
-						Uint32  direct_radiance_idx;
-						Uint32  indirect_radiance_idx;
-						Uint32  direct_albedo_idx;
-						Uint32  indirect_albedo_idx;
-					} constants =
-					{
-						.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
-						.direct_radiance_idx = ctx.GetReadWriteTextureIndex(data.direct_radiance),
-						.indirect_radiance_idx = ctx.GetReadWriteTextureIndex(data.indirect_radiance),
-						.direct_albedo_idx = ctx.GetReadWriteTextureIndex(data.direct_albedo),
-						.indirect_albedo_idx = ctx.GetReadWriteTextureIndex(data.indirect_albedo)
-					};
+					Int32   bounce_count;
+					Int32   accumulated_frames;
+					Uint32  accum_idx;
+					Uint32  output_idx;
+				} constants =
+				{
+					.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
+					.accum_idx = ctx.GetReadWriteTextureIndex(data.accumulation),
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
+				};
 
-					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-					cmd_list->SetRootConstants(1, constants);
+				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
+				cmd_list->SetRootConstants(1, constants);
 
-					if (use_inline_rt)
-					{
-						cmd_list->SetPipelineState(path_tracing_svgf_compute_pso->Get());
-						cmd_list->Dispatch(DivideAndRoundUp(width, 16u), DivideAndRoundUp(height, 16u), 1);
-					}
-					else
-					{
-						GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(path_tracing_svgf_enabled_pso.get());
-						bindings->SetRayGenShader("PT_RayGen");
-						bindings->Commit();
-						cmd_list->DispatchRays(width, height);
-					}
+				if (use_inline_rt)
+				{
+					cmd_list->SetPipelineState(path_tracing_compute_pso->Get());
+					cmd_list->Dispatch(DivideAndRoundUp(width, 16u), DivideAndRoundUp(height, 16u), 1);
 				}
 				else
 				{
-					struct PathTracingConstants
-					{
-						Int32   bounce_count;
-						Int32   accumulated_frames;
-						Uint32  accum_idx;
-						Uint32  output_idx;
-					} constants =
-					{
-						.bounce_count = MaxBounces.Get(), .accumulated_frames = accumulated_frames,
-						.accum_idx = ctx.GetReadWriteTextureIndex(data.accumulation),
-						.output_idx = ctx.GetReadWriteTextureIndex(data.output)
-					};
-
-					cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
-					cmd_list->SetRootConstants(1, constants);
-
-					if (use_inline_rt)
-					{
-						cmd_list->SetPipelineState(path_tracing_compute_pso->Get());
-						cmd_list->Dispatch(DivideAndRoundUp(width, 16u), DivideAndRoundUp(height, 16u), 1);
-					}
-					else
-					{
-						GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(path_tracing_pso.get());
-						bindings->SetRayGenShader("PT_RayGen");
-						bindings->Commit();
-						cmd_list->DispatchRays(width, height);
-					}
+					GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(path_tracing_pso.get());
+					bindings->SetRayGenShader("PT_RayGen");
+					bindings->Commit();
+					cmd_list->DispatchRays(width, height);
 				}
 
 			}, RGPassType::Compute, RGPassFlags::None);

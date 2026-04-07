@@ -33,16 +33,11 @@ namespace adria
 		Bool use_inline_rt;
 
 		std::unique_ptr<GfxRayTracingPipeline> path_tracing_pso;
-		std::unique_ptr<GfxRayTracingPipeline> path_tracing_svgf_enabled_pso;
 		std::unique_ptr<GfxComputePipelineState> path_tracing_compute_pso;
-		std::unique_ptr<GfxComputePipelineState> path_tracing_svgf_compute_pso;
 		std::unique_ptr<GfxGraphicsPipelineState> pt_gbuffer_pso;
 
 		std::unique_ptr<GfxTexture> accumulation_texture = nullptr;
 		Int32 accumulated_frames = 1;
-
-		std::unique_ptr<SVGFDenoiserPass> svgf_denoiser_pass;
-		Bool denoiser_active = false;
 
 	private:
 		void CreatePSOs();
