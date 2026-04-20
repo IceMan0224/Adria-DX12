@@ -466,6 +466,8 @@ namespace adria
 		frame_cbuf_data.rain_view_projection = rain_pass.GetRainViewProjection();
 		frame_cbuf_data.sheenE_idx = g_TextureManager.GetBindlessIndex(sheenE_texture);
 		frame_cbuf_data.rain_total_time = rain_pass.GetRainTotalTime();
+		frame_cbuf_data.fog_volumes_idx = volumetric_fog_manager.GetFogVolumeBufferIndex();
+		frame_cbuf_data.fog_volume_count = volumetric_fog_manager.GetFogVolumeCount();
 		if (ray_tracing_supported && reg.view<RayTracing>().size())
 		{
 			frame_cbuf_data.accel_struct_idx = accel_structure.GetTLASIndex();
@@ -662,6 +664,7 @@ namespace adria
 	void Renderer::Render_PathTracing(RenderGraph& render_graph)
 	{
 		ZoneScopedN("Renderer::Render_PathTracing");
+		path_tracer.SetVolumetricFogEnabled(volumetric_fog_manager.IsFogVolumesActive());
 		path_tracer.AddPass(render_graph);
 		postprocessor.AddTonemapPass(render_graph, path_tracer.GetFinalOutput());
 	}

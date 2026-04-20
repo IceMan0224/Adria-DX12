@@ -44,6 +44,9 @@ namespace adria
 		void OnSceneInitialized();
 		void GUI();
 
+		Int32 GetFogVolumeBufferIndex() const;
+		Int32 GetFogVolumeCount() const;
+
 	private:
 		GfxDevice* gfx;
 		entt::registry& reg;

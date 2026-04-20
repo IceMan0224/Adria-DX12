@@ -53,6 +53,8 @@ struct FrameCBuffer
 	int    sheenEIdx;
 	int    triangleOverdrawIdx;
 	float  rainTotalTime;
+	int    fogVolumesIdx;
+	int    fogVolumeCount;
 };
 ConstantBuffer<FrameCBuffer> FrameCB  : register(b0);
 

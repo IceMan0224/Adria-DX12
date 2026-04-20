@@ -22,6 +22,7 @@ namespace adria
 		Bool IsSupported() const;
 		void Reset();
 		void GUI();
+		void SetVolumetricFogEnabled(Bool enabled) { volumetric_fog_enabled = enabled; }
 
 		RGResourceName GetFinalOutput() const;
 
@@ -31,9 +32,12 @@ namespace adria
 		Uint32 width, height;
 		Bool is_supported;
 		Bool use_inline_rt;
+		Bool volumetric_fog_enabled = false;
 
 		std::unique_ptr<GfxRayTracingPipeline> path_tracing_pso;
+		std::unique_ptr<GfxRayTracingPipeline> path_tracing_pso_volumetric;
 		std::unique_ptr<GfxComputePipelineState> path_tracing_compute_pso;
+		std::unique_ptr<GfxComputePipelineState> path_tracing_compute_pso_volumetric;
 		std::unique_ptr<GfxGraphicsPipelineState> pt_gbuffer_pso;
 
 		std::unique_ptr<GfxTexture> accumulation_texture = nullptr;

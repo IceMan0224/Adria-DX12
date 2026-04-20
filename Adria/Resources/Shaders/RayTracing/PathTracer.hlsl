@@ -45,7 +45,70 @@ void PT_RayGen()
     for (int bounce = 0; bounce < PathTracingPassCB.bounceCount; ++bounce)
     {
         HitInfo hit = (HitInfo)0;
-        if (TraceRay(ray, hit))
+        bool hitSurface = TraceRay(ray, hit);
+
+#ifdef VOLUMETRIC_FOG
+        float hitT = hitSurface ? hit.hitT : FLT_MAX;
+        FogResult fogResult = SampleFog(ray.Origin, ray.Direction, hitT, rng);
+        if (fogResult.scattered)
+        {
+            float3 scatterPos = ray.Origin + fogResult.scatterT * ray.Direction;
+            throughput *= fogResult.scatterAlbedo;
+
+            int lightIndex = 0;
+            float lightWeight = 0.0f;
+            if (SampleLightRIS(rng, scatterPos, lightIndex, lightWeight))
+            {
+                LightInfo lightInfo = LoadLightInfo(lightIndex);
+
+                float3 wi;
+                float attenuation = 1.0f;
+                float shadowMaxT = FLT_MAX;
+                if (lightInfo.type == DIRECTIONAL_LIGHT)
+                {
+                    wi = normalize(-lightInfo.direction.xyz);
+                }
+                else
+                {
+                    float3 toLight = lightInfo.position.xyz - scatterPos;
+                    float dist = length(toLight);
+                    wi = toLight / dist;
+                    attenuation = DoAttenuation(dist, lightInfo.range);
+                    shadowMaxT = dist;
+                    if (lightInfo.type == SPOT_LIGHT)
+                    {
+                        float cosAng = dot(-normalize(lightInfo.direction.xyz), wi);
+                        float conAtt = saturate((cosAng - lightInfo.outerCosine) / (lightInfo.innerCosine - lightInfo.outerCosine));
+                        attenuation *= conAtt * conAtt;
+                    }
+                }
+
+                float vis = TraceShadowRay(lightInfo, scatterPos);
+                float3 fogTrans = GetFogTransmittance(scatterPos, wi, shadowMaxT, rng);
+                float3 lightRadiance = lightInfo.color.rgb * attenuation;
+                float phase = HenyeyGreenstein(dot(ray.Direction, wi), FOG_PHASE_G);
+                radiance += lightWeight * phase * lightRadiance * vis * fogTrans * throughput;
+            }
+
+            if (bounce == PathTracingPassCB.bounceCount - 1) break;
+
+            if (bounce >= MIN_BOUNCES)
+            {
+                float survivalProb = min(max(throughput.r, max(throughput.g, throughput.b)), 0.95f);
+                if (RNG_GetNext(rng) > survivalProb)
+                    break;
+                throughput /= survivalProb;
+            }
+
+            ray.Origin    = scatterPos;
+            ray.Direction = SampleHenyeyGreenstein(ray.Direction, FOG_PHASE_G, rng);
+            ray.TMin      = 0.0f;
+            ray.TMax      = FLT_MAX;
+            continue;
+        }
+#endif
+
+        if (hitSurface)
         {
             Instance instanceData = GetInstanceData(hit.instanceIndex);
             Mesh meshData = GetMeshData(instanceData.meshIndex);
@@ -76,12 +139,13 @@ void PT_RayGen()
 
             int lightIndex = 0;
             float lightWeight = 0.0f;
-            if (SampleLightRIS(rng, worldPosition, worldNormal, lightIndex, lightWeight))
+            if (SampleLightRIS(rng, worldPosition, lightIndex, lightWeight))
             {
                 LightInfo lightInfo = LoadLightInfo(lightIndex);
 
                 float3 wi;
                 float attenuation = 1.0f;
+                float shadowMaxT = FLT_MAX;
                 if (lightInfo.type == DIRECTIONAL_LIGHT)
                 {
                     wi = normalize(-lightInfo.direction.xyz);
@@ -92,6 +156,7 @@ void PT_RayGen()
                     float dist = length(toLight);
                     wi = toLight / dist;
                     attenuation = DoAttenuation(dist, lightInfo.range);
+                    shadowMaxT = dist;
                     if (lightInfo.type == SPOT_LIGHT)
                     {
                         float cosAng = dot(-normalize(lightInfo.direction.xyz), wi);
@@ -101,11 +166,16 @@ void PT_RayGen()
                 }
 
                 float vis = TraceShadowRay(lightInfo, worldPosition.xyz);
+#ifdef VOLUMETRIC_FOG
+                float3 fogTrans = GetFogTransmittance(worldPosition.xyz, wi, shadowMaxT, rng);
+#else
+                float3 fogTrans = 1.0f;
+#endif
                 float NdotL = saturate(dot(worldNormal, wi));
                 float3 lightRadiance = lightInfo.color.rgb * attenuation;
 
                 float3 brdfValue = DefaultBRDF(wi, V, worldNormal, brdf.Diffuse, brdf.Specular, brdf.Roughness);
-                radiance += lightWeight * brdfValue * lightRadiance * NdotL * vis * throughput;
+                radiance += lightWeight * brdfValue * lightRadiance * NdotL * vis * fogTrans * throughput;
             }
 
             radiance += matProps.emissive * throughput;

@@ -109,7 +109,7 @@ namespace adria
 					ImGui::TreePop();
 					ImGui::Separator();
 				}
-			}, GUICommandGroup_Renderer);
+			}, GUICommandGroup_Renderer, GUICommandSubGroup_Lighting);
 	}
 
 	RGResourceName PathTracingPass::GetFinalOutput() const
@@ -144,11 +144,18 @@ namespace adria
 			GfxComputePipelineStateDesc compute_pso_desc{};
 			compute_pso_desc.CS = pt_shader_key;
 			path_tracing_compute_pso = gfx->CreateManagedComputePipelineState(compute_pso_desc);
+
+			pt_shader_key.AddDefine("VOLUMETRIC_FOG", "1");
+			compute_pso_desc.CS = pt_shader_key;
+			path_tracing_compute_pso_volumetric = gfx->CreateManagedComputePipelineState(compute_pso_desc);
 		}
 		else
 		{
 			GfxShaderKey pt_shader_key(LIB_PathTracing);
 			path_tracing_pso = CreateRayTracingPipelineCommon(pt_shader_key);
+
+			pt_shader_key.AddDefine("VOLUMETRIC_FOG", "1");
+			path_tracing_pso_volumetric = CreateRayTracingPipelineCommon(pt_shader_key);
 		}
 	}
 
@@ -325,12 +332,14 @@ namespace adria
 
 				if (use_inline_rt)
 				{
-					cmd_list->SetPipelineState(path_tracing_compute_pso->Get());
+					GfxComputePipelineState* pso = volumetric_fog_enabled ? path_tracing_compute_pso_volumetric.get() : path_tracing_compute_pso.get();
+					cmd_list->SetPipelineState(pso->Get());
 					cmd_list->Dispatch(DivideAndRoundUp(width, 16u), DivideAndRoundUp(height, 16u), 1);
 				}
 				else
 				{
-					GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(path_tracing_pso.get());
+					GfxRayTracingPipeline* pso = volumetric_fog_enabled ? path_tracing_pso_volumetric.get() : path_tracing_pso.get();
+					GfxRayTracingShaderBindings* bindings = cmd_list->BeginRayTracingShaderBindings(pso);
 					bindings->SetRayGenShader("PT_RayGen");
 					bindings->Commit();
 					cmd_list->DispatchRays(width, height);

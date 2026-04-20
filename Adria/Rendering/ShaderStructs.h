@@ -62,6 +62,8 @@ namespace adria
 		Int32  sheenE_idx;
 		Int32  triangle_overdraw_idx;
 		Float  rain_total_time;
+		Int32  fog_volumes_idx;
+		Int32  fog_volume_count;
 	};
 
 	struct LightGPU

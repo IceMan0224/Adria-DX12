@@ -85,6 +85,17 @@ namespace adria
 		}
 	}
 
+	Int32 FogVolumesPass::GetFogVolumeBufferIndex() const
+	{
+		if (!fog_volume_buffer) return -1;
+		return (Int32)gfx->GetBindlessDescriptorIndex(fog_volume_buffer_srv);
+	}
+
+	Int32 FogVolumesPass::GetFogVolumeCount() const
+	{
+		return (Int32)fog_volumes.size();
+	}
+
 	void FogVolumesPass::AddPasses(RenderGraph& rg)
 	{
 		RG_SCOPE(rg, "Fog Volumes");

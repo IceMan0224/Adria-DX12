@@ -2,6 +2,9 @@
 #define _PATHTRACING_
 #include "RayTracingUtil.hlsli"
 #include "Tonemapping.hlsli"
+#ifdef VOLUMETRIC_FOG
+#include "VolumetricFogRT.hlsli"
+#endif
 
 #define MIN_BOUNCES 2
 #define RIS_CANDIDATES_LIGHTS 8
@@ -12,7 +15,7 @@ struct Reservoir
     {
         totalWeight += w;
         M += 1;
- 
+
         if (random < w / totalWeight)
         {
             lightIndex = X;
@@ -20,7 +23,7 @@ struct Reservoir
             sampleTargetPdf = pdf;
             return true;
         }
- 
+
         return false;
     }
 
@@ -29,11 +32,11 @@ struct Reservoir
         return (totalWeight / M) / sampleTargetPdf;
     }
 
-    uint  lightIndex;       
-    float lightWeight;      
-    float totalWeight; 
-    float sampleTargetPdf;     
-    uint  M;                
+    uint  lightIndex;
+    float lightWeight;
+    float totalWeight;
+    float sampleTargetPdf;
+    uint  M;
 };
 
 void SampleSourceLight(in int lightCount, inout RNG rng, out int lightIndex, out float sourcePdf)
@@ -41,7 +44,7 @@ void SampleSourceLight(in int lightCount, inout RNG rng, out int lightIndex, out
     lightIndex = min(int(RNG_GetNext(rng) * lightCount), lightCount - 1);
     sourcePdf = 1.0f / lightCount;
 }
-bool SampleLightRIS(inout RNG rng, float3 position, float3 N, out int lightIndex, out float sampleWeight)
+bool SampleLightRIS(inout RNG rng, float3 position, out int lightIndex, out float sampleWeight)
 {
     uint M = min(RIS_CANDIDATES_LIGHTS, FrameCB.lightCount);
     lightIndex = -1;
@@ -59,22 +62,13 @@ bool SampleLightRIS(inout RNG rng, float3 position, float3 N, out int lightIndex
 
         float3 positionDifference = lightInfo.position.xyz - position;
         float distance = length(positionDifference);
-        float3 L = positionDifference / distance;
-        if (lightInfo.type == DIRECTIONAL_LIGHT)
-        {
-            L = -normalize(lightInfo.direction.xyz);
-        }
-        if (dot(N, L) < 0.0f)
-        {
-            continue;
-        }
         float targetPdf = Luminance(DoAttenuation(distance, lightInfo.range) * lightInfo.color.rgb);
         if (lightInfo.type == DIRECTIONAL_LIGHT)
         {
             targetPdf = Luminance(lightInfo.color.rgb);
         }
         float risWeight = targetPdf / sourcePdf;
-        
+
         reservoir.UpdateReservoir(lightIndex, risWeight, targetPdf, RNG_GetNext(rng));
     }
 

@@ -28,6 +28,10 @@ namespace adria
 		}
 		void GUI();
 
+		Int32 GetFogVolumeBufferIndex() const { return fog_volumes_pass.GetFogVolumeBufferIndex(); }
+		Int32 GetFogVolumeCount() const { return fog_volumes_pass.GetFogVolumeCount(); }
+		Bool IsFogVolumesActive() const;
+
 	private:
 		entt::registry& reg;
 		VolumetricFogType volumetric_fog_type;

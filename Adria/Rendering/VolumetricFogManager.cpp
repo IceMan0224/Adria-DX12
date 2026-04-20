@@ -22,6 +22,11 @@ namespace adria
 	}
 	VolumetricFogManager::~VolumetricFogManager() = default;
 
+	Bool VolumetricFogManager::IsFogVolumesActive() const
+	{
+		return volumetric_fog_type == VolumetricFogType::FogVolume && fog_volumes_pass.GetFogVolumeCount() > 0;
+	}
+
 	void VolumetricFogManager::AddPass(RenderGraph& rg)
 	{
 		auto view = reg.view<Light>();
