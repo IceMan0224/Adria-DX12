@@ -4,7 +4,8 @@
 #include "BlackboardData.h"
 #include "ShaderManager.h"
 #include "Postprocessor.h"
-#include "Graphics/GfxDevice.h" 
+#include "SunManager.h"
+#include "Graphics/GfxDevice.h"
 #include "Graphics/GfxPipelineState.h" 
 #include "RenderGraph/RenderGraph.h"
 
@@ -21,32 +22,23 @@ namespace adria
 
 	void GodRaysPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
-		RGResourceName final_resource = postprocessor->GetFinalResource();
-		entt::registry& reg = postprocessor->GetRegistry();
-		auto lights = reg.view<Light>();
-		for (entt::entity light : lights)
+		entt::entity active = g_SunManager.GetActiveCelestialEntity();
+		if (active == entt::null)
 		{
-			Light const& light_data = lights.get<Light>(light);
-			if (!light_data.active)
-			{
-				continue;
-			}
-
-			if (light_data.type == LightType::Directional)
-			{
-				if (light_data.god_rays)
-				{
-					AddGodRaysPass(rg, light_data);
-					copy_to_texture_pass.AddPass(rg, final_resource, RG_NAME(GodRaysOutput), BlendMode::AdditiveBlend);
-				}
-				else
-				{
-					copy_to_texture_pass.AddPass(rg, final_resource, RG_NAME(SunOutput), BlendMode::AdditiveBlend);
-				}
-				break;
-			}
+			return;
 		}
 
+		Light const& light = postprocessor->GetRegistry().get<Light>(active);
+		RGResourceName final_resource = postprocessor->GetFinalResource();
+		if (light.god_rays)
+		{
+			AddGodRaysPass(rg, light);
+			copy_to_texture_pass.AddPass(rg, final_resource, RG_NAME(GodRaysOutput), BlendMode::AdditiveBlend);
+		}
+		else
+		{
+			copy_to_texture_pass.AddPass(rg, final_resource, RG_NAME(SunOutput), BlendMode::AdditiveBlend);
+		}
 	}
 
 	void GodRaysPass::OnResize(Uint32 w, Uint32 h)

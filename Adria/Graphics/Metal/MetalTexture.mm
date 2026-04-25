@@ -225,7 +225,8 @@ namespace adria
     Uint32 MetalTexture::GetRowPitch(Uint32 mip_level) const
     {
         Uint32 mip_width = std::max(1u, desc.width >> mip_level);
-        return mip_width * GetGfxFormatStride(desc.format);
+        Uint32 row_bytes = mip_width * GetGfxFormatStride(desc.format);
+        return row_bytes;
     }
 
     void MetalTexture::SetName(Char const* name)

@@ -19,6 +19,7 @@
 #include "DecalsPass.h"
 #include "RainPass.h"
 #include "OceanRenderer.h"
+#include "SunManager.h"
 #include "AccelerationStructure.h"
 #include "ShadowRenderer.h"
 #include "PathTracingPass.h"
@@ -150,7 +151,6 @@ namespace adria
 		Float					 ambient_color[3] = { 1.0f / 255.0f, 1.0f / 255.0f, 1.0f / 255.0f };
 		Float					 wind_dir[3] = { 1.0f, 0.0f, 1.0f };
 		Float					 wind_speed = 10.0f;
-		Vector3					 sun_direction;
 
 		//screenshot
 		Bool						take_screenshot = false;

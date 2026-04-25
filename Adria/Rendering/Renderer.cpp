@@ -89,6 +89,7 @@ namespace adria
 	void Renderer::Update(Float dt)
 	{
 		PropagateTransforms(reg);
+		g_SunManager.Update(reg);
 		shadow_renderer.SetupShadows(camera);
 		UpdateSceneBuffers();
 		UpdateFrameConstants(dt);
@@ -278,7 +279,7 @@ namespace adria
 
 			LightGPU& hlsl_light = hlsl_lights.emplace_back();
 			hlsl_light.color = light.color * light.intensity;
-			if (light.type == LightType::Directional)
+			if (light.type == LightType::Directional && light.active)
 			{
 				Float sun_elevation = -light.direction.y;
 				Float sun_fade = Clamp(sun_elevation * 5.0f, 0.0f, 1.0f);
@@ -477,22 +478,7 @@ namespace adria
 			frame_cbuf_data.triangle_overdraw_idx = gfx->GetBindlessDescriptorIndex(overdraw_texture_uav);
 		}
 
-		auto lights = reg.view<Light>();
-		for (entt::entity light : lights)
-		{
-			Light const& light_data = lights.get<Light>(light);
-			if (light_data.type == LightType::Directional && light_data.active)
-			{
-				frame_cbuf_data.sun_direction = -light_data.direction;
-				sun_direction = Vector3(light_data.direction);
-
-				Float sun_elevation = -light_data.direction.y;
-				Float sun_fade = Clamp(sun_elevation * 5.0f, 0.0f, 1.0f);
-				frame_cbuf_data.sun_color = light_data.color * light_data.intensity * sun_fade;
-				break;
-			}
-		}
-
+		g_SunManager.FillFrameCBuffer(frame_cbuf_data);
 		frame_cbuf_data.ambient_color = Vector4(ambient_color[0], ambient_color[1], ambient_color[2], 1.0f);
 		frame_cbuf_data.wind_params = Vector4(wind_dir[0], wind_dir[1], wind_dir[2], wind_speed);
 		frame_cbuffer.Update(frame_cbuf_data, backbuffer_index);
@@ -641,7 +627,7 @@ namespace adria
 			{
 				RG_SCOPE(render_graph, "Forward");
 				ocean_renderer.AddPasses(render_graph);
-				sky_pass.AddPasses(render_graph, sun_direction);
+				sky_pass.AddPasses(render_graph, g_SunManager.GetSunDirection());
 				transparent_pass.AddPass(render_graph);
 				picking_pass.AddPass(render_graph);
 				if (rain_pass.IsEnabled())
@@ -694,46 +680,9 @@ namespace adria
 		rain_pass.GUI();
 		transparent_pass.GUI();
 		volumetric_fog_manager.GUI();
+		g_SunManager.GUI([this]() { path_tracer.Reset(); });
 		QueueGUI([&]()
 			{
-				if (ImGui::TreeNode("Sun"))
-				{
-					auto lights = reg.view<Light, Transform>();
-					Light* sun_light = nullptr;
-					Transform* sun_transform = nullptr;
-					for (entt::entity light : lights)
-					{
-						Light& light_data = lights.get<Light>(light);
-						if (light_data.type == LightType::Directional && light_data.active)
-						{
-							sun_light = &light_data;
-							sun_transform = &lights.get<Transform>(light);
-							break;
-						}
-					}
-					if (sun_light)
-					{
-						static Float sun_elevation = 75.0f;
-						static Float sun_azimuth = 260.0f;
-						ConvertDirectionToAzimuthAndElevation(-sun_light->direction, sun_elevation, sun_azimuth);
-
-						Bool changed = false;
-						changed |= ImGui::ColorEdit3("Sun Color", &sun_light->color.x);
-						changed |= ImGui::SliderFloat("Sun Energy", &sun_light->intensity, 0.0f, 50.0f);
-						changed |= ImGui::SliderFloat("Sun Elevation", &sun_elevation, -90.0f, 90.0f);
-						changed |= ImGui::SliderFloat("Sun Azimuth", &sun_azimuth, 0.0f, 360.0f);
-
-						if (changed)
-						{
-							path_tracer.Reset();
-						}
-						sun_light->direction = ConvertElevationAndAzimuthToDirection(sun_elevation, sun_azimuth);
-						sun_light->position = 1e3 * sun_light->direction;
-						sun_light->direction = -sun_light->direction;
-						sun_transform->local_transform = XMMatrixTranslationFromVector(sun_light->position);
-					}
-					ImGui::TreePop();
-				}
 				if (ImGui::TreeNode("Weather"))
 				{
 					ImGui::ColorEdit3("Ambient Color", ambient_color);

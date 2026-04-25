@@ -62,7 +62,7 @@ namespace adria
 
 	SkyParameters CalculateSkyParameters(Float turbidity, Float albedo, Vector3 const& sun_direction)
 	{
-		Float sun_theta = std::acos(std::clamp(-sun_direction.y, 0.f, 1.f));
+		Float sun_theta = std::acos(std::clamp(-sun_direction.y, 0.087f, 1.f));
 
 		SkyParameters params{};
 		for (Uint64 i = 0; i < SkyParam_Z; ++i)
@@ -89,7 +89,8 @@ namespace adria
 			params[SkyParam_H],
 			params[SkyParam_I]);
 		S = S * params[SkyParam_Z];
-		params[SkyParam_Z] = params[SkyParam_Z] / (S.Dot(Vector3(0.2126f, 0.7152f, 0.0722f)));
+		Float luminance = S.Dot(Vector3(0.2126f, 0.7152f, 0.0722f));
+		params[SkyParam_Z] = std::abs(luminance) > 1e-4f ? params[SkyParam_Z] / luminance : Vector3::Zero;
 		return params;
 	}
 

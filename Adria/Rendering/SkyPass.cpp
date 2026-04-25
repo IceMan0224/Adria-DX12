@@ -3,6 +3,7 @@
 #include "Components.h"
 #include "TextureManager.h"
 #include "BlackboardData.h"
+#include "SunManager.h"
 #include "ShaderManager.h"
 #include "Graphics/GfxBufferView.h"
 #include "Graphics/GfxPipelineState.h"
@@ -78,7 +79,6 @@ namespace adria
 				case SkyType::HosekWilkie:
 				{
 					cmd_list->SetPipelineState(hosek_wilkie_pso->Get());
-					SkyParameters parameters = CalculateSkyParameters(turbidity, ground_albedo, dir);
 					struct HosekWilkieConstants
 					{
 						alignas(16) Vector3 A;
@@ -91,19 +91,23 @@ namespace adria
                         alignas(16) Vector3 H;
                         alignas(16) Vector3 I;
                         alignas(16) Vector3 Z;
-					} constants =
+					} constants{};
+					if (g_SunManager.IsSunActive())
 					{
-							.A = parameters[SkyParam_A],
-							.B = parameters[SkyParam_B],
-							.C = parameters[SkyParam_C],
-							.D = parameters[SkyParam_D],
-							.E = parameters[SkyParam_E],
-							.F = parameters[SkyParam_F],
-							.G = parameters[SkyParam_G],
-							.H = parameters[SkyParam_H],
-							.I = parameters[SkyParam_I],
-							.Z = parameters[SkyParam_Z],
-					};
+						SkyParameters parameters = CalculateSkyParameters(turbidity, ground_albedo, dir);
+						constants = {
+								.A = parameters[SkyParam_A],
+								.B = parameters[SkyParam_B],
+								.C = parameters[SkyParam_C],
+								.D = parameters[SkyParam_D],
+								.E = parameters[SkyParam_E],
+								.F = parameters[SkyParam_F],
+								.G = parameters[SkyParam_G],
+								.H = parameters[SkyParam_H],
+								.I = parameters[SkyParam_I],
+								.Z = parameters[SkyParam_Z],
+						};
+					}
 					cmd_list->SetRootCBV(3, constants);
 					break;
 				}

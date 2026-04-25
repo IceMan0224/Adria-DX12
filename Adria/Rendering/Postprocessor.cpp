@@ -17,6 +17,7 @@
 #include "MotionBlurPass.h"
 #include "GodRaysPass.h"
 #include "FilmEffectsPass.h"
+#include "StarrySkyPass.h"
 #include "RainDropsPass.h"
 #include "TAAPass.h"
 #include "UpscalerPassGroup.h"
@@ -202,6 +203,7 @@ namespace adria
 		post_effects[PostEffectType_Silhouette]		= std::make_unique<SilhouettePass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_FilmEffects]	= std::make_unique<FilmEffectsPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_Fog]			= std::make_unique<ExponentialHeightFogPass>(gfx, render_width, render_height);
+		post_effects[PostEffectType_StarrySky]	= std::make_unique<StarrySkyPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_DepthOfField]	= std::make_unique<DepthOfFieldPassGroup>(gfx, render_width, render_height);
 		post_effects[PostEffectType_RainDrops]		= std::make_unique<RainDropsPass>(gfx, render_width, render_height);
 		post_effects[PostEffectType_Upscaler]		= std::make_unique<UpscalerPassGroup>(gfx, render_width, render_height);
@@ -314,6 +316,10 @@ namespace adria
 		else if constexpr (std::is_same_v<PostEffectT, CRTFilterPass>)
 		{
 			return static_cast<PostEffectT*>(post_effects[PostEffectType_CRT].get());
+		}
+		else if constexpr (std::is_same_v<PostEffectT, StarrySkyPass>)
+		{
+			return static_cast<PostEffectT*>(post_effects[PostEffectType_StarrySky].get());
 		}
 		else
 		{

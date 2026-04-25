@@ -102,9 +102,13 @@ namespace adria
 			material.albedo_color[2] = params.light_data.color.z;
 
             if (params.light_texture.has_value())
-                material.albedo_texture = g_TextureManager.LoadTexture(params.light_texture.value()); //
+			{
+                material.albedo_texture = g_TextureManager.LoadTexture(paths::TexturesDir + params.light_texture.value()); 
+			}
             else if (params.light_data.type == LightType::Directional)
-                material.albedo_texture = g_TextureManager.LoadTexture(paths::TexturesDir + "sun.dds");
+            {
+				material.albedo_texture = g_TextureManager.LoadTexture(paths::TexturesDir + "sun.dds");
+			}
 
             reg.emplace<Material>(light, material);
 			Matrix translation_matrix = Matrix::CreateTranslation(Vector3(&params.light_data.position.x));
@@ -150,6 +154,15 @@ namespace adria
 		{
 			Matrix translation_matrix = Matrix::CreateTranslation(Vector3(&params.light_data.position.x));
 			reg.emplace<Transform>(light, translation_matrix);
+		}
+
+		if (params.role == "sun") 
+		{
+			reg.emplace<Sun>(light);
+		}
+		else if (params.role == "moon") 
+		{
+			reg.emplace<Moon>(light);
 		}
 
         return light;

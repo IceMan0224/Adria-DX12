@@ -3,6 +3,7 @@
 #include "Components.h"
 #include "BlackboardData.h"
 #include "Postprocessor.h"
+#include "SunManager.h"
 #include "Graphics/GfxShaderCompiler.h"
 #include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"
@@ -19,23 +20,13 @@ namespace adria
 
 	void SunPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
-		entt::registry& reg = postprocessor->GetRegistry();
-		entt::entity sun = entt::null;
-		auto lights = reg.view<Light>();
-		for (entt::entity light : lights)
+		entt::entity sun = g_SunManager.GetActiveCelestialEntity();
+		if (sun == entt::null)
 		{
-			Light const& light_data = lights.get<Light>(light);
-			if (!light_data.active)
-			{
-				continue;
-			}
-			if (light_data.type == LightType::Directional)
-			{
-				sun = light;
-				break;
-			}
+			return;
 		}
-		ADRIA_ASSERT(sun != entt::null);
+
+		entt::registry& reg = postprocessor->GetRegistry();
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
 		RGResourceName last_resource = postprocessor->GetFinalResource();

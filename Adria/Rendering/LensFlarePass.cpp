@@ -2,8 +2,9 @@
 #include "ShaderStructs.h"
 #include "Components.h"
 #include "BlackboardData.h"
-#include "ShaderManager.h" 
-#include "Postprocessor.h" 
+#include "ShaderManager.h"
+#include "Postprocessor.h"
+#include "SunManager.h"
 #include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"
 #include "TextureManager.h"
@@ -34,16 +35,17 @@ namespace adria
 
 	Bool LensFlarePass::IsEnabled(PostProcessor const* postprocessor) const
 	{
-		auto lights = postprocessor->GetRegistry().view<Light>();
-		for (entt::entity light : lights)
+		if (!g_SunManager.IsSunActive()) 
 		{
-			Light const& light_data = lights.get<Light>(light);
-			if (light_data.active && light_data.lens_flare)
-			{
-				return true;
-			}
+			return false;
 		}
-		return false;
+		entt::entity sun = g_SunManager.GetSunEntity();
+		if (sun == entt::null) 
+		{
+			return false;
+		}
+		Light const& light = postprocessor->GetRegistry().get<Light>(sun);
+		return light.lens_flare;
 	}
 
 	Bool LensFlarePass::IsSupported() const
@@ -54,27 +56,22 @@ namespace adria
 
 	void LensFlarePass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
-		auto lights = postprocessor->GetRegistry().view<Light>();
-		for (entt::entity light : lights)
+		ADRIA_ASSERT(g_SunManager.IsSunActive());
+		entt::entity sun = g_SunManager.GetSunEntity();
+		ADRIA_ASSERT(sun != entt::null);
+		Light const& light = postprocessor->GetRegistry().get<Light>(sun);
+		ADRIA_ASSERT(light.lens_flare);
+		ADRIA_ASSERT(is_procedural_supported || is_texture_based_supported);
+
+		switch (LensFlare.Get())
 		{
-			auto const& light_data = lights.get<Light>(light);
-			if (!light_data.active || !light_data.lens_flare)
-			{
-				continue;
-			}
-
-			ADRIA_ASSERT(is_procedural_supported || is_texture_based_supported);
-
-			switch (LensFlare.Get())
-			{
-			case LensFlareType_Procedural:
-				AddProceduralLensFlarePass(rg, postprocessor, light_data);
-				break;
-			case LensFlareType_TextureBased:
-			default:
-				AddTextureBasedLensFlare(rg, postprocessor, light_data);
-				break;
-			}
+		case LensFlareType_Procedural:
+			AddProceduralLensFlarePass(rg, postprocessor, light);
+			break;
+		case LensFlareType_TextureBased:
+		default:
+			AddTextureBasedLensFlare(rg, postprocessor, light);
+			break;
 		}
 	}
 

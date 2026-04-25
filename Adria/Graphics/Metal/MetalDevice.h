@@ -132,8 +132,8 @@ namespace adria
         GfxDescriptor CreateTextureDSV(GfxTexture const*, GfxTextureDescriptorDesc const* = nullptr) override;
         GfxDescriptor CreateRayTracingTLASSRV(GfxRayTracingTLAS const*) override;
 
-        Uint64 GetLinearBufferSize(GfxTexture const* texture) const override { return 0; }
-        Uint64 GetLinearBufferSize(GfxBuffer const* buffer) const override { return 0; }
+        Uint64 GetLinearBufferSize(GfxTexture const* texture) const override;
+        Uint64 GetLinearBufferSize(GfxBuffer const* buffer) const override;
 
         GfxShadingRateInfo const& GetShadingRateInfo() const override;
         void SetShadingRateInfo(GfxShadingRateInfo const& info) override {}

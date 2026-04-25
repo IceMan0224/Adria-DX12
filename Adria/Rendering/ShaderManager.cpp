@@ -164,6 +164,8 @@ namespace adria
 			case CS_PathTracing:
 			case CS_Silhouette:
 				return GfxShaderStage::CS;
+			case CS_StarrySky:
+				return GfxShaderStage::CS;
 			case HS_OceanLOD:
 				return GfxShaderStage::HS;
 			case DS_OceanLOD:
@@ -397,6 +399,8 @@ namespace adria
 				return "Other/TensorTextureConversions.hlsl";
 			case CS_Silhouette:
 				return "Other/Silhouette.hlsl";
+			case CS_StarrySky:
+				return "Postprocess/StarrySky.hlsl";
 			case ShaderID_Count:
 			default:
 				return "";
@@ -650,6 +654,8 @@ namespace adria
 				return "PathTracerCS";
 			case CS_Silhouette:
 				return "SilhouetteCS";
+			case CS_StarrySky:
+				return "StarrySkyCS";
 			}
 			return "main";
 		}

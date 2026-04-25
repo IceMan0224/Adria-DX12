@@ -28,6 +28,7 @@
 	  "lights" : [
 		{
 			"type": "directional",
+			"role": "sun",
 			"temperature" :  5900.0,
 			"elevation": 73.0,
 			"azimuth" :  180.0,
@@ -38,6 +39,20 @@
 			"lens_flare": true,
 			"mesh": "quad",
 			"size": 100
+		},
+		{
+			"type": "directional",
+			"role": "moon",
+			"color": [0.2, 0.2, 0.35],
+			"elevation": 45.0,
+			"azimuth": 80.0,
+			"intensity": 1.0,
+			"active": false,
+			"shadows": true,
+			"cascades": true,
+			"mesh": "quad",
+			"size": 50,
+			"texture": "moon.png"
 		}
 	]
 }

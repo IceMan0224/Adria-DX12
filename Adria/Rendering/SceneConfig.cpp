@@ -144,6 +144,7 @@ namespace adria
 			light.mesh_size = light_params.FindOr<Uint32>("size", 100u);
 			light.light_texture = light_params.FindOr<std::string>("texture", "");
 			if (light.light_texture.has_value() && light.light_texture->empty()) light.light_texture = std::nullopt;
+			light.role = light_params.FindOr<std::string>("role", "");
 
 			if (type == "directional")
 			{

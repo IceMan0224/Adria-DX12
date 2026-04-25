@@ -137,6 +137,7 @@ namespace adria
 		CS_TensorToTexture,
 		CS_TextureToTensor,
 		CS_Silhouette,
+		CS_StarrySky,
 		ShaderID_Count
 	};
 

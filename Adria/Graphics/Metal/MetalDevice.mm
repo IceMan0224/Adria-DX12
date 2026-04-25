@@ -1305,4 +1305,27 @@ kernel void ClearTexture3DInt(texture3d<int, access::write> tex [[texture(10)]],
         MakeResident(texture_view);
         return texture_view;
     }
+
+    Uint64 MetalDevice::GetLinearBufferSize(GfxTexture const* texture) const
+    {
+        MetalTexture const* metal_texture = static_cast<MetalTexture const*>(texture);
+        GfxTextureDesc const& desc = texture->GetDesc();
+        Uint32 block_size = GetGfxFormatBlockSize(desc.format);
+        Uint64 size = 0;
+        for (Uint32 layer = 0; layer < desc.array_size; ++layer)
+        {
+            for (Uint32 mip = 0; mip < desc.mip_levels; ++mip)
+            {
+                Uint32 h = std::max(desc.height >> mip, block_size);
+                Uint32 d = std::max(desc.depth >> mip, 1u);
+                size += (Uint64)metal_texture->GetRowPitch(mip) * DivideAndRoundUp(h, block_size) * d;
+            }
+        }
+        return size;
+    }
+
+    Uint64 MetalDevice::GetLinearBufferSize(GfxBuffer const* buffer) const
+    {
+        return buffer->GetSize();
+    }
 }

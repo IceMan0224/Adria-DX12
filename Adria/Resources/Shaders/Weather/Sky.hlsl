@@ -81,6 +81,7 @@ float3 HosekWilkieSky(float3 v, float3 sunDir)
 	float cosGamma = clamp(dot(v, sunDir), 0, 1);
 	float gamma = acos(cosGamma);
 	float3 R = -HosekWilkiePassCB.Z * HosekWilkie(cosTheta, gamma, cosGamma);
+	if (any(isnan(R)) || any(isinf(R))) R = 0;
 	return R;
 }
 

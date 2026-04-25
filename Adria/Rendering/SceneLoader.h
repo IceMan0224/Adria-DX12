@@ -52,6 +52,7 @@ namespace adria
         LightMesh mesh_type = LightMesh::NoMesh;
         Uint32 mesh_size = 0u;
         std::optional<std::string> light_texture = std::nullopt;
+        std::string role;
     };
 	struct DecalParameters
 	{

@@ -32,6 +32,7 @@ namespace adria
 			PostEffectType_Silhouette,
 			PostEffectType_FilmEffects,
 			PostEffectType_Fog,
+			PostEffectType_StarrySky,
 			PostEffectType_DepthOfField,
 			PostEffectType_RainDrops,
 			PostEffectType_Upscaler,

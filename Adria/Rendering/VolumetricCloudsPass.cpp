@@ -2,8 +2,9 @@
 #include "ShaderStructs.h"
 #include "Components.h"
 #include "BlackboardData.h"
-#include "ShaderManager.h" 
-#include "Postprocessor.h" 
+#include "ShaderManager.h"
+#include "Postprocessor.h"
+#include "SunManager.h"
 #include "TextureManager.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Graphics/GfxTexture.h"
@@ -29,7 +30,7 @@ namespace adria
 
 	Bool VolumetricCloudsPass::IsEnabled(PostProcessor const*) const
 	{
-		return Clouds.Get();
+		return Clouds.Get() && g_SunManager.IsSunActive();
 	}
 
 	void VolumetricCloudsPass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)

@@ -96,7 +96,7 @@ namespace adria
 		return handle.IsValid() && handle.id < buffers.size();
 	}
 
-	RenderGraph::~RenderGraph()
+	RenderGraph::~RenderGraph() 
 	{
 		for (GfxDescriptor const& view : texture_views_to_free)
 		{
