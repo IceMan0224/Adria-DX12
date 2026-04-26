@@ -74,9 +74,6 @@ Graphics engine written in C++ with DirectX12 and Metal backends.
 ### Sun Temple
 ![](Adria/Saved/Screenshots/suntemple.png "Sun Temple") 
 
-### Brutalism Hall
-![](Adria/Saved/Screenshots/brutalism.png "Brutalism Hall") 
-
 ### Ocean
 ![](Adria/Saved/Screenshots/ocean.png "Ocean") 
 
@@ -100,9 +97,6 @@ Graphics engine written in C++ with DirectX12 and Metal backends.
 
 ### Triangle Overdraw
 ![](Adria/Saved/Screenshots/bistrooverdraw.png "Bistro Triangle Overdraw") 
-
-### Transparent Objects
-![](Adria/Saved/Screenshots/transparent.png "Transparent Water") 
 
 ### Editor
 ![](Adria/Saved/Screenshots/editor2.png "Editor") 
