@@ -23,7 +23,9 @@
 #include "IconsFontAwesome6.h"
 #include "Logging/Log.h"
 
+#if defined(ADRIA_PLATFORM_WINDOWS)
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
 
 namespace adria
 {
