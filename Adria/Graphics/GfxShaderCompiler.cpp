@@ -203,6 +203,148 @@ namespace adria
 		return target;
 	}
 
+	namespace
+	{
+		enum SpvOp : Uint32
+		{
+			SpvOpName                         = 5,
+			SpvOpTypeImage                    = 25,
+			SpvOpTypeRuntimeArray             = 29,
+			SpvOpTypePointer                  = 32,
+			SpvOpVariable                     = 59,
+			SpvOpDecorate                     = 71,
+			SpvOpMemberDecorate               = 72,
+			SpvOpTypeAccelerationStructureKHR = 5341,
+		};
+		enum : Uint32
+		{
+			SpvDecorationNonWritable  = 24,
+			SpvDecorationBinding      = 33,
+			SpvStorageClassUniformConstant = 0,
+			SpvStorageClassStorageBuffer   = 12,
+		};
+
+		void PatchSpirvBindlessBindings(void* spirv_data, Uint64 spirv_size)
+		{
+			Uint32* words = (Uint32*)spirv_data;
+			Uint32 word_count = (Uint32)(spirv_size / 4);
+			if (word_count < 5) return;
+
+			std::unordered_map<Uint32, std::string> names;
+			std::unordered_map<Uint32, Uint32> var_result_type;
+			std::unordered_map<Uint32, Uint32> var_storage_class;
+			std::unordered_map<Uint32, Uint32> ptr_pointee;
+			std::unordered_map<Uint32, Uint32> rta_element;
+			std::unordered_map<Uint32, Uint32> image_sampled;
+			std::unordered_map<Uint32, Uint32> binding_word_offset;
+			std::unordered_set<Uint32> nonwritable_types;
+			std::unordered_set<Uint32> accel_struct_types;
+
+			Uint32 i = 5;
+			while (i < word_count)
+			{
+				Uint32 inst = words[i];
+				Uint32 len = inst >> 16;
+				Uint32 op  = inst & 0xFFFF;
+				if (len == 0) break;
+
+				switch (op)
+				{
+				case SpvOpName:
+				{
+					Uint32 target = words[i + 1];
+					names[target] = (char const*)&words[i + 2];
+					break;
+				}
+				case SpvOpTypeImage:
+				{
+					Uint32 result_id = words[i + 1];
+					if (len >= 9) image_sampled[result_id] = words[i + 7];
+					break;
+				}
+				case SpvOpTypeRuntimeArray:
+				{
+					rta_element[words[i + 1]] = words[i + 2];
+					break;
+				}
+				case SpvOpTypeAccelerationStructureKHR:
+				{
+					accel_struct_types.insert(words[i + 1]);
+					break;
+				}
+				case SpvOpTypePointer:
+				{
+					ptr_pointee[words[i + 1]] = words[i + 3];
+					break;
+				}
+				case SpvOpVariable:
+				{
+					var_result_type[words[i + 2]] = words[i + 1];
+					var_storage_class[words[i + 2]] = words[i + 3];
+					break;
+				}
+				case SpvOpDecorate:
+				{
+					Uint32 target = words[i + 1];
+					Uint32 dec    = words[i + 2];
+					if (dec == SpvDecorationBinding && len >= 4)
+						binding_word_offset[target] = i + 3;
+					break;
+				}
+				case SpvOpMemberDecorate:
+				{
+					Uint32 target = words[i + 1];
+					Uint32 dec    = words[i + 3];
+					if (dec == SpvDecorationNonWritable)
+						nonwritable_types.insert(target);
+					break;
+				}
+				}
+				i += len;
+			}
+
+			for (auto& [var_id, type_id] : var_result_type)
+			{
+				auto name_it = names.find(var_id);
+				if (name_it == names.end()) continue;
+				if (name_it->second.find("ResourceDescriptorHeap") == std::string::npos) continue;
+
+				auto boff = binding_word_offset.find(var_id);
+				if (boff == binding_word_offset.end()) continue;
+
+				Uint32 sc = var_storage_class[var_id];
+				Uint32 new_binding = 0;
+
+				if (sc == SpvStorageClassStorageBuffer)
+				{
+					auto pp = ptr_pointee.find(type_id);
+					Uint32 rta_id = pp != ptr_pointee.end() ? pp->second : 0;
+					auto re = rta_element.find(rta_id);
+					Uint32 struct_id = re != rta_element.end() ? re->second : 0;
+					new_binding = nonwritable_types.count(struct_id) ? 2 : 3;
+				}
+				else if (sc == SpvStorageClassUniformConstant)
+				{
+					auto pp = ptr_pointee.find(type_id);
+					Uint32 rta_id = pp != ptr_pointee.end() ? pp->second : 0;
+					auto re = rta_element.find(rta_id);
+					Uint32 elem_id = re != rta_element.end() ? re->second : 0;
+					if (accel_struct_types.contains(elem_id))
+					{
+						new_binding = 4; // VK_BINDLESS_BINDING_AS
+					}
+					else
+					{
+						auto si = image_sampled.find(elem_id);
+						new_binding = (si != image_sampled.end() && si->second == 1) ? 0 : 1;
+					}
+				}
+
+				words[boff->second] = new_binding;
+			}
+		}
+	}
+
 	namespace GfxShaderCompiler
 	{
 		static Bool CheckCache(Char const* cache_path, GfxShaderCompileInput const& input, GfxShaderCompileOutput& output)
@@ -311,6 +453,8 @@ namespace adria
 			std::string dxcompiler_path = "dxcompiler.dll";
 #elif defined(ADRIA_PLATFORM_MACOS)
 			std::string dxcompiler_path = "@executable_path/dxcompiler.dylib";
+#elif defined(ADRIA_PLATFORM_LINUX)
+			std::string dxcompiler_path = "libdxcompiler.so";
 #endif
 			dxcompiler.Open(dxcompiler_path.c_str());
 			ADRIA_FATAL_ASSERT(dxcompiler.IsOpen(), "Couldn't open dxcompiler!");
@@ -552,9 +696,17 @@ namespace adria
 			}
 			Uint64 define_hash = crc64(define_key.c_str(), define_key.size());
 			std::string build_string = input.flags & GfxShaderCompilerFlag_Debug ? "debug" : "release";
+			Char const* backend_suffix = "";
+			switch (current_backend)
+			{
+			case GfxBackend::Vulkan: backend_suffix = "_vk";   break;
+			case GfxBackend::Metal:  backend_suffix = "_mtl";  break;
+			case GfxBackend::D3D12:  backend_suffix = "_dx12"; break;
+			default: break;
+			}
 			Char cache_path[256];
-			snprintf(cache_path, sizeof(cache_path), "%s%s_%s_%llx_%s", paths::ShaderCacheDir.c_str(), GetFilenameWithoutExtension(input.file).c_str(),
-												     input.entry_point.c_str(), define_hash, build_string.c_str());
+			snprintf(cache_path, sizeof(cache_path), "%s%s_%s_%llx_%s%s", paths::ShaderCacheDir.c_str(), GetFilenameWithoutExtension(input.file).c_str(),
+												     input.entry_point.c_str(), define_hash, build_string.c_str(), backend_suffix);
 
 			if (CheckCache(cache_path, input, output))
 			{
@@ -635,6 +787,19 @@ namespace adria
 				compile_args.push_back(L"-D");
 				defines.push_back(L"GFX_VULKAN=1");
 				compile_args.push_back(defines.back().c_str());
+				compile_args.push_back(L"-spirv");
+				compile_args.push_back(L"-fspv-target-env=vulkan1.3");
+				compile_args.push_back(L"-fvk-use-dx-layout");
+				compile_args.push_back(L"-fvk-use-scalar-layout");
+				compile_args.push_back(L"-Vd");
+				compile_args.push_back(L"-fspv-extension=SPV_KHR_ray_tracing");
+				compile_args.push_back(L"-fspv-extension=SPV_KHR_ray_query");
+				compile_args.push_back(L"-fspv-extension=SPV_EXT_descriptor_indexing");
+				compile_args.push_back(L"-fspv-extension=SPV_EXT_mesh_shader");
+				compile_args.push_back(L"-fspv-extension=SPV_KHR_physical_storage_buffer");
+				compile_args.push_back(L"-fvk-s-shift");
+				compile_args.push_back(L"0");
+				compile_args.push_back(L"1");
 			}
 			for (GfxShaderDefine const& define : input.defines)
 			{
@@ -729,6 +894,16 @@ namespace adria
 			}
 
 #if defined(ADRIA_PLATFORM_MACOS)
+			if (current_backend == GfxBackend::Vulkan)
+			{
+				std::vector<Uint8> spirv(blob->GetBufferSize());
+				memcpy(spirv.data(), blob->GetBufferPointer(), spirv.size());
+				PatchSpirvBindlessBindings(spirv.data(), spirv.size());
+				output.shader.SetDesc(input);
+				output.shader.SetShaderData(spirv.data(), spirv.size());
+			}
+			else
+			{
 			ADRIA_ASSERT(metal_ir_compiler && metal_root_signature);
 			IRCompilerSetGlobalRootSignature(metal_ir_compiler, metal_root_signature);
 			IRCompilerSetMinimumGPUFamily(metal_ir_compiler, IRGPUFamilyApple7);
@@ -880,11 +1055,22 @@ namespace adria
 
 			output.shader.SetDesc(input);
 			output.shader.SetShaderData(shader_data.data(), shader_data.size());
-			output.shader.SetReflectionData(&reflection, sizeof(MetalShaderReflection));  
+			output.shader.SetReflectionData(&reflection, sizeof(MetalShaderReflection));
 			ADRIA_LOG(INFO, "Successfully converted DXIL to Metal IR for shader: %s", input.file.c_str());
+			}
 #else
 			output.shader.SetDesc(input);
-			output.shader.SetShaderData(blob->GetBufferPointer(), blob->GetBufferSize());
+			if (current_backend == GfxBackend::Vulkan)
+			{
+				std::vector<Uint8> spirv(blob->GetBufferSize());
+				memcpy(spirv.data(), blob->GetBufferPointer(), spirv.size());
+				PatchSpirvBindlessBindings(spirv.data(), spirv.size());
+				output.shader.SetShaderData(spirv.data(), spirv.size());
+			}
+			else
+			{
+				output.shader.SetShaderData(blob->GetBufferPointer(), blob->GetBufferSize());
+			}
 #endif
 			output.includes = std::move(custom_include_handler.include_files);
 			output.includes.push_back(input.file);

@@ -16,14 +16,14 @@ struct OceanIndices
 	uint skyIdx;
 	uint foamIdx;
 };
-ConstantBuffer<OceanIndices> OceanPassCB : register(b1);
+DECLARE_CBUFFER(OceanIndices, OceanPassCB, 1);
 
 struct OceanConstants
 {
 	row_major matrix oceanModelMatrix;
 	float3 oceanColor;
 };
-ConstantBuffer<OceanConstants> OceanPassCB2 : register(b2);
+DECLARE_CBUFFER(OceanConstants, OceanPassCB2, 2);
 
 struct VSInput
 {

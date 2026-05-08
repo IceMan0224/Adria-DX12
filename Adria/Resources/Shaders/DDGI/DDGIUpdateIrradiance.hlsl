@@ -9,7 +9,7 @@ struct DDGIPassConstants
 	uint   rayBufferIdx;
 	uint   irradianceIdx;
 };
-ConstantBuffer<DDGIPassConstants> DDGIPassCB : register(b1);
+DECLARE_CBUFFER(DDGIPassConstants, DDGIPassCB, 1);
 
 #define CACHE_SIZE PROBE_IRRADIANCE_TEXELS * PROBE_IRRADIANCE_TEXELS
 groupshared float3 SharedRadianceCache[CACHE_SIZE];

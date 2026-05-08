@@ -24,6 +24,8 @@ namespace adria::CommandLineOptions
 		Bool perf_report = false;
 		Bool perf_hud = false;
 		Bool wait_debugger = false;
+		std::string gfx_backend{};
+		Bool triangle_test = false;
 
 		void RegisterOptions(CLIParser& cli_parser)
 		{
@@ -47,6 +49,8 @@ namespace adria::CommandLineOptions
 			cli_parser.AddArg(false, "-perfreport");
 			cli_parser.AddArg(false, "-perfhud");
 			cli_parser.AddArg(false, "-waitdebugger");
+			cli_parser.AddArg(true, "-gfx");
+			cli_parser.AddArg(false, "-triangletest");
 		}
 
 		void SetOptionValues(CLIParseResult const& parse_result)
@@ -70,6 +74,8 @@ namespace adria::CommandLineOptions
 			perf_report = parse_result["-perfreport"];
 			perf_hud = parse_result["-perfhud"];
 			wait_debugger = parse_result["-waitdebugger"];
+			gfx_backend = parse_result["-gfx"].AsStringOr("");
+			triangle_test = parse_result["-triangletest"];
 		}
 	}
 
@@ -181,6 +187,16 @@ namespace adria::CommandLineOptions
 	Bool WaitDebugger()
 	{
 		return wait_debugger;
+	}
+
+	std::string const& GetGfxBackend()
+	{
+		return gfx_backend;
+	}
+
+	Bool GetTriangleTest()
+	{
+		return triangle_test;
 	}
 
 }

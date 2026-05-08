@@ -1,3 +1,4 @@
+#include "CommonResources.hlsli"
 #include "Noise.hlsli"
 
 struct CloudNoiseConstants
@@ -6,7 +7,7 @@ struct CloudNoiseConstants
 	uint frequency;
 	uint outputIdx;
 };
-ConstantBuffer<CloudNoiseConstants> CloudNoisePassCB : register(b1);
+DECLARE_CBUFFER(CloudNoiseConstants, CloudNoisePassCB, 1);
 
 [numthreads(8, 8, 8)]
 void CloudShapeCS(uint3 ThreadId : SV_DispatchThreadID)

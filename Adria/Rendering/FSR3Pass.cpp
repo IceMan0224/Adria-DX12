@@ -35,8 +35,10 @@ namespace adria
 
 	FSR3Pass::FSR3Pass(GfxDevice* _gfx, Uint32 w, Uint32 h) : gfx(_gfx), display_width(w), display_height(h), render_width(), render_height(), ffx_interface(nullptr)
 	{
-		if (!gfx->GetCapabilities().SupportsShaderModel(SM_6_6))
+		is_supported = gfx->GetBackend() == GfxBackend::D3D12 && gfx->GetCapabilities().SupportsShaderModel(SM_6_6);
+		if (!is_supported)
 		{
+			ADRIA_LOG(WARNING, "FSR3 is only supported on D3D12 backend");
 			return;
 		}
 
@@ -184,8 +186,11 @@ namespace adria
 
 	void FSR3Pass::DestroyContext()
 	{
-		gfx->WaitForGPU();
-		ffxFsr3ContextDestroy(&fsr3_context);
+		if (is_supported)
+		{
+			gfx->WaitForGPU();
+			ffxFsr3ContextDestroy(&fsr3_context);
+		}
 	}
 
 	void FSR3Pass::RecreateRenderResolution()

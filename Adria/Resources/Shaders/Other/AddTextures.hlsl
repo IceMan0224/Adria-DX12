@@ -11,7 +11,7 @@ struct AddTexturesConstants
 	uint inputIdx1;
 	uint inputIdx2;
 };
-ConstantBuffer<AddTexturesConstants> AddTexturesPassCB : register(b1);
+DECLARE_CBUFFER(AddTexturesConstants, AddTexturesPassCB, 1);
 
 float4 AddTexturesPS(VSToPS input) : SV_Target0
 {

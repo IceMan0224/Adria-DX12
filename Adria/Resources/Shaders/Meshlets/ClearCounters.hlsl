@@ -1,3 +1,4 @@
+#include "CommonResources.hlsli"
 
 struct ClearCountersConstants
 {
@@ -6,7 +7,7 @@ struct ClearCountersConstants
 	uint occludedInstancesCounterIdx;
 };
 
-ConstantBuffer<ClearCountersConstants> ClearCountersPassCB : register(b1);
+DECLARE_CBUFFER(ClearCountersConstants, ClearCountersPassCB, 1);
 
 [numthreads(1, 1, 1)]
 void ClearCountersCS()

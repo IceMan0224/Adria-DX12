@@ -1,10 +1,14 @@
 #pragma once
+#include <mutex>
 #include "GfxDefines.h"
 #include "GfxTimestampProfilerFwd.h"
+#include "Utilities/Align.h"
 #include "Utilities/Singleton.h"
 
 namespace adria
 {
+	using ProfilerMutexT = std::conditional_t<GFX_MULTITHREADED, std::mutex, DummyMutex>;
+
 	class GfxDevice;
 	class GfxCommandList;
 

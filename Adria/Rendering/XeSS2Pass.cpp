@@ -37,9 +37,10 @@ namespace adria
 	XeSS2Pass::XeSS2Pass(GfxDevice* gfx, Uint32 w, Uint32 h) 
 		: gfx(gfx), display_width(), display_height(), render_width(), render_height()
 	{
-		if (!gfx->GetCapabilities().SupportsHardwareRayTracing())
+		is_supported = gfx->GetBackend() == GfxBackend::D3D12 && gfx->GetCapabilities().SupportsShaderModel(SM_6_4);
+		if (!is_supported)
 		{
-			ADRIA_LOG(ERROR, "XeSS2 is not supported on this GPU!");
+			ADRIA_LOG(ERROR, "XeSS2 is only supported on D3D12 backend!");
 			return;
 		}
 
@@ -57,8 +58,11 @@ namespace adria
 
 	XeSS2Pass::~XeSS2Pass()
 	{
-		gfx->WaitForGPU();
-		xessDestroyContext(context);
+		if (is_supported)
+		{
+			gfx->WaitForGPU();
+			xessDestroyContext(context);
+		}
 	}
 
 	void XeSS2Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)

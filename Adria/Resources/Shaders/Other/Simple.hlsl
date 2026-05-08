@@ -7,7 +7,7 @@ struct Constants
 	float3 diffuseColor;
 	uint   diffuseIdx;
 };
-ConstantBuffer<Constants> SimplePassCB : register(b2);
+DECLARE_CBUFFER(Constants, SimplePassCB, 2);
 
 struct VSInput
 {

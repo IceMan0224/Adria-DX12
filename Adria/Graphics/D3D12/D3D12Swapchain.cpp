@@ -56,19 +56,6 @@ namespace adria
 
 	D3D12Swapchain::~D3D12Swapchain() {}
 
-	void D3D12Swapchain::SetAsRenderTarget(GfxCommandList* cmd_list)
-	{
-		GfxDescriptor rtvs[] = { GetBackbufferDescriptor() };
-		cmd_list->SetRenderTargets(rtvs);
-	}
-
-	void D3D12Swapchain::ClearBackbuffer(GfxCommandList* cmd_list)
-	{
-		constexpr Float clear_color[] = { 0,0,0,0 };
-		GfxDescriptor rtv = GetBackbufferDescriptor();
-		cmd_list->ClearRenderTarget(rtv, clear_color);
-	}
-
 	Bool D3D12Swapchain::Present(Bool vsync)
 	{
 		HRESULT hr = swapchain->Present(vsync, 0);

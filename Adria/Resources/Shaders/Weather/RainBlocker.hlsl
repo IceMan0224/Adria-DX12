@@ -4,13 +4,13 @@ struct ModelConstants
 {
 	uint  instanceId;
 };
-ConstantBuffer<ModelConstants> ModelCB : register(b1);
+DECLARE_CBUFFER(ModelConstants, ModelCB, 1);
 
 struct RainBlockerConstants
 {
 	row_major matrix rainViewProjectionMatrix;
 };
-ConstantBuffer<RainBlockerConstants> RainBlockerPassCB : register(b2);
+DECLARE_CBUFFER(RainBlockerConstants, RainBlockerPassCB, 2);
 
 struct VSToPS
 {

@@ -11,7 +11,7 @@ struct ReSTIR_DI_OutputConstants
 	uint finalReservoirIdx;
 	uint outputIdx;
 };
-ConstantBuffer<ReSTIR_DI_OutputConstants> ReSTIR_DI_OutputCB : register(b1);
+DECLARE_CBUFFER(ReSTIR_DI_OutputConstants, ReSTIR_DI_OutputCB, 1);
 
 [numthreads(16, 16, 1)]
 void ReSTIR_DI_OutputCS(uint3 DTid : SV_DispatchThreadID)

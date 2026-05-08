@@ -6,13 +6,13 @@ struct ShadowConstants
 	uint  lightIndex;
 	uint  matrixIndex;
 };
-ConstantBuffer<ShadowConstants> ShadowPassCB : register(b1);
+DECLARE_CBUFFER(ShadowConstants, ShadowPassCB, 1);
 
 struct ModelConstants
 {
 	uint instanceId;
 };
-ConstantBuffer<ModelConstants> ModelCB : register(b2);
+DECLARE_CBUFFER(ModelConstants, ModelCB, 2);
 
 
 struct VSToPS

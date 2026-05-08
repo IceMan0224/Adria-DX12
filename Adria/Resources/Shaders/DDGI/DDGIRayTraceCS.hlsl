@@ -10,7 +10,7 @@ struct DDGIRayTracePassConstants
 	float  historyBlendWeight;
 	uint   rayBufferIdx;
 };
-ConstantBuffer<DDGIRayTracePassConstants> DDGIRayTracePassCB : register(b1);
+DECLARE_CBUFFER(DDGIRayTracePassConstants, DDGIRayTracePassCB, 1);
 
 [numthreads(32, 1, 1)]
 void DDGIRayTraceCS(uint3 dispatchThreadId : SV_DispatchThreadID)

@@ -75,6 +75,54 @@
             "args": [],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "CMake: Build (RelWithDebInfo)"
+        },
+        {
+            "name": "Triangle Test (Vulkan) - macOS",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Adria.app/Contents/MacOS/Adria",
+            "args": ["-triangletest", "-gfx", "vulkan"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "VK_ICD_FILENAMES": "${env:HOME}/VulkanSDK/1.4.341.1/macOS/share/vulkan/icd.d/MoltenVK_icd.json"
+            },
+            "preLaunchTask": "CMake: Build (Debug)"
+        },
+        {
+            "name": "Launch Adria (Vulkan, Debug) - macOS",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Adria.app/Contents/MacOS/Adria",
+            "args": ["-gfx", "vulkan"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "VK_ICD_FILENAMES": "${env:HOME}/VulkanSDK/1.4.341.1/macOS/share/vulkan/icd.d/MoltenVK_icd.json"
+            },
+            "preLaunchTask": "CMake: Build (Debug)"
+        },
+        {
+            "name": "Launch Adria (Vulkan, Release) - macOS",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Adria.app/Contents/MacOS/Adria",
+            "args": ["-gfx", "vulkan"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "VK_ICD_FILENAMES": "${env:HOME}/VulkanSDK/1.4.341.1/macOS/share/vulkan/icd.d/MoltenVK_icd.json"
+            },
+            "preLaunchTask": "CMake: Build (Release)"
+        },
+        {
+            "name": "Launch Adria (Vulkan, RelWithDebInfo) - macOS",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Adria.app/Contents/MacOS/Adria",
+            "args": ["-gfx", "vulkan"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "VK_ICD_FILENAMES": "${env:HOME}/VulkanSDK/1.4.341.1/macOS/share/vulkan/icd.d/MoltenVK_icd.json"
+            },
+            "preLaunchTask": "CMake: Build (RelWithDebInfo)"
         }
     ]
 }

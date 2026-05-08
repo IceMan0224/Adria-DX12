@@ -16,7 +16,7 @@ struct PickingConstants
 	uint entityIdIdx;
 	uint bufferIdx;
 };
-ConstantBuffer<PickingConstants> PickingPassCB : register(b1);
+DECLARE_CBUFFER(PickingConstants, PickingPassCB, 1);
 
 [numthreads(1, 1, 1)]
 void PickingCS()

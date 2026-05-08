@@ -7,7 +7,7 @@ struct PathTracingConstants
     uint accumIdx;            
     uint outputIdx;   
 };
-ConstantBuffer<PathTracingConstants> PathTracingPassCB : register(b1);
+DECLARE_CBUFFER(PathTracingConstants, PathTracingPassCB, 1);
 
 [shader("raygeneration")]
 void PT_RayGen()

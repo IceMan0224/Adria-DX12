@@ -20,7 +20,7 @@ struct ClusteredDeferredLightingConstants
 	uint outputIdx;
 	uint lightBufferDataPacked;
 };
-ConstantBuffer<ClusteredDeferredLightingConstants> ClusteredDeferredLightingPassCB : register(b1);
+DECLARE_CBUFFER(ClusteredDeferredLightingConstants, ClusteredDeferredLightingPassCB, 1);
 
 struct CSInput
 {

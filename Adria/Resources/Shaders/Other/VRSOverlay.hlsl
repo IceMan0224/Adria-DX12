@@ -26,7 +26,7 @@ struct VRSOverlayConstants
 	uint vrsImageIdx;
     uint vrsTileSize;
 };
-ConstantBuffer<VRSOverlayConstants> VRSOverlayPassCB : register(b1);
+DECLARE_CBUFFER(VRSOverlayConstants, VRSOverlayPassCB, 1);
 
 float4 VRSOverlayPS(VSToPS input) : SV_Target0
 {

@@ -10,7 +10,7 @@ struct RayTracedAmbientOcclusionConstants
 	float aoPower;
 };
 
-ConstantBuffer<RayTracedAmbientOcclusionConstants> RayTracedAmbientOcclusionPassCB : register(b1);
+DECLARE_CBUFFER(RayTracedAmbientOcclusionConstants, RayTracedAmbientOcclusionPassCB, 1);
 
 
 struct [raypayload] AORayData

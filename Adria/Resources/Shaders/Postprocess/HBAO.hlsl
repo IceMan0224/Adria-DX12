@@ -20,7 +20,7 @@ struct HBAOConstants
     uint noiseIdx;
     uint outputIdx;
 };
-ConstantBuffer<HBAOConstants> HBAOPassCB : register(b1);
+DECLARE_CBUFFER(HBAOConstants, HBAOPassCB, 1);
 
 struct CSInput
 {

@@ -1,3 +1,4 @@
+#include "CommonResources.hlsli"
 #include "Common.hlsli"
 #include "ExposureUtil.hlsli"
 
@@ -12,9 +13,8 @@ struct BuildHistogramConstants
 	uint  sceneIdx;
 	uint  histogramIdx;
 };
-ConstantBuffer<BuildHistogramConstants> BuildHistogramPassCB : register(b1);
+DECLARE_CBUFFER(BuildHistogramConstants, BuildHistogramPassCB, 1);
 
-SamplerState				  LinearClampSampler : register(s1);
 groupshared uint			  SharedHistogramBins[HISTOGRAM_BIN_NUM];
 
 [numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, 1)]

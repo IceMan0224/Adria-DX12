@@ -22,7 +22,7 @@ struct ReprojectionPassConstants
     uint outputNormalDepthIdx;
     uint outputHistoryLengthIdx;
 };
-ConstantBuffer<ReprojectionPassConstants> ReprojectionPassCB : register(b2);
+DECLARE_CBUFFER(ReprojectionPassConstants, ReprojectionPassCB, 2);
 
 uint2 PackNormalDepth(float3 normal, float depth)
 {
@@ -138,7 +138,7 @@ struct FilterMomentsConstants
     uint outputDirectIdx;
     uint outputIndirectIdx;
 };
-ConstantBuffer<FilterMomentsConstants> FilterMomentsCB : register(b2);
+DECLARE_CBUFFER(FilterMomentsConstants, FilterMomentsCB, 2);
 
 float BilateralWeight_Moments(float depthDiff, float phiDepth, float normalDot, float phiNormal, float lumaDiff, float phiLuma) 
 {
@@ -247,7 +247,7 @@ struct AtrousPassConstants
     uint  feedbackDirectOutIdx;
     uint  feedbackIndirectOutIdx;
 };
-ConstantBuffer<AtrousPassConstants> AtrousPassCB : register(b2);
+DECLARE_CBUFFER(AtrousPassConstants, AtrousPassCB, 2);
 
 float ComputeStabilizedVariance(int2 ipos, Texture2D<float4> directTex)
 {

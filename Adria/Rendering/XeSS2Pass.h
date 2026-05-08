@@ -26,8 +26,10 @@ namespace adria
 		virtual void AddPass(RenderGraph&, PostProcessor*) override;
 		virtual Bool IsEnabled(PostProcessor const*) const override;
 		virtual void GUI() override;
+		virtual Bool IsSupported() const override { return is_supported; }
 
 	private:
+		Bool is_supported = true;
 		Char name_version[16] = {};
 		GfxDevice* gfx = nullptr;
 		Uint32 display_width, display_height;

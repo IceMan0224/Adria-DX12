@@ -12,7 +12,7 @@ struct RayTracedReflectionsConstants
 	uint  albedoIdx;
 	uint  outputIdx;
 };
-ConstantBuffer<RayTracedReflectionsConstants> RayTracedReflectionsPassCB : register(b1);
+DECLARE_CBUFFER(RayTracedReflectionsConstants, RayTracedReflectionsPassCB, 1);
 
 struct [raypayload] RTR_Payload
 {

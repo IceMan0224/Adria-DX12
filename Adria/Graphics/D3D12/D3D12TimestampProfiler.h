@@ -37,8 +37,6 @@ namespace adria
 		};
 		std::stack<QueryData> query_data;
 		Uint32 scope_counter = 0;
-#if GFX_MULTITHREADED
-		std::mutex profiler_mutex;
-#endif
+		ProfilerMutexT profiler_mutex;
 	};
 }

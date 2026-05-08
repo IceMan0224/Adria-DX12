@@ -35,7 +35,7 @@ struct SpectrumConstants
 	uint  phasesIdx;
 	uint  outputIdx;
 };
-ConstantBuffer<SpectrumConstants> SpectrumPassCB : register(b1);
+DECLARE_CBUFFER(SpectrumConstants, SpectrumPassCB, 1);
 
 struct CSInput
 {

@@ -32,7 +32,7 @@ struct LightInjectionConstants
 	uint   lightInjectionTargetHistoryIdx;
     uint   blueNoiseIdx;
 };
-ConstantBuffer<LightInjectionConstants> LightInjectionPassCB : register(b1);
+DECLARE_CBUFFER(LightInjectionConstants, LightInjectionPassCB, 1);
 
 //already exists in VolumetricClouds.hlsl, move volumetric common stuff to Volumetrics.hlsli
 float HenyeyGreensteinPhase(float LdotV, float G)
@@ -150,7 +150,7 @@ struct ScatteringIntegrationConstants
 	uint  lightInjectionTargetIdx;
 	uint  outputIdx;
 };
-ConstantBuffer<ScatteringIntegrationConstants> ScatteringIntegrationPassCB : register(b1);
+DECLARE_CBUFFER(ScatteringIntegrationConstants, ScatteringIntegrationPassCB, 1);
 
 [numthreads(8, 8, 1)]
 void ScatteringIntegrationCS(CSInput input)
@@ -196,7 +196,7 @@ struct CombineFogConstants
 	uint fogIdx;
 	uint depthIdx;
 };
-ConstantBuffer<CombineFogConstants> CombineFogPassCB : register(b1);
+DECLARE_CBUFFER(CombineFogConstants, CombineFogPassCB, 1);
 
 float4 CombineFogPS(VSToPS input) : SV_Target0
 {

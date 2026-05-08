@@ -15,7 +15,7 @@ struct TiledLightingConstants
 	uint outputIdx;
 	uint debugDataPacked;
 };
-ConstantBuffer<TiledLightingConstants> TiledLightingPassCB : register(b1);
+DECLARE_CBUFFER(TiledLightingConstants, TiledLightingPassCB, 1);
 
 groupshared uint MinZ;
 groupshared uint MaxZ;

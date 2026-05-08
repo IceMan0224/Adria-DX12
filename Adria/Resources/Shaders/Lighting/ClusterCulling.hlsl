@@ -29,7 +29,7 @@ struct ClusterCullingConstants
 	uint lightIndexListIdx;	   
 	uint lightGridIdx;		   
 };
-ConstantBuffer<ClusterCullingConstants> ClusterCullingPassCB : register(b1);
+DECLARE_CBUFFER(ClusterCullingConstants, ClusterCullingPassCB, 1);
 
 bool LightIntersectsCluster(LightInfo light, ClusterAABB cluster)
 {

@@ -11,7 +11,7 @@ struct RainSimulationConstants
 	float  simulationSpeed;
 	float  rangeRadius;
 };
-ConstantBuffer<RainSimulationConstants> RainSimulationPassCB : register(b1);
+DECLARE_CBUFFER(RainSimulationConstants, RainSimulationPassCB, 1);
 
 struct RainData
 {

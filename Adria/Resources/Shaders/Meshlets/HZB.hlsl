@@ -7,7 +7,7 @@ struct InitializeHZBConstants
 	float2 hzbDimsInv;
 };
 
-ConstantBuffer<InitializeHZBConstants> HZBPassCB : register(b1);
+DECLARE_CBUFFER(InitializeHZBConstants, HZBPassCB, 1);
 
 [numthreads(16, 16, 1)]
 void InitializeHZB_CS(uint3 threadId : SV_DispatchThreadID)
@@ -32,14 +32,14 @@ struct SpdConstants
 	uint2 workGroupOffset;
 };
 
-ConstantBuffer<SpdConstants> spdConstants : register(b1);
+DECLARE_CBUFFER(SpdConstants, spdConstants, 1);
 
 struct SPDIndices
 {
 	uint4	dstIdx[12];
 	uint	spdGlobalAtomicIdx;
 };
-ConstantBuffer<SPDIndices> spdIndices : register(b2);
+DECLARE_CBUFFER(SPDIndices, spdIndices, 2);
 
 
 //#define globallycoherent

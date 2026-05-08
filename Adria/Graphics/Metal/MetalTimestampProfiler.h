@@ -51,9 +51,7 @@ namespace adria
         Uint32 encoder_counter = 0;
         Uint64 frame_sample_offset = 0;
 
-#if GFX_MULTITHREADED
-        std::mutex profiler_mutex;
-#endif
+        ProfilerMutexT profiler_mutex;
     private:
         Uint32 AllocateEncoderTimestamp();
     };

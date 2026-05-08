@@ -35,7 +35,7 @@ namespace adria
 		Uint32 display_width, display_height;
 		Uint32 render_width, render_height;
 
-		FfxInterface* ffx_interface;
+		FfxInterface* ffx_interface = nullptr;
 		FfxFsr2ContextDescription fsr2_context_desc{};
 		FfxFsr2Context fsr2_context{};
 		Bool recreate_context = true;

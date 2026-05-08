@@ -1,10 +1,13 @@
 <img align="center" padding="2" src="Adria/Resources/Icons/adria_logo_wide2.png"/>
 
-Graphics engine written in C++ with DirectX12 and Metal backends.
+Graphics engine written in C++ with DirectX12, Metal, and Vulkan backends.
 
 ## Backends
-* **DirectX12** (Windows) 
-* **Metal** (macOS) 
+* **DirectX12** (Windows)
+* **Metal** (macOS)
+* **Vulkan** (Windows, macOS via MoltenVK) *experimental*
+* **Vulkan** (Linux) *planned*
+* **Metal4** (macOS) *planned*
 
 ## Features
 * Render graph

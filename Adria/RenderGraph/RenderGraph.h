@@ -123,7 +123,7 @@ namespace adria
 
 		mutable std::unordered_map<RGTextureId, std::vector<std::pair<GfxTextureDescriptorDesc, RGDescriptorType>>> texture_view_desc_map;
 		mutable std::unordered_map<RGTextureId, std::vector<GfxDescriptor>> texture_view_map;
-		mutable std::vector<GfxDescriptor> texture_views_to_free;
+		mutable std::vector<GfxDescriptor> views_to_free;
 
 		mutable std::unordered_map<RGBufferId, std::vector<std::pair<GfxBufferDescriptorDesc, RGDescriptorType>>> buffer_view_desc_map;
 		mutable std::unordered_map<RGBufferId, std::vector<GfxDescriptor>> buffer_view_map;

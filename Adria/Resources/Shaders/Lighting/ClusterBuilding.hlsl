@@ -17,7 +17,7 @@ struct ClusterBuildingConstants
 {
 	uint clustersIdx;
 };
-ConstantBuffer<ClusterBuildingConstants> ClusterBuildingPassCB : register(b1);
+DECLARE_CBUFFER(ClusterBuildingConstants, ClusterBuildingPassCB, 1);
 
 float3 IntersectionZPlane(float3 B, float zDist)
 {

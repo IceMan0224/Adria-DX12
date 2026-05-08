@@ -18,8 +18,6 @@ namespace adria
         MetalSwapchain(GfxDevice* gfx, void* window_handle, Uint32 width, Uint32 height);
         virtual ~MetalSwapchain() override;
 
-        virtual void SetAsRenderTarget(GfxCommandList* cmd_list) override {}
-        virtual void ClearBackbuffer(GfxCommandList* cmd_list) override {}
         virtual Bool Present(Bool vsync) override;
         virtual void OnResize(Uint32 w, Uint32 h) override;
         virtual Uint32 GetBackbufferIndex() const override { return frame_index; }

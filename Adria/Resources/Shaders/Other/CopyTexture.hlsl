@@ -10,7 +10,7 @@ struct CopyTextureConstants
 {
 	uint inputIdx;
 };
-ConstantBuffer<CopyTextureConstants> CopyTexturePassCB : register(b1);
+DECLARE_CBUFFER(CopyTextureConstants, CopyTexturePassCB, 1);
 
 float4 CopyTexturePS(VSToPS input) : SV_Target0
 {

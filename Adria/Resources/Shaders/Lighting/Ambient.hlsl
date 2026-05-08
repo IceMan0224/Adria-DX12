@@ -13,7 +13,7 @@ struct AmbientConstants
 	int   aoIdx;
 	uint  outputIdx;
 };
-ConstantBuffer<AmbientConstants> AmbientPassCB : register(b1);
+DECLARE_CBUFFER(AmbientConstants, AmbientPassCB, 1);
 
 struct CSInput
 {

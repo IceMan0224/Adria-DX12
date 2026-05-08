@@ -23,7 +23,7 @@ struct CullInstancesConstants
 	uint candidateMeshletsIdx;
 	uint candidateMeshletsCounterIdx;
 };
-ConstantBuffer<CullInstancesConstants> CullInstancesPassCB : register(b1);
+DECLARE_CBUFFER(CullInstancesConstants, CullInstancesPassCB, 1);
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void CullInstancesCS(uint ThreadId : SV_DispatchThreadID)
@@ -114,7 +114,7 @@ struct BuildInstanceCullArgsConstants
 	uint occludedInstancesCounterIdx;
 	uint instanceCullArgsIdx;
 };
-ConstantBuffer<BuildInstanceCullArgsConstants> BuildInstanceCullArgsPassCB : register(b1);
+DECLARE_CBUFFER(BuildInstanceCullArgsConstants, BuildInstanceCullArgsPassCB, 1);
 
 [numthreads(1, 1, 1)]
 void BuildInstanceCullArgsCS()

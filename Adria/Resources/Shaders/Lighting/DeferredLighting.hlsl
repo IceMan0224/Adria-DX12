@@ -14,7 +14,7 @@ struct DeferredLightingConstants
 	uint outputIdx;
 	int  restirDIOutputIdx;
 };
-ConstantBuffer<DeferredLightingConstants> DeferredLightingPassCB : register(b1);
+DECLARE_CBUFFER(DeferredLightingConstants, DeferredLightingPassCB, 1);
 
 struct CSInput
 {

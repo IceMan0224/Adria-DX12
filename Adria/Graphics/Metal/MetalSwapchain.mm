@@ -12,19 +12,12 @@ namespace adria
     {
         @autoreleasepool
         {
-            NSWindow* nsWindow = (__bridge NSWindow*)window_handle;
-            NSView* contentView = [nsWindow contentView];
-
-            metal_layer = [CAMetalLayer layer];
+            metal_layer = (__bridge CAMetalLayer*)window_handle;
             metal_layer.device = (__bridge id<MTLDevice>)gfx->GetNative();
             metal_layer.pixelFormat = MTLPixelFormatRGBA8Unorm;
             metal_layer.framebufferOnly = NO;
-
             metal_layer.drawableSize = CGSizeMake(w, h);
             metal_layer.contentsScale = 1.0;
-
-            [contentView setLayer:metal_layer];
-            [contentView setWantsLayer:YES];
 
             GfxTextureDesc texture_desc{};
             texture_desc.width = w;

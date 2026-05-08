@@ -80,6 +80,32 @@ namespace adria
 		Unknown
 	};
 
+	inline Char const* GetGfxVendorName(GfxVendor v)
+	{
+		switch (v)
+		{
+		case GfxVendor::AMD:       return "AMD";
+		case GfxVendor::Nvidia:    return "Nvidia";
+		case GfxVendor::Intel:     return "Intel";
+		case GfxVendor::Microsoft: return "Microsoft";
+		case GfxVendor::Apple:     return "Apple";
+		case GfxVendor::Unknown:
+		default:                   return "Unknown";
+		}
+	}
+
+	inline Char const* GetGfxBackendName(GfxBackend b)
+	{
+		switch (b)
+		{
+		case GfxBackend::D3D12:  return "D3D12";
+		case GfxBackend::Metal:  return "Metal";
+		case GfxBackend::Vulkan: return "Vulkan";
+		case GfxBackend::Unknown:
+		default:                 return "Unknown";
+		}
+	}
+
 	class GfxDevice
 	{
 	public:
@@ -104,6 +130,7 @@ namespace adria
 		virtual GfxCapabilities const& GetCapabilities() const = 0;
 		virtual GfxVendor GetVendor() const = 0;
 		virtual GfxBackend GetBackend() const = 0;
+		std::string const& GetDeviceName() const { return device_name; }
 
 		virtual GfxNsightPerfManager* GetNsightPerfManager() const = 0;
 
@@ -126,7 +153,7 @@ namespace adria
 
 		virtual GfxLinearDynamicAllocator* GetDynamicAllocator() const = 0;
 
-		virtual void FreeCPUDescriptor(GfxDescriptor descriptor) = 0;
+		virtual void FreeDescriptor(GfxDescriptor descriptor) = 0;
 		virtual Uint32 GetBindlessDescriptorIndex(GfxDescriptor descriptor) const = 0;
 
 		virtual std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) = 0;
@@ -244,7 +271,11 @@ namespace adria
 
 	private:
 		virtual void AddToReleaseQueue_Internal(ReleasableObject* _obj) = 0;
+
+	protected:
+		std::string device_name;
 	};
 
 	std::unique_ptr<GfxDevice> CreateGfxDevice(GfxBackend backend, Window* window);
+	std::unique_ptr<GfxDevice> CreateGfxDevice(Window* window); 
 }

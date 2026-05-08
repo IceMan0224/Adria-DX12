@@ -40,7 +40,7 @@ struct VolumetricCloudsConstants
 	float 	  henyeyGreensteinGBackward;
 	uint      resolutionFactor;
 };
-ConstantBuffer<VolumetricCloudsConstants> VolumetricCloudsPassCB : register(b2);
+DECLARE_CBUFFER(VolumetricCloudsConstants, VolumetricCloudsPassCB, 2);
 
 static const float BayerFactor = 1.0f / 16.0f;
 static const int BayerFilter[16] =
@@ -370,7 +370,7 @@ struct CloudsCombineConstants
 {
 	uint inputIdx;
 };
-ConstantBuffer<CloudsCombineConstants> CloudsCombinePassCB : register(b1);
+DECLARE_CBUFFER(CloudsCombineConstants, CloudsCombinePassCB, 1);
 
 float4 CloudsCombinePS(VSToPS input) : SV_Target0
 {

@@ -9,7 +9,7 @@ struct GBufferConstants
     uint instanceId;
     uint entityId;
 };
-ConstantBuffer<GBufferConstants> GBufferPassCB : register(b1);
+DECLARE_CBUFFER(GBufferConstants, GBufferPassCB, 1);
 
 struct VSToPS
 {

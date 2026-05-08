@@ -6,7 +6,7 @@ struct PT_GBufferConstants
 {
     uint instanceId;
 };
-ConstantBuffer<PT_GBufferConstants> PT_GBufferPassCB : register(b1);
+DECLARE_CBUFFER(PT_GBufferConstants, PT_GBufferPassCB, 1);
 
 struct VSToPS
 {

@@ -56,21 +56,53 @@ struct FrameCBuffer
 	int    fogVolumesIdx;
 	int    fogVolumeCount;
 };
+
+#if GFX_VULKAN
+
+struct _AdriaPC
+{
+	uint64_t _cbv_b0;
+	uint64_t _cbv_b1;
+	uint64_t _cbv_b2;
+	uint64_t _cbv_b3;
+};
+[[vk::push_constant]] _AdriaPC _adria_push;
+
+static FrameCBuffer FrameCB = vk::RawBufferLoad<FrameCBuffer>(_adria_push._cbv_b0);
+
+#define DECLARE_CBUFFER(Type, Name, Slot) \
+	static Type Name = vk::RawBufferLoad<Type>(_adria_push._cbv_b##Slot)
+
+#else
+
 ConstantBuffer<FrameCBuffer> FrameCB  : register(b0);
 
-SamplerState LinearWrapSampler : register(s0);
-SamplerState LinearClampSampler : register(s1);
-SamplerState LinearBorderSampler : register(s2);
+#define DECLARE_CBUFFER(Type, Name, Slot) \
+	ConstantBuffer<Type> Name : register(b##Slot)
 
-SamplerState PointWrapSampler : register(s3);
-SamplerState PointClampSampler : register(s4);
-SamplerState PointBorderSampler : register(s5);
+#endif
 
-SamplerComparisonState ShadowClampSampler : register(s6);
-SamplerComparisonState ShadowWrapSampler : register(s7);
+#if GFX_VULKAN
+#define ADRIA_SAMPLER(Type, Name, Reg, Idx) [[vk::binding(Idx, 1)]] Type Name : register(Reg)
+#else
+#define ADRIA_SAMPLER(Type, Name, Reg, Idx) Type Name : register(Reg)
+#endif
 
-SamplerState LinearMirrorSampler : register(s8);
-SamplerState PointMirrorSampler : register(s9);
+ADRIA_SAMPLER(SamplerState,           LinearWrapSampler,   s0, 0);
+ADRIA_SAMPLER(SamplerState,           LinearClampSampler,  s1, 1);
+ADRIA_SAMPLER(SamplerState,           LinearBorderSampler, s2, 2);
+
+ADRIA_SAMPLER(SamplerState,           PointWrapSampler,    s3, 3);
+ADRIA_SAMPLER(SamplerState,           PointClampSampler,   s4, 4);
+ADRIA_SAMPLER(SamplerState,           PointBorderSampler,  s5, 5);
+
+ADRIA_SAMPLER(SamplerComparisonState, ShadowClampSampler,  s6, 6);
+ADRIA_SAMPLER(SamplerComparisonState, ShadowWrapSampler,   s7, 7);
+
+ADRIA_SAMPLER(SamplerState,           LinearMirrorSampler, s8, 8);
+ADRIA_SAMPLER(SamplerState,           PointMirrorSampler,  s9, 9);
+
+#undef ADRIA_SAMPLER
 
 
 static float3 GetViewPosition(float2 texcoord, float depth)

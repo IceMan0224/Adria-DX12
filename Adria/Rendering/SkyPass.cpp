@@ -81,31 +81,32 @@ namespace adria
 					cmd_list->SetPipelineState(hosek_wilkie_pso->Get());
 					struct HosekWilkieConstants
 					{
-						alignas(16) Vector3 A;
-                        alignas(16) Vector3 B;
-                        alignas(16) Vector3 C;
-                        alignas(16) Vector3 D;
-                        alignas(16) Vector3 E;
-                        alignas(16) Vector3 F;
-                        alignas(16) Vector3 G;
-                        alignas(16) Vector3 H;
-                        alignas(16) Vector3 I;
-                        alignas(16) Vector3 Z;
+						Vector4 A;
+						Vector4 B;
+						Vector4 C;
+						Vector4 D;
+						Vector4 E;
+						Vector4 F;
+						Vector4 G;
+						Vector4 H;
+						Vector4 I;
+						Vector4 Z;
 					} constants{};
 					if (g_SunManager.IsSunActive())
 					{
 						SkyParameters parameters = CalculateSkyParameters(turbidity, ground_albedo, dir);
+						auto ToVec4 = [](Vector3 const& v) { return Vector4(v.x, v.y, v.z, 0.0f); };
 						constants = {
-								.A = parameters[SkyParam_A],
-								.B = parameters[SkyParam_B],
-								.C = parameters[SkyParam_C],
-								.D = parameters[SkyParam_D],
-								.E = parameters[SkyParam_E],
-								.F = parameters[SkyParam_F],
-								.G = parameters[SkyParam_G],
-								.H = parameters[SkyParam_H],
-								.I = parameters[SkyParam_I],
-								.Z = parameters[SkyParam_Z],
+								.A = ToVec4(parameters[SkyParam_A]),
+								.B = ToVec4(parameters[SkyParam_B]),
+								.C = ToVec4(parameters[SkyParam_C]),
+								.D = ToVec4(parameters[SkyParam_D]),
+								.E = ToVec4(parameters[SkyParam_E]),
+								.F = ToVec4(parameters[SkyParam_F]),
+								.G = ToVec4(parameters[SkyParam_G]),
+								.H = ToVec4(parameters[SkyParam_H]),
+								.I = ToVec4(parameters[SkyParam_I]),
+								.Z = ToVec4(parameters[SkyParam_Z]),
 						};
 					}
 					cmd_list->SetRootCBV(3, constants);

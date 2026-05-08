@@ -9,7 +9,7 @@ struct DDGIPassConstants
 	uint   rayBufferIdx;
 	uint   distanceIdx;
 };
-ConstantBuffer<DDGIPassConstants> DDGIPassCB : register(b1);
+DECLARE_CBUFFER(DDGIPassConstants, DDGIPassCB, 1);
 
 #define CACHE_SIZE PROBE_DISTANCE_TEXELS * PROBE_DISTANCE_TEXELS
 groupshared float  SharedDepthCache[CACHE_SIZE];

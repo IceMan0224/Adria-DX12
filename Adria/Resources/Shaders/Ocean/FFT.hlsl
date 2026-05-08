@@ -11,7 +11,7 @@ struct FFTConstants
 	uint seqCount;
 	uint subseqCount;
 };
-ConstantBuffer<FFTConstants> FFTPassCB : register(b1);
+DECLARE_CBUFFER(FFTConstants, FFTPassCB, 1);
 
 float2 MultiplyComplex(float2 a, float2 b)
 {

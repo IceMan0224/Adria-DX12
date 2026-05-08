@@ -187,8 +187,11 @@ namespace adria
 
 	void FSR2Pass::DestroyContext()
 	{
-		gfx->WaitForGPU();
-		ffxFsr2ContextDestroy(&fsr2_context);
+		if (is_supported)
+		{
+			gfx->WaitForGPU();
+			ffxFsr2ContextDestroy(&fsr2_context);
+		}
 	}
 
 	void FSR2Pass::RecreateRenderResolution()

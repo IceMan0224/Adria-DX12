@@ -7,7 +7,7 @@ struct BlurConstants
 	uint inputIdx;
 	uint outputIdx;
 };
-ConstantBuffer<BlurConstants> BlurPassCB : register(b1);
+DECLARE_CBUFFER(BlurConstants, BlurPassCB, 1);
 
 groupshared float4 SharedPoints[4 + BLOCK_SIZE + 4];
 

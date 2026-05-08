@@ -6,7 +6,7 @@ struct RainConstants
 	uint   rainStreakIdx;
 	float  rainStreakScale;
 };
-ConstantBuffer<RainConstants> RainPassCB : register(b1);
+DECLARE_CBUFFER(RainConstants, RainPassCB, 1);
 
 struct RainData
 {

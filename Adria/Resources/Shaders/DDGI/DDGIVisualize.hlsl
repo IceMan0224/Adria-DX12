@@ -10,7 +10,7 @@ struct DDGIVisualizeConstants
 {
     uint visualizeMode;
 };
-ConstantBuffer<DDGIVisualizeConstants> DDGIVisualizePassCB : register(b1);
+DECLARE_CBUFFER(DDGIVisualizeConstants, DDGIVisualizePassCB, 1);
 
 
 struct VSToPS

@@ -16,7 +16,7 @@ struct VolumetricLightingConstants
 	uint resolutionFactor;
 	uint sampleCount;
 };
-ConstantBuffer<VolumetricLightingConstants> VolumetricLightingPassCB : register(b1);
+DECLARE_CBUFFER(VolumetricLightingConstants, VolumetricLightingPassCB, 1);
 
 float GetAttenuation(LightInfo light, float3 P);
 

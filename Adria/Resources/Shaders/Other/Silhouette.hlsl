@@ -11,7 +11,7 @@ struct SilhouetteConstants
     uint  entityIdIdx;
     uint  outputIdx;
 };
-ConstantBuffer<SilhouetteConstants> SilhouetteCB : register(b1);
+DECLARE_CBUFFER(SilhouetteConstants, SilhouetteCB, 1);
 
 [numthreads(8, 8, 1)]
 void SilhouetteCS(uint3 dispatchId : SV_DispatchThreadID)

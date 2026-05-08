@@ -9,8 +9,6 @@ namespace adria
 		D3D12Swapchain(GfxDevice* gfx, GfxSwapchainDesc const& desc);
         ~D3D12Swapchain();
 
-        virtual void SetAsRenderTarget(GfxCommandList* cmd_list) override;
-		virtual void ClearBackbuffer(GfxCommandList* cmd_list) override;
 		virtual Bool Present(Bool vsync) override;
 		virtual void OnResize(Uint32 w, Uint32 h) override;
 

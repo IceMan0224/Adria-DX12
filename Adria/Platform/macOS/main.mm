@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 #include "Core/Engine.h"
+#include "Rendering/TriangleTestApp.h"
 #include "Core/FatalAssert.h"
 #include "Core/CommandLineOptions.h"
 #include "Platform/Input.h"
@@ -12,6 +13,7 @@
 using namespace adria;
 
 @interface AdriaAppDelegate : NSObject <NSApplicationDelegate>
+@property (nonatomic, assign) adria::Window* window;
 @end
 
 @implementation AdriaAppDelegate
@@ -19,6 +21,15 @@ using namespace adria;
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)theApplication
 {
     return YES;
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
+{
+    if (self.window)
+    {
+        self.window->Quit(0);
+    }
+    return NSTerminateCancel;
 }
 
 @end
@@ -65,22 +76,35 @@ int main(int argc, char* argv[])
         window_params.title = window_title.c_str();
 
         Window window(window_params);
+        appDelegate.window = &window;
         g_Input.Initialize(&window);
 
-        EditorInitParams editor_params{ .window = &window, .scene_file = CommandLineOptions::GetSceneFile() };
-        g_Editor.Initialize(std::move(editor_params));
-        window.GetWindowEvent().AddLambda([](WindowEventInfo const& msg_data) { g_Editor.OnWindowEvent(msg_data); });
-
         [NSApp activateIgnoringOtherApps:YES];
-        while (window.Loop())
+        if (CommandLineOptions::GetTriangleTest())
         {
-            @autoreleasepool
+            TriangleTestApp app(&window);
+            while (window.Loop())
             {
-                g_Editor.Run();
+                @autoreleasepool
+                {
+                    app.Run();
+                }
             }
         }
-
-        g_Editor.Shutdown();
+        else
+        {
+            EditorInitParams editor_params{ .window = &window, .scene_file = CommandLineOptions::GetSceneFile() };
+            g_Editor.Initialize(std::move(editor_params));
+            window.GetWindowEvent().AddLambda([](WindowEventInfo const& msg_data) { g_Editor.OnWindowEvent(msg_data); });
+            while (window.Loop())
+            {
+                @autoreleasepool
+                {
+                    g_Editor.Run();
+                }
+            }
+            g_Editor.Shutdown();
+        }
         [NSApp terminate:nil];
         exit(0);
     }

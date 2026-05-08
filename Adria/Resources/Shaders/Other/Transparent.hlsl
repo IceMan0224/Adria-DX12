@@ -14,7 +14,7 @@ struct TransparentConstants
 	uint sceneIdx;
 	uint depthIdx;
 };
-ConstantBuffer<TransparentConstants> TransparentPassCB : register(b1);
+DECLARE_CBUFFER(TransparentConstants, TransparentPassCB, 1);
 
 struct VSToPS
 {

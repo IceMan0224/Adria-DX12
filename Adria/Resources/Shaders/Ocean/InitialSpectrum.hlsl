@@ -31,7 +31,7 @@ struct InitialSpectrumConstants
 	float oceanSize;
 	uint  outputIdx;
 };
-ConstantBuffer<InitialSpectrumConstants> InitialSpectrumPassCB : register(b1);
+DECLARE_CBUFFER(InitialSpectrumConstants, InitialSpectrumPassCB, 1);
 
 struct CSInput
 {

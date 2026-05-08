@@ -24,13 +24,7 @@ namespace adria
 	Engine::Engine(Window* window, std::string const& scene_file) : window{ window }, viewport_data{}
 	{
 		g_ThreadPool.Initialize();
-#if defined(ADRIA_PLATFORM_WINDOWS)
-		gfx = CreateGfxDevice(GfxBackend::D3D12, window);
-#elif defined(ADRIA_PLATFORM_MACOS)
-		gfx = CreateGfxDevice(GfxBackend::Metal, window);
-#else
-		gfx = CreateGfxDevice(GfxBackend::Vulkan, window);
-#endif
+		gfx = CreateGfxDevice(window);
 		GfxShaderCompiler::Initialize(gfx.get());
 		ShaderManager::Initialize();
 		g_TextureManager.Initialize(gfx.get());

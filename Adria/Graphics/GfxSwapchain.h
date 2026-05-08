@@ -22,8 +22,6 @@ namespace adria
 	public:
 		virtual ~GfxSwapchain() {}
 
-		virtual void SetAsRenderTarget(GfxCommandList* cmd_list)= 0;
-		virtual void ClearBackbuffer(GfxCommandList* cmd_list)= 0;
 		virtual Bool Present(Bool vsync) = 0;
 		virtual void OnResize(Uint32 w, Uint32 h) = 0;
 

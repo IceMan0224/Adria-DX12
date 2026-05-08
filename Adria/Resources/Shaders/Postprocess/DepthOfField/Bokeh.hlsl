@@ -32,7 +32,7 @@ struct BokehFirstPassConstants
     float maxCoC;
 };
 
-ConstantBuffer<BokehFirstPassConstants> BokehFirstPassCB : register(b1);
+DECLARE_CBUFFER(BokehFirstPassConstants, BokehFirstPassCB, 1);
 
 float4 SampleColorCoCNear(float2 Texcoord, float2 Offset)
 {
@@ -130,7 +130,7 @@ struct BokehSecondPassConstants
     float maxCoC;
 };
 
-ConstantBuffer<BokehSecondPassConstants> BokehSecondPassCB : register(b1);
+DECLARE_CBUFFER(BokehSecondPassConstants, BokehSecondPassCB, 1);
 
 float4 SampleColorCoCNear2(float2 Texcoord, float2 Offset)
 {

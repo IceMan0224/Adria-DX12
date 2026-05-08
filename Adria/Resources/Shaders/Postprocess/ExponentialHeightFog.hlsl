@@ -19,7 +19,7 @@ struct ExponentialHeightFogConstants
     uint  sceneIdx;
     uint  outputIdx;
 };
-ConstantBuffer<ExponentialHeightFogConstants> ExponentialHeightFogPassCB : register(b2);
+DECLARE_CBUFFER(ExponentialHeightFogConstants, ExponentialHeightFogPassCB, 2);
 
 
 

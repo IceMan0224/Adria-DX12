@@ -10,7 +10,7 @@ struct IntialSamplingConstants
     uint albedoIdx;
     uint reservoirBufferIdx;
 };
-ConstantBuffer<IntialSamplingConstants> IntialSamplingCB : register(b1);
+DECLARE_CBUFFER(IntialSamplingConstants, IntialSamplingCB, 1);
 
 [numthreads(16, 16, 1)]
 void InitialSamplingCS( uint3 DTid : SV_DispatchThreadID )

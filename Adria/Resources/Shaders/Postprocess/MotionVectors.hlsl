@@ -8,7 +8,7 @@ struct MotionVectorsConstants
 	uint outputIdx;
 };
 
-ConstantBuffer<MotionVectorsConstants> MotionVectorsPassCB : register(b1);
+DECLARE_CBUFFER(MotionVectorsConstants, MotionVectorsPassCB, 1);
 
 struct CSInput
 {

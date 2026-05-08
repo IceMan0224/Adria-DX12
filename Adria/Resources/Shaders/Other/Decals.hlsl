@@ -14,7 +14,7 @@ struct DecalsConstants
 	uint decalNormalIdx;
 	uint depthIdx;
 };
-ConstantBuffer<DecalsConstants> DecalsPassCB : register(b2);
+DECLARE_CBUFFER(DecalsConstants, DecalsPassCB, 2);
 
 struct VSInput
 {

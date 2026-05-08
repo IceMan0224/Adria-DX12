@@ -21,7 +21,7 @@ struct ComputeCoCConstants
 	float maxCircleOfConfusion;
 };
 
-ConstantBuffer<ComputeCoCConstants> ComputeCoCPassCB : register(b1);
+DECLARE_CBUFFER(ComputeCoCConstants, ComputeCoCPassCB, 1);
 
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
 void ComputeCircleOfConfusionCS(CSInput input)
@@ -45,7 +45,7 @@ struct SeparatedCoCConstants
 	uint inputIdx;
 	uint outputIdx;
 };
-ConstantBuffer<SeparatedCoCConstants> SeparatedCoCPassCB : register(b1);
+DECLARE_CBUFFER(SeparatedCoCConstants, SeparatedCoCPassCB, 1);
 
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
 void ComputeSeparatedCircleOfConfusionCS(CSInput input)
@@ -63,7 +63,7 @@ struct DownsampleCoCConstants
 	uint outputIdx;
 };
 
-ConstantBuffer<DownsampleCoCConstants> DownsampleCoCPassCB : register(b1);
+DECLARE_CBUFFER(DownsampleCoCConstants, DownsampleCoCPassCB, 1);
 
 int2 ClampScreenCoord(int2 PixelCoord, int2 Dimension)
 {

@@ -47,7 +47,12 @@ namespace adria
 
 	Bool GPUDrivenGBufferPass::IsSupported() const
     {
-		return gfx->GetCapabilities().SupportsMeshShaders();
+		return gfx->GetCapabilities().SupportsMeshShaders() 
+#if defined (ADRIA_HAS_VULKAN_SDK)
+			//for now disable it on vulkan, doesnt crash but scene disappears
+			&& gfx->GetBackend() != GfxBackend::Vulkan
+#endif
+		;
     }
 
 	Bool GPUDrivenGBufferPass::IsEnabled() const

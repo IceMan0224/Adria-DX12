@@ -1,6 +1,7 @@
 #include "Core/Engine.h"
 #include "Core/FatalAssert.h"
 #include "Core/CommandLineOptions.h"
+#include "Rendering/TriangleTestApp.h"
 #include "Platform/Input.h"
 #include "Platform/Window.h"
 #include "Logging/FileSink.h"
@@ -40,14 +41,25 @@ int APIENTRY wWinMain(
     Window window(window_params);
     g_Input.Initialize(&window);
 
-    EditorInitParams editor_params{ .window = &window, .scene_file = CommandLineOptions::GetSceneFile() };
-    g_Editor.Initialize(std::move(editor_params));
-    window.GetWindowEvent().AddLambda([](WindowEventInfo const& msg_data) { g_Editor.OnWindowEvent(msg_data); });
-    while (window.Loop())
+    if (CommandLineOptions::GetTriangleTest())
     {
-        g_Editor.Run();
+        TriangleTestApp app(&window);
+        while (window.Loop())
+        {
+            app.Run();
+        }
     }
-    g_Editor.Shutdown();
+    else
+    {
+        EditorInitParams editor_params{ .window = &window, .scene_file = CommandLineOptions::GetSceneFile() };
+        g_Editor.Initialize(std::move(editor_params));
+        window.GetWindowEvent().AddLambda([](WindowEventInfo const& msg_data) { g_Editor.OnWindowEvent(msg_data); });
+        while (window.Loop())
+        {
+            g_Editor.Run();
+        }
+        g_Editor.Shutdown();
+    }
 }
 
 

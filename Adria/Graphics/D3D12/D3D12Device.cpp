@@ -61,20 +61,6 @@ namespace adria
 		}
 		return GfxVendor::Unknown;
 	}
-	static inline Char const* GetGfxVendorName(GfxVendor gfx_vendor)
-	{
-		switch (gfx_vendor)
-		{
-		case GfxVendor::AMD: return "AMD";
-		case GfxVendor::Nvidia: return "Nvidia";
-		case GfxVendor::Intel: return "Intel";
-		case GfxVendor::Microsoft: return "Microsoft";
-		case GfxVendor::Apple:
-		default:
-			ADRIA_UNREACHABLE();
-		}
-		return "Unknown";
-	}
 
 	struct DRED
 	{
@@ -137,6 +123,7 @@ namespace adria
 
 		std::wstring adapter_wide_description(desc.Description);
 		std::string adapter_description = ToString(adapter_wide_description);
+		device_name = adapter_description;
 		ADRIA_LOG(INFO, "GPU: %s", adapter_description.c_str());
 
 		D3D_FEATURE_LEVEL feature_levels[] =
@@ -1133,7 +1120,7 @@ namespace adria
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
 		);
 	}
-	void D3D12Device::FreeCPUDescriptor(GfxDescriptor descriptor)
+	void D3D12Device::FreeDescriptor(GfxDescriptor descriptor)
 	{
 		if (!descriptor.IsValid())
 		{
@@ -1148,9 +1135,9 @@ namespace adria
 		}
 
 		GfxDescriptorType const descriptor_type = internal_desc.parent_heap->GetType();
-		ADRIA_ASSERT(!internal_desc.parent_heap->IsShaderVisible() && "Cannot free a GPU descriptor handle directly!");
 		if (internal_desc.parent_heap->IsShaderVisible())
 		{
+			//ADRIA_ASSERT(!internal_desc.parent_heap->IsShaderVisible() && "Cannot free a GPU descriptor handle directly!");
 			return;
 		}
 		FreeCPUDescriptorImpl(internal_desc, descriptor_type);

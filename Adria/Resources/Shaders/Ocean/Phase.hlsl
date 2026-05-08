@@ -24,7 +24,7 @@ struct PhaseConstants
 	uint  phasesIdx;
 	uint  outputIdx;
 };
-ConstantBuffer<PhaseConstants> PhasePassCB : register(b1);
+DECLARE_CBUFFER(PhaseConstants, PhasePassCB, 1);
 
 struct CSInput
 {

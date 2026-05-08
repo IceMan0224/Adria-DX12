@@ -8,7 +8,7 @@ struct RTAOFilterIndices
 	uint  inputIdx;
 	uint  outputIdx;
 };
-ConstantBuffer<RTAOFilterIndices> RTAOFilterPassCB : register(b1);
+DECLARE_CBUFFER(RTAOFilterIndices, RTAOFilterPassCB, 1);
 
 struct RTAOFilterConstants
 {
@@ -23,7 +23,7 @@ struct RTAOFilterConstants
 	float filterDistKernel4;
 	float filterDistKernel5;
 };
-ConstantBuffer<RTAOFilterConstants> RTAOFilterPassCB2 : register(b2);
+DECLARE_CBUFFER(RTAOFilterConstants, RTAOFilterPassCB2, 2);
 
 
 

@@ -22,7 +22,7 @@ struct CullMeshletsConstants
 	uint visibleMeshletsIdx;
 	uint visibleMeshletsCounterIdx;
 };
-ConstantBuffer<CullMeshletsConstants> CullMeshletsPassCB : register(b1);
+DECLARE_CBUFFER(CullMeshletsConstants, CullMeshletsPassCB, 1);
 
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -99,7 +99,7 @@ struct BuildMeshletCullArgsConstants
 	uint candidateMeshletsCounterIdx;
 	uint meshletCullArgsIdx;
 };
-ConstantBuffer<BuildMeshletCullArgsConstants> BuildMeshletCullArgsPassCB : register(b1);
+DECLARE_CBUFFER(BuildMeshletCullArgsConstants, BuildMeshletCullArgsPassCB, 1);
 
 
 [numthreads(1, 1, 1)]

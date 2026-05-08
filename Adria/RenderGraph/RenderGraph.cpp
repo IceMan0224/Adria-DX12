@@ -96,11 +96,11 @@ namespace adria
 		return handle.IsValid() && handle.id < buffers.size();
 	}
 
-	RenderGraph::~RenderGraph() 
+	RenderGraph::~RenderGraph()
 	{
-		for (GfxDescriptor const& view : texture_views_to_free)
+		for (GfxDescriptor const& view : views_to_free)
 		{
-			gfx->FreeCPUDescriptor(view);
+			gfx->FreeDescriptor(view);
 		}
 	}
 
@@ -694,11 +694,9 @@ namespace adria
 			{
 			case RGDescriptorType::RenderTarget:
 				view = gfx->CreateTextureRTV(texture, &view_desc);
-				texture_views_to_free.push_back(view);
 				break;
 			case RGDescriptorType::DepthStencil:
 				view = gfx->CreateTextureDSV(texture, &view_desc);
-				texture_views_to_free.push_back(view);
 				break;
 			case RGDescriptorType::ReadOnly:
 				view = gfx->CreateTextureSRV(texture, &view_desc);
@@ -710,6 +708,7 @@ namespace adria
 				ADRIA_ASSERT_MSG(false, "invalid resource view type for texture");
 			}
 			texture_view_map[res_id].push_back(view);
+			views_to_free.push_back(view);
 		}
 	}
 
@@ -748,6 +747,7 @@ namespace adria
 				ADRIA_ASSERT_MSG(false, "invalid resource view type for buffer");
 			}
 			buffer_view_map[res_id].push_back(view);
+			views_to_free.push_back(view);
 		}
 	}
 

@@ -27,7 +27,7 @@ struct ComputePrefilteredTextureConstants
 	uint backgroundOutputIdx;
 };
 
-ConstantBuffer<ComputePrefilteredTextureConstants> ComputePrefilteredTexturePassCB : register(b1);
+DECLARE_CBUFFER(ComputePrefilteredTextureConstants, ComputePrefilteredTexturePassCB, 1);
 
 
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
@@ -74,7 +74,7 @@ struct ComputePostfilteredTextureConstants
 	uint backgroundOutputIdx;
 };
 
-ConstantBuffer<ComputePostfilteredTextureConstants> ComputePostfilteredTexturePassCB : register(b1);
+DECLARE_CBUFFER(ComputePostfilteredTextureConstants, ComputePostfilteredTexturePassCB, 1);
 
 
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
@@ -114,7 +114,7 @@ struct CombineConstants
     float alphaInterpolation;
 };
 
-ConstantBuffer<CombineConstants> CombinePassCB : register(b1);
+DECLARE_CBUFFER(CombineConstants, CombinePassCB, 1);
 
 
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]

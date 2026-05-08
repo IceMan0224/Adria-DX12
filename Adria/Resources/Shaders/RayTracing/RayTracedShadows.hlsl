@@ -6,7 +6,7 @@ struct RayTracedShadowsConstants
 	uint  depthIdx;
 	uint  lightIdx;
 };
-ConstantBuffer<RayTracedShadowsConstants> RayTracedShadowsPassCB : register(b1);
+DECLARE_CBUFFER(RayTracedShadowsConstants, RayTracedShadowsPassCB, 1);
 
 struct [raypayload] ShadowRayData
 {

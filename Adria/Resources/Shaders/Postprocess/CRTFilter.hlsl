@@ -13,7 +13,7 @@ struct CRTFilterConstants
 	float  warpX;
 	float  warpY;
 };
-ConstantBuffer<CRTFilterConstants> CRTFilterPassCB : register(b1);
+DECLARE_CBUFFER(CRTFilterConstants, CRTFilterPassCB, 1);
 
 static const float MASK_DARK  = 0.5f;
 static const float MASK_LIGHT = 1.5f;

@@ -1,4 +1,5 @@
 #import <Cocoa/Cocoa.h>
+#import <QuartzCore/CAMetalLayer.h>
 #include "Platform/Window.h"
 #include "Core/Paths.h"
 
@@ -22,7 +23,7 @@
 
 - (void)close
 {
-    if (adriaWindow) 
+    if (adriaWindow)
     {
         adriaWindow->Quit(0);
     }
@@ -127,8 +128,16 @@ namespace adria
             [nsWindow setTitle:@(init.title)];
 
             NSView* contentView = [[NSView alloc] initWithFrame:frame];
-            [nsWindow setContentView:contentView];
 
+            CAMetalLayer* metalLayer = [CAMetalLayer layer];
+            metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+            metalLayer.contentsScale = [nsWindow backingScaleFactor];
+            metalLayer.frame = contentView.bounds;
+            metalLayer.delegate = (id<CALayerDelegate>)contentView;
+            [contentView setLayer:metalLayer];
+            [contentView setWantsLayer:YES];
+
+            [nsWindow setContentView:contentView];
             [nsWindow center];
             [nsWindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
 
@@ -245,7 +254,16 @@ namespace adria
 
     void* Window::Handle() const
     {
-        return window_handle;
+        if (!window_handle) 
+        {
+            return nullptr;
+        }
+
+        @autoreleasepool
+        {
+            NSWindow* nsWindow = (__bridge NSWindow*)window_handle;
+            return (__bridge void*)[nsWindow.contentView layer];
+        }
     }
 
     Bool Window::IsActive() const
@@ -255,7 +273,11 @@ namespace adria
         @autoreleasepool
         {
             NSWindow* nsWindow = (__bridge NSWindow*)window_handle;
-            return [nsWindow isKeyWindow];
+            if (![NSApp isActive]) 
+            {
+                return false;
+            }
+            return [nsWindow isVisible] && ![nsWindow isMiniaturized];
         }
     }
 

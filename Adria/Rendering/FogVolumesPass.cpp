@@ -112,6 +112,25 @@ namespace adria
 
 		rg.ImportTexture(RG_NAME(FogLightInjectionTargetHistory), light_injection_target_history.get());
 
+		if (gfx->IsFirstFrame())
+		{
+			struct ClearHistoryPassData
+			{
+				RGTextureReadWriteId history;
+			};
+			rg.AddPass<ClearHistoryPassData>("Fog Volumes Clear History",
+				[=](ClearHistoryPassData& data, RenderGraphBuilder& builder)
+				{
+					data.history = builder.WriteTexture(RG_NAME(FogLightInjectionTargetHistory));
+				},
+				[=, this](ClearHistoryPassData const& data, RenderGraphContext& ctx)
+				{
+					GfxCommandList* cmd_list = ctx.GetCommandList();
+					static constexpr Float black[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+					cmd_list->ClearTexture(ctx.GetTexture(*data.history), black);
+				}, RGPassType::Compute);
+		}
+
 		struct LightInjectionPassData
 		{
 			RGTextureReadWriteId light_injection_target;
@@ -295,7 +314,7 @@ namespace adria
 		light_injection_target_desc.height = voxel_grid_height;
 		light_injection_target_desc.depth = VOXEL_GRID_SIZE_Z;
 		light_injection_target_desc.format = GfxFormat::R16G16B16A16_FLOAT;
-		light_injection_target_desc.bind_flags = GfxBindFlag::ShaderResource;
+		light_injection_target_desc.bind_flags = GfxBindFlag::ShaderResource | GfxBindFlag::UnorderedAccess;
 		light_injection_target_desc.initial_state = GfxResourceState::CopyDst;
 		light_injection_target_history = gfx->CreateTexture(light_injection_target_desc);
 		light_injection_target_history->SetName("Light Injection Target History");

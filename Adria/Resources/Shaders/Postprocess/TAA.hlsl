@@ -67,7 +67,7 @@ struct TAAConstants
 	uint velocityIdx;
 	uint outputIdx;
 };
-ConstantBuffer<TAAConstants> TAAPassCB : register(b1);
+DECLARE_CBUFFER(TAAConstants, TAAPassCB, 1);
 
 struct CSInput
 {

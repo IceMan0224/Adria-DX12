@@ -455,7 +455,7 @@ namespace adria
 		for (entt::entity e : light_view)
 		{
 			Light& light = light_view.get<Light>(e);
-			if (!light.casts_shadows)
+			if (!light.casts_shadows || !light.active)
 			{
 				continue;
 			}
@@ -471,7 +471,7 @@ namespace adria
 					for (Uint32 i = 0; i < SHADOW_CASCADE_COUNT; ++i)
 					{
 						rg.ImportTexture(RG_NAME_IDX(ShadowMap, light_matrix_index + i), light_shadow_maps[light_id][i].get());
-						std::string name = "Cascade Shadow Pass" + std::to_string(i);
+						std::string name = "Cascade Shadow Pass L" + std::to_string(light_index) + "_" + std::to_string(i);
 						rg.AddPass<void>(name.c_str(),
 							[=, this](RenderGraphBuilder& builder)
 							{
@@ -491,7 +491,7 @@ namespace adria
 				else
 				{
 					rg.ImportTexture(RG_NAME_IDX(ShadowMap, light.shadow_matrix_index), light_shadow_maps[light_id][0].get());
-					std::string name = "Directional Shadow Pass";
+					std::string name = "Directional Shadow Pass L" + std::to_string(light_index);
 					rg.AddPass<void>(name.c_str(),
 						[=, this](RenderGraphBuilder& builder)
 						{
@@ -513,7 +513,7 @@ namespace adria
 				for (Uint32 i = 0; i < 6; ++i)
 				{
 					rg.ImportTexture(RG_NAME_IDX(ShadowMap, light.shadow_matrix_index + i), light_shadow_maps[light_id][i].get());
-					std::string name = "Point Shadow Pass" + std::to_string(i);
+					std::string name = "Point Shadow Pass L" + std::to_string(light_index) + "_" + std::to_string(i);
 					rg.AddPass<void>(name.c_str(),
 						[=, this](RenderGraphBuilder& builder)
 						{
@@ -533,7 +533,7 @@ namespace adria
 			else if (light.type == LightType::Spot)
 			{
 				rg.ImportTexture(RG_NAME_IDX(ShadowMap, light_matrix_index), light_shadow_maps[light_id][0].get());
-				std::string name = "Spot Shadow Pass";
+				std::string name = "Spot Shadow Pass L" + std::to_string(light_index);
 				rg.AddPass<void>(name.c_str(),
 					[=, this](RenderGraphBuilder& builder)
 					{
@@ -562,7 +562,7 @@ namespace adria
 		for (entt::entity e : light_view)
 		{
 			Light& light = light_view.get<Light>(e);
-			if (!light.ray_traced_shadows)
+			if (!light.ray_traced_shadows || !light.active)
 			{
 				continue;
 			}

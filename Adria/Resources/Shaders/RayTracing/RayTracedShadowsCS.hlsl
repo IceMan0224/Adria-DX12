@@ -6,7 +6,7 @@ struct RayTracedShadowsConstants
 	uint  depthIdx;
 	uint  lightIdx;
 };
-ConstantBuffer<RayTracedShadowsConstants> RayTracedShadowsPassCB : register(b1);
+DECLARE_CBUFFER(RayTracedShadowsConstants, RayTracedShadowsPassCB, 1);
 
 [numthreads(16, 16, 1)]
 void RayTracedShadowsCS(uint3 dispatchThreadId : SV_DispatchThreadID)

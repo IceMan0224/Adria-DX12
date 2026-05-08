@@ -15,7 +15,7 @@ struct TemporalResamplingConstants
 	float normalThreshold;
 };
 
-ConstantBuffer<TemporalResamplingConstants> TemporalResamplingCB : register(b1);
+DECLARE_CBUFFER(TemporalResamplingConstants, TemporalResamplingCB, 1);
 
 [numthreads(16, 16, 1)]
 void TemporalResamplingCS( uint3 DTid : SV_DispatchThreadID )

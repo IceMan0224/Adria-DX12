@@ -12,7 +12,7 @@ struct OceanNormalsConstants
 	uint  displacementIdx;
 	uint  outputIdx;
 };
-ConstantBuffer<OceanNormalsConstants> OceanNormalsPassCB : register(b1);
+DECLARE_CBUFFER(OceanNormalsConstants, OceanNormalsPassCB, 1);
 
 struct CSInput
 {

@@ -22,8 +22,8 @@ struct RendererDebugViewConstants
 	uint  entityIdIdx;
 };
 
-ConstantBuffer<RendererDebugViewIndices>   RendererDebugViewPassCB  : register(b1);
-ConstantBuffer<RendererDebugViewConstants> RendererDebugViewPassCB2 : register(b2);
+DECLARE_CBUFFER(RendererDebugViewIndices, RendererDebugViewPassCB, 1);
+DECLARE_CBUFFER(RendererDebugViewConstants, RendererDebugViewPassCB2, 2);
 
 
 float3 TurboColormap(float x)

@@ -24,7 +24,7 @@ struct FilmEffectsConstants
 	uint  outputIdx;
 };
 
-ConstantBuffer<FilmEffectsConstants> FilmEffectsPassCB : register(b2);
+DECLARE_CBUFFER(FilmEffectsConstants, FilmEffectsPassCB, 2);
 
 float2 ApplyLensDistortion(float2 uv)
 {

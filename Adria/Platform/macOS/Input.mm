@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 #import <Carbon/Carbon.h>
+#import <QuartzCore/CAMetalLayer.h>
 #include "Platform/Input.h"
 #include "Platform/Window.h"
 
@@ -113,10 +114,9 @@ namespace adria
             prev_mouse_position_x = mouse_position_x;
             prev_mouse_position_y = mouse_position_y;
 
-            if (window->IsActive())
             {
-                NSWindow* nsWindow = (__bridge NSWindow*)window->Handle();
-                NSView* contentView = [nsWindow contentView];
+                NSView* contentView = (NSView*)((__bridge CAMetalLayer*)window->Handle()).delegate;
+                NSWindow* nsWindow = contentView.window;
                 NSPoint screenPoint = [NSEvent mouseLocation];
                 NSPoint windowPoint = [nsWindow convertPointFromScreen:screenPoint];
                 NSPoint viewPoint = [contentView convertPoint:windowPoint fromView:nil];
@@ -260,7 +260,7 @@ namespace adria
     {
         @autoreleasepool
         {
-            NSWindow* nsWindow = (__bridge NSWindow*)window->Handle();
+            NSWindow* nsWindow = ((NSView*)((__bridge CAMetalLayer*)window->Handle()).delegate).window;
             if (nsWindow && [nsWindow isKeyWindow])
             {
                 NSPoint windowPoint = NSMakePoint(xpos, ypos);

@@ -33,8 +33,8 @@ struct LensFlareConstants2
     float3 sunScreenSpacePosition;
 };
 
-ConstantBuffer<LensFlareConstants> LensFlarePassCB : register(b1);
-ConstantBuffer<LensFlareConstants2> LensFlareLensFlarePassCB2 : register(b2);
+DECLARE_CBUFFER(LensFlareConstants, LensFlarePassCB, 1);
+DECLARE_CBUFFER(LensFlareConstants2, LensFlareLensFlarePassCB2, 2);
 
 
 void Append(inout TriangleStream<GSToPS> triStream, GSToPS p1, uint selector, float2 posMod, float2 size)

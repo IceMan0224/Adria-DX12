@@ -9,7 +9,7 @@ struct LensFlareConstants
 	uint   depthIdx;
 	uint   outputIdx;
 };
-ConstantBuffer<LensFlareConstants> LensFlarePassCB : register(b1);
+DECLARE_CBUFFER(LensFlareConstants, LensFlarePassCB, 1);
 
 //https://www.shadertoy.com/view/4sX3Rs
 float3 LensFlare(float2 uv, float2 pos)

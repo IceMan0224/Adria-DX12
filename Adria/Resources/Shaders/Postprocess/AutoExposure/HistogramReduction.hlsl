@@ -1,3 +1,4 @@
+#include "CommonResources.hlsli"
 #include "Common.hlsli"
 #include "ExposureUtil.hlsli"
 
@@ -13,7 +14,7 @@ struct HistogramReductionConstants
 	uint  luminanceIdx;
 	uint  exposureIdx;
 };
-ConstantBuffer<HistogramReductionConstants> HistogramReductionPassCB : register(b1);
+DECLARE_CBUFFER(HistogramReductionConstants, HistogramReductionPassCB, 1);
 groupshared float HistogramShared[HISTOGRAM_BIN_NUM];
 
 [numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, 1)]

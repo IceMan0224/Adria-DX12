@@ -7,7 +7,7 @@ struct RainDropsConstants
 	uint   outputIdx;
 	uint   noiseIdx;
 };
-ConstantBuffer<RainDropsConstants> RainDropsPassCB : register(b1);
+DECLARE_CBUFFER(RainDropsConstants, RainDropsPassCB, 1);
 
 struct CSInput
 {

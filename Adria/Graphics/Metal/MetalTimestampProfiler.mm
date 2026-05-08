@@ -114,13 +114,11 @@ namespace adria
     void MetalTimestampProfiler::BeginProfileScope(GfxCommandList* cmd_list, const char* name, bool active)
     {
 #if GFX_PROFILING
-        if (!valid || !active) 
+        if (!valid || !active)
         {
             return;
         }
-#if GFX_MULTITHREADED
         std::lock_guard lock(profiler_mutex);
-#endif
         Uint32 profile_index = scope_counter++;
         if (profile_index >= MAX_PROFILES) 
         {
@@ -160,9 +158,7 @@ namespace adria
             return;
         }
         ADRIA_ASSERT(!query_data.empty());
-#if GFX_MULTITHREADED
         std::lock_guard lock(profiler_mutex);
-#endif
         query_data.pop();
 #endif
     }

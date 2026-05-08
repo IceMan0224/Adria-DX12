@@ -15,13 +15,13 @@ struct SSAOConstants
     uint noiseIdx;
     uint outputIdx;
 };
-ConstantBuffer<SSAOConstants> SSAOPassCB : register(b1);
+DECLARE_CBUFFER(SSAOConstants, SSAOPassCB, 1);
 
 struct SSAOKernel
 {
     float4 samples[16];
 };
-ConstantBuffer<SSAOKernel> SSAOKernelCB : register(b2);
+DECLARE_CBUFFER(SSAOKernel, SSAOKernelCB, 2);
 
 struct CSInput
 {

@@ -9,7 +9,7 @@ struct RayTracedAmbientOcclusionConstants
 	float aoRadius;
 	float aoPower;
 };
-ConstantBuffer<RayTracedAmbientOcclusionConstants> RayTracedAmbientOcclusionPassCB : register(b1);
+DECLARE_CBUFFER(RayTracedAmbientOcclusionConstants, RayTracedAmbientOcclusionPassCB, 1);
 
 [numthreads(16, 16, 1)]
 void RayTracedAmbientOcclusionCS(uint3 dispatchThreadId : SV_DispatchThreadID)

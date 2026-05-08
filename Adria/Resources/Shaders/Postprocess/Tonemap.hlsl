@@ -15,7 +15,7 @@ struct TonemapConstants
     uint  lensDirtIdx;
 	uint  bloomParamsPacked; //f16 bloomIntensity + f16 bloomBlendFactor;
 };
-ConstantBuffer<TonemapConstants> TonemapPassCB : register(b1);
+DECLARE_CBUFFER(TonemapConstants, TonemapPassCB, 1);
 
 struct CSInput
 {

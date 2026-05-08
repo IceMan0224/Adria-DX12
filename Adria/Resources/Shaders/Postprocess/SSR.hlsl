@@ -16,7 +16,7 @@ struct SSRConstants
     uint sceneIdx;
     uint outputIdx;
 };
-ConstantBuffer<SSRConstants> SSRPassCB : register(b1);
+DECLARE_CBUFFER(SSRConstants, SSRPassCB, 1);
 
 
 struct CSInput

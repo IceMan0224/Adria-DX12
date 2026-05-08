@@ -11,7 +11,7 @@ struct StarrySkyConstants
 	uint   sceneIdx;
 	uint   outputIdx;
 };
-ConstantBuffer<StarrySkyConstants> StarrySkyPassCB : register(b2);
+DECLARE_CBUFFER(StarrySkyConstants, StarrySkyPassCB, 2);
 
 float3 StarsHash(float3 p)
 {

@@ -5,11 +5,16 @@
 #elif defined(ADRIA_PLATFORM_MACOS)
 #include "Metal/MetalImGuiManager.h"
 #endif
+#include "Vulkan/VulkanImGuiManager.h"
 
 namespace adria
 {
 	std::unique_ptr<ImGuiManager> CreateImguiManager(GfxDevice* gfx)
 	{
+		if (gfx->GetBackend() == GfxBackend::Vulkan)
+		{
+			return std::make_unique<VulkanImGuiManager>(gfx);
+		}
 #if defined(ADRIA_PLATFORM_WINDOWS)
 		if (gfx->GetBackend() == GfxBackend::D3D12)
 		{

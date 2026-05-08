@@ -14,7 +14,7 @@ struct SpatialResamplingConstants
 	float spatialRadius;
 };
 
-ConstantBuffer<SpatialResamplingConstants> SpatialResamplingCB : register(b1);
+DECLARE_CBUFFER(SpatialResamplingConstants, SpatialResamplingCB, 1);
 
 static const float NORMAL_THRESHOLD = cos(25.0f * 3.14159265f / 180.0f); 
 static const float DEPTH_THRESHOLD = 0.1f; 

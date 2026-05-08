@@ -12,7 +12,7 @@ struct RayTracedReflectionsConstants
 	uint  albedoIdx;
 	uint  outputIdx;
 };
-ConstantBuffer<RayTracedReflectionsConstants> RayTracedReflectionsPassCB : register(b1);
+DECLARE_CBUFFER(RayTracedReflectionsConstants, RayTracedReflectionsPassCB, 1);
 
 [numthreads(16, 16, 1)]
 void RayTracedReflectionsCS(uint3 dispatchThreadId : SV_DispatchThreadID)

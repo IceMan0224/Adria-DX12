@@ -20,7 +20,7 @@ struct BloomDownsampleConstants
 	uint   sourceIdx;
 	uint   targetIdx;
 };
-ConstantBuffer<BloomDownsampleConstants> BloomDownsamplePassCB : register(b1);
+DECLARE_CBUFFER(BloomDownsampleConstants, BloomDownsamplePassCB, 1);
 
 float Luminance(float3 color)
 {
@@ -84,7 +84,7 @@ struct BloomUpsampleConstants
 	uint   outputIdx;
 	float  radius;
 };
-ConstantBuffer<BloomUpsampleConstants> BloomUpsampleBloomDownsamplePassCB : register(b1);
+DECLARE_CBUFFER(BloomUpsampleConstants, BloomUpsampleBloomDownsamplePassCB, 1);
 
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
 void BloomUpsampleCS(CSInput input)

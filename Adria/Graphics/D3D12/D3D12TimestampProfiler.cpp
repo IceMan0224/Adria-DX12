@@ -55,9 +55,7 @@ namespace adria
 		{
 			return;
 		}
-#if GFX_MULTITHREADED
 		std::lock_guard lock(profiler_mutex);
-#endif
 		Uint32 profile_index = scope_counter++;
 		GfxProfilerTreeNode* tree_node = nullptr;
 		if (!query_data.empty())
@@ -81,9 +79,7 @@ namespace adria
 	{
 #if GFX_PROFILING
 		ADRIA_ASSERT(!query_data.empty());
-#if GFX_MULTITHREADED
 		std::lock_guard lock(profiler_mutex);
-#endif
 		QueryData& scope_data = query_data.top();
 		ADRIA_ASSERT(scope_data.cmd_list == cmd_list);
 		query_data.pop();

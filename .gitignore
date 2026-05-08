@@ -413,6 +413,8 @@ FodyWeavers.xsd
 /build
 /build-xcode
 /build_xcode
+/build-vk
+
 
 # macOS
 .DS_Store

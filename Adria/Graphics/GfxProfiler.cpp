@@ -9,6 +9,7 @@
 #if defined(ADRIA_PLATFORM_MACOS)
 #include "Metal/MetalTimestampProfiler.h"
 #endif
+#include "Vulkan/VulkanTimestampProfiler.h"
 
 namespace adria
 {
@@ -40,8 +41,8 @@ namespace adria
 #if defined(ADRIA_PLATFORM_WINDOWS)
 		case GfxBackend::D3D12: timestamp_profiler = std::make_unique<D3D12TimestampProfiler>(); break;
 #endif
-#if defined(ADRIA_PLATFORM_WINDOWS) || defined(ADRIA_PLATFORM_LINUX)
-		case GfxBackend::Vulkan: timestamp_profiler = std::make_unique<GfxDummyProfiler>(); break;
+#if defined(ADRIA_PLATFORM_WINDOWS) || defined(ADRIA_PLATFORM_LINUX) || defined(ADRIA_PLATFORM_MACOS)
+		case GfxBackend::Vulkan: timestamp_profiler = std::make_unique<VulkanTimestampProfiler>(); break;
 #endif
 #if defined(ADRIA_PLATFORM_MACOS)
 		case GfxBackend::Metal: timestamp_profiler = std::make_unique<MetalTimestampProfiler>(); break;

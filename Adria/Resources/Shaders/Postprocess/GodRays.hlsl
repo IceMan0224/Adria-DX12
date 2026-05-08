@@ -14,7 +14,7 @@ struct GodRaysConstants
 	uint   sunIdx;
 	uint   outputIdx;
 };
-ConstantBuffer<GodRaysConstants> GodRaysPassCB : register(b1);
+DECLARE_CBUFFER(GodRaysConstants, GodRaysPassCB, 1);
 
 struct CSInput
 {

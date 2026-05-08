@@ -8,6 +8,8 @@ set(ADRIA_COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Core/ConsoleManager.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Core/Engine.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Core/Engine.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/TriangleTestApp.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Rendering/TriangleTestApp.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Core/FatalAssert.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Core/FatalAssert.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Core/IConsoleManager.h"
@@ -100,6 +102,8 @@ set(ADRIA_COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/Singleton.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/StringConversions.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/StringConversions.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/SystemInfo.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/SystemInfo.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/TemplatesUtil.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/ThreadPool.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/Timer.h"
@@ -428,6 +432,48 @@ set(ADRIA_METAL_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Metal/MetalImGuiManager.mm"
 )
 
+set(ADRIA_LINUX_SOURCES
+	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/main.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Window.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Input.cpp"
+)
+
+set(ADRIA_VULKAN_SOURCES
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanDefines.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanConversions.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanConversions.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanCapabilities.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanCapabilities.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanFence.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanFence.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanBuffer.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanBuffer.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanTexture.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanTexture.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanQueryHeap.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanQueryHeap.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanCommandQueue.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanCommandQueue.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanPipelineState.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanPipelineState.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanCommandList.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanCommandList.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanSwapchain.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanSwapchain.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanDevice.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanDevice.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanRayTracingAS.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanRayTracingAS.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanRayTracingPipeline.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanRayTracingPipeline.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanRayTracingShaderBindings.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanRayTracingShaderBindings.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanTimestampProfiler.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Graphics/Vulkan/VulkanTimestampProfiler.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Vulkan/VulkanImGuiManager.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Vulkan/VulkanImGuiManager.mm"
+)
+
 if(WIN32)
 	set(ADRIA_PLATFORM_SOURCES ${ADRIA_WIN32_SOURCES})
 	set(ADRIA_BACKEND_SOURCES ${ADRIA_D3D12_SOURCES})
@@ -449,6 +495,29 @@ elseif(APPLE)
 		)
 	else()
 		message(STATUS "Found Metal Shader Converter Runtime: ${METAL_IR_RUNTIME_INCLUDE_DIR}")
+	endif()
+elseif(UNIX)
+	set(ADRIA_PLATFORM_SOURCES ${ADRIA_LINUX_SOURCES})
+	set(ADRIA_BACKEND_SOURCES ${ADRIA_VULKAN_SOURCES})
+	add_compile_definitions(ADRIA_PLATFORM_LINUX)
+endif()
+
+# Vulkan support — required on Linux, optional elsewhere
+if(UNIX AND NOT APPLE)
+	find_package(Vulkan REQUIRED)
+else()
+	find_package(Vulkan QUIET)
+endif()
+
+if(Vulkan_FOUND)
+	list(APPEND ADRIA_BACKEND_SOURCES ${ADRIA_VULKAN_SOURCES})
+	add_compile_definitions(ADRIA_HAS_VULKAN_SDK)
+	message(STATUS "Vulkan found: ${Vulkan_VERSION}")
+	if(NOT APPLE)
+		set_source_files_properties(
+			"${CMAKE_CURRENT_SOURCE_DIR}/Editor/Vulkan/VulkanImGuiManager.mm"
+			PROPERTIES LANGUAGE CXX
+		)
 	endif()
 endif()
 
@@ -512,6 +581,16 @@ elseif(APPLE)
 		"${EXTERNAL_DIR}/ImGui/imgui_impl_metal.mm"
 		"${EXTERNAL_DIR}/ImGui/imgui_impl_osx.mm"
 	)
+elseif(UNIX)
+	list(APPEND EXTERNAL_SOURCES
+		"${EXTERNAL_DIR}/ImGui/imgui_impl_vulkan.cpp"
+	)
+endif()
+
+if(Vulkan_FOUND)
+	list(APPEND EXTERNAL_SOURCES
+		"${EXTERNAL_DIR}/ImGui/imgui_impl_vulkan.cpp"
+	)
 endif()
 
 source_group("External" FILES ${EXTERNAL_SOURCES})
@@ -520,6 +599,8 @@ if(WIN32)
 	add_executable(Adria WIN32 ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_PLATFORM_SOURCES} ${ADRIA_BACKEND_SOURCES} ${EXTERNAL_SOURCES} ${SHADER_FILES})
 elseif(APPLE)
 	add_executable(Adria MACOSX_BUNDLE ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_PLATFORM_SOURCES} ${ADRIA_BACKEND_SOURCES} ${EXTERNAL_SOURCES})
+elseif(UNIX)
+	add_executable(Adria ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_PLATFORM_SOURCES} ${ADRIA_BACKEND_SOURCES} ${EXTERNAL_SOURCES})
 endif()
 
 target_precompile_headers(Adria PRIVATE precomp.h)
@@ -549,7 +630,22 @@ target_include_directories(Adria PRIVATE
 if(APPLE)
     target_include_directories(Adria PRIVATE
         "${EXTERNAL_DIR}/MetalShaderConverter/include"
-        "/usr/local/include"  
+        "/usr/local/include"
+    )
+endif()
+
+if(Vulkan_FOUND)
+    target_include_directories(Adria PRIVATE
+        ${Vulkan_INCLUDE_DIRS}
+        "${EXTERNAL_DIR}/vma"
+    )
+    target_link_libraries(Adria PRIVATE ${Vulkan_LIBRARIES})
+endif()
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(Adria PRIVATE xcb xcb-keysyms)
+    target_include_directories(Adria PRIVATE
+        "${EXTERNAL_DIR}/dxc/include"
     )
 endif()
 
@@ -574,7 +670,7 @@ if(MSVC)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	target_compile_options(Adria PRIVATE -Wno-switch -Wno-format-security -Wno-deprecated-declarations)
+	target_compile_options(Adria PRIVATE -Wno-switch -Wno-format-security -Wno-deprecated-declarations -Wno-nullability-completeness)
 endif()
 
 # Enable ARC (Automatic Reference Counting) for all Objective-C++ files on Apple (required by metal_irconverter_runtime)

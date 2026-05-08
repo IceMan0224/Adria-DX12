@@ -7,7 +7,7 @@ struct PathTracingConstants
     uint accumIdx;
     uint outputIdx;
 };
-ConstantBuffer<PathTracingConstants> PathTracingPassCB : register(b1);
+DECLARE_CBUFFER(PathTracingConstants, PathTracingPassCB, 1);
 
 [numthreads(16, 16, 1)]
 void PathTracerCS(uint3 dispatchThreadId : SV_DispatchThreadID)

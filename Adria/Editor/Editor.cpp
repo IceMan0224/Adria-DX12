@@ -18,6 +18,8 @@
 #include "Rendering/TextureManager.h"
 #include "Rendering/HelperPasses.h"
 #include "Graphics/GfxDevice.h"
+#include "Graphics/GfxCapabilities.h"
+#include "Utilities/SystemInfo.h"
 #include "Graphics/GfxCommandList.h"
 #include "Graphics/GfxTexture.h"
 #include "Graphics/GfxProfiler.h"
@@ -323,9 +325,24 @@ namespace adria
 				}
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu(ICON_FA_CIRCLE_QUESTION" Help"))
+			if (ImGui::BeginMenu(ICON_FA_CIRCLE_INFO" Info"))
 			{
-				ImGui::Text("TODO");
+				GfxCapabilities const& caps = gfx->GetCapabilities();
+
+				ImGui::SeparatorText("Backend");
+				ImGui::Text("%s", GetGfxBackendName(gfx->GetBackend()));
+
+				ImGui::SeparatorText("GPU");
+				ImGui::Text("%s (%s)", gfx->GetDeviceName().c_str(), GetGfxVendorName(gfx->GetVendor()));
+				ImGui::Text("Hardware Ray Tracing: %s", caps.SupportsHardwareRayTracing() ? "yes" : "no");
+				ImGui::Text("Inline Ray Tracing:   %s", caps.SupportsInlineRayTracing()   ? "yes" : "no");
+				ImGui::Text("Mesh Shaders:         %s", caps.SupportsMeshShaders()        ? "yes" : "no");
+
+				ImGui::SeparatorText("CPU");
+				static std::string const cpu_name = GetCpuName();
+				ImGui::Text("%s", cpu_name.c_str());
+				ImGui::Text("Logical cores: %u", GetLogicalCoreCount());
+
 				ImGui::Spacing();
 				ImGui::EndMenu();
 			}

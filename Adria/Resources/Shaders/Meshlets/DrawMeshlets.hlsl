@@ -11,7 +11,7 @@ struct DrawMeshletsConstants
 {
 	uint visibleMeshletsIdx;
 };
-ConstantBuffer<DrawMeshletsConstants> DrawMeshletsPassCB : register(b1);
+DECLARE_CBUFFER(DrawMeshletsConstants, DrawMeshletsPassCB, 1);
 
 
 struct MSToPS
@@ -187,7 +187,7 @@ struct BuildMeshletDrawArgsConstants
 	uint visibleMeshletsCounterIdx;
 	uint meshletDrawArgsIdx;
 };
-ConstantBuffer<BuildMeshletDrawArgsConstants> BuildMeshletDrawArgsPassCB : register(b1);
+DECLARE_CBUFFER(BuildMeshletDrawArgsConstants, BuildMeshletDrawArgsPassCB, 1);
 
 
 [numthreads(1, 1, 1)]

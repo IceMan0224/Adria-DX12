@@ -26,6 +26,8 @@ namespace adria
 		Bool GetPerfReport();
 		Bool GetPerfHUD();
 		Bool WaitDebugger();
+		std::string const& GetGfxBackend();
+		Bool GetTriangleTest();
 	}
 }
 

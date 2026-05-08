@@ -98,6 +98,7 @@ namespace adria
             ADRIA_LOG(ERROR, "Failed to create Metal device!");
             return;
         }
+        device_name = [device.name UTF8String];
 
         MTLResidencySetDescriptor* residency_desc = [MTLResidencySetDescriptor new];
         residency_desc.initialCapacity = 4096; 
@@ -190,7 +191,14 @@ namespace adria
 
     void* MetalDevice::GetWindowHandle() const
     {
-        return window ? window->Handle() : nullptr;
+        if (!window) 
+        {
+            return nullptr;
+        }
+        
+        CAMetalLayer* layer = (__bridge CAMetalLayer*)window->Handle();
+        NSView* view = (NSView*)layer.delegate;
+        return (__bridge void*)view.window;
     }
 
     void MetalDevice::OnResize(Uint32 w, Uint32 h)
@@ -315,7 +323,7 @@ namespace adria
         return shading_rate_info;
     }
 
-    void MetalDevice::FreeCPUDescriptor(GfxDescriptor descriptor)
+    void MetalDevice::FreeDescriptor(GfxDescriptor descriptor)
     {
         
     }

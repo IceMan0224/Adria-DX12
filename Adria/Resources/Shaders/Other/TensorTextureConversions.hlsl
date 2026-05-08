@@ -1,3 +1,5 @@
+#include "CommonResources.hlsli"
+
 #define THREAD_GROUP_SIZE 16
 
 struct TensorTextureConversionsConstants
@@ -7,7 +9,7 @@ struct TensorTextureConversionsConstants
     uint   outputIdx;
     uint   inputIdx;
 };
-ConstantBuffer<TensorTextureConversionsConstants> TensorTextureConversionsPassCB : register(b1);
+DECLARE_CBUFFER(TensorTextureConversionsConstants, TensorTextureConversionsPassCB, 1);
 
 void ConvertRGB(uint3 DTid, float2 outputResolution, RWTexture2D<float4> outputTexture, RWBuffer<half> inputTensor)
 {

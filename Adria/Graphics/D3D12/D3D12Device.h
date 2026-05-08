@@ -68,7 +68,7 @@ namespace adria
 		virtual GfxLinearDynamicAllocator* GetDynamicAllocator() const override;
 
 		virtual Uint32 GetBindlessDescriptorIndex(GfxDescriptor descriptor) const override;
-		virtual void FreeCPUDescriptor(GfxDescriptor descriptor) override;
+		virtual void FreeDescriptor(GfxDescriptor descriptor) override;
 
 		virtual std::unique_ptr<GfxCommandList> CreateCommandList(GfxCommandListType type) override;
 		virtual std::unique_ptr<GfxTexture> CreateTexture(GfxTextureDesc const& desc) override;

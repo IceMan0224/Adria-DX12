@@ -9,7 +9,7 @@ struct MotionBlurConstants
 	uint  velocityIdx;
 	uint  outputIdx;
 };
-ConstantBuffer<MotionBlurConstants> MotionBlurPassCB : register(b1);
+DECLARE_CBUFFER(MotionBlurConstants, MotionBlurPassCB, 1);
 
 struct CSInput
 {

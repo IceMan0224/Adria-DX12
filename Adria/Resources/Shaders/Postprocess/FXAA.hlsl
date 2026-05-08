@@ -7,7 +7,7 @@ struct FXAAConstants
 	uint  ldrIdx;
 	uint  outputIdx;
 };
-ConstantBuffer<FXAAConstants> FXAAPassCB : register(b1);
+DECLARE_CBUFFER(FXAAConstants, FXAAPassCB, 1);
 
 struct CSInput
 {

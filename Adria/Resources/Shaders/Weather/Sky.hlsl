@@ -44,33 +44,33 @@ struct EnvMapConstants
 {
 	uint envMapIdx;
 };
-ConstantBuffer<EnvMapConstants> EnvMapPassCB : register(b1);
+DECLARE_CBUFFER(EnvMapConstants, EnvMapPassCB, 1);
 
 struct HosekWilkieConstants
 {
-	float3 A;
-	float3 B;
-	float3 C;
-	float3 D;
-	float3 E;
-	float3 F;
-	float3 G;
-	float3 H;
-	float3 I;
-	float3 Z;
+	float4 A;
+	float4 B;
+	float4 C;
+	float4 D;
+	float4 E;
+	float4 F;
+	float4 G;
+	float4 H;
+	float4 I;
+	float4 Z;
 };
-ConstantBuffer<HosekWilkieConstants> HosekWilkiePassCB : register(b3);
+DECLARE_CBUFFER(HosekWilkieConstants, HosekWilkiePassCB, 3);
 float3 HosekWilkie(float cosTheta, float gamma, float cosGamma)
 {
-	const float3 A = HosekWilkiePassCB.A;
-	const float3 B = HosekWilkiePassCB.B;
-	const float3 C = HosekWilkiePassCB.C;
-	const float3 D = HosekWilkiePassCB.D;
-	const float3 E = HosekWilkiePassCB.E;
-	const float3 F = HosekWilkiePassCB.F;
-	const float3 G = HosekWilkiePassCB.G;
-	const float3 H = HosekWilkiePassCB.H;
-	const float3 I = HosekWilkiePassCB.I;
+	const float3 A = HosekWilkiePassCB.A.xyz;
+	const float3 B = HosekWilkiePassCB.B.xyz;
+	const float3 C = HosekWilkiePassCB.C.xyz;
+	const float3 D = HosekWilkiePassCB.D.xyz;
+	const float3 E = HosekWilkiePassCB.E.xyz;
+	const float3 F = HosekWilkiePassCB.F.xyz;
+	const float3 G = HosekWilkiePassCB.G.xyz;
+	const float3 H = HosekWilkiePassCB.H.xyz;
+	const float3 I = HosekWilkiePassCB.I.xyz;
 
 	float3 chi = (1 + cosGamma * cosGamma) / pow(1 + H * H - 2 * cosGamma * H, float3(1.5f, 1.5f, 1.5f));
 	return (1 + A * exp(B / (cosTheta + 0.01))) * (C + D * exp(E * gamma) + F * (cosGamma * cosGamma) + G * chi + I * sqrt(cosTheta));
@@ -80,7 +80,7 @@ float3 HosekWilkieSky(float3 v, float3 sunDir)
 	float cosTheta = clamp(v.y, 0, 1);
 	float cosGamma = clamp(dot(v, sunDir), 0, 1);
 	float gamma = acos(cosGamma);
-	float3 R = -HosekWilkiePassCB.Z * HosekWilkie(cosTheta, gamma, cosGamma);
+	float3 R = -HosekWilkiePassCB.Z.xyz * HosekWilkie(cosTheta, gamma, cosGamma);
 	if (any(isnan(R)) || any(isinf(R))) R = 0;
 	return R;
 }
