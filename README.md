@@ -1,53 +1,69 @@
 <img align="center" padding="2" src="Adria/Resources/Icons/adria_logo_wide2.png"/>
 
-Graphics engine written in C++ with DirectX12, Metal, and Vulkan backends.
+Modern cross-platform graphics engine written in C++.
 
-## Backends
-* **DirectX12** (Windows)
-* **Metal** (macOS)
-* **Vulkan** (Windows, macOS via MoltenVK) *experimental*
-* **Vulkan** (Linux) *planned*
-* **Metal4** (macOS) *planned*
+## Rendering Backends
+
+| Backend | Platforms | Status |
+|---|---|---|
+| Direct3D 12 | Windows | Stable |
+| Metal | macOS | Stable |
+| Vulkan | Windows | Experimental |
+| Vulkan (MoltenVK) | macOS | Experimental |
+| Vulkan | Linux | Planned |
+| Metal 4 | macOS | Planned |
 
 ## Features
+
 * Render graph
-    - Automatic resource barriers
-    - Resource reuse using resource pool
-    - Automatic resource bind flags and initial state deduction
-    - Async Compute
-* Ultimate Bindless resource binding
-* DDGI
-* GPU-Driven Rendering : GPU frustum culling + 2 phase GPU occlusion culling
-* Reference path tracer
-* Upscalers : FSR2, FSR3, XeSS2, DLSS3.5, MetalFX
-* Volumetric lighting: Raymarching, Fog volumes
-* Tiled/Clustered deferred rendering 
-* ReSTIR DI (wip)
-* Shadows
-    - PCF shadow maps for directional, spot and point lights
-	- Cascade shadow maps for directional lights
-    - Ray traced shadows (DXR)
-* Volumetric clouds, Hosek-Wilkie sky, Rain
-* FFT Ocean
-* Automatic exposure
-* Bloom
-* Ambient occlusion: SSAO, HBAO, RTAO (DXR)
-* Reflections: SSR, RTR (DXR)
-* Antialiasing: FXAA, TAA
-* FFX: Variable Rate Shading, Contrast Adaptive Sharpening, Depth of Field 
-* Entity picking with selection silhouettes and transform gizmos
-* Film effects: Lens distortion, Chromatic aberration, Vignette, Film grain, CRT filter
-* Lens flare: texture-based and procedural
-* Profiler: custom and tracy profiler
-* Debug tools
+    - Automatic barriers and resource state tracking
+    - Transient resource pooling and reuse
+    - Automatic bind-flag and initial-state deduction
+    - Async compute scheduling
+
+* GPU-driven renderer
+    - GPU frustum culling and two-phase GPU occlusion culling
+    - Indirect rendering
+    - Ultimate bindless resource model
+
+* Global illumination and ray tracing
+    - DDGI, ReSTIR DI (WIP), reference path tracer
+    - Ray-traced shadows, reflections, and ambient occlusion 
+
+* Deferred rendering pipeline
+    - Tiled and clustered lighting
+    - PCF shadow maps for directional, spot, and point lights
+    - Cascaded shadow maps for directional lights
+    - SSR, SSAO, HBAO
+    - Volumetric raymarching and fog volumes
+
+* Atmosphere and environment rendering
+    - Volumetric clouds
+    - Hosek-Wilkie sky
+    - FFT ocean
+    - Rain
+
+* Upscaling and image reconstruction
+    - DLSS 3.5, XeSS2, FSR2, FSR3, MetalFX
+
+* Post-processing and image effects
+    - TAA, FXAA, bloom, automatic exposure
+    - Variable rate shading, CAS, depth of field
+    - Film grain, vignette, chromatic aberration, lens distortion, CRT filter
+    - Texture-based and procedural lens flare
+
+* Editor and visualization tools
+    - Entity picking with selection silhouettes and transform gizmos
     - Debug renderer
-    - Shader hot reloading
-    - Render graph graphviz visualization
-    - GPU printf, GPU assert
+    - Debug outputs: diffuse, normal, depth, roughness, metallic, emissive, AO, GI, custom, shading extension, mipmap view, triangle overdraw, material ID, meshlet ID, motion vectors
+
+* Tooling and debugging
+    - Shader hot reload
+    - GPU printf and GPU assert
+    - Render graph Graphviz visualization
     - PIX and RenderDoc programmatic APIs
     - Nsight Aftermath SDK, Nsight Perf SDK
-    - Debug Outputs: Diffuse, Normal, Depth, Roughness, Metallic, Emissive, AO, GI, \
-      Custom, Shading Extension, View Mipmaps, Triangle Overdraw, Material and Meshlet ID, Motion Vectors
+    - Custom profiler and Tracy integration
 
 ## Screenshots
 
