@@ -46,7 +46,7 @@ namespace adria
 		std::unique_ptr<GfxComputePipelineState> ocean_normals_pso;
 
 		Bool ocean_wireframe = false;
-		Bool ocean_tesselation = false;
+		Bool ocean_tessellation = false;
 		Float ocean_color[3] = { 0.0123f, 0.3613f, 0.6867f };
 		Float ocean_choppiness = 1.2f;
 		Bool ocean_color_changed = false;

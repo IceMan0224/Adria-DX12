@@ -310,7 +310,7 @@ namespace adria
 				GfxDevice* gfx = ctx.GetDevice();
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
-				if (ocean_tesselation)
+				if (ocean_tessellation)
 				{
 					if (ocean_wireframe) ocean_lod_psos->SetFillMode(GfxFillMode::Wireframe);
 					cmd_list->SetPipelineState(ocean_lod_psos->Get());
@@ -351,7 +351,7 @@ namespace adria
 
 					cmd_list->SetRootConstants(1, indices);
 					cmd_list->SetRootCBV(2, constants);
-					ocean_tesselation ? Draw(mesh, cmd_list, true, GfxPrimitiveTopology::PatchList3) : Draw(mesh, cmd_list);
+					ocean_tessellation ? Draw(mesh, cmd_list, true, GfxPrimitiveTopology::PatchList3) : Draw(mesh, cmd_list);
 				}
 			},
 			RGPassType::Graphics, RGPassFlags::None);
@@ -363,7 +363,7 @@ namespace adria
 			{
 				if (ImGui::TreeNodeEx("Ocean Settings", 0))
 				{
-					ImGui::Checkbox("Tessellation", &ocean_tesselation);
+					ImGui::Checkbox("Tessellation", &ocean_tessellation);
 					ImGui::Checkbox("Wireframe", &ocean_wireframe);
 
 					ImGui::SliderFloat("Choppiness", &ocean_choppiness, 0.0f, 10.0f);

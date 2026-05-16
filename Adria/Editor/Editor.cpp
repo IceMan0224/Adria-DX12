@@ -25,6 +25,7 @@
 #include "Graphics/GfxProfiler.h"
 #include "Graphics/GfxNsightPerfManager.h"
 #include "Graphics/GfxRenderDoc.h"
+#include "Logging/Log.h"
 #if defined(ADRIA_PLATFORM_WINDOWS)
 #include "Graphics/D3D12/D3D12PIX.h"
 #endif
@@ -42,6 +43,8 @@ namespace fs = std::filesystem;
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(Editor);
+
 	extern Bool g_DumpRenderGraph;
 
 	struct ProfilerState
@@ -2415,8 +2418,13 @@ namespace adria
 				camera.SetNearAndFar(near_plane, far_plane);
 			}
 		}
+		catch (std::exception const& e)
+		{
+			ADRIA_LOG(WARNING, "Failed to load editor state from disk: %s. Using defaults.", e.what());
+		}
 		catch (...)
 		{
+			ADRIA_LOG(WARNING, "Failed to load editor state from disk (unknown exception). Using defaults.");
 		}
 
 		switch (theme)

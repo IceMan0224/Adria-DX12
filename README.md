@@ -1,4 +1,4 @@
-<img align="center" padding="2" src="Adria/Resources/Icons/adria_logo_wide2.png"/>
+<img align="center" padding="2" width="75%" src="Adria/Resources/Icons/adria_logo_wide2.png"/>
 
 Modern cross-platform graphics engine written in C++.
 
@@ -8,10 +8,10 @@ Modern cross-platform graphics engine written in C++.
 |---|---|---|
 | Direct3D 12 | Windows | Stable |
 | Metal | macOS | Stable |
+| Metal 4 | macOS | Planned |
 | Vulkan | Windows | Experimental |
 | Vulkan (MoltenVK) | macOS | Experimental |
 | Vulkan | Linux | Planned |
-| Metal 4 | macOS | Planned |
 
 ## Features
 

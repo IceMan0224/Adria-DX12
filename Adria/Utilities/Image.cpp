@@ -114,12 +114,15 @@ namespace adria
 
 		FILE* file = fopen(texture_path.data(), "rb");
 		if (!file)
+		{
 			return false;
+		}
 
 		fseek(file, 0, SEEK_END);
 		std::vector<Char> data((Uint64)ftell(file));
 		fseek(file, 0, SEEK_SET);
 		fread(data.data(), data.size(), 1, file);
+		fclose(file);
 
 		Char* bytes = data.data();
 #pragma pack(push,1)

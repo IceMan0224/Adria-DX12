@@ -107,6 +107,9 @@ namespace adria
 
 		VkCommandBuffer GetCommandBuffer() const { return cmd_buffer; }
 
+		std::vector<std::pair<VkSemaphore, Uint64>>& GetPendingWaits()   { return pending_waits; }
+		std::vector<std::pair<VkSemaphore, Uint64>>& GetPendingSignals() { return pending_signals; }
+
 	private:
 		VulkanDevice*      gfx        = nullptr;
 		GfxCommandListType type;

@@ -112,30 +112,33 @@ namespace adria
 
 	FfxInterface* CreateFfxInterface(GfxDevice* gfx, Uint32 context_count)
 	{
-		FfxInterface* ffx_interface = new FfxInterface{};
 		Uint64 const scratch_buffer_size = ffxGetScratchMemorySizeDX12(context_count);
 		void* scratch_buffer = malloc(scratch_buffer_size);
 		ADRIA_ASSERT(scratch_buffer);
-		if (scratch_buffer)
-		{
-			memset(scratch_buffer, 0, scratch_buffer_size);
-			FfxErrorCode error_code = ffxGetInterfaceDX12(ffx_interface, gfx->GetNative(), scratch_buffer, scratch_buffer_size, context_count);
-			ADRIA_ASSERT(error_code == FFX_OK);
-			return ffx_interface;
-		}
-		else
+		if (!scratch_buffer)
 		{
 			return nullptr;
 		}
+		memset(scratch_buffer, 0, scratch_buffer_size);
+
+		FfxInterface* ffx_interface = new FfxInterface{};
+		FfxErrorCode error_code = ffxGetInterfaceDX12(ffx_interface, gfx->GetNative(), scratch_buffer, scratch_buffer_size, context_count);
+		ADRIA_ASSERT(error_code == FFX_OK);
+		return ffx_interface;
 	}
 
 	void DestroyFfxInterface(FfxInterface* ffx_interface)
 	{
-		if (ffx_interface && ffx_interface->scratchBuffer)
+		if (!ffx_interface)
+		{
+			return;
+		}
+		if (ffx_interface->scratchBuffer)
 		{
 			free(ffx_interface->scratchBuffer);
 			ffx_interface->scratchBuffer = nullptr;
 		}
+		delete ffx_interface;
 	}
 
 	FfxResource GetFfxResource()

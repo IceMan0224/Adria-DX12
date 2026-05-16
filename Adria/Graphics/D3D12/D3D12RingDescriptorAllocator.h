@@ -17,7 +17,7 @@ namespace adria
 		ADRIA_NONCOPYABLE_NONMOVABLE(D3D12RingDescriptorAllocator)
 		~D3D12RingDescriptorAllocator() = default;
 
-		ADRIA_NODISCARD D3D12Descriptor Allocate(uint32_t count = 1)
+		ADRIA_NODISCARD D3D12Descriptor Allocate(Uint32 count = 1)
 		{
 			Uint64 start_offset = INVALID_ALLOC_OFFSET;
 			{

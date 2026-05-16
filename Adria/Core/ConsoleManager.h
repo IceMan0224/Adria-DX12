@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include "IConsoleManager.h"
 #include "Utilities/Singleton.h"
 
@@ -10,7 +11,7 @@ namespace adria
 		friend class Singleton<ConsoleManager>;
 	public:
 		ConsoleManager() {}
-		~ConsoleManager();
+		~ConsoleManager() = default;
 
 		virtual IConsoleVariable* RegisterConsoleVariable(Char const* name, Bool default_value, Char const* help) override;
 		virtual IConsoleVariable* RegisterConsoleVariable(Char const* name, Int default_value, Char const* help) override;
@@ -37,10 +38,10 @@ namespace adria
 		virtual Bool ProcessInput(std::string const& cmd) override;
 
 	private:
-		std::unordered_map<std::string, IConsoleObject*> console_objects;
+		std::unordered_map<std::string, std::unique_ptr<IConsoleObject>> console_objects;
 
 	private:
-		IConsoleObject* AddObject(Char const* name, IConsoleObject* obj);
+		IConsoleObject* AddObject(Char const* name, std::unique_ptr<IConsoleObject> obj);
 	};
 	#define g_ConsoleManager ConsoleManager::Get()
 

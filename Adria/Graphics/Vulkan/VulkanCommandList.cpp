@@ -99,7 +99,30 @@ namespace adria
 
 	void VulkanCommandList::WaitAll()
 	{
-		ADRIA_TODO();
+		if (pending_waits.empty()) 
+		{
+			return;
+		}
+		
+		std::vector<VkSemaphoreSubmitInfo> wait_infos;
+		wait_infos.reserve(pending_waits.size());
+		for (auto const& [sem, val] : pending_waits)
+		{
+			VkSemaphoreSubmitInfo info{ VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };
+			info.semaphore = sem;
+			info.value     = val;
+			info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+			wait_infos.push_back(info);
+		}
+
+		VkSubmitInfo2 submit{ VK_STRUCTURE_TYPE_SUBMIT_INFO_2 };
+		submit.waitSemaphoreInfoCount = (Uint32)wait_infos.size();
+		submit.pWaitSemaphoreInfos    = wait_infos.data();
+
+		VkQueue queue = static_cast<VulkanCommandQueue*>(GetQueue())->GetQueue();
+		VK_CHECK(vkQueueSubmit2(queue, 1, &submit, VK_NULL_HANDLE));
+
+		pending_waits.clear();
 	}
 
 	void VulkanCommandList::Submit()
@@ -142,7 +165,30 @@ namespace adria
 
 	void VulkanCommandList::SignalAll()
 	{
-		ADRIA_TODO();
+		if (pending_signals.empty())
+		{
+			return;
+		}
+
+		std::vector<VkSemaphoreSubmitInfo> signal_infos;
+		signal_infos.reserve(pending_signals.size());
+		for (auto const& [sem, val] : pending_signals)
+		{
+			VkSemaphoreSubmitInfo info{ VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };
+			info.semaphore = sem;
+			info.value     = val;
+			info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+			signal_infos.push_back(info);
+		}
+
+		VkSubmitInfo2 submit{ VK_STRUCTURE_TYPE_SUBMIT_INFO_2 };
+		submit.signalSemaphoreInfoCount = (Uint32)signal_infos.size();
+		submit.pSignalSemaphoreInfos    = signal_infos.data();
+
+		VkQueue queue = static_cast<VulkanCommandQueue*>(GetQueue())->GetQueue();
+		VK_CHECK(vkQueueSubmit2(queue, 1, &submit, VK_NULL_HANDLE));
+
+		pending_signals.clear();
 	}
 
 	void VulkanCommandList::ResetState()

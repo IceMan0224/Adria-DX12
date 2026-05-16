@@ -116,25 +116,7 @@ namespace adria
         }
         else if (params.mesh_type == LightMesh::Sphere)
         {
-            //load sphere mesh and mesh component
-           //Mesh sphere_mesh{};
-           //
-           //
-           //Material material{};
-           //XMStoreFloat3(&material.diffuse, params.light_data.color);
-           //
-           //if (params.light_texture.has_value())
-           //    material.diffuse_texture = texture_manager.LoadTexture(params.light_texture.value()); //
-           //else if (params.light_data.type == LightType::eDirectional)
-           //    material.diffuse_texture = texture_manager.LoadTexture(paths::TexturesDir + "sun.png");
-           //
-           //if (params.light_data.type == LightType::eDirectional)
-           //    material.shader = StandardShader::eSun;
-           //else if (material.diffuse_texture == INVALID_TEXTURE_HANDLE)
-           //    material.shader = StandardShader::eSolid;
-           //else material.shader = StandardShader::eTexture;
-           //
-           //reg.emplace<Material>(light, material);
+            ADRIA_TODO("Sphere light mesh: load sphere mesh + attach Material with current API");
         }
 
         switch (params.light_data.type)

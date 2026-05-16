@@ -469,73 +469,68 @@ namespace adria
 	private:
 		ConsoleCommandWithArgsDelegate delegate;
 	};
-	
-	ConsoleManager::~ConsoleManager()
-	{
-		for (auto& [name, obj] : console_objects) delete obj;
-	}
 
 	IConsoleVariable* ConsoleManager::RegisterConsoleVariable(Char const* name, Bool default_value, Char const* help)
 	{
-		return AddObject(name, new ConsoleVariable<Bool>(default_value, name, help))->AsVariable();
+		return AddObject(name, std::make_unique<ConsoleVariable<Bool>>(default_value, name, help))->AsVariable();
 	}
 
 	IConsoleVariable* ConsoleManager::RegisterConsoleVariable(Char const* name, Int default_value, Char const* help)
 	{
-		return AddObject(name, new ConsoleVariable<Int>(default_value, name, help))->AsVariable();
+		return AddObject(name, std::make_unique<ConsoleVariable<Int>>(default_value, name, help))->AsVariable();
 	}
 
 	IConsoleVariable* ConsoleManager::RegisterConsoleVariable(Char const* name, Float default_value, Char const* help)
 	{
-		return AddObject(name, new ConsoleVariable<Float>(default_value, name, help))->AsVariable();
+		return AddObject(name, std::make_unique<ConsoleVariable<Float>>(default_value, name, help))->AsVariable();
 	}
 
 	IConsoleVariable* ConsoleManager::RegisterConsoleVariable(Char const* name, Char const* default_value, Char const* help)
 	{
-		return AddObject(name, new ConsoleVariable<std::string>(default_value, name, help))->AsVariable();
+		return AddObject(name, std::make_unique<ConsoleVariable<std::string>>(default_value, name, help))->AsVariable();
 	}
 
 	IConsoleVariable* ConsoleManager::RegisterConsoleVariable(Char const* name, std::string const& default_value, Char const* help)
 	{
-		return AddObject(name, new ConsoleVariable<std::string>(default_value, name, help))->AsVariable();
+		return AddObject(name, std::make_unique<ConsoleVariable<std::string>>(default_value, name, help))->AsVariable();
 	}
 
 	IConsoleVariable* ConsoleManager::RegisterConsoleVariableRef(Char const* name, Bool& value, Char const* help)
 	{
-		return AddObject(name, new ConsoleVariableRef<Bool>(value, name, help))->AsVariable();
+		return AddObject(name, std::make_unique<ConsoleVariableRef<Bool>>(value, name, help))->AsVariable();
 	}
 
 	IConsoleVariable* ConsoleManager::RegisterConsoleVariableRef(Char const* name, Int& value, Char const* help)
 	{
-		return AddObject(name, new ConsoleVariableRef<Int>(value, name, help))->AsVariable();
+		return AddObject(name, std::make_unique<ConsoleVariableRef<Int>>(value, name, help))->AsVariable();
 	}
 
 	IConsoleVariable* ConsoleManager::RegisterConsoleVariableRef(Char const* name, Float& value, Char const* help)
 	{
-		return AddObject(name, new ConsoleVariableRef<Float>(value, name, help))->AsVariable();
+		return AddObject(name, std::make_unique<ConsoleVariableRef<Float>>(value, name, help))->AsVariable();
 
 	}
 
 	IConsoleVariable* ConsoleManager::RegisterConsoleVariableRef(Char const* name, std::string& value, Char const* help)
 	{
-		return AddObject(name, new ConsoleVariableRef<std::string>(value, name, help))->AsVariable();
+		return AddObject(name, std::make_unique<ConsoleVariableRef<std::string>>(value, name, help))->AsVariable();
 	}
 
 	IConsoleCommand* ConsoleManager::RegisterConsoleCommand(Char const* name, Char const* help, ConsoleCommandDelegate const& command)
 	{
-		return AddObject(name, new ConsoleCommand(command, name, help))->AsCommand();
+		return AddObject(name, std::make_unique<ConsoleCommand>(command, name, help))->AsCommand();
 	}
 
 	IConsoleCommand* ConsoleManager::RegisterConsoleCommand(Char const* name, Char const* help, ConsoleCommandWithArgsDelegate const& command)
 	{
-		return AddObject(name, new ConsoleCommandWithArgs(command, name, help))->AsCommand();
+		return AddObject(name, std::make_unique<ConsoleCommandWithArgs>(command, name, help))->AsCommand();
 	}
 
 	void ConsoleManager::UnregisterConsoleObject(IConsoleObject* console_obj)
 	{
 		for (auto& [name, obj] : console_objects)
 		{
-			if (console_obj == obj)
+			if (console_obj == obj.get())
 			{
 				UnregisterConsoleObject(name);
 				break;
@@ -562,13 +557,17 @@ namespace adria
 
 	IConsoleObject* ConsoleManager::FindConsoleObject(std::string const& name) const
 	{
-		if (!console_objects.contains(name)) return nullptr;
-		return console_objects.find(name)->second;
+		auto it = console_objects.find(name);
+		if (it == console_objects.end())
+		{
+			return nullptr;
+		}
+		return it->second.get();
 	}
 
 	void ConsoleManager::ForAllObjects(ConsoleObjectDelegate const& delegate) const
 	{
-		for (auto& [name, obj] : console_objects) delegate(obj);
+		for (auto& [name, obj] : console_objects) delegate(obj.get());
 	}
 
 	Bool ConsoleManager::ProcessInput(std::string const& cmd)
@@ -593,11 +592,12 @@ namespace adria
 		return false;
 	}
 
-	IConsoleObject* ConsoleManager::AddObject(Char const* name, IConsoleObject* obj)
+	IConsoleObject* ConsoleManager::AddObject(Char const* name, std::unique_ptr<IConsoleObject> obj)
 	{
 		ADRIA_ASSERT(!console_objects.contains(name));
-		console_objects[name] = obj;
-		return obj;
+		IConsoleObject* raw = obj.get();
+		console_objects[name] = std::move(obj);
+		return raw;
 	}
 
 }
