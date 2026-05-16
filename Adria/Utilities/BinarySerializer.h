@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include "cereal/archives/binary.hpp"
 
 namespace DirectX::SimpleMath
@@ -28,10 +29,18 @@ namespace adria
 	{
 	public:
 		explicit BinaryFileWriter(std::string const& file_path)
-			: stream(file_path, std::ios::binary)
 		{
+			std::filesystem::path parent = std::filesystem::path(file_path).parent_path();
+			if (!parent.empty() && !std::filesystem::exists(parent))
+			{
+				std::error_code ec;
+				std::filesystem::create_directories(parent, ec);
+			}
+			stream.open(file_path, std::ios::binary);
 			if (stream.is_open())
+			{
 				archive = std::make_unique<cereal::BinaryOutputArchive>(stream);
+			}
 		}
 
 		Bool IsValid() const { return archive != nullptr; }
@@ -61,7 +70,9 @@ namespace adria
 			: stream(file_path, std::ios::binary)
 		{
 			if (stream.is_open())
+			{
 				archive = std::make_unique<cereal::BinaryInputArchive>(stream);
+			}
 		}
 
 		Bool IsValid() const { return archive != nullptr; }

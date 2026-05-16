@@ -66,14 +66,11 @@ namespace adria
 
 		if (!AccumulateRadiance.Get())
 		{
-			accumulated_frames = 1;
+			accumulated_frames = 0;
 		}
+		++accumulated_frames;
 
 		AddPathTracingPass(rg);
-		if (AccumulateRadiance.Get())
-		{
-			++accumulated_frames;
-		}
 	}
 
 	void PathTracingPass::OnResize(Uint32 w, Uint32 h)

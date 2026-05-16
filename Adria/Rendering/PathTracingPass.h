@@ -41,7 +41,7 @@ namespace adria
 		std::unique_ptr<GfxGraphicsPipelineState> pt_gbuffer_pso;
 
 		std::unique_ptr<GfxTexture> accumulation_texture = nullptr;
-		Int32 accumulated_frames = 1;
+		Int32 accumulated_frames = 0;
 
 	private:
 		void CreatePSOs();

@@ -190,6 +190,9 @@ namespace adria
 			{
 				GfxCommandList* cmd_list = ctx.GetCommandList();
 
+				cmd_list->BufferBarrier(*reservoir_buffer, GfxResourceState::ComputeUAV, GfxResourceState::ComputeUAV);
+				cmd_list->FlushBarriers();
+
 				struct TemporalResamplingPassParameters
 				{
 					Uint32 depth_idx;

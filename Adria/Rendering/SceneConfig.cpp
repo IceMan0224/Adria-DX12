@@ -39,6 +39,7 @@ namespace adria
 			if (!model_params.Find<std::string>("path", path))
 			{
 				ADRIA_LOG(WARNING, "Model doesn't have path field! Skipping this model...");
+				continue;
 			}
 			path = paths::ModelsDir + path;
 			std::string tex_path = model_params.FindOr<std::string>("tex_path", GetParentPath(path) + "\\");
@@ -74,6 +75,7 @@ namespace adria
 			if (!light_params.Find<std::string>("type", type))
 			{
 				ADRIA_LOG(WARNING, "Light doesn't have type field! Skipping this light...");
+				continue;
 			}
 
 			LightParameters light{};
@@ -113,7 +115,7 @@ namespace adria
 			light.light_data.range = light_params.FindOr<Float>("range", 100.0f);
 
 			light.light_data.outer_cosine = std::cos(XMConvertToRadians(light_params.FindOr<Float>("outer_angle", 45.0f)));
-			light.light_data.inner_cosine = std::cos(XMConvertToRadians(light_params.FindOr<Float>("outer_angle", 22.5f)));
+			light.light_data.inner_cosine = std::cos(XMConvertToRadians(light_params.FindOr<Float>("inner_angle", 22.5f)));
 
 			light.light_data.casts_shadows = light_params.FindOr<Bool>("shadows", true);
 			light.light_data.use_cascades = light_params.FindOr<Bool>("cascades", false);

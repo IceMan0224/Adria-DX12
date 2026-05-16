@@ -18,11 +18,9 @@ namespace adria
 		for (GfxCommandList* cmd : cmd_lists)
 		{
 			VulkanCommandList* vk_cmd = static_cast<VulkanCommandList*>(cmd);
-
 			VkCommandBufferSubmitInfo info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO };
 			info.commandBuffer = vk_cmd->GetCommandBuffer();
 			cmd_infos.push_back(info);
-
 			for (auto const& [sem, val] : vk_cmd->GetPendingWaits())
 			{
 				VkSemaphoreSubmitInfo wi{ VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };

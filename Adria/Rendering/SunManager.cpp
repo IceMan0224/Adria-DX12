@@ -14,6 +14,8 @@ namespace adria
 		moon_light = nullptr;
 		sun_transform = nullptr;
 		moon_transform = nullptr;
+		sun_active = false;
+		sun_direction = Vector3(0.0f, -1.0f, 0.0f);
 
 		for (entt::entity e : reg.view<Sun, Light, Transform>())
 		{
@@ -35,9 +37,13 @@ namespace adria
 			Vector3 dir = Vector3(sun_light->direction);
 			Float dir_len = dir.Length();
 			if (dir_len > 1e-6f)
+			{
 				dir /= dir_len;
+			}
 			else
+			{
 				dir = Vector3(0.0f, -1.0f, 0.0f);
+			}
 
 			sun_active = dir.y < 0.0f;
 			sun_direction = dir;

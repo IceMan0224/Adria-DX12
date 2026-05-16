@@ -742,7 +742,9 @@ namespace adria
 		}
 
 		VkRenderingAttachmentInfo depth_att{};
+		VkRenderingAttachmentInfo stencil_att{};
 		Bool has_depth = desc.dsv_attachment.has_value();
+		Bool has_stencil = false;
 		if (has_depth)
 		{
 			auto const& dsv = *desc.dsv_attachment;
@@ -761,6 +763,24 @@ namespace adria
 				depth_att.clearValue.depthStencil.depth   = dsv.clear_value.depth_stencil.depth;
 				depth_att.clearValue.depthStencil.stencil = dsv.clear_value.depth_stencil.stencil;
 			}
+
+			has_stencil = dsv.stencil_beginning_access != GfxLoadAccessOp::NoAccess;
+			if (has_stencil)
+			{
+				stencil_att.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+				stencil_att.imageView   = view;
+				stencil_att.imageLayout = (desc.flags & GfxRenderPassFlagBit_ReadOnlyStencil)
+					? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+					: VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				stencil_att.loadOp      = ConvertLoadOp(dsv.stencil_beginning_access);
+				stencil_att.storeOp     = ConvertStoreOp(dsv.stencil_ending_access);
+
+				if (dsv.stencil_beginning_access == GfxLoadAccessOp::Clear)
+				{
+					stencil_att.clearValue.depthStencil.depth   = dsv.clear_value.depth_stencil.depth;
+					stencil_att.clearValue.depthStencil.stencil = dsv.clear_value.depth_stencil.stencil;
+				}
+			}
 		}
 
 		VkRenderingInfo rendering{ VK_STRUCTURE_TYPE_RENDERING_INFO };
@@ -769,7 +789,7 @@ namespace adria
 		rendering.colorAttachmentCount = (Uint32)color_attachments.size();
 		rendering.pColorAttachments    = color_attachments.data();
 		rendering.pDepthAttachment     = has_depth ? &depth_att : nullptr;
-		rendering.pStencilAttachment   = nullptr;
+		rendering.pStencilAttachment   = has_stencil ? &stencil_att : nullptr;
 
 		vkCmdBeginRendering(cmd_buffer, &rendering);
 		SetViewport(0, 0, desc.width, desc.height);
