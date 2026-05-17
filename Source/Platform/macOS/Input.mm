@@ -200,6 +200,8 @@ namespace adria
                 keys[(Uint64)CtrlRight] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_RightControl);
                 keys[(Uint64)AltLeft] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_Option);
                 keys[(Uint64)AltRight] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_RightOption);
+                keys[(Uint64)CmdLeft] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_Command);
+                keys[(Uint64)CmdRight] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_RightCommand);
                 keys[(Uint64)Space] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_Space);
                 keys[(Uint64)CapsLock] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_CapsLock);
                 keys[(Uint64)Backspace] = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, kVK_Delete);

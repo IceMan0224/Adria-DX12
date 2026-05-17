@@ -1,8 +1,10 @@
 #include "CommonResources.hlsli"
 
+#define MAX_SILHOUETTE_IDS 128
+#define MAX_SILHOUETTE_PACKED ((MAX_SILHOUETTE_IDS + 3) / 4)
+
 struct SilhouetteConstants
 {
-    uint  selectedEntityId;
     float outlineWidth;
     float outlineR;
     float outlineG;
@@ -10,8 +12,36 @@ struct SilhouetteConstants
     uint  hdrIdx;
     uint  entityIdIdx;
     uint  outputIdx;
+    uint  _pad;
 };
 DECLARE_CBUFFER(SilhouetteConstants, SilhouetteCB, 1);
+
+struct SilhouetteIds
+{
+    uint  idCount;
+    uint  _pad0;
+    uint  _pad1;
+    uint  _pad2;
+    uint4 ids[MAX_SILHOUETTE_PACKED];
+};
+DECLARE_CBUFFER(SilhouetteIds, SilhouetteIdsCB, 2);
+
+static bool IsSelected(uint id)
+{
+    if (id == 0xffffffffu)
+    {
+        return false;
+    }
+    uint const count = SilhouetteIdsCB.idCount;
+    for (uint i = 0; i < count; ++i)
+    {
+        if (SilhouetteIdsCB.ids[i / 4][i % 4] == id)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 [numthreads(8, 8, 1)]
 void SilhouetteCS(uint3 dispatchId : SV_DispatchThreadID)
@@ -23,15 +53,21 @@ void SilhouetteCS(uint3 dispatchId : SV_DispatchThreadID)
     uint2 pixel = dispatchId.xy;
     uint2 dims;
     hdrTexture.GetDimensions(dims.x, dims.y);
-    if (any(pixel >= dims)) 
+    if (any(pixel >= dims))
     {
         return;
     }
 
     float4 sceneColor = hdrTexture[pixel];
     uint   centerId   = entityIdTex[pixel];
-    
-    if (centerId == SilhouetteCB.selectedEntityId)
+
+    if (SilhouetteIdsCB.idCount == 0)
+    {
+        outputTex[pixel] = sceneColor;
+        return;
+    }
+
+    if (IsSelected(centerId))
     {
         outputTex[pixel] = sceneColor;
         return;
@@ -45,13 +81,13 @@ void SilhouetteCS(uint3 dispatchId : SV_DispatchThreadID)
         {
             if (dx == 0 && dy == 0) continue;
             int2 coord = clamp((int2)pixel + int2(dx, dy), int2(0, 0), (int2)dims - 1);
-            if (entityIdTex[coord] == SilhouetteCB.selectedEntityId)
+            if (IsSelected(entityIdTex[coord]))
             {
                 onBorder = true;
                 break;
             }
         }
-        if (onBorder) 
+        if (onBorder)
         {
             break;
         }

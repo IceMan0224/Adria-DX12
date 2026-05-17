@@ -80,7 +80,8 @@ namespace adria
 
 		console = std::make_unique<EditorConsole>();
 		ray_tracing_supported = gfx->GetCapabilities().SupportsHardwareRayTracing();
-		selected_entity = entt::null;
+		selected_entities.clear();
+		primary_selected = entt::null;
 		LoadState();
 		fs::create_directory(paths::PixCapturesDir);
 		fs::create_directory(paths::RenderDocCapturesDir);
@@ -121,6 +122,16 @@ namespace adria
 			if (engine->reg.valid(e)) engine->reg.destroy(e);
 		}
 		pending_deletions.clear();
+
+		auto& reg = engine->reg;
+		selected_entities.erase(
+			std::remove_if(selected_entities.begin(), selected_entities.end(),
+				[&](entt::entity x) { return !reg.valid(x); }),
+			selected_entities.end());
+		if (primary_selected != entt::null && !reg.valid(primary_selected))
+		{
+			primary_selected = selected_entities.empty() ? entt::null : selected_entities.back();
+		}
 	}
 
 	void Editor::Run()
@@ -242,7 +253,7 @@ namespace adria
 				selection_mode = !selection_mode;
 				if (!selection_mode)
 				{
-					selected_entity = entt::null;
+					ClearSelection();
 				}
 			}
 		}
@@ -549,7 +560,7 @@ namespace adria
 					params.light_data.use_cascades = true;
 					params.mesh_type = LightMesh::NoMesh;
 					entt::entity e = engine->scene_loader->LoadLight(params);
-					selected_entity = e;
+					ApplySelectionPick(e, false);
 					scroll_to_selected = true;
 				}
 				if (ImGui::MenuItem(ICON_FA_LIGHTBULB " Point Light"))
@@ -563,7 +574,7 @@ namespace adria
 					params.light_data.active = true;
 					params.mesh_type = LightMesh::NoMesh;
 					entt::entity e = engine->scene_loader->LoadLight(params);
-					selected_entity = e;
+					ApplySelectionPick(e, false);
 					scroll_to_selected = true;
 				}
 				if (ImGui::MenuItem(ICON_FA_BOLT " Spot Light"))
@@ -580,7 +591,7 @@ namespace adria
 					params.light_data.active = true;
 					params.mesh_type = LightMesh::NoMesh;
 					entt::entity e = engine->scene_loader->LoadLight(params);
-					selected_entity = e;
+					ApplySelectionPick(e, false);
 					scroll_to_selected = true;
 				}
 				ImGui::EndPopup();
@@ -588,9 +599,9 @@ namespace adria
 
 			ImGui::Separator();
 			std::unordered_set<entt::entity> ancestors;
-			if (scroll_to_selected && selected_entity != entt::null)
+			if (scroll_to_selected && primary_selected != entt::null)
 			{
-				entt::entity current = selected_entity;
+				entt::entity current = primary_selected;
 				while (current != entt::null)
 				{
 					Relationship const* rel = reg.try_get<Relationship>(current);
@@ -616,26 +627,28 @@ namespace adria
 				Bool has_children = rel && !rel->children.empty();
 
 				ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-				if (selected_entity == e) flags |= ImGuiTreeNodeFlags_Selected;
+				if (IsSelected(e)) flags |= ImGuiTreeNodeFlags_Selected;
 				if (!has_children) flags |= ImGuiTreeNodeFlags_Leaf;
 				Bool opened = ImGui::TreeNodeEx((void*)(uintptr_t)entt::to_integral(e), flags, "%s", tag->name.c_str());
 
-				if (selected_entity == e && scroll_to_selected)
+				if (primary_selected == e && scroll_to_selected)
 					ImGui::SetScrollHereY(0.5f);
 
 				if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 				{
-					selected_entity = (e == selected_entity) ? entt::null : e;
+					ImGuiIO const& io = ImGui::GetIO();
+					Bool const additive = io.KeySuper || io.KeyCtrl;
+					ApplySelectionPick(e, additive);
 				}
 
 				if (ImGui::BeginPopupContextItem())
 				{
-					if (selected_entity != entt::null && selected_entity != e)
+					if (primary_selected != entt::null && primary_selected != e)
 					{
-						Tag* sel_tag = reg.try_get<Tag>(selected_entity);
+						Tag* sel_tag = reg.try_get<Tag>(primary_selected);
 						std::string label = "Parent to " + (sel_tag ? sel_tag->name : std::string("Selected"));
 						if (ImGui::MenuItem(label.c_str()))
-							SetParent(reg, e, selected_entity);
+							SetParent(reg, e, primary_selected);
 					}
 					if (rel && rel->parent != entt::null)
 					{
@@ -647,8 +660,20 @@ namespace adria
 					ImGui::Separator();
 					if (ImGui::MenuItem(ICON_FA_TRASH " Delete"))
 					{
-						if (selected_entity == e) selected_entity = entt::null;
-						QueueEntityDestruction(e);
+						std::vector<entt::entity> to_delete;
+						if (IsSelected(e))
+						{
+							to_delete = selected_entities;
+						}
+						else
+						{
+							GatherSubtree(e, to_delete);
+						}
+						for (entt::entity de : to_delete)
+						{
+							QueueEntityDestruction(de);
+						}
+						ClearSelection();
 					}
 					ImGui::Separator();
 					if (ImGui::MenuItem(ICON_FA_WAND_MAGIC_SPARKLES " Spawn..."))
@@ -691,9 +716,9 @@ namespace adria
 		if (ImGui::Begin("Properties", &visibility_flags[Flag_Entities]))
 		{
 			GfxDevice* gfx = engine->gfx.get();
-			if (selected_entity != entt::null)
+			if (primary_selected != entt::null)
 			{
-				Tag* tag = engine->reg.try_get<Tag>(selected_entity);
+				Tag* tag = engine->reg.try_get<Tag>(primary_selected);
 				if (tag)
 				{
 					Char buffer[256];
@@ -705,7 +730,7 @@ namespace adria
 					}
 				}
 
-				Light* light = engine->reg.try_get<Light>(selected_entity);
+				Light* light = engine->reg.try_get<Light>(primary_selected);
 				if (light && ImGui::CollapsingHeader("Light"))
 				{
 					if (light->type == LightType::Directional)	{ ImGui::Text("Directional Light"); }
@@ -719,9 +744,9 @@ namespace adria
 
 					changed |= ImGui::SliderFloat("Light Intensity", &light->intensity, 0.0f, 50.0f);
 
-					if (engine->reg.all_of<Material>(selected_entity))
+					if (engine->reg.all_of<Material>(primary_selected))
 					{
-						Material& material = engine->reg.get<Material>(selected_entity);
+						Material& material = engine->reg.get<Material>(primary_selected);
 						memcpy(material.albedo_color, color, 3 * sizeof(Float));
 					}
 
@@ -755,9 +780,9 @@ namespace adria
 						changed |= ImGui::SliderFloat("Range", &light->range, 50.0f, 1000.0f);
 					}
 
-					if (engine->reg.all_of<Transform>(selected_entity))
+					if (engine->reg.all_of<Transform>(primary_selected))
 					{
-						Transform& tr = engine->reg.get<Transform>(selected_entity);
+						Transform& tr = engine->reg.get<Transform>(primary_selected);
 						Vector3 translation(light->position.x, light->position.y, light->position.z);
 						tr.local_transform = Matrix::CreateTranslation(translation);
 					}
@@ -810,7 +835,7 @@ namespace adria
 					ImGui::Checkbox("Lens Flare", &light->lens_flare);
 				}
 
-				Material* material = engine->reg.try_get<Material>(selected_entity);
+				Material* material = engine->reg.try_get<Material>(primary_selected);
 				if (material && ImGui::CollapsingHeader("Material"))
 				{
 					ImGui::Text("Albedo Texture");
@@ -904,7 +929,7 @@ namespace adria
 					ImGui::SliderFloat("Emissive Factor", &material->emissive_factor, 0.0f, 32.0f);
 				}
 
-				Transform* transform = engine->reg.try_get<Transform>(selected_entity);
+				Transform* transform = engine->reg.try_get<Transform>(primary_selected);
 				if (transform && ImGui::CollapsingHeader("Transform"))
 				{
 					Matrix tr = transform->local_transform;
@@ -928,13 +953,13 @@ namespace adria
 						Matrix scale_matrix = Matrix::CreateScale(scale);
 						Matrix rotation_matrix = Matrix::CreateFromQuaternion(new_rotation);
 						Matrix translation_matrix = Matrix::CreateTranslation(translation);
-						transform->local_transform = translation_matrix * rotation_matrix * scale_matrix;
+						transform->local_transform = scale_matrix * rotation_matrix * translation_matrix;
 					}
 					Vector3 world_pos = transform->current_transform.Translation();
 					ImGui::Text("World Position: %.2f, %.2f, %.2f", world_pos.x, world_pos.y, world_pos.z);
 				}
 
-				Decal* decal = engine->reg.try_get<Decal>(selected_entity);
+				Decal* decal = engine->reg.try_get<Decal>(primary_selected);
 				if (decal && ImGui::CollapsingHeader("Decal"))
 				{
 					ImGui::Text("Decal Albedo Texture");
@@ -980,7 +1005,7 @@ namespace adria
 					ImGui::Checkbox("Modify GBuffer Normals", &decal->modify_gbuffer_normals);
 				}
 
-				Skybox* skybox = engine->reg.try_get<Skybox>(selected_entity);
+				Skybox* skybox = engine->reg.try_get<Skybox>(primary_selected);
 				if (skybox && ImGui::CollapsingHeader("Skybox"))
 				{
 					ImGui::Checkbox("Active", &skybox->active);
@@ -998,7 +1023,7 @@ namespace adria
 				}
 			}
 
-				Mesh* mesh = engine->reg.try_get<Mesh>(selected_entity);
+				Mesh* mesh = engine->reg.try_get<Mesh>(primary_selected);
 				if (mesh && ImGui::CollapsingHeader("Mesh"))
 				{
 					ImGui::Text("Submeshes: %d", (Int32)mesh->submeshes.size());
@@ -1006,7 +1031,7 @@ namespace adria
 					ImGui::Text("Materials: %d", (Int32)mesh->materials.size());
 				}
 
-				NodeMeshRef* node_ref = engine->reg.try_get<NodeMeshRef>(selected_entity);
+				NodeMeshRef* node_ref = engine->reg.try_get<NodeMeshRef>(primary_selected);
 				if (node_ref && ImGui::CollapsingHeader("Mesh Reference"))
 				{
 					Tag* mesh_tag = engine->reg.try_get<Tag>(node_ref->mesh_entity);
@@ -1014,7 +1039,7 @@ namespace adria
 					ImGui::Text("Instance index: %u  count: %u", node_ref->first_instance_index, node_ref->instance_count);
 				}
 
-				Relationship* rel_comp = engine->reg.try_get<Relationship>(selected_entity);
+				Relationship* rel_comp = engine->reg.try_get<Relationship>(primary_selected);
 				if (rel_comp && ImGui::CollapsingHeader("Relationship"))
 				{
 					if (rel_comp->parent != entt::null)
@@ -1025,7 +1050,7 @@ namespace adria
 					ImGui::Text("Children: %d", (Int32)rel_comp->children.size());
 				}
 
-				if (engine->reg.all_of<RayTracing>(selected_entity) && ImGui::CollapsingHeader("Ray Tracing"))
+				if (engine->reg.all_of<RayTracing>(primary_selected) && ImGui::CollapsingHeader("Ray Tracing"))
 				{
 					ImGui::Text("Ray tracing enabled");
 				}
@@ -1213,7 +1238,7 @@ namespace adria
 						selection_mode = !selection_mode;
 						if (!selection_mode)
 						{
-							selected_entity = entt::null;
+							primary_selected = entt::null;
 						}
 					}
 					if (ImGui::IsItemHovered())
@@ -1284,7 +1309,7 @@ namespace adria
 					ImVec2 icon_min(screen_x - LIGHT_ICON_HALF, screen_y - LIGHT_ICON_HALF);
 					ImVec2 icon_max(screen_x + LIGHT_ICON_HALF, screen_y + LIGHT_ICON_HALF);
 
-					ImU32 tint = (entity == selected_entity) ? IM_COL32(255, 200, 50, 255) : IM_COL32(255, 255, 255, 200);
+					ImU32 tint = (entity == primary_selected) ? IM_COL32(255, 200, 50, 255) : IM_COL32(255, 255, 255, 200);
 					draw_list->AddImage(tex_id, icon_min, icon_max, ImVec2(0, 0), ImVec2(1, 1), tint);
 
 					if (mouse_pos.x >= icon_min.x && mouse_pos.x <= icon_max.x &&
@@ -1299,10 +1324,10 @@ namespace adria
 			ImGuizmo::SetDrawlist();
 			ImGuizmo::SetRect(v_min.x, v_min.y, size.x, size.y);
 
-			if (selected_entity != entt::null && engine->reg.valid(selected_entity) && engine->reg.all_of<Transform>(selected_entity))
+			if (primary_selected != entt::null && engine->reg.valid(primary_selected) && engine->reg.all_of<Transform>(primary_selected))
 			{
-				Light* light = engine->reg.try_get<Light>(selected_entity);
-				Transform& transform = engine->reg.get<Transform>(selected_entity);
+				Light* light = engine->reg.try_get<Light>(primary_selected);
+				Transform& transform = engine->reg.get<Transform>(primary_selected);
 				Matrix world = transform.current_transform;
 
 				if (light)
@@ -1377,7 +1402,7 @@ namespace adria
 				{
 					// Compute bounding box center as gizmo pivot for entities with mesh references
 					Vector3 pivot = Vector3::Zero;
-					NodeMeshRef const* node_ref = engine->reg.try_get<NodeMeshRef>(selected_entity);
+					NodeMeshRef const* node_ref = engine->reg.try_get<NodeMeshRef>(primary_selected);
 					if (node_ref)
 					{
 						Mesh const* mesh = engine->reg.try_get<Mesh>(node_ref->mesh_entity);
@@ -1404,9 +1429,9 @@ namespace adria
 					if (ImGuizmo::Manipulate(&view._11, &proj._11, gizmo_operation, gizmo_mode, &gizmo_world._11, &delta._11, use_snap ? snap_value : nullptr))
 					{
 						Matrix new_world = world * delta;
-						if (engine->reg.all_of<Relationship>(selected_entity))
+						if (engine->reg.all_of<Relationship>(primary_selected))
 						{
-							Relationship const& rel = engine->reg.get<Relationship>(selected_entity);
+							Relationship const& rel = engine->reg.get<Relationship>(primary_selected);
 							if (rel.parent != entt::null && engine->reg.all_of<Transform>(rel.parent))
 							{
 								Matrix parent_world = engine->reg.get<Transform>(rel.parent).current_transform;
@@ -1437,9 +1462,12 @@ namespace adria
 
 			if (selection_mode && ImGui::IsWindowHovered() && !ImGuizmo::IsUsing() && g_Input.IsKeyDown(KeyCode::MouseRight))
 			{
+				Bool const additive =
+					g_Input.GetKey(KeyCode::CmdLeft)  || g_Input.GetKey(KeyCode::CmdRight)  ||
+					g_Input.GetKey(KeyCode::CtrlLeft) || g_Input.GetKey(KeyCode::CtrlRight);
 				if (icon_hovered_entity != entt::null)
 				{
-					selected_entity = (icon_hovered_entity == selected_entity) ? entt::null : icon_hovered_entity;
+					ApplySelectionPick(icon_hovered_entity, additive);
 					scroll_to_selected = true;
 				}
 				else
@@ -1447,8 +1475,15 @@ namespace adria
 					PickingData const pd = engine->renderer->GetPickingData();
 					entt::entity picked = static_cast<entt::entity>(pd.entity_id);
 					entt::entity resolved = engine->reg.valid(picked) ? picked : entt::null;
-					selected_entity = (resolved != entt::null && resolved == selected_entity) ? entt::null : resolved;
-					scroll_to_selected = true;
+					if (resolved == entt::null)
+					{
+						if (!additive) ClearSelection();
+					}
+					else
+					{
+						ApplySelectionPick(resolved, additive);
+						scroll_to_selected = true;
+					}
 				}
 			}
 		}
@@ -2433,6 +2468,90 @@ namespace adria
 		case EditorTheme_Photoshop:    SetStyle_Photoshop();    break;
 		case EditorTheme_ClassicSteam: SetStyle_ClassicSteam(); break;
 		default:                       SetStyle_Default();      break;
+		}
+	}
+
+	Bool Editor::IsSelected(entt::entity e) const
+	{
+		for (entt::entity s : selected_entities)
+		{
+			if (s == e) return true;
+		}
+		return false;
+	}
+
+	void Editor::ClearSelection()
+	{
+		selected_entities.clear();
+		primary_selected = entt::null;
+	}
+
+	void Editor::GatherSubtree(entt::entity root, std::vector<entt::entity>& out) const
+	{
+		if (root == entt::null || !engine || !engine->reg.valid(root))
+		{
+			return;
+		}
+		out.push_back(root);
+		Relationship const* rel = engine->reg.try_get<Relationship>(root);
+		if (!rel)
+		{
+			return;
+		}
+		for (entt::entity child : rel->children)
+		{
+			GatherSubtree(child, out);
+		}
+	}
+
+	void Editor::ApplySelectionPick(entt::entity picked, Bool additive)
+	{
+		if (picked == entt::null || !engine || !engine->reg.valid(picked))
+		{
+			if (!additive) ClearSelection();
+			return;
+		}
+
+		std::vector<entt::entity> subtree;
+		GatherSubtree(picked, subtree);
+		if (subtree.empty())
+		{
+			if (!additive) ClearSelection();
+			return;
+		}
+
+		if (!additive)
+		{
+			selected_entities = std::move(subtree);
+			primary_selected = picked;
+			return;
+		}
+
+		Bool subtree_present = IsSelected(picked);
+		if (subtree_present)
+		{
+			std::unordered_set<entt::entity> remove(subtree.begin(), subtree.end());
+			selected_entities.erase(
+				std::remove_if(selected_entities.begin(), selected_entities.end(),
+					[&](entt::entity x) { return remove.contains(x); }),
+				selected_entities.end());
+			if (primary_selected == picked || remove.contains(primary_selected))
+			{
+				primary_selected = selected_entities.empty() ? entt::null : selected_entities.back();
+			}
+		}
+		else
+		{
+			std::unordered_set<entt::entity> existing(selected_entities.begin(), selected_entities.end());
+			for (entt::entity x : subtree)
+			{
+				if (!existing.contains(x))
+				{
+					selected_entities.push_back(x);
+					existing.insert(x);
+				}
+			}
+			primary_selected = picked;
 		}
 	}
 }

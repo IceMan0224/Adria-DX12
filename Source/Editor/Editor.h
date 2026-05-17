@@ -7,6 +7,7 @@
 #include "Rendering/ViewportData.h"
 #include "Utilities/Singleton.h"
 #include "entt/entity/fwd.hpp"
+#include "entt/entity/entity.hpp"
 
 namespace adria
 {
@@ -67,7 +68,10 @@ namespace adria
 		void AddRenderPass(RenderGraph& rg);
 
 		Engine*		GetEngine() const { return engine.get(); }
-		entt::entity GetSelectedEntity() const { return selected_entity; }
+		entt::entity GetSelectedEntity() const { return primary_selected; }
+		std::vector<entt::entity> const& GetSelectedEntities() const { return selected_entities; }
+		Bool         IsSelected(entt::entity e) const;
+		Bool         IsSelectionModeEnabled() const { return selection_mode; }
 		void QueueEntityDestruction(entt::entity e) { pending_deletions.push_back(e); }
 
 	private:
@@ -80,7 +84,8 @@ namespace adria
 		EditorSink* editor_sink;
 
 		Bool scene_focused = false;
-		entt::entity selected_entity;
+		std::vector<entt::entity> selected_entities;
+		entt::entity primary_selected = entt::null;
 		Bool scroll_to_selected = false;
 		Bool selection_mode = false;
 
@@ -137,6 +142,10 @@ namespace adria
 		void SaveState();
 		void LoadState();
 		void FlushPendingDeletions();
+
+		void GatherSubtree(entt::entity root, std::vector<entt::entity>& out) const;
+		void ApplySelectionPick(entt::entity picked, Bool additive);
+		void ClearSelection();
 	};
 	#define g_Editor Editor::Get()
 

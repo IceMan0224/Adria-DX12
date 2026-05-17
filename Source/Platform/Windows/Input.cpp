@@ -107,6 +107,8 @@ namespace adria
 			keys[(Uint64)CtrlRight] = IsPressed(VK_RCONTROL);
 			keys[(Uint64)AltLeft] = IsPressed(VK_LMENU);
 			keys[(Uint64)AltRight] = IsPressed(VK_RMENU);
+			keys[(Uint64)CmdLeft] = IsPressed(VK_LWIN);
+			keys[(Uint64)CmdRight] = IsPressed(VK_RWIN);
 			keys[(Uint64)Space] = IsPressed(VK_SPACE);
 			keys[(Uint64)CapsLock] = IsPressed(VK_CAPITAL);
 			keys[(Uint64)Backspace] = IsPressed(VK_BACK);

@@ -17,6 +17,7 @@ namespace adria
 		ShiftLeft, ShiftRight,
 		CtrlLeft, CtrlRight,
 		AltLeft, AltRight,
+		CmdLeft, CmdRight,
 		Space,
 		CapsLock,
 		Backspace,

@@ -2,6 +2,7 @@
 #include "BlackboardData.h"
 #include "ShaderManager.h"
 #include "Postprocessor.h"
+#include "Components.h"
 #include "Graphics/GfxDevice.h"
 #include "Graphics/GfxPipelineState.h"
 #include "RenderGraph/RenderGraph.h"
@@ -26,7 +27,14 @@ namespace adria
 		RG_SCOPE(rg, "Silhouette");
 
 		FrameBlackboardData const& frame_data = rg.GetBlackboard().Get<FrameBlackboardData>();
-		Uint32 selected_entity_id = (Uint32)entt::to_integral(g_Editor.GetSelectedEntity());
+
+		std::vector<entt::entity> const& sel = g_Editor.GetSelectedEntities();
+		ids_cb.idCount = std::min<Uint32>((Uint32)sel.size(), kMaxSelectedIds);
+		for (Uint32 i = 0; i < ids_cb.idCount; ++i)
+		{
+			ids_cb.ids[i] = (Uint32)entt::to_integral(sel[i]);
+		}
+
 		struct SilhouettePassData
 		{
 			RGTextureReadOnlyId  input;
@@ -53,7 +61,6 @@ namespace adria
 
 				struct SilhouetteConstants
 				{
-					Uint32 selected_entity_id;
 					Float  outline_width;
 					Float  outline_r;
 					Float  outline_g;
@@ -61,21 +68,23 @@ namespace adria
 					Uint32 input_idx;
 					Uint32 entity_id_idx;
 					Uint32 output_idx;
+					Uint32 _pad;
 				} constants =
 				{
-					.selected_entity_id = selected_entity_id,
 					.outline_width      = (Float)SilhouetteOutlineWidth.Get(),
 					.outline_r          = SilhouetteOutlineR.Get(),
 					.outline_g          = SilhouetteOutlineG.Get(),
 					.outline_b          = SilhouetteOutlineB.Get(),
 					.input_idx          = ctx.GetReadOnlyTextureIndex(data.input),
 					.entity_id_idx      = ctx.GetReadOnlyTextureIndex(data.entity_id),
-					.output_idx         = ctx.GetReadWriteTextureIndex(data.output)
+					.output_idx         = ctx.GetReadWriteTextureIndex(data.output),
+					._pad               = 0
 				};
 
 				cmd_list->SetPipelineState(pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
+				cmd_list->SetRootCBV(2, &ids_cb, sizeof(SilhouetteIdsCB));
 				cmd_list->Dispatch(DivideAndRoundUp(width, 8), DivideAndRoundUp(height, 8), 1);
 			}, RGPassType::Compute, RGPassFlags::None);
 
@@ -89,7 +98,7 @@ namespace adria
 
 	Bool SilhouettePass::IsEnabled(PostProcessor const*) const
 	{
-		return g_Editor.IsActive() && g_Editor.GetSelectedEntity() != entt::null;
+		return g_Editor.IsActive() && g_Editor.IsSelectionModeEnabled() && !g_Editor.GetSelectedEntities().empty();
 	}
 
 	void SilhouettePass::GUI()
