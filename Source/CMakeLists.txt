@@ -764,7 +764,7 @@ elseif(APPLE)
 
 	add_custom_command(TARGET Adria POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-		"${CMAKE_CURRENT_SOURCE_DIR}/dxcompiler.dylib"
+		"${CMAKE_SOURCE_DIR}/External/Binaries/dxcompiler.dylib"
 		$<TARGET_FILE_DIR:Adria>
 		COMMENT "Copying dxcompiler.dylib to output directory"
 	)
@@ -774,7 +774,7 @@ if(WIN32)
 	function(copy_runtime_dll SOURCE_FILE TARGET_NAME)
 		add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			"${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_FILE}"
+			"${CMAKE_SOURCE_DIR}/External/Binaries/${SOURCE_FILE}"
 			$<TARGET_FILE_DIR:${TARGET_NAME}>
 			COMMENT "Copying ${SOURCE_FILE} to output directory"
 		)
