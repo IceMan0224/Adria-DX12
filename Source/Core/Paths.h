@@ -2,9 +2,9 @@
 
 namespace adria::paths
 {
-	extern std::string const MainDir;
-	extern std::string const ResourcesDir;
-	extern std::string const SavedDir;
+	extern std::string const SourceDir;
+	extern std::string const AssetsDir;
+	extern std::string const RuntimeDir;
 	extern std::string const ConfigDir;
 	extern std::string const ToolsDir;
 

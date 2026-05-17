@@ -11,8 +11,8 @@
 #include "Core/ConsoleManager.h"
 
 #define A_CPU 1
-#include "Resources/Shaders/SPD/ffx_a.h"
-#include "Resources/Shaders/SPD/ffx_spd.h"
+#include "Assets/Shaders/SPD/ffx_a.h"
+#include "Assets/Shaders/SPD/ffx_spd.h"
 
 using namespace DirectX;
 

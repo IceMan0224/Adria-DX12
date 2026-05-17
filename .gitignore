@@ -5,24 +5,24 @@
 
 
 #My Files
-/Adria/Saved/Ini/editor_state.bin
-/Adria/Saved/PixCaptures/*.wpix
-/Adria/Saved/RenderDocCaptures/
-/Adria/Saved/ShaderCache/
-/Adria/Saved/Aftermath/
-/Adria/Saved/NsightPerfReport/
-/Adria/Resources/Models/SanMiguel
-/Adria/Resources/Models/Brutalism
-/Adria/Resources/Models/SponzaNew
-/Adria/Resources/Models/Hangar
-/Adria/Resources/Models/BistroInterior
-/Adria/Resources/Models/Toyshop_TeddyGI
-/Adria/Resources/Models/Arcade
-/Adria/Resources/Models/Bistro
-/Adria/Resources/Models/SunTemple
-/Adria/Resources/Models/SheenChair
-/Adria/Resources/Models/CarbonFibre
-/Adria/Resources/Models/JunkShop
+/Runtime/Ini/editor_state.bin
+/Runtime/PixCaptures/*.wpix
+/Runtime/RenderDocCaptures/
+/Runtime/ShaderCache/
+/Runtime/Aftermath/
+/Runtime/NsightPerfReport/
+/Assets/Models/SanMiguel
+/Assets/Models/Brutalism
+/Assets/Models/SponzaNew
+/Assets/Models/Hangar
+/Assets/Models/BistroInterior
+/Assets/Models/Toyshop_TeddyGI
+/Assets/Models/Arcade
+/Assets/Models/Bistro
+/Assets/Models/SunTemple
+/Assets/Models/SheenChair
+/Assets/Models/CarbonFibre
+/Assets/Models/JunkShop
 
 
 packages/

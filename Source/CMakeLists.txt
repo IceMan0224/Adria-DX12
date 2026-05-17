@@ -524,12 +524,12 @@ endif()
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_PLATFORM_SOURCES} ${ADRIA_BACKEND_SOURCES})
 
 file(GLOB_RECURSE SHADER_FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Shaders/*.hlsl"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Shaders/*.hlsli"
+    "${CMAKE_SOURCE_DIR}/Assets/Shaders/*.hlsl"
+    "${CMAKE_SOURCE_DIR}/Assets/Shaders/*.hlsli"
 )
 set_source_files_properties(${SHADER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 source_group(
-    TREE "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Shaders"
+    TREE "${CMAKE_SOURCE_DIR}/Assets/Shaders"
     PREFIX "Shaders"
     FILES ${SHADER_FILES}
 )
@@ -598,7 +598,7 @@ source_group("External" FILES ${EXTERNAL_SOURCES})
 if(WIN32)
 	add_executable(Adria WIN32 ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_PLATFORM_SOURCES} ${ADRIA_BACKEND_SOURCES} ${EXTERNAL_SOURCES} ${SHADER_FILES})
 elseif(APPLE)
-	set(ADRIA_APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Icons/adria_logo.icns")
+	set(ADRIA_APP_ICON "${CMAKE_SOURCE_DIR}/Assets/Icons/adria_logo.icns")
 	set_source_files_properties(${ADRIA_APP_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 	add_executable(Adria MACOSX_BUNDLE ${ADRIA_COMMON_SOURCES} ${ADRIA_GRAPHICS_SOURCES} ${ADRIA_PLATFORM_SOURCES} ${ADRIA_BACKEND_SOURCES} ${EXTERNAL_SOURCES} ${ADRIA_APP_ICON})
 	set_target_properties(Adria PROPERTIES
@@ -616,6 +616,7 @@ target_precompile_headers(Adria PRIVATE precomp.h)
 
 target_include_directories(Adria PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}"
     "${EXTERNAL_DIR}/stb"
     "${EXTERNAL_DIR}/cgltf"
     "${EXTERNAL_DIR}/tinyobjloader"

@@ -48,4 +48,4 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-add_subdirectory(Adria)
+add_subdirectory(Source)
