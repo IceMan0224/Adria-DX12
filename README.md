@@ -1,4 +1,4 @@
-<img align="center" padding="2" width="75%" src="Adria/Resources/Icons/adria_logo_wide2.png"/>
+<img align="center" padding="2" width="75%" src="Assets/Icons/adria_logo_wide2.png"/>
 
 Modern cross-platform graphics engine written in C++.
 
@@ -23,8 +23,6 @@ Modern cross-platform graphics engine written in C++.
 
 * GPU-driven renderer
     - GPU frustum culling and two-phase GPU occlusion culling
-    - Indirect rendering
-    - Ultimate bindless resource model
 
 * Global illumination and ray tracing
     - DDGI, ReSTIR DI (WIP), reference path tracer
