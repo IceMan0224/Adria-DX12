@@ -1273,8 +1273,8 @@ namespace adria
 					}
 					else if(rtv_desc.beginning_access == GfxLoadAccessOp::Clear)
 					{
-						rtv_desc.clear_value.format = desc.format;
 						rtv_desc.clear_value = GfxClearValue(0.0f, 0.0f, 0.0f, 0.0f);
+						rtv_desc.clear_value.format = desc.format;
 					}
 
 					rtv_desc.cpu_handle = rg.GetRenderTarget(render_target_info.render_target_handle);
@@ -1342,8 +1342,8 @@ namespace adria
 					}
 					else if (dsv_desc.depth_beginning_access == GfxLoadAccessOp::Clear)
 					{
-						dsv_desc.clear_value.format = desc.format;
 						dsv_desc.clear_value = GfxClearValue(0.0f, 0);
+						dsv_desc.clear_value.format = desc.format;
 					}
 
 					dsv_desc.cpu_handle = rg.GetDepthStencil(depth_stencil_info.depth_stencil_handle);
@@ -1761,13 +1761,15 @@ namespace adria
 		for (Uint64 i = 0; i < textures.size(); ++i)
 		{
 			auto& texture = textures[i];
-			render_graph_data += std::format("Texture: id = {}, name = {}, last used by: {} \n", texture->id, texture->name, texture->last_used_by->name);
+			Char const* last_used = texture->last_used_by ? texture->last_used_by->name.c_str() : "<unused>";
+			render_graph_data += std::format("Texture: id = {}, name = {}, last used by: {} \n", texture->id, texture->name, last_used);
 		}
 		render_graph_data += "\nBuffers: \n";
 		for (Uint64 i = 0; i < buffers.size(); ++i)
 		{
 			auto& buffer = buffers[i];
-			render_graph_data += std::format("Buffer: id = {}, name = {}, last used by: {} \n", buffer->id, buffer->name, buffer->last_used_by->name);
+			Char const* last_used = buffer->last_used_by ? buffer->last_used_by->name.c_str() : "<unused>";
+			render_graph_data += std::format("Buffer: id = {}, name = {}, last used by: {} \n", buffer->id, buffer->name, last_used);
 		}
 		ADRIA_LOG(DEBUG, "[RenderGraph]\n%s", render_graph_data.c_str());
 	}

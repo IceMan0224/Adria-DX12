@@ -31,6 +31,6 @@ namespace adria
 		VkSampler        imgui_sampler = VK_NULL_HANDLE;
 		std::string      ini_file;
 		Bool             visible    = true;
-		std::unordered_map<VkImageView, VkDescriptorSet> texture_cache;
+		std::unordered_map<GfxTexture const*, VkDescriptorSet> texture_cache;
 	};
 }

@@ -56,11 +56,12 @@ namespace adria
     {
         entt::entity light = reg.create();
 
-		if (params.light_data.type == LightType::Directional)
+		Light light_data = params.light_data;
+		if (light_data.type == LightType::Directional)
 		{
-			const_cast<LightParameters&>(params).light_data.position = -params.light_data.direction * 1e3;
+			light_data.position = -light_data.direction * 1e3;
 		}
-        reg.emplace<Light>(light, params.light_data);
+        reg.emplace<Light>(light, light_data);
         if (params.mesh_type == LightMesh::Quad)
         {
             Uint32 const size = params.mesh_size;
@@ -111,7 +112,7 @@ namespace adria
 			}
 
             reg.emplace<Material>(light, material);
-			Matrix translation_matrix = Matrix::CreateTranslation(Vector3(&params.light_data.position.x));
+			Matrix translation_matrix = Matrix::CreateTranslation(Vector3(&light_data.position.x));
             reg.emplace<Transform>(light, translation_matrix);
         }
         else if (params.mesh_type == LightMesh::Sphere)
@@ -134,7 +135,7 @@ namespace adria
 
 		if (!reg.all_of<Transform>(light))
 		{
-			Matrix translation_matrix = Matrix::CreateTranslation(Vector3(&params.light_data.position.x));
+			Matrix translation_matrix = Matrix::CreateTranslation(Vector3(&light_data.position.x));
 			reg.emplace<Transform>(light, translation_matrix);
 		}
 
@@ -569,21 +570,9 @@ namespace adria
 			for (Uint32 j = 0; j < gltf_mesh.primitives_count; ++j)
 			{
 				cgltf_primitive const& gltf_primitive = gltf_mesh.primitives[j];
-				ADRIA_ASSERT(gltf_primitive.indices->count >= 0);
 
 				MeshData& mesh_data = mesh_datas.emplace_back();
 				mesh_data.material_index = (Int32)(gltf_primitive.material - gltf_data->materials);
-				mesh_data.indices.reserve(gltf_primitive.indices->count);
-				
-				Uint32 triangle_cw[] = { 0, 1, 2 };
-				Uint32 triangle_ccw[] = { 0, 2, 1 };
-				Uint32* order = params.triangle_ccw ? triangle_ccw : triangle_cw;
-				for (Uint64 i = 0; i < gltf_primitive.indices->count; i += 3)
-				{
-					mesh_data.indices.push_back((Uint32)cgltf_accessor_read_index(gltf_primitive.indices, i + order[0]));
-					mesh_data.indices.push_back((Uint32)cgltf_accessor_read_index(gltf_primitive.indices, i + order[1]));
-					mesh_data.indices.push_back((Uint32)cgltf_accessor_read_index(gltf_primitive.indices, i + order[2]));
-				}
 
 				switch (gltf_primitive.type)
 				{
@@ -626,6 +615,54 @@ namespace adria
 					ReadAttributeData(mesh_data.normals_stream, "NORMAL");
 					ReadAttributeData(mesh_data.tangents_stream, "TANGENT");
 					ReadAttributeData(mesh_data.uvs_stream, "TEXCOORD_0");
+				}
+
+				Bool const is_triangle_list = (mesh_data.topology == GfxPrimitiveTopology::TriangleList);
+				Uint32 triangle_cw[]  = { 0, 1, 2 };
+				Uint32 triangle_ccw[] = { 0, 2, 1 };
+				Uint32* order = params.triangle_ccw ? triangle_ccw : triangle_cw;
+
+				if (gltf_primitive.indices)
+				{
+					Uint64 const index_count = gltf_primitive.indices->count;
+					mesh_data.indices.reserve(index_count);
+					if (is_triangle_list)
+					{
+						for (Uint64 i = 0; i + 2 < index_count; i += 3)
+						{
+							mesh_data.indices.push_back((Uint32)cgltf_accessor_read_index(gltf_primitive.indices, i + order[0]));
+							mesh_data.indices.push_back((Uint32)cgltf_accessor_read_index(gltf_primitive.indices, i + order[1]));
+							mesh_data.indices.push_back((Uint32)cgltf_accessor_read_index(gltf_primitive.indices, i + order[2]));
+						}
+					}
+					else
+					{
+						for (Uint64 i = 0; i < index_count; ++i)
+						{
+							mesh_data.indices.push_back((Uint32)cgltf_accessor_read_index(gltf_primitive.indices, i));
+						}
+					}
+				}
+				else
+				{
+					Uint64 const vertex_count = mesh_data.positions_stream.size();
+					mesh_data.indices.reserve(vertex_count);
+					if (is_triangle_list && params.triangle_ccw)
+					{
+						for (Uint64 i = 0; i + 2 < vertex_count; i += 3)
+						{
+							mesh_data.indices.push_back((Uint32)(i + order[0]));
+							mesh_data.indices.push_back((Uint32)(i + order[1]));
+							mesh_data.indices.push_back((Uint32)(i + order[2]));
+						}
+					}
+					else
+					{
+						for (Uint64 i = 0; i < vertex_count; ++i)
+						{
+							mesh_data.indices.push_back((Uint32)i);
+						}
+					}
 				}
 				primitives.push_back(primitive_count++);
 			}
@@ -876,7 +913,8 @@ namespace adria
 		{
 			tinyobj::mesh_t const& obj_mesh = shapes[s].mesh;
 			MeshData& mesh_data = mesh_datas.emplace_back();
-			mesh_data.material_index = obj_mesh.material_ids[0];
+			Int32 const obj_material_id = (!obj_mesh.material_ids.empty() && obj_mesh.material_ids[0] >= 0) ? obj_mesh.material_ids[0] : 0;
+			mesh_data.material_index = obj_material_id;
 			
 			Uint32 index_offset = 0;
 			for (Uint64 f = 0; f < obj_mesh.num_face_vertices.size(); ++f)

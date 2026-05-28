@@ -27,7 +27,7 @@ namespace adria
 			max_size{ max_size - reserve },
 			head{ 0 },
 			tail{ 0 },
-			used_size{ reserve }
+			used_size{ 0 }
 		{}
 
 		ADRIA_DEFAULT_COPYABLE_MOVABLE(RingOffsetAllocator)
@@ -40,19 +40,21 @@ namespace adria
 				return INVALID_ALLOC_OFFSET;
 			}
 
+			Uint64 aligned_tail = (align > 0) ? AlignUp(tail, align) : tail;
+
 			if (tail >= head)
 			{
-				if (tail + size <= max_size)
+				if (aligned_tail + size <= max_size)
 				{
-					Uint64 offset = tail;
-					tail += size;
-					used_size += size;
-					current_frame_size += size;
+					Uint64 const pad = aligned_tail - tail;
+					Uint64 offset = aligned_tail;
+					tail = aligned_tail + size;
+					used_size += size + pad;
+					current_frame_size += size + pad;
 					return offset + reserve;
 				}
 				else if (size <= head)
 				{
-					// Allocate from the beginning of the buffer
 					Uint64 add_size = (max_size - tail) + size;
 					used_size += add_size;
 					current_frame_size += add_size;
@@ -60,12 +62,13 @@ namespace adria
 					return 0 + reserve;
 				}
 			}
-			else if (tail + size <= head)
+			else if (aligned_tail + size <= head)
 			{
-				Uint64 offset = tail;
-				tail += size;
-				used_size += size;
-				current_frame_size += size;
+				Uint64 const pad = aligned_tail - tail;
+				Uint64 offset = aligned_tail;
+				tail = aligned_tail + size;
+				used_size += size + pad;
+				current_frame_size += size + pad;
 				return offset + reserve;
 			}
 
@@ -93,7 +96,7 @@ namespace adria
 
 		Uint64 MaxSize()  const { return max_size; }
 		Bool   Full()	  const { return used_size == max_size; };
-		Bool   Empty()	  const { return used_size == reserve; };
+		Bool   Empty()	  const { return used_size == 0; };
 		Uint64 UsedSize() const { return used_size; }
 		Uint64 ReservedSize() const { return reserve; }
 

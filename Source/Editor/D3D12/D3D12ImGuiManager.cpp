@@ -45,7 +45,7 @@ namespace adria
 		ImGui_ImplWin32_Init(gfx->GetWindowHandle());
 
 		D3D12DescriptorHeapDesc gui_heap_desc{};
-		gui_heap_desc.descriptor_count = 30;
+		gui_heap_desc.descriptor_count = 256;
 		gui_heap_desc.shader_visible = true;
 		gui_heap_desc.type = GfxDescriptorType::CBV_SRV_UAV;
 		std::unique_ptr<D3D12DescriptorHeap> gui_heap = d3d12_gfx->CreateDescriptorHeap(gui_heap_desc);

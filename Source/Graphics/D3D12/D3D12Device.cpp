@@ -1,3 +1,4 @@
+#include <atomic>
 #include "D3D12Device.h"
 #include "D3D12Swapchain.h"
 #include "D3D12CommandQueue.h"
@@ -1016,9 +1017,10 @@ namespace adria
 	ADRIA_NODISCARD GfxDescriptor D3D12Device::AllocatePersistentGPUDescriptor(GfxDescriptorType type)
 	{
 		ADRIA_TODO("Need a way to free persistent descriptors");
-		static Uint32 next_persistent_index = 0;
-		ADRIA_ASSERT_MSG(next_persistent_index + 1 <= gpu_descriptor_allocator->GetReservedSize(), "Out of persistent bindless slots!");
-		return EncodeFromD3D12Descriptor(gpu_descriptor_allocator->GetDescriptor(next_persistent_index++));
+		static std::atomic<Uint32> next_persistent_index{ 0 };
+		Uint32 const index = next_persistent_index.fetch_add(1, std::memory_order_relaxed);
+		ADRIA_ASSERT_MSG(index < gpu_descriptor_allocator->GetReservedSize(), "Out of persistent bindless slots!");
+		return EncodeFromD3D12Descriptor(gpu_descriptor_allocator->GetDescriptor(index));
 	}
 	ADRIA_NODISCARD GfxDescriptor D3D12Device::AllocateTransientGPUDescriptor(GfxDescriptorType type)
 	{
@@ -1742,7 +1744,7 @@ namespace adria
 					Int32 lastOp = std::min<Int32>(lastCompletedOp + 20, Int32(pNode->BreadcrumbCount) - 1);
 
 					contextStrings.clear();
-					for (Uint32 breadcrumbContext = firstOp; breadcrumbContext < pNode->BreadcrumbContextsCount; ++breadcrumbContext)
+					for (Uint32 breadcrumbContext = 0; breadcrumbContext < pNode->BreadcrumbContextsCount; ++breadcrumbContext)
 					{
 						const D3D12_DRED_BREADCRUMB_CONTEXT& context = pNode->pBreadcrumbContexts[breadcrumbContext];
 						contextStrings[context.BreadcrumbIndex] = context.pContextString;
@@ -1760,7 +1762,7 @@ namespace adria
 						}
 
 						Wchar const* opName = DredBreadcrumbOpName(breadcrumbOp);
-						ADRIA_LOG(DEBUG, "\tOp: %d, %ls%ls%s", op, opName, context_string.c_str(), (op + 1 == lastCompletedOp) ? " - Last completed" : "");
+						ADRIA_LOG(DEBUG, "\tOp: %d, %ls%ls%s", op, opName, context_string.c_str(), (op == lastCompletedOp - 1) ? " - Last completed" : "");
 					}
 				}
 				pNode = pNode->pNext;

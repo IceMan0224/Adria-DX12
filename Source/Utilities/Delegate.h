@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 
 namespace adria
 {
@@ -47,7 +48,8 @@ namespace adria
 		template<typename T>
 		void BindMember(R(T::*mem_pfn)(Args...), T& instance)
 		{
-			callback = [&instance, mem_pfn](Args&&... args) mutable -> R {return (instance.*mem_pfn)(std::forward<Args>(args)...); };
+			T* instance_ptr = &instance;
+			callback = [instance_ptr, mem_pfn](Args&&... args) mutable -> R {return (instance_ptr->*mem_pfn)(std::forward<Args>(args)...); };
 		}
 
 		void Unbind()
@@ -147,8 +149,8 @@ namespace adria
 		inline static constexpr Uint64 INVALID_ID = Uint64(-1);
 		static Uint64 GenerateID()
 		{
-			static Uint64 current_id = 0;
-			return current_id++;
+			static std::atomic<Uint64> current_id{ 0 };
+			return current_id.fetch_add(1, std::memory_order_relaxed);
 		}
 	};
 

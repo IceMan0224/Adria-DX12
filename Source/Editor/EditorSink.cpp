@@ -7,11 +7,11 @@ namespace adria
 	{
 		switch (level)
 		{
-		case LogLevel::LOG_DEBUG:   return ImVec4(0.5f, 1.0f, 0.5f, 1.0f); // Green
-		case LogLevel::LOG_INFO:    return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // White
-		case LogLevel::LOG_WARNING: return ImVec4(1.0f, 1.0f, 0.4f, 1.0f); // Yellow
-		case LogLevel::LOG_ERROR:   return ImVec4(1.0f, 0.4f, 0.4f, 1.0f); // Red
-		case LogLevel::LOG_FATAL:   return ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // Bright Red
+		case LogLevel::Debug:   return ImVec4(0.5f, 1.0f, 0.5f, 1.0f); // Green
+		case LogLevel::Info:    return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // White
+		case LogLevel::Warning: return ImVec4(1.0f, 1.0f, 0.4f, 1.0f); // Yellow
+		case LogLevel::Error:   return ImVec4(1.0f, 0.4f, 0.4f, 1.0f); // Red
+		case LogLevel::Fatal:   return ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // Bright Red
 		default:					return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // White
 		}
 	}
@@ -153,10 +153,12 @@ namespace adria
 			return;
 		}
 		std::string log_entry = GetLogTime() + LevelToString(level) + ChannelToString(channel) + std::string(entry) + "\n";
+		std::lock_guard<std::mutex> guard(log_mutex);
 		imgui_log->AddLog(GetLevelColor(level), log_entry.c_str());
 	}
 	void EditorSink::Draw(const Char* title, Bool* p_open)
 	{
+		std::lock_guard<std::mutex> guard(log_mutex);
 		imgui_log->Draw(title, p_open);
 	}
 }

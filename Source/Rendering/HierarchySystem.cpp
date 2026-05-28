@@ -1,8 +1,13 @@
+#include <cstring>
+#include <unordered_map>
 #include "HierarchySystem.h"
 #include "Components.h"
+#include "Logging/Log.h"
 
 namespace adria
 {
+	ADRIA_LOG_CHANNEL(Scene);
+
 	static void PropagateTransformRecursive(entt::registry& reg, entt::entity entity, Matrix const& parent_world)
 	{
 		Transform* transform = reg.try_get<Transform>(entity);
@@ -65,6 +70,7 @@ namespace adria
 		}
 
 		auto mat_view = reg.view<NodeMeshRef, Material>();
+		std::unordered_map<Mesh const*, std::unordered_map<Uint32, entt::entity>> first_writer;
 		for (entt::entity e : mat_view)
 		{
 			NodeMeshRef const& node_ref = mat_view.get<NodeMeshRef>(e);
@@ -80,6 +86,17 @@ namespace adria
 				Uint32 mat_idx = mesh->submeshes[inst.submesh_index].material_index;
 				if (mat_idx < (Uint32)mesh->materials.size())
 				{
+					auto& slot_owners = first_writer[mesh];
+					auto [it, inserted] = slot_owners.emplace(mat_idx, e);
+					if (!inserted)
+					{
+						if (std::memcmp(&mesh->materials[mat_idx], &mat, sizeof(Material)) != 0)
+						{
+							ADRIA_LOG(WARNING, "Material slot %u on mesh %p has conflicting overrides from multiple nodes; first write retained (entity %u, ignoring entity %u)",
+								mat_idx, (void const*)mesh, (Uint32)it->second, (Uint32)e);
+						}
+						continue;
+					}
 					mesh->materials[mat_idx] = mat;
 				}
 			}

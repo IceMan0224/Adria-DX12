@@ -90,10 +90,21 @@ namespace adria
 
 		void Destroy()
 		{
+			if (!initialized)
+			{
+				return;
+			}
+			for (GfxDescriptor& view : common_views)
+			{
+				gfx->FreeDescriptor(view);
+				view = GfxDescriptor{};
+			}
 			for (auto& texture : common_textures)
 			{
 				texture.reset();
 			}
+			gfx = nullptr;
+			initialized = false;
 		}
 
 		GfxTexture* GetCommonTexture(GfxCommonTextureType type)

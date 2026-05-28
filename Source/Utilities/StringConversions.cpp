@@ -76,7 +76,7 @@ namespace adria
 		std::string out; out.resize(str.size());
 		for (Uint32 i = 0; i < str.size(); ++i)
 		{
-			out[i] = std::tolower(str[i]);
+			out[i] = static_cast<Char>(std::tolower(static_cast<unsigned char>(str[i])));
 		}
 		return out;
 	}
@@ -85,7 +85,7 @@ namespace adria
 		std::string out; out.resize(str.size());
 		for (Uint32 i = 0; i < str.size(); ++i)
 		{
-			out[i] = std::toupper(str[i]);
+			out[i] = static_cast<Char>(std::toupper(static_cast<unsigned char>(str[i])));
 		}
 		return out;
 	}

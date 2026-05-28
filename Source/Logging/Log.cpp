@@ -1,4 +1,6 @@
 #include <ctime>
+#include <mutex>
+#include <thread>
 #include "Log.h"
 #include "Utilities/ConcurrentQueue.h"
 
@@ -38,6 +40,7 @@ namespace adria
 		}
 		void LogSync(LogLevel level, LogChannel channel, Char const* str, Char const* filename, Uint32 line)
 		{
+			std::lock_guard<std::mutex> guard(sinks_mutex);
 			for (auto& log_sink : log_sinks)
 			{
 				if (log_sink)
@@ -49,14 +52,18 @@ namespace adria
 		void Flush()
 		{
 			pause.store(true);
-			for (auto& logger : log_sinks)
 			{
-				logger->Flush();
+				std::lock_guard<std::mutex> guard(sinks_mutex);
+				for (auto& logger : log_sinks)
+				{
+					logger->Flush();
+				}
 			}
 			pause.store(false);
 		}
 
 		std::vector<std::unique_ptr<ILogSink>> log_sinks;
+		std::mutex sinks_mutex;
 		ConcurrentQueue<QueueEntry> log_queue;
 		std::thread log_thread;
 		std::atomic_bool exit = false;
@@ -70,12 +77,14 @@ namespace adria
 			{
 				if (pause.load())
 				{
+					std::this_thread::sleep_for(std::chrono::milliseconds(1));
 					continue;
 				}
 
 				Bool success = log_queue.TryPop(entry);
 				if (success)
 				{
+					std::lock_guard<std::mutex> guard(sinks_mutex);
 					for (auto& log_sink : log_sinks)
 					{
 						if (log_sink)
@@ -84,9 +93,13 @@ namespace adria
 						}
 					}
 				}
-				if (exit.load() && log_queue.Empty())
+				else
 				{
-					break;
+					if (exit.load() && log_queue.Empty())
+					{
+						break;
+					}
+					std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				}
 			}
 		}
@@ -96,15 +109,15 @@ namespace adria
 	{
 		switch (level)
 		{
-		case LogLevel::LOG_DEBUG:
+		case LogLevel::Debug:
 			return "[DEBUG]";
-		case LogLevel::LOG_INFO:
+		case LogLevel::Info:
 			return "[INFO]";
-		case LogLevel::LOG_WARNING:
+		case LogLevel::Warning:
 			return "[WARNING]";
-		case LogLevel::LOG_ERROR:
+		case LogLevel::Error:
 			return "[ERROR]";
-		case LogLevel::LOG_FATAL:
+		case LogLevel::Fatal:
 			return "[FATAL]";
 		}
 		return "[UNKNOWN]";
@@ -126,9 +139,15 @@ namespace adria
 	{
 		auto time = std::chrono::system_clock::now();
 		time_t c_time = std::chrono::system_clock::to_time_t(time);
-		std::string time_str = std::string(ctime(&c_time));
-		time_str.pop_back();
-		return "[" + time_str + "]";
+		std::tm tm_buf{};
+#if defined(_WIN32)
+		localtime_s(&tm_buf, &c_time);
+#else
+		localtime_r(&c_time, &tm_buf);
+#endif
+		Char buf[64];
+		std::strftime(buf, sizeof(buf), "%a %b %e %H:%M:%S %Y", &tm_buf);
+		return std::string("[") + buf + "]";
 	}
 	std::string LineInfoToString(Char const* file, Uint32 line)
 	{

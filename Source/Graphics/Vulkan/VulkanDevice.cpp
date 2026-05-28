@@ -115,11 +115,11 @@ namespace adria
 		compute_queue.reset();
 		copy_queue.reset();
 
-		frame_fence.~VulkanFence();
-		release_fence.~VulkanFence();
-		graphics_fence.~VulkanFence();
-		compute_fence.~VulkanFence();
-		copy_fence.~VulkanFence();
+		frame_fence.Destroy();
+		release_fence.Destroy();
+		graphics_fence.Destroy();
+		compute_fence.Destroy();
+		copy_fence.Destroy();
 
 		vkDestroyDevice(device, nullptr);
 

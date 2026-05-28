@@ -202,14 +202,14 @@ namespace adria
 		VkImageView view = vk_tex.GetDefaultSRVView();
 		if (view == VK_NULL_HANDLE) return (ImTextureID)0;
 
-		auto it = texture_cache.find(view);
+		auto it = texture_cache.find(&texture);
 		if (it != texture_cache.end())
 		{
 			return (ImTextureID)it->second;
 		}
 
 		VkDescriptorSet ds = ImGui_ImplVulkan_AddTexture(imgui_sampler, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		texture_cache[view] = ds;
+		texture_cache[&texture] = ds;
 		return (ImTextureID)ds;
 	}
 

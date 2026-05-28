@@ -8,7 +8,7 @@ namespace adria
 	class CallbackSink : public ILogSink
 	{
 	public:
-		CallbackSink(LogCallbackT callback, LogLevel log_level = LogLevel::LOG_DEBUG);
+		CallbackSink(LogCallbackT callback, LogLevel log_level = LogLevel::Debug);
 		virtual ~CallbackSink() override;
 		virtual void Log(LogLevel level, LogChannel channel, Char const* entry, Char const* file, Uint32 line) override;
 

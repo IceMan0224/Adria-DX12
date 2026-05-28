@@ -1,4 +1,5 @@
 #pragma once
+#include <mutex>
 
 namespace adria
 {
@@ -11,6 +12,7 @@ namespace adria
 		static Bool HasInstance() { return Instance != nullptr; }
 		static T& Get()
 		{
+			std::lock_guard<std::mutex> lock(InstanceMutex);
 			if (Instance != nullptr)
 			{
 				return *Instance;
@@ -22,6 +24,7 @@ namespace adria
 		};
 		static void Reset()
 		{
+			std::lock_guard<std::mutex> lock(InstanceMutex);
 			ADRIA_ASSERT_MSG(Instance != nullptr, "Attempting to destroy a singleton before it has been instantiated");
 			IsDestroying = true;
 			delete Instance;
@@ -37,7 +40,7 @@ namespace adria
 
 		~Singleton()
 		{
-			if (Instance != nullptr)
+			if (Instance != nullptr && !IsDestroying)
 			{
 				Reset();
 			}
@@ -47,6 +50,7 @@ namespace adria
 		static T* Instance;
 		static Bool IsInitializing;
 		static Bool IsDestroying;
+		static std::mutex InstanceMutex;
 	};
 
 	template <typename T>
@@ -57,4 +61,7 @@ namespace adria
 
 	template <typename T>
 	Bool Singleton<T>::IsDestroying = false;
+
+	template <typename T>
+	std::mutex Singleton<T>::InstanceMutex;
 }

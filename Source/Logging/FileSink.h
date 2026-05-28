@@ -6,7 +6,7 @@ namespace adria
 	class FileSink : public ILogSink
 	{
 	public:
-		FileSink(Char const* log_file, LogLevel log_level = LogLevel::LOG_DEBUG, Bool append_mode = false);
+		FileSink(Char const* log_file, LogLevel log_level = LogLevel::Debug, Bool append_mode = false);
 		virtual ~FileSink() override;
 		ADRIA_NONCOPYABLE_NONMOVABLE(FileSink)
 

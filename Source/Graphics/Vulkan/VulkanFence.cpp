@@ -5,6 +5,11 @@ namespace adria
 {
 	VulkanFence::~VulkanFence()
 	{
+		Destroy();
+	}
+
+	void VulkanFence::Destroy()
+	{
 		if (semaphore != VK_NULL_HANDLE)
 		{
 			vkDestroySemaphore(device, semaphore, nullptr);

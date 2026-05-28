@@ -6,7 +6,7 @@ namespace adria
 	class DebuggerSink : public ILogSink
 	{
 	public:
-		DebuggerSink(LogLevel log_level = LogLevel::LOG_DEBUG);
+		DebuggerSink(LogLevel log_level = LogLevel::Debug);
 		virtual ~DebuggerSink() override;
 		virtual void Log(LogLevel level, LogChannel channel, Char const* entry, Char const* file, Uint32 line) override;
 		virtual void Flush() override;

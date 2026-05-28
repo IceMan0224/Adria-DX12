@@ -5,11 +5,11 @@ namespace adria
 {
 	enum class LogLevel : Uint8
 	{
-		LOG_DEBUG,
-		LOG_INFO,
-		LOG_WARNING,
-		LOG_ERROR,
-		LOG_FATAL
+		Debug,
+		Info,
+		Warning,
+		Error,
+		Fatal
 	};
 
 	enum class LogChannel : Uint8
@@ -63,12 +63,20 @@ namespace adria
 
 	#define ADRIA_LOG_CHANNEL(name) ADRIA_MAYBE_UNUSED static constexpr LogChannel ___LogChannel___ = LogChannel::name
 
+	#define ADRIA_LOG_LEVEL_DEBUG    LogLevel::Debug
+	#define ADRIA_LOG_LEVEL_INFO     LogLevel::Info
+	#define ADRIA_LOG_LEVEL_WARNING  LogLevel::Warning
+	#define ADRIA_LOG_LEVEL_ERROR    LogLevel::Error
+	#define ADRIA_LOG_LEVEL_FATAL    LogLevel::Fatal
+
 	#define ADRIA_LOG(level, ... ) [&]()  \
 		{ \
-			Uint64 const size = snprintf(nullptr, 0, __VA_ARGS__) + 1; \
+			Int const __ret = snprintf(nullptr, 0, __VA_ARGS__); \
+			if (__ret < 0) { return; } \
+			Uint64 const size = static_cast<Uint64>(__ret) + 1; \
 			std::unique_ptr<Char[]> buf = std::make_unique<Char[]>(size); \
 			snprintf(buf.get(), size, __VA_ARGS__); \
-			g_Log.Log(LogLevel::LOG_##level, ___LogChannel___, buf.get(), __FILE__, __LINE__);  \
+			g_Log.Log(ADRIA_LOG_LEVEL_##level, ___LogChannel___, buf.get(), __FILE__, __LINE__);  \
 		}()
 	#define ADRIA_DEBUG(...)	ADRIA_LOG(DEBUG, __VA_ARGS__)
 	#define ADRIA_INFO(...)		ADRIA_LOG(INFO, __VA_ARGS__)
@@ -78,10 +86,12 @@ namespace adria
 
 	#define ADRIA_LOG_SYNC(level, ... ) [&]()  \
 		{ \
-			Uint64 const size = snprintf(nullptr, 0, __VA_ARGS__) + 1; \
+			Int const __ret = snprintf(nullptr, 0, __VA_ARGS__); \
+			if (__ret < 0) { return; } \
+			Uint64 const size = static_cast<Uint64>(__ret) + 1; \
 			std::unique_ptr<Char[]> buf = std::make_unique<Char[]>(size); \
 			snprintf(buf.get(), size, __VA_ARGS__); \
-			g_Log.LogSync(LogLevel::LOG_##level, ___LogChannel___, buf.get(), __FILE__, __LINE__);  \
+			g_Log.LogSync(ADRIA_LOG_LEVEL_##level, ___LogChannel___, buf.get(), __FILE__, __LINE__);  \
 		}()
 	#define ADRIA_LOG_FLUSH()   (g_Log.Flush())
 	#define ADRIA_SINK(SinkClass, ...) g_Log.Register<SinkClass>(__VA_ARGS__);

@@ -41,7 +41,11 @@ namespace adria
 
         virtual void Release() override
         {
-            if(resource) resource->Release();
+            if (resource)
+            {
+                resource->Release();
+                resource = nullptr;
+            }
         }
 
         T* resource;

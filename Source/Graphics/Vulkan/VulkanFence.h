@@ -10,6 +10,8 @@ namespace adria
 		VulkanFence() = default;
 		virtual ~VulkanFence() override;
 
+		void Destroy();
+
 		virtual Bool Create(GfxDevice* gfx, Char const* name) override;
 		virtual void Wait(Uint64 value) override;
 		virtual void Signal(Uint64 value) override;

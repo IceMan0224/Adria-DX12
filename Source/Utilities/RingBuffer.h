@@ -379,7 +379,7 @@ namespace adria
 
 		const_reference operator[](size_type i) const
 		{
-			iterator it = cbegin();
+			const_iterator it = cbegin();
 			it += i;
 			return *it;
 		}
@@ -395,7 +395,7 @@ namespace adria
 		const_reference At(size_type i) const
 		{
 			ADRIA_ASSERT_MSG(InBounds(i), "Out of Bounds Index");
-			iterator it = cbegin();
+			const_iterator it = cbegin();
 			it += i;
 			return *it;
 		}
@@ -430,7 +430,7 @@ namespace adria
 
 		Bool InBounds(size_type i) const
 		{
-			return (i >= head && i <= tail) || !(i > tail && i < head);
+			return i < content_size;
 		}
 	};
 }

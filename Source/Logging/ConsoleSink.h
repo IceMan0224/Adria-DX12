@@ -6,7 +6,7 @@ namespace adria
 	class ConsoleSink : public ILogSink
 	{
 	public:
-		ConsoleSink(Bool use_cerr = false, LogLevel log_level = LogLevel::LOG_DEBUG);
+		ConsoleSink(Bool use_cerr = false, LogLevel log_level = LogLevel::Debug);
 		virtual ~ConsoleSink() override;
 		ADRIA_NONCOPYABLE_NONMOVABLE(ConsoleSink)
 

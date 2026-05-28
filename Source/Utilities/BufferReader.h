@@ -8,17 +8,19 @@ namespace adria
 
 		Bool HasMoreData(Uint32 count) const
 		{
-			return current_offset + count <= size;
+			return count <= size - current_offset;
 		}
 		template<typename T>
 		T* Consume()
 		{
+			ADRIA_ASSERT(HasMoreData(sizeof(T)));
 			T* consumed_data = reinterpret_cast<T*>(data + current_offset);
 			current_offset += sizeof(T);
 			return consumed_data;
 		}
 		std::string ConsumeString(Uint32 char_count)
 		{
+			ADRIA_ASSERT(HasMoreData(char_count));
 			Char* char_data = (Char*)data;
 			std::string consumed_string(char_data + current_offset, char_count);
 			current_offset += char_count;
