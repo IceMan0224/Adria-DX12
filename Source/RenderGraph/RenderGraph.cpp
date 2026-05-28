@@ -573,7 +573,7 @@ namespace adria
 
 						if (post_pass->buffer_reads.find(write_buffer) != post_pass->buffer_reads.end())
 						{
-							pre_graphics_queue_passes.insert(post_pass);
+							post_graphics_queue_passes.insert(post_pass);
 							break;
 						}
 					}

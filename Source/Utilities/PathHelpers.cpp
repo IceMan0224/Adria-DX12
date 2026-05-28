@@ -66,13 +66,17 @@ namespace adria
 			}
 
 			Uint64 idx0 = path.rfind('/', index);
-			if (idx0 == std::string::npos)
+			if (idx0 == std::string::npos || idx0 == 0)
 			{
 				return false;
 			}
 
 			idx0 = path.rfind('/', idx0 - 1);
-			if (idx0 != std::string::npos)
+			if (idx0 == std::string::npos)
+			{
+				path = path.substr(index + 3);
+			}
+			else
 			{
 				path = path.substr(0, idx0 + 1) + path.substr(index + 3);
 			}

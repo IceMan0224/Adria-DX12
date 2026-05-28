@@ -48,30 +48,29 @@ namespace adria
 			other.first_block = nullptr;
 		}
 
-		void* Allocate(Uint64 size, Uint64 align) 
+		void* Allocate(Uint64 size, Uint64 align)
 		{
-			Uint64 bytes_needed = size;
+			Uint64 alignment = std::max(align, Uint64(1));
 
-			// Check if we have enough space in the current block
-			if (current_block->used + bytes_needed > current_block->capacity) 
+			auto compute_padding = [&]()
 			{
-				Uint64 new_block_size = std::max(block_size, bytes_needed);
+				Uintptr current = reinterpret_cast<Uintptr>(current_block->buffer + current_block->used);
+				Uint64 misalignment = current % alignment;
+				return misalignment == 0 ? Uint64(0) : alignment - misalignment;
+			};
+
+			Uint64 padding = compute_padding();
+			if (current_block->used + padding + size > current_block->capacity)
+			{
+				Uint64 new_block_size = std::max(block_size, size + alignment);
 				MemoryBlock* new_block = new MemoryBlock(new_block_size);
 				current_block->next = new_block;
 				current_block = new_block;
+				padding = compute_padding();
 			}
 
-			void* result = current_block->buffer + current_block->used;
-			current_block->used += bytes_needed;
-
-			Uint64 alignment = align; // alignof(T);
-			Uint64 misalignment = reinterpret_cast<Uintptr>(result) % alignment;
-			if (misalignment != 0) 
-			{
-				Uint64 padding = alignment - misalignment;
-				result = static_cast<Uint8*>(result) + padding;
-				current_block->used += padding;
-			}
+			void* result = current_block->buffer + current_block->used + padding;
+			current_block->used += padding + size;
 			return result;
 		}
 

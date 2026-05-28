@@ -672,8 +672,8 @@ namespace adria
 	}
 	std::array<Matrix, ShadowRenderer::SHADOW_CASCADE_COUNT> ShadowRenderer::RecalculateProjectionMatrices(Camera const& camera, Float split_lambda, std::array<Float, SHADOW_CASCADE_COUNT>& split_distances)
 	{
-		Float camera_near = camera.Near();
-		Float camera_far = camera.Far();
+		Float camera_near = camera.ProjZNear();
+		Float camera_far = camera.ProjZFar();
 		Float near_plane = std::min(camera_near, camera_far);
 		Float far_plane  = std::max(camera_near, camera_far);
 

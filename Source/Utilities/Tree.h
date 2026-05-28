@@ -69,7 +69,7 @@ namespace adria
 		{
 			if (index < children.size()) 
 			{
-				return children[index].get();
+				return children[index];
 			}
 			return nullptr;
 		}
@@ -83,10 +83,13 @@ namespace adria
 			return children.size();
 		}
 
-		Bool RemoveChild(Uint64 index) 
+		Bool RemoveChild(Uint64 index)
 		{
-			if (index < children.size()) 
+			if (index < children.size())
 			{
+				TreeNode* child = children[index];
+				child->~TreeNode();
+				allocator.Deallocate(child, 1);
 				children.erase(children.begin() + index);
 				return true;
 			}
@@ -96,9 +99,11 @@ namespace adria
 		Bool RemoveChild(TreeNode* child)
 		{
 			auto it = std::find_if(children.begin(), children.end(),
-				[child](auto const& c) { return c.get() == child; });
-			if (it != children.end()) 
+				[child](auto const& c) { return c == child; });
+			if (it != children.end())
 			{
+				(*it)->~TreeNode();
+				allocator.Deallocate(*it, 1);
 				children.erase(it);
 				return true;
 			}
@@ -128,7 +133,7 @@ namespace adria
 			{
 				if (child->name == child_name) 
 				{
-					return child.get();
+					return child;
 				}
 			}
 			return nullptr;
@@ -265,7 +270,7 @@ namespace adria
 			Int32 max_child_height = -1;
 			for (auto const& child : node->GetChildren()) 
 			{
-				Int32 child_height = CalculateHeight(child.get());
+				Int32 child_height = CalculateHeight(child);
 				max_child_height = std::max(max_child_height, child_height);
 			}
 			return max_child_height + 1;

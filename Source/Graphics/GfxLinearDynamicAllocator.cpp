@@ -77,12 +77,10 @@ namespace adria
 			max_used_page_count = std::max(max_used_page_count, used_page_count_history[j]);
 		}
 
-		if (max_used_page_count < alloc_pages.size())
+		Uint64 const min_pages = std::max<Uint64>(max_used_page_count, 1);
+		while (alloc_pages.size() > min_pages)
 		{
-			while (alloc_pages.size() == max_used_page_count)
-			{
-				alloc_pages.pop_back();
-			}
+			alloc_pages.pop_back();
 		}
 		current_page = 0;
 	}

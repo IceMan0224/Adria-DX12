@@ -510,7 +510,9 @@ else()
 endif()
 
 if(Vulkan_FOUND)
-	list(APPEND ADRIA_BACKEND_SOURCES ${ADRIA_VULKAN_SOURCES})
+	if(WIN32 OR APPLE)
+		list(APPEND ADRIA_BACKEND_SOURCES ${ADRIA_VULKAN_SOURCES})
+	endif()
 	add_compile_definitions(ADRIA_HAS_VULKAN_SDK)
 	message(STATUS "Vulkan found: ${Vulkan_VERSION}")
 	if(NOT APPLE)
@@ -587,7 +589,7 @@ elseif(UNIX)
 	)
 endif()
 
-if(Vulkan_FOUND)
+if(Vulkan_FOUND AND (WIN32 OR APPLE))
 	list(APPEND EXTERNAL_SOURCES
 		"${EXTERNAL_DIR}/ImGui/imgui_impl_vulkan.cpp"
 	)

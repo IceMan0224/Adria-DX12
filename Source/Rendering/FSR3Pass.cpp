@@ -48,17 +48,24 @@ namespace adria
 		fsr3_context_desc.backendInterfaceFrameInterpolation = *ffx_interface;
 		RecreateRenderResolution();
 		CreateContext();
-		is_supported = true;
 	}
 
 	FSR3Pass::~FSR3Pass()
 	{
-		DestroyContext();
-		DestroyFfxInterface(ffx_interface);
+		if (ffx_interface)
+		{
+			DestroyContext();
+			DestroyFfxInterface(ffx_interface);
+		}
 	}
 
 	void FSR3Pass::AddPass(RenderGraph& rg, PostProcessor* postprocessor)
 	{
+		if (!IsSupported())
+		{
+			return;
+		}
+
 		if (recreate_context)
 		{
 			DestroyContext();

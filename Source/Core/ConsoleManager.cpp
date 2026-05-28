@@ -200,7 +200,7 @@ namespace adria
 			}
 			else if constexpr (std::is_same_v<T, Bool>)
 			{
-				value = detail::ConsoleVariableConversionHelper<Int>::GetInt(int_value);
+				value = detail::ConsoleVariableConversionHelper<Int>::GetBool(int_value);
 				OnChangedDelegate().Broadcast(this);
 				return true;
 			}
@@ -354,7 +354,7 @@ namespace adria
 			}
 			else if constexpr (std::is_same_v<T, Bool>)
 			{
-				value = detail::ConsoleVariableConversionHelper<Int>::GetInt(int_value);
+				value = detail::ConsoleVariableConversionHelper<Int>::GetBool(int_value);
 				OnChangedDelegate().Broadcast(this);
 				return true;
 			}

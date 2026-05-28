@@ -27,6 +27,7 @@ namespace adria
 
 	DynamicLibrary& DynamicLibrary::operator=(void* handle)
 	{
+		Close();
 		lib_handle = handle;
 		return *this;
 	}

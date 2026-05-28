@@ -450,7 +450,7 @@ namespace adria
 			{
 				material.alpha_mode = MaterialAlphaMode::Mask;
 			}
-			if (gltf_material.alpha_mode == cgltf_alpha_mode_opaque)
+			else if (gltf_material.alpha_mode == cgltf_alpha_mode_opaque)
 			{
 				material.alpha_mode = MaterialAlphaMode::Opaque;
 			}

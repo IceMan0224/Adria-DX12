@@ -9,17 +9,17 @@ namespace adria
 	{
 		if (ks >= 'a' && ks <= 'z') { return (KeyCode)((Int32)KeyCode::A + (ks - 'a')); }
 		if (ks >= 'A' && ks <= 'Z') { return (KeyCode)((Int32)KeyCode::A + (ks - 'A')); }
-		if (ks >= '0' && ks <= '9') { return (KeyCode)((Int32)KeyCode::Zero + (ks - '0')); }
+		if (ks >= '0' && ks <= '9') { return (KeyCode)((Int32)KeyCode::Alpha0 + (ks - '0')); }
 		switch (ks)
 		{
-		case 0xff1b: return KeyCode::Escape;
+		case 0xff1b: return KeyCode::Esc;
 		case 0xff0d: return KeyCode::Enter;
 		case 0x20:   return KeyCode::Space;
-		case 0xff51: return KeyCode::Left;
-		case 0xff52: return KeyCode::Up;
-		case 0xff53: return KeyCode::Right;
-		case 0xff54: return KeyCode::Down;
-		default:     return KeyCode::Unknown;
+		case 0xff51: return KeyCode::ArrowLeft;
+		case 0xff52: return KeyCode::ArrowUp;
+		case 0xff53: return KeyCode::ArrowRight;
+		case 0xff54: return KeyCode::ArrowDown;
+		default:     return KeyCode::Count;
 		}
 	}
 
@@ -42,7 +42,7 @@ namespace adria
 				xcb_keysym_t ks = xcb_key_symbols_get_keysym(syms, e->detail, 0);
 				xcb_key_symbols_free(syms);
 				KeyCode kc = XcbKeyToKeyCode(ks);
-				if (kc != KeyCode::Unknown)
+				if (kc != KeyCode::Count)
 				{
 					keys[(Uint32)kc] = (type == XCB_KEY_PRESS);
 				}
@@ -53,9 +53,9 @@ namespace adria
 			{
 				xcb_button_press_event_t* e = (xcb_button_press_event_t*)raw;
 				Bool pressed = (type == XCB_BUTTON_PRESS);
-				if (e->detail == 1) { mouse_buttons[(Uint32)MouseButton::Left]   = pressed; }
-				if (e->detail == 3) { mouse_buttons[(Uint32)MouseButton::Right]  = pressed; }
-				if (e->detail == 2) { mouse_buttons[(Uint32)MouseButton::Middle] = pressed; }
+				if (e->detail == 1) { keys[(Uint32)KeyCode::MouseLeft]   = pressed; }
+				if (e->detail == 3) { keys[(Uint32)KeyCode::MouseRight]  = pressed; }
+				if (e->detail == 2) { keys[(Uint32)KeyCode::MouseMiddle] = pressed; }
 				break;
 			}
 			case XCB_MOTION_NOTIFY:

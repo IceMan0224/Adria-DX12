@@ -33,10 +33,10 @@ namespace adria
 			if (cmd_list.get() == _cmd_list)
 			{
 				cmd_list.swap(cmd_lists.back());
-				break;
+				cmd_lists.pop_back();
+				return;
 			}
 		}
-		cmd_lists.pop_back();
 	}
 
 	void GfxCommandListPool::BeginCmdLists()

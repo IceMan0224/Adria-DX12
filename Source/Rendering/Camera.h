@@ -33,14 +33,16 @@ namespace adria
 		Vector3 Forward() const;
 
 		Vector2 Jitter(Uint32 frame_index) const;
-		Float Near() const;
-		Float Far() const;
+		Float ProjZNear() const;
+		Float ProjZFar() const;
+		Float SceneNear() const;
+		Float SceneFar() const;
 		Float Fov() const;
 		Float AspectRatio() const;
 
 		void SetPosition(Vector3 const& pos);
 		void SetOrientation(Quaternion const& q);
-		void SetNearAndFar(Float n, Float f);
+		void SetProjZNearAndFar(Float zn, Float zf);
 		void SetAspectRatio(Float ar);
 		void SetFov(Float fov);
 
@@ -61,7 +63,7 @@ namespace adria
 
 		Float fov;
 		Float aspect_ratio;
-		Float near_plane, far_plane;
+		Float proj_zn, proj_zf;
 		Bool  enabled;
 		Bool  changed;
 

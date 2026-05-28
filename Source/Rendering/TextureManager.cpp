@@ -104,7 +104,7 @@ namespace adria
 			images.emplace_back(normalized_path);
 			GfxTextureSubData subresource_data{};
 			subresource_data.data = images.back().Data<void>();
-			subresource_data.row_pitch = GetRowPitch(images.back().Format(), desc.width, 0);
+			subresource_data.row_pitch = GetRowPitch(images.back().Format(), images.back().Width(), 0);
 			subresources.push_back(subresource_data);
 		}
 		desc.width  = images[0].Width();
@@ -137,7 +137,7 @@ namespace adria
 
 	GfxDescriptor TextureManager::GetDescriptor(TextureHandle tex_handle) const
 	{
-		if (handle == INVALID_TEXTURE_HANDLE)
+		if (tex_handle == INVALID_TEXTURE_HANDLE)
 		{
 			return GfxDescriptor{};
 		}

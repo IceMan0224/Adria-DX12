@@ -964,7 +964,10 @@ namespace adria
 				{
 					ImGui::Text("Decal Albedo Texture");
 					GfxTexture* tex_handle = g_TextureManager.GetTexture(decal->albedo_decal_texture);
-					gui->ShowImage(*tex_handle);
+					if (tex_handle)
+					{
+						gui->ShowImage(*tex_handle);
+					}
 
 					ImGui::PushID(4);
 					if (ImGui::Button("Remove"))
@@ -986,7 +989,10 @@ namespace adria
 
 					ImGui::Text("Decal Normal Texture");
 					tex_handle = g_TextureManager.GetTexture(decal->normal_decal_texture);
-					gui->ShowImage(*tex_handle);
+					if (tex_handle)
+					{
+						gui->ShowImage(*tex_handle);
+					}
 
 					ImGui::PushID(5);
 					if (ImGui::Button("Remove")) decal->normal_decal_texture = INVALID_TEXTURE_HANDLE;
@@ -1070,12 +1076,12 @@ namespace adria
 			Vector3 cam_pos = camera.Position();
 			ImGui::SliderFloat3("Position", (Float*)&cam_pos, 0.0f, 2000.0f);
 			camera.SetPosition(cam_pos);
-			Float near_plane = camera.Near(), far_plane = camera.Far();
+			Float near_plane = camera.ProjZNear(), far_plane = camera.ProjZFar();
 			Float fov = camera.Fov();
 			ImGui::SliderFloat("Near", &near_plane, 10.0f, 3000.0f);
 			ImGui::SliderFloat("Far", &far_plane, 0.001f, 2.0f);
 			ImGui::SliderFloat("FOV", &fov, 0.01f, 1.5707f);
-			camera.SetNearAndFar(near_plane, far_plane);
+			camera.SetProjZNearAndFar(near_plane, far_plane);
 			camera.SetFov(fov);
 			Vector3 look_at = camera.Forward();
 			ImGui::Text("Look Vector: (%f,%f,%f)", look_at.x, look_at.y, look_at.z);
@@ -1256,7 +1262,7 @@ namespace adria
 			}
 
 			Matrix view = engine->camera->View();
-			Matrix proj = XMMatrixPerspectiveFovLH(engine->camera->Fov(), engine->camera->AspectRatio(), engine->camera->Far(), engine->camera->Near());
+			Matrix proj = XMMatrixPerspectiveFovLH(engine->camera->Fov(), engine->camera->AspectRatio(), engine->camera->ProjZFar(), engine->camera->ProjZNear());
 			entt::entity icon_hovered_entity = entt::null;
 			if (show_light_icons)
 			{
@@ -2390,8 +2396,8 @@ namespace adria
 			writer.Write(camera.Position());
 			writer.Write(camera.Orientation());
 			writer.Write(camera.Fov());
-			writer.Write(camera.Near());
-			writer.Write(camera.Far());
+			writer.Write(camera.ProjZNear());
+			writer.Write(camera.ProjZFar());
 		}
 	}
 
@@ -2450,7 +2456,7 @@ namespace adria
 				camera.SetPosition(pos);
 				camera.SetOrientation(ori);
 				camera.SetFov(fov);
-				camera.SetNearAndFar(near_plane, far_plane);
+				camera.SetProjZNearAndFar(near_plane, far_plane);
 			}
 		}
 		catch (std::exception const& e)

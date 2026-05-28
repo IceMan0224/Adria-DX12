@@ -151,7 +151,7 @@ namespace adria
 		GfxTextureDesc kernel_desc{};
 		kernel_desc.width = (Uint32)bokeh_kernel_data.size();
 		kernel_desc.height = 1;
-		kernel_desc.format = GfxFormat::R32_FLOAT;
+		kernel_desc.format = GfxFormat::R32G32_FLOAT;
 		kernel_desc.initial_state = GfxResourceState::PixelSRV;
 		kernel_desc.bind_flags = GfxBindFlag::ShaderResource;
 
@@ -178,7 +178,7 @@ namespace adria
 		GfxTextureDesc kernel_desc{};
 		kernel_desc.width = (Uint32)bokeh_kernel_data.size();
 		kernel_desc.height = 1;
-		kernel_desc.format = GfxFormat::R32_FLOAT;
+		kernel_desc.format = GfxFormat::R32G32_FLOAT;
 		kernel_desc.initial_state = GfxResourceState::PixelSRV;
 		kernel_desc.bind_flags = GfxBindFlag::ShaderResource;
 

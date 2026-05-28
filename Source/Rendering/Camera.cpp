@@ -8,7 +8,7 @@ using namespace DirectX;
 namespace adria
 {
 	Camera::Camera(CameraParameters const& desc) 
-		: position(desc.position), aspect_ratio(1.0f), fov(desc.fov), near_plane(desc.far_plane), far_plane(desc.near_plane), enabled(true), changed(false)
+		: position(desc.position), aspect_ratio(1.0f), fov(desc.fov), proj_zn(desc.far_plane), proj_zf(desc.near_plane), enabled(true), changed(false)
 	{
 		Vector3 look_vector = desc.look_at - position;
 		look_vector.Normalize();
@@ -34,13 +34,21 @@ namespace adria
 		jitter.y = y[frame_index % 16] - 0.5f;
 		return jitter;
 	}
-	Float Camera::Near() const
+	Float Camera::ProjZNear() const
 	{
-		return near_plane;
+		return proj_zn;
 	}
-	Float Camera::Far() const
+	Float Camera::ProjZFar() const
 	{
-		return far_plane;
+		return proj_zf;
+	}
+	Float Camera::SceneNear() const
+	{
+		return proj_zf;
+	}
+	Float Camera::SceneFar() const
+	{
+		return proj_zn;
 	}
 	Float Camera::Fov() const
 	{
@@ -90,14 +98,14 @@ namespace adria
 		
 		Matrix view_inverse = Matrix::CreateFromQuaternion(orientation) * Matrix::CreateTranslation(position);
 		view_inverse.Invert(view_matrix);
-		SetProjectionMatrix(fov, aspect_ratio, near_plane, far_plane);
+		SetProjectionMatrix(fov, aspect_ratio, proj_zn, proj_zf);
 	}
 	void Camera::Zoom(Int32 increment)
 	{
 		if (!enabled) return;
 		fov -= XMConvertToRadians(increment * 1.0f);
 		fov = std::clamp(fov, 0.00005f, pi_div_2<Float>);
-		SetProjectionMatrix(fov, aspect_ratio, near_plane, far_plane);
+		SetProjectionMatrix(fov, aspect_ratio, proj_zn, proj_zf);
 	}
 	void Camera::OnResize(Uint32 w, Uint32 h)
 	{
@@ -107,18 +115,18 @@ namespace adria
 	void Camera::SetAspectRatio(Float ar)
 	{
 		aspect_ratio = ar;
-		SetProjectionMatrix(fov, aspect_ratio, near_plane, far_plane);
+		SetProjectionMatrix(fov, aspect_ratio, proj_zn, proj_zf);
 	}
 	void Camera::SetFov(Float _fov)
 	{
 		fov = _fov;
-		SetProjectionMatrix(fov, aspect_ratio, near_plane, far_plane);
+		SetProjectionMatrix(fov, aspect_ratio, proj_zn, proj_zf);
 	}
-	void Camera::SetNearAndFar(Float n, Float f)
+	void Camera::SetProjZNearAndFar(Float zn, Float zf)
 	{
-		near_plane = n;
-		far_plane = f;
-		SetProjectionMatrix(fov, aspect_ratio, near_plane, far_plane);
+		proj_zn = zn;
+		proj_zf = zf;
+		SetProjectionMatrix(fov, aspect_ratio, proj_zn, proj_zf);
 	}
 	void Camera::SetPosition(Vector3 const& pos)
 	{

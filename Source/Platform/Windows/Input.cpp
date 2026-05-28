@@ -152,6 +152,7 @@ namespace adria
 				}
 				break;
 			case WM_MOUSEWHEEL:
+				mmouse_wheel_delta = (Float)GET_WHEEL_DELTA_WPARAM(data.wparam) / (Float)WHEEL_DELTA;
 				input_events.scroll_mouse_event.Broadcast((Int32)GET_WHEEL_DELTA_WPARAM(data.wparam) / WHEEL_DELTA);
 				break;
 			case WM_RBUTTONDOWN:
@@ -173,8 +174,6 @@ namespace adria
 				break;
 			}
 		}
-		mmouse_wheel_delta = (Float)GET_WHEEL_DELTA_WPARAM(data.wparam) / (Float)WHEEL_DELTA;
-
 	}
 	void Input::SetMouseVisibility(Bool visible)
 	{

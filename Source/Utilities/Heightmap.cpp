@@ -13,7 +13,7 @@ namespace adria
 		case NoiseType::OpenSimplex2S:
 			return FastNoiseLite::NoiseType_OpenSimplex2S;
 		case NoiseType::Cellular:
-			return FastNoiseLite::NoiseType_OpenSimplex2;
+			return FastNoiseLite::NoiseType_Cellular;
 		case NoiseType::ValueCubic:
 			return FastNoiseLite::NoiseType_ValueCubic;
 		case NoiseType::Value:

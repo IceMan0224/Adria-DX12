@@ -1331,7 +1331,7 @@ namespace adria
 
 	void VulkanDevice::FreeBindlessIndex(Uint32 binding, Uint32 index)
 	{
-		ADRIA_ASSERT(binding < 4);
+		ADRIA_ASSERT(binding < VK_BINDLESS_BINDING_COUNT);
 		std::lock_guard lock(bindless_mutex);
 		bindless_free_list[binding].push_back(index);
 	}

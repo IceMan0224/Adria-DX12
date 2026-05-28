@@ -13,7 +13,7 @@ namespace adria
 		ADRIA_DEFAULT_COPYABLE_MOVABLE(LinearOffsetAllocator)
 		~LinearOffsetAllocator() = default;
 
-		Uint64 Allocate(Uint64 size, Uint64 align = 0)
+		Uint64 Allocate(Uint64 size, Uint64 align = 1)
 		{
 			Uint64 aligned_top = AlignUp(top, align);
 			if (aligned_top + size > max_size)

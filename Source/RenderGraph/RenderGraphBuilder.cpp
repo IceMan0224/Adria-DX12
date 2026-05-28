@@ -230,7 +230,7 @@ namespace adria
 
 	RGBufferIndexId RenderGraphBuilder::ReadIndexBuffer(RGResourceName name)
 	{
-		RGBufferIndexId index_buf_id = rg.ReadVertexBuffer(name);
+		RGBufferIndexId index_buf_id = rg.ReadIndexBuffer(name);
 		RGBufferId res_id(index_buf_id);
 		rg_pass.buffer_state_map[res_id] = GfxResourceState::IndexBuffer;
 		rg_pass.buffer_reads.insert(res_id);

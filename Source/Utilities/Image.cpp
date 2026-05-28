@@ -74,7 +74,7 @@ namespace adria
 	Image::Image(std::string_view file_path)
 	{
 		ImageFormat format = GetImageFormat(file_path);
-		Bool result;
+		Bool result = false;
 		switch (format)
 		{
 		case ImageFormat::DDS:
@@ -112,7 +112,8 @@ namespace adria
 	{
 		//https://github.com/simco50/D3D12_Research/blob/master/D3D12/Content/Image.cpp - LoadDDS
 
-		FILE* file = fopen(texture_path.data(), "rb");
+		std::string path(texture_path);
+		FILE* file = fopen(path.c_str(), "rb");
 		if (!file)
 		{
 			return false;
@@ -303,12 +304,13 @@ namespace adria
 
 	Bool Image::LoadSTB(std::string_view texture_path)
 	{
+		std::string path(texture_path);
 		Int32 components = 0;
-		is_hdr = stbi_is_hdr(texture_path.data());
+		is_hdr = stbi_is_hdr(path.c_str());
 		if (is_hdr)
 		{
 			Int32 _width, _height;
-			Float* _pixels = stbi_loadf(texture_path.data(), &_width, &_height, &components, 4);
+			Float* _pixels = stbi_loadf(path.c_str(), &_width, &_height, &components, 4);
 			if (_pixels == nullptr) return false;
 			width = (Uint32)_width;
 			height = (Uint32)_height;
@@ -323,7 +325,7 @@ namespace adria
 		else
 		{
 			Int _width, _height;
-			stbi_uc* _pixels = stbi_load(texture_path.data(), &_width, &_height, &components, 4);
+			stbi_uc* _pixels = stbi_load(path.c_str(), &_width, &_height, &components, 4);
 			if (_pixels == nullptr) return false;
 			width = (Uint32)_width;
 			height = (Uint32)_height;

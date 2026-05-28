@@ -429,8 +429,8 @@ namespace adria
 			path_tracer.Reset();
 		}
 
-		frame_cbuf_data.camera_near = camera->Near();
-		frame_cbuf_data.camera_far = camera->Far();
+		frame_cbuf_data.camera_near = camera->ProjZNear();
+		frame_cbuf_data.camera_far = camera->ProjZFar();
 		frame_cbuf_data.camera_position = camera->Position();
 		frame_cbuf_data.camera_forward = camera->Forward();
 		frame_cbuf_data.view = camera->View();
@@ -519,8 +519,8 @@ namespace adria
 			frame_data.camera_viewproj = camera->ViewProj();
 			frame_data.camera_fov = camera->Fov();
 			frame_data.camera_aspect_ratio = camera->AspectRatio();
-			frame_data.camera_near = camera->Near();
-			frame_data.camera_far = camera->Far();
+			frame_data.camera_near = camera->ProjZNear();
+			frame_data.camera_far = camera->ProjZFar();
 			frame_data.camera_jitter_x = camera_jitter.x;
 			frame_data.camera_jitter_y = camera_jitter.y;
 			frame_data.delta_time = frame_cbuf_data.delta_time;
