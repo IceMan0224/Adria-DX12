@@ -599,12 +599,15 @@ namespace adria
 		}
 		decals_pass.AddPass(render_graph);
 		postprocessor.AddAmbientOcclusionPass(render_graph);
-		restir_di.AddPasses(render_graph);
-		if (!restir_di.IsEnabled())
+
 		{
 			RG_SCOPE(render_graph, "Shadows");
 			shadow_renderer.AddShadowMapPasses(render_graph);
 			shadow_renderer.AddRayTracingShadowPasses(render_graph);
+		}
+		if (restir_di.IsEnabled())
+		{
+			restir_di.AddPasses(render_graph);
 		}
 
 		if (renderer_debug_view_pass.GetDebugView() == RendererDebugView::Final)

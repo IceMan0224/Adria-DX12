@@ -77,15 +77,17 @@ void SpatialResamplingCS( uint3 DTid : SV_DispatchThreadID )
 		uint neighborLightIndex = ReSTIR_DI_GetLightIndex(neighborReservoir);
 		if (neighborLightIndex != ReSTIR_InvalidLightIndex && neighborLightIndex < (uint)FrameCB.lightCount)
 		{
-			LightInfo neighborLightInfo = LoadLightInfo(neighborLightIndex);
-			float2 neighborSampleUV = ReSTIR_DI_GetSampleUV(neighborReservoir);
-			LightSample neighborLightSample = ReSTIR_SampleLight(neighborLightInfo, surface, neighborSampleUV);
-			neighborTargetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(neighborLightSample, neighborLightInfo, surface);
-
-			if (neighborTargetPdf > 0.0f && neighborLightInfo.shadowMaskIndex >= 0
-				&& !TraceShadowRay(neighborLightInfo, surface.worldPos, FrameCB.inverseView))
+			LightInfo neighborLightInfoWS = ReSTIR_LoadLightInfoWS(neighborLightIndex);
+			if (neighborLightInfoWS.active)
 			{
-				neighborTargetPdf = 0.0f;
+				float2 neighborSampleUV = ReSTIR_DI_GetSampleUV(neighborReservoir);
+				LightSample neighborLightSample = ReSTIR_SampleLight(neighborLightInfoWS, surface, neighborSampleUV);
+				neighborTargetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(neighborLightSample, neighborLightInfoWS, surface);
+
+				if (neighborTargetPdf > 0.0f && !TraceShadowRay(neighborLightInfoWS, surface.worldPos))
+				{
+					neighborTargetPdf = 0.0f;
+				}
 			}
 		}
 		ReSTIR_DI_CombineReservoirs(combined, neighborReservoir, RNG_GetNext(rng), neighborTargetPdf);

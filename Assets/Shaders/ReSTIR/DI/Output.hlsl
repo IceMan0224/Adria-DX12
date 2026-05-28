@@ -37,17 +37,17 @@ void ReSTIR_DI_OutputCS(uint3 DTid : SV_DispatchThreadID)
 		return;
 	}
 
-	LightInfo lightInfo = LoadLightInfo(lightIndex);
-	if (lightInfo.shadowMaskIndex >= 0 && !TraceShadowRay(lightInfo, surface.worldPos, FrameCB.inverseView))
+	LightInfo lightInfoWS = ReSTIR_LoadLightInfoWS(lightIndex);
+	if (!lightInfoWS.active || !TraceShadowRay(lightInfoWS, surface.worldPos))
 	{
 		outputTexture[DTid.xy] = float4(0, 0, 0, 0);
 		return;
 	}
 
 	float2 sampleUV = ReSTIR_DI_GetSampleUV(reservoir);
-	LightSample lightSample = ReSTIR_SampleLight(lightInfo, surface, sampleUV);
+	LightSample lightSample = ReSTIR_SampleLight(lightInfoWS, surface, sampleUV);
 
-	float3 shadingOutput = ReSTIR_ShadeSurfaceWithLightSample(lightSample, lightInfo, surface)
+	float3 shadingOutput = ReSTIR_ShadeSurfaceWithLightSample(lightSample, lightInfoWS, surface)
 						 * ReSTIR_DI_GetInvPdf(reservoir);
 
 	outputTexture[DTid.xy] = float4(shadingOutput, 1.0f);

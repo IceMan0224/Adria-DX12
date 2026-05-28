@@ -112,6 +112,10 @@ bool ReSTIR_DI_CombineReservoirs(
     float random,
     float targetPdf)
 {
+    if (newReservoir.M <= 0.0f || targetPdf <= 0.0f)
+    {
+        return false;
+    }
     return ReSTIR_DI_InternalSimpleResample(
         reservoir,
         newReservoir,
@@ -135,21 +139,21 @@ void ReSTIR_DI_FinalizeResampling(
 void ReSTIR_DI_RandomlySelectLight(
     inout RNG rng,
     uint lightCount,
-    out LightInfo lightInfo,
+    out LightInfo lightInfoWS,
     out uint lightIndex,
     out float invSourcePdf)
 {
     lightIndex = 0;
     invSourcePdf = 0.0f;
-    lightInfo = (LightInfo)0;
-    if (lightCount == 0) 
+    lightInfoWS = (LightInfo)0;
+    if (lightCount == 0)
     {
         return;
     }
     float rnd = RNG_GetNext(rng);
     invSourcePdf = float(lightCount);
     lightIndex = min(uint(floor(rnd * lightCount)), lightCount - 1);
-    lightInfo = LoadLightInfo(lightIndex);
+    lightInfoWS = ReSTIR_LoadLightInfoWS(lightIndex);
 }
 
 bool ReSTIR_DI_StreamLocalLightAtUVIntoReservoir(
@@ -158,12 +162,16 @@ bool ReSTIR_DI_StreamLocalLightAtUVIntoReservoir(
     uint lightIndex,
     float2 uv,
     float invSourcePdf,
-    LightInfo lightInfo,
+    LightInfo lightInfoWS,
     inout ReSTIR_DI_Reservoir state,
     inout LightSample selectedSample)
 {
-    LightSample candidateSample = ReSTIR_SampleLight(lightInfo, surface, uv);
-    float targetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(candidateSample, lightInfo, surface);
+    if (!lightInfoWS.active)
+    {
+        return false;
+    }
+    LightSample candidateSample = ReSTIR_SampleLight(lightInfoWS, surface, uv);
+    float targetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(candidateSample, lightInfoWS, surface);
     float risRnd = RNG_GetNext(rng);
     bool selected = ReSTIR_DI_StreamSample(state, lightIndex, uv, risRnd, targetPdf, invSourcePdf);
     if (selected)
@@ -175,7 +183,7 @@ bool ReSTIR_DI_StreamLocalLightAtUVIntoReservoir(
 
 void ReSTIR_DI_StreamInfiniteLightAtUVIntoReservoir(
     inout RNG rng,
-    LightInfo lightInfo,
+    LightInfo lightInfoWS,
     Surface surface,
     uint lightIndex,
     float2 uv,
@@ -183,8 +191,12 @@ void ReSTIR_DI_StreamInfiniteLightAtUVIntoReservoir(
     inout ReSTIR_DI_Reservoir state,
     inout LightSample selectedSample)
 {
-    LightSample candidateSample = ReSTIR_SampleLight(lightInfo, surface, uv);
-    float targetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(candidateSample, lightInfo, surface);
+    if (!lightInfoWS.active)
+    {
+        return;
+    }
+    LightSample candidateSample = ReSTIR_SampleLight(lightInfoWS, surface, uv);
+    float targetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(candidateSample, lightInfoWS, surface);
     float risRnd = RNG_GetNext(rng);
     bool selected = ReSTIR_DI_StreamSample(state, lightIndex, uv, risRnd, targetPdf, invSourcePdf);
     if (selected)
@@ -205,15 +217,15 @@ ReSTIR_DI_Reservoir ReSTIR_DI_SampleLocalLights(inout RNG rng, Surface surface, 
     for (uint i = 0; i < localLightSamples; i++)
     {
         uint lightIndex;
-        LightInfo lightInfo;
+        LightInfo lightInfoWS;
         float invSourcePdf;
-        ReSTIR_DI_RandomlySelectLight(rng, FrameCB.lightCount, lightInfo, lightIndex, invSourcePdf);
+        ReSTIR_DI_RandomlySelectLight(rng, FrameCB.lightCount, lightInfoWS, lightIndex, invSourcePdf);
         float2 uv = ReSTIR_RandomlySelectLocalLightUV(rng);
-        ReSTIR_DI_StreamLocalLightAtUVIntoReservoir(rng, surface, lightIndex, uv, invSourcePdf, lightInfo, state, lightSample);
+        ReSTIR_DI_StreamLocalLightAtUVIntoReservoir(rng, surface, lightIndex, uv, invSourcePdf, lightInfoWS, state, lightSample);
     }
 
     ReSTIR_DI_FinalizeResampling(state, 1.0, localLightSamples);
-    state.M = 1;
+    state.M = (state.targetPdf > 0.0f) ? 1 : 0;
     return state;
 }
 ReSTIR_DI_Reservoir ReSTIR_DI_SampleInfiniteLights(inout RNG rng, Surface surface, out LightSample lightSample)
@@ -226,17 +238,28 @@ ReSTIR_DI_Reservoir ReSTIR_DI_SampleInfiniteLights(inout RNG rng, Surface surfac
         return state;
     }
 
-    LightInfo lightInfo = LoadLightInfo(0);
-    if (lightInfo.type != DIRECTIONAL_LIGHT)
+    uint dirLightIndex = ReSTIR_InvalidLightIndex;
+    LightInfo dirLightWS = (LightInfo)0;
+    for (uint i = 0; i < (uint)FrameCB.lightCount; ++i)
+    {
+        LightInfo candidate = ReSTIR_LoadLightInfoWS(i);
+        if (candidate.active && candidate.type == DIRECTIONAL_LIGHT)
+        {
+            dirLightIndex = i;
+            dirLightWS = candidate;
+            break;
+        }
+    }
+    if (dirLightIndex == ReSTIR_InvalidLightIndex)
     {
         return state;
     }
 
     float invSourcePdf = 1.0f;
     float2 uv = ReSTIR_RandomlySelectInfiniteLightUV(rng);
-    ReSTIR_DI_StreamInfiniteLightAtUVIntoReservoir(rng, lightInfo, surface, 0, uv, invSourcePdf, state, lightSample);
+    ReSTIR_DI_StreamInfiniteLightAtUVIntoReservoir(rng, dirLightWS, surface, dirLightIndex, uv, invSourcePdf, state, lightSample);
     ReSTIR_DI_FinalizeResampling(state, 1.0, state.M);
-    state.M = 1;
+    state.M = (state.targetPdf > 0.0f) ? 1 : 0;
     return state;
 }
 // BRDF sampling: traces a ray in a BRDF-importance-sampled direction to find emissive geometry.
@@ -246,10 +269,7 @@ ReSTIR_DI_Reservoir ReSTIR_DI_SampleInfiniteLights(inout RNG rng, Surface surfac
 ReSTIR_DI_Reservoir ReSTIR_DI_SampleBrdf(inout RNG rng, Surface surface, out LightSample lightSample)
 {
     lightSample = EmptyLightSample();
-    ReSTIR_DI_Reservoir state = ReSTIR_DI_EmptyDIReservoir();
-    ReSTIR_DI_FinalizeResampling(state, 1.0, 1.0);
-    state.M = 1;
-    return state;
+    return ReSTIR_DI_EmptyDIReservoir();
 }
 
 ReSTIR_DI_Reservoir ReSTIR_DI_SampleLightsForSurface(inout RNG rng, Surface surface, out LightSample lightSample)
@@ -272,7 +292,7 @@ ReSTIR_DI_Reservoir ReSTIR_DI_SampleLightsForSurface(inout RNG rng, Surface surf
     bool selectBrdf = ReSTIR_DI_CombineReservoirs(state, brdfReservoir, RNG_GetNext(rng), brdfReservoir.targetPdf);
 
     ReSTIR_DI_FinalizeResampling(state, 1.0, state.M);
-    state.M = 1;
+    state.M = (state.targetPdf > 0.0f) ? 1 : 0;
 
     if (selectBrdf) lightSample = brdfSample;
     else if (selectInfinite) lightSample = infiniteSample;

@@ -8,6 +8,7 @@ struct TemporalResamplingConstants
 	uint depthIdx;
 	uint normalIdx;
 	uint albedoIdx;
+	uint prevDepthIdx;
 	uint reservoirIdx;
 	uint prevReservoirIdx;
 	float maxTemporalM;
@@ -20,13 +21,13 @@ DECLARE_CBUFFER(TemporalResamplingConstants, TemporalResamplingCB, 1);
 [numthreads(16, 16, 1)]
 void TemporalResamplingCS( uint3 DTid : SV_DispatchThreadID )
 {
-	if (any(DTid.xy >= (uint2)FrameCB.renderResolution)) 
+	if (any(DTid.xy >= (uint2)FrameCB.renderResolution))
 	{
 		return;
 	}
 
 	Surface surface = GetSurface(DTid.xy, TemporalResamplingCB.albedoIdx, TemporalResamplingCB.normalIdx, TemporalResamplingCB.depthIdx);
-	if (surface.depth == 0.0f) 
+	if (surface.depth == 0.0f)
 	{
 		return;
 	}
@@ -36,7 +37,7 @@ void TemporalResamplingCS( uint3 DTid : SV_DispatchThreadID )
 	float2 uv = ((float2)DTid.xy + 0.5) * rcp(FrameCB.renderResolution);
 	float2 currentClip = uv * float2(2, -2) + float2(-1, 1);
 	float4 previousClip = mul(float4(currentClip, surface.depth, 1.0f), FrameCB.reprojection);
-	previousClip.xy /= previousClip.w;
+	previousClip.xyz /= previousClip.w;
 	float2 prevUV = previousClip.xy * float2(0.5, -0.5) + 0.5;
 	int2 prevPixel = (int2)(prevUV * FrameCB.renderResolution);
 
@@ -45,21 +46,17 @@ void TemporalResamplingCS( uint3 DTid : SV_DispatchThreadID )
 		return;
 	}
 
-	//todo: this uses current frame gbuffer, not previous frame
-	Surface prevSurface = GetSurface((uint2)prevPixel, TemporalResamplingCB.albedoIdx, TemporalResamplingCB.normalIdx, TemporalResamplingCB.depthIdx);
-	if (prevSurface.depth == 0.0f) 
+	Texture2D<float> prevDepthTexture = ResourceDescriptorHeap[TemporalResamplingCB.prevDepthIdx];
+	float prevDepthRaw = prevDepthTexture[(uint2)prevPixel];
+	if (prevDepthRaw == 0.0f)
 	{
 		return;
 	}
 
-	float depthDiff = abs(surface.viewDepth - prevSurface.viewDepth) / max(surface.viewDepth, 1e-6f);
-	if (depthDiff > TemporalResamplingCB.depthThreshold) 
-	{
-		return;
-	}
-
-	float normalSimilarity = dot(surface.worldNormal, prevSurface.worldNormal);
-	if (normalSimilarity < TemporalResamplingCB.normalThreshold) 
+	float prevViewDepth = LinearizeDepth(prevDepthRaw);
+	float expectedPrevViewDepth = LinearizeDepth(previousClip.z);
+	float depthDiff = abs(expectedPrevViewDepth - prevViewDepth) / max(expectedPrevViewDepth, 1e-6f);
+	if (depthDiff > TemporalResamplingCB.depthThreshold)
 	{
 		return;
 	}
@@ -71,10 +68,13 @@ void TemporalResamplingCS( uint3 DTid : SV_DispatchThreadID )
 	uint prevLightIndex = ReSTIR_DI_GetLightIndex(prevReservoir);
 	if (prevLightIndex != ReSTIR_InvalidLightIndex && prevLightIndex < (uint)FrameCB.lightCount)
 	{
-		LightInfo prevLightInfo = LoadLightInfo(prevLightIndex);
-		float2 prevSampleUV = ReSTIR_DI_GetSampleUV(prevReservoir);
-		LightSample prevLightSample = ReSTIR_SampleLight(prevLightInfo, surface, prevSampleUV);
-		prevTargetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(prevLightSample, prevLightInfo, surface);
+		LightInfo prevLightInfoWS = ReSTIR_LoadLightInfoWS(prevLightIndex);
+		if (prevLightInfoWS.active)
+		{
+			float2 prevSampleUV = ReSTIR_DI_GetSampleUV(prevReservoir);
+			LightSample prevLightSample = ReSTIR_SampleLight(prevLightInfoWS, surface, prevSampleUV);
+			prevTargetPdf = ReSTIR_GetLightSampleTargetPdfForSurface(prevLightSample, prevLightInfoWS, surface);
+		}
 	}
 
 	RNG rng = RNG_Initialize(DTid.x + DTid.y * (uint)FrameCB.renderResolution.x, FrameCB.frameCount * 3 + 1, 16);

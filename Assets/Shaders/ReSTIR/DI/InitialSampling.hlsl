@@ -21,24 +21,21 @@ void InitialSamplingCS( uint3 DTid : SV_DispatchThreadID )
     }
 
     Surface surface = GetSurface(DTid.xy, IntialSamplingCB.albedoIdx, IntialSamplingCB.normalIdx, IntialSamplingCB.depthIdx);
-    if (surface.depth == 0.0f) 
+    if (surface.depth == 0.0f)
     {
-        ReSTIR_DI_Reservoir emptyReservoir = (ReSTIR_DI_Reservoir)0;
-        ReSTIR_DI_StoreReservoir(emptyReservoir, DTid.xy, IntialSamplingCB.reservoirBufferIdx);
+        ReSTIR_DI_StoreReservoir(ReSTIR_DI_EmptyDIReservoir(), DTid.xy, IntialSamplingCB.reservoirBufferIdx);
         return;
     }
     RNG rng = RNG_Initialize(DTid.x + DTid.y * (uint)FrameCB.renderResolution.x, FrameCB.frameCount, 16);
-    
+
     LightSample lightSample = EmptyLightSample();
     ReSTIR_DI_Reservoir finalReservoir = ReSTIR_DI_SampleLightsForSurface(rng, surface, lightSample);
 
-    // Initial visibility check: discard occluded samples early so temporal/spatial
-    // resampling doesn't waste budget propagating invisible light samples
     uint selectedLight = ReSTIR_DI_GetLightIndex(finalReservoir);
     if (selectedLight != ReSTIR_InvalidLightIndex && selectedLight < (uint)FrameCB.lightCount)
     {
-        LightInfo lightInfo = LoadLightInfo(selectedLight);
-        if (lightInfo.shadowMaskIndex >= 0 && !TraceShadowRay(lightInfo, surface.worldPos, FrameCB.inverseView))
+        LightInfo lightInfoWS = ReSTIR_LoadLightInfoWS(selectedLight);
+        if (!TraceShadowRay(lightInfoWS, surface.worldPos))
         {
             finalReservoir = ReSTIR_DI_EmptyDIReservoir();
         }

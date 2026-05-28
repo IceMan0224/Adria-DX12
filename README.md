@@ -25,7 +25,7 @@ Modern cross-platform graphics engine written in C++.
     - GPU frustum culling and two-phase GPU occlusion culling
 
 * Global illumination and ray tracing
-    - DDGI, ReSTIR DI (WIP), reference path tracer
+    - DDGI, ReSTIR DI, reference path tracer
     - Ray-traced shadows, reflections, and ambient occlusion 
 
 * Deferred rendering pipeline
