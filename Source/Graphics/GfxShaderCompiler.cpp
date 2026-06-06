@@ -379,6 +379,10 @@ namespace adria
 
 			for (std::string const& include : output.includes)
 			{
+				if (!FileExists(include))
+				{
+					return false;
+				}
 				if (GetFileLastWriteTime(cache_binary) < GetFileLastWriteTime(include))
 				{
 					return false;
@@ -688,7 +692,7 @@ namespace adria
 
 		Bool CompileShader(GfxShaderCompileInput const& input, GfxShaderCompileOutput& output)
 		{
-			std::string define_key;
+			std::string define_key = input.file;
 			for (GfxShaderDefine const& define : input.defines)
 			{
 				define_key += define.name;

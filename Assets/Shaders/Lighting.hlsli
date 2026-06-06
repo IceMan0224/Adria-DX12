@@ -180,15 +180,21 @@ float3 DoLight(uint extension, LightInfo light, BrdfData brdfData, float3 P, flo
 	return result;
 }
 
-float3 GetIndirectLighting(float3 viewPosition, float3 viewNormal, float3 diffuseColor, float ambientOcclusion)
+float3 GetIndirectLighting(float3 viewPosition, float3 viewNormal, float3 diffuseColor, float ambientOcclusion, uint restirGIOutputIdx, uint2 pixel)
 {
+	if (restirGIOutputIdx != 0xFFFFFFFF)
+	{
+		Texture2D<float4> restirGIOutput = ResourceDescriptorHeap[restirGIOutputIdx];
+		return restirGIOutput[pixel].rgb * ambientOcclusion;
+	}
+
 	float3 indirectLighting = 0.0f;
 	int ddgiVolumesIdx = FrameCB.ddgiVolumesIdx;
 	if (ddgiVolumesIdx >= 0)
 	{
 		StructuredBuffer<DDGIVolume> ddgiVolumes = ResourceDescriptorHeap[ddgiVolumesIdx];
 		DDGIVolume ddgiVolume = ddgiVolumes[0];
-		
+
 		float3 worldNormal = normalize(mul(viewNormal, (float3x3) FrameCB.inverseView));
 		float4 worldPosition = mul(float4(viewPosition, 1.0f), FrameCB.inverseView);
 		worldPosition /= worldPosition.w;

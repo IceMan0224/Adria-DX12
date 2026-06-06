@@ -43,7 +43,7 @@ namespace adria
 		postprocessor(gfx, reg, width, height), picking_pass(gfx, width, height), clustered_deferred_lighting_pass(reg, gfx, width, height),
 		decals_pass(reg, gfx, width, height), rain_pass(reg, gfx, width, height), ocean_renderer(reg, gfx, width, height),
 		shadow_renderer(reg, gfx, width, height), renderer_debug_view_pass(gfx, width, height),
-		path_tracer(reg, gfx, width, height), ddgi(gfx, reg, width, height), restir_di(gfx, width, height), gpu_printf(gfx), gpu_assert(gfx),
+		path_tracer(reg, gfx, width, height), gi_manager(gfx, reg, width, height), restir_di(gfx, width, height), gpu_printf(gfx), gpu_assert(gfx),
 		transparent_pass(reg, gfx, width, height), ray_tracing_supported(gfx->GetCapabilities().SupportsHardwareRayTracing()),
 		volumetric_fog_manager(gfx, reg, width, height)
 	{
@@ -137,7 +137,7 @@ namespace adria
 			decals_pass.OnResize(w, h);
 			ocean_renderer.OnResize(w, h);
 			shadow_renderer.OnResize(w, h);
-			ddgi.OnResize(w, h);
+			gi_manager.OnResize(w, h);
 			restir_di.OnResize(w, h);
 			rain_pass.OnResize(w, h);
 			volumetric_fog_manager.OnResize(w, h);
@@ -153,7 +153,7 @@ namespace adria
 		rain_pass.OnSceneInitialized();
 		postprocessor.OnSceneInitialized();
 		ocean_renderer.OnSceneInitialized();
-		ddgi.OnSceneInitialized();
+		gi_manager.OnSceneInitialized();
 		volumetric_fog_manager.OnSceneInitialized();
 		CreateAS();
 
@@ -458,7 +458,7 @@ namespace adria
 		frame_cbuf_data.lights_idx = (Int32)scene_buffers[SceneBuffer_Light].buffer_srv_gpu_index;
 		frame_cbuf_data.light_count = (Int32)scene_buffers[SceneBuffer_Light].buffer->GetCount();
 		shadow_renderer.FillFrameCBuffer(frame_cbuf_data);
-		frame_cbuf_data.ddgi_volumes_idx = ddgi.IsEnabled() ? ddgi.GetDDGIVolumeIndex() : -1;
+		frame_cbuf_data.ddgi_volumes_idx = gi_manager.GetDDGIVolumeIndex();
 		frame_cbuf_data.printf_buffer_idx = gpu_printf.GetPrintfBufferIndex();
 		frame_cbuf_data.assert_buffer_idx = gpu_assert.GetAssertBufferIndex();
 		frame_cbuf_data.rain_splash_diffuse_idx = rain_pass.GetRainSplashDiffuseIndex();
@@ -593,10 +593,6 @@ namespace adria
 			gbuffer_pass.AddPass(render_graph);
 		}
 
-		if (ddgi.IsEnabled())
-		{
-			ddgi.AddPasses(render_graph);
-		}
 		decals_pass.AddPass(render_graph);
 		postprocessor.AddAmbientOcclusionPass(render_graph);
 
@@ -609,6 +605,7 @@ namespace adria
 		{
 			restir_di.AddPasses(render_graph);
 		}
+		gi_manager.AddPasses(render_graph);
 
 		if (renderer_debug_view_pass.GetDebugView() == RendererDebugView::Final)
 		{
@@ -623,10 +620,7 @@ namespace adria
 				volumetric_fog_manager.AddPass(render_graph);
 			}
 
-			if (ddgi.IsEnabled() && ddgi.Visualize())
-			{
-				ddgi.AddVisualizePass(render_graph);
-			}
+			gi_manager.AddVisualizePass(render_graph);
 			{
 				RG_SCOPE(render_graph, "Forward");
 				ocean_renderer.AddPasses(render_graph);
@@ -664,10 +658,7 @@ namespace adria
 		{
 			gpu_driven_renderer.GUI();
 		}
-		if (ddgi.IsSupported())
-		{
-			ddgi.GUI();
-		}
+		gi_manager.GUI();
 		if (lighting_path == LightingPath::TiledDeferred)
 		{
 			tiled_deferred_lighting_pass.GUI();

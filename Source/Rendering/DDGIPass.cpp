@@ -21,7 +21,6 @@
 
 namespace adria
 {
-	static TAutoConsoleVariable<Bool> DDGI("r.DDGI", true, "Enable DDGI if supported");
 
 	Vector2u DDGIPass::ProbeTextureDimensions(Vector3u const& num_probes, Uint32 texels_per_probe)
 	{
@@ -42,7 +41,7 @@ namespace adria
 			is_supported = true;
 			use_inline_rt = false;
 		}
-		DDGI->Set(is_supported);
+
 		if (is_supported)
 		{
 			CreatePSOs();
@@ -360,8 +359,7 @@ namespace adria
 			{
 				if (ImGui::TreeNode("DDGI"))
 				{
-					ImGui::Checkbox("Enable", DDGI.GetPtr());
-					if (DDGI.Get())
+					if (IsSupported())
 					{
 						ImGui::Checkbox("Visualize DDGI", &visualize);
 						if (visualize)
@@ -385,11 +383,6 @@ namespace adria
 					ImGui::TreePop();
 				}
 			}, GUICommandGroup_Renderer, GUICommandSubGroup_Lighting);
-	}
-
-	Bool DDGIPass::IsEnabled() const
-	{
-		return DDGI.Get();
 	}
 
 	Int32 DDGIPass::GetDDGIVolumeIndex()

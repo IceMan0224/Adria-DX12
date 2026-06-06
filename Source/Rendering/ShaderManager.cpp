@@ -141,6 +141,10 @@ namespace adria
 			case CS_ReSTIR_DI_TemporalResampling:
 			case CS_ReSTIR_DI_SpatialResampling:
 			case CS_ReSTIR_DI_Output:
+			case CS_ReSTIR_GI_InitialSampling:
+			case CS_ReSTIR_GI_TemporalResampling:
+			case CS_ReSTIR_GI_SpatialResampling:
+			case CS_ReSTIR_GI_Output:
 			case CS_VolumetricFog_LightInjection:
 			case CS_VolumetricFog_ScatteringIntegration:
 			case CS_RendererDebugView:
@@ -379,6 +383,14 @@ namespace adria
 				return "ReSTIR/DI/SpatialResampling.hlsl";
 			case CS_ReSTIR_DI_Output:
 				return "ReSTIR/DI/Output.hlsl";
+			case CS_ReSTIR_GI_InitialSampling:
+				return "ReSTIR/GI/InitialSampling.hlsl";
+			case CS_ReSTIR_GI_TemporalResampling:
+				return "ReSTIR/GI/TemporalResampling.hlsl";
+			case CS_ReSTIR_GI_SpatialResampling:
+				return "ReSTIR/GI/SpatialResampling.hlsl";
+			case CS_ReSTIR_GI_Output:
+				return "ReSTIR/GI/Output.hlsl";
 			case CS_RendererDebugView:
 				return "Other/RendererDebugView.hlsl";
 			case CS_DepthOfField_ComputeCoC:
@@ -618,6 +630,14 @@ namespace adria
 				return "SpatialResamplingCS";
 			case CS_ReSTIR_DI_Output:
 				return "ReSTIR_DI_OutputCS";
+			case CS_ReSTIR_GI_InitialSampling:
+				return "InitialSamplingCS";
+			case CS_ReSTIR_GI_TemporalResampling:
+				return "TemporalResamplingCS";
+			case CS_ReSTIR_GI_SpatialResampling:
+				return "SpatialResamplingCS";
+			case CS_ReSTIR_GI_Output:
+				return "ReSTIR_GI_OutputCS";
 			case CS_RendererDebugView:
 				return "RendererDebugViewCS";
 			case CS_DepthOfField_ComputeCoC:

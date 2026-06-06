@@ -61,10 +61,6 @@ namespace adria
 				{
 					data.ambient_occlusion = builder.ReadTexture(RG_NAME(AmbientOcclusion), ReadAccess_NonPixelShader);
 				}
-				else
-				{
-					data.ambient_occlusion.Invalidate();
-				}
 
 				data.depth = builder.ReadTexture(RG_NAME(DepthStencil), ReadAccess_NonPixelShader);
 			},

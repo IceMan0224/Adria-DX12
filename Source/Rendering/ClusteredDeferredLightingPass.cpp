@@ -144,10 +144,6 @@ namespace adria
 				{
 					data.ambient_occlusion = builder.ReadTexture(RG_NAME(AmbientOcclusion), ReadAccess_NonPixelShader);
 				}
-				else
-				{
-					data.ambient_occlusion.Invalidate();
-				}
 
 				data.output = builder.WriteTexture(RG_NAME(HDR_RenderTarget));
 			},

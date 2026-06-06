@@ -10,7 +10,7 @@
 #include "FogVolumesPass.h"
 #include "TiledDeferredLightingPass.h"
 #include "ClusteredDeferredLightingPass.h"
-#include "DDGIPass.h"
+#include "GIManager.h"
 #include "ReSTIR_DI.h"
 #include "GpuPrintf.h"
 #include "GpuAssert.h"
@@ -124,7 +124,7 @@ namespace adria
 		OceanRenderer  ocean_renderer;
 		ShadowRenderer shadow_renderer;
 		PostProcessor postprocessor;
-		DDGIPass 	  ddgi;
+		GIManager     gi_manager;
 		ReSTIR_DI     restir_di;
 		PathTracingPass path_tracer;
 		RendererDebugViewPass renderer_debug_view_pass;

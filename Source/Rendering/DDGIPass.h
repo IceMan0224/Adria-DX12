@@ -61,7 +61,6 @@ namespace adria
 		void GUI();
 
 		Bool Visualize() const   { return visualize; }
-		Bool IsEnabled() const;
 		Bool IsSupported() const { return is_supported; }
 		Int32 GetDDGIVolumeIndex();
 

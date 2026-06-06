@@ -12,9 +12,42 @@ struct DeferredLightingConstants
 	uint depthIdx;
 	uint aoIdx;
 	uint outputIdx;
-	int  restirDIOutputIdx;
 };
 DECLARE_CBUFFER(DeferredLightingConstants, DeferredLightingPassCB, 1);
+
+struct DeferredLightingRestirConstants
+{
+	uint restirDIOutputIdx;
+	uint restirGIOutputIdx;
+};
+DECLARE_CBUFFER(DeferredLightingRestirConstants, DeferredLightingPassCB2, 2);
+
+// Direct lighting: ReSTIR DI output if available, otherwise the analytic per-light loop.
+float3 ComputeDirectLighting(uint shadingExtension, BrdfData brdfData, float3 viewPosition, float3 viewNormal, float3 V, float2 uv, float4 customData, uint2 pixel)
+{
+	uint restirDIOutputIdx = DeferredLightingPassCB2.restirDIOutputIdx;
+	if (restirDIOutputIdx != 0xFFFFFFFF)
+	{
+		// ReSTIR DI handles all light types (point, spot, directional)
+		Texture2D<float4> restirDIOutput = ResourceDescriptorHeap[restirDIOutputIdx];
+		return restirDIOutput[pixel].rgb;
+	}
+
+	float3 directLighting = 0.0f;
+	for (uint i = 0; i < FrameCB.lightCount; ++i)
+	{
+		LightInfo lightInfo = LoadLightInfo(i);
+		if (!lightInfo.active) continue;
+		directLighting += DoLight(shadingExtension, lightInfo, brdfData, viewPosition, viewNormal, V, uv, customData);
+	}
+	return directLighting;
+}
+
+// Indirect lighting: dispatched through GetIndirectLighting, which handles ReSTIR GI / DDGI / ambient.
+float3 ComputeIndirectLighting(float3 viewPosition, float3 viewNormal, float3 diffuseColor, float ambientOcclusion, uint2 pixel)
+{
+	return GetIndirectLighting(viewPosition, viewNormal, diffuseColor, ambientOcclusion, DeferredLightingPassCB2.restirGIOutputIdx, pixel);
+}
 
 struct CSInput
 {
@@ -52,29 +85,16 @@ void DeferredLightingCS(CSInput input)
 	float4 customData       = customRT.SampleLevel(LinearWrapSampler, uv, 0);
 	
 	BrdfData brdfData = GetBrdfData(albedo, metallic, roughness);
-	float3 directLighting = 0.0f;
-	if (DeferredLightingPassCB.restirDIOutputIdx >= 0)
-	{
-		// ReSTIR DI handles all light types (point, spot, directional)
-		Texture2D<float4> restirDIOutput = ResourceDescriptorHeap[DeferredLightingPassCB.restirDIOutputIdx];
-		directLighting += restirDIOutput[input.DispatchThreadId.xy].rgb;
-	}
-	else
-	{
-		for (uint i = 0; i < FrameCB.lightCount; ++i)
-		{
-			LightInfo lightInfo = LoadLightInfo(i);
-			if (!lightInfo.active) continue;
-			directLighting += DoLight(shadingExtension, lightInfo, brdfData, viewPosition, viewNormal, V, uv, customData);
-		}
-	}
 
+	uint2 pixel = input.DispatchThreadId.xy;
 	float ambientOcclusion = ambientOcclusionTexture.SampleLevel(LinearWrapSampler, uv, 0);
-	float3 indirectLighting = GetIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion);
-	
+
+	float3 directLighting   = ComputeDirectLighting(shadingExtension, brdfData, viewPosition, viewNormal, V, uv, customData, pixel);
+	float3 indirectLighting = ComputeIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion, pixel);
+
 	float4 emissiveData = emissiveRT.SampleLevel(LinearWrapSampler, uv, 0);
 	float3 emissiveColor = emissiveData.rgb * emissiveData.a * 256;
 
 	RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[DeferredLightingPassCB.outputIdx];
-	outputTexture[input.DispatchThreadId.xy] = float4(indirectLighting + directLighting + emissiveColor, 1.0f);
+	outputTexture[pixel] = float4(indirectLighting + directLighting + emissiveColor, 1.0f);
 }

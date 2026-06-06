@@ -86,7 +86,7 @@ void ClusteredDeferredLightingCS(CSInput input)
 
 	Texture2D<float> ambientOcclusionTexture = ResourceDescriptorHeap[ClusteredDeferredLightingPassCB.aoIdx];
 	float ambientOcclusion = ambientOcclusionTexture.SampleLevel(LinearWrapSampler, uv, 0);
-	float3 indirectLighting = GetIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion);
+	float3 indirectLighting = GetIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion, 0xFFFFFFFF, input.DispatchThreadId.xy);
 
 	float4 emissiveData = emissiveRT.SampleLevel(LinearWrapSampler, uv, 0);
 	float3 emissiveColor = emissiveData.rgb * emissiveData.a * 256;

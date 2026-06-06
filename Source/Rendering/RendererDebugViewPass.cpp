@@ -38,6 +38,7 @@ namespace adria
 			RGTextureReadOnlyId  ambient_occlusion;
 			RGTextureReadOnlyId  motion_vectors;
 			RGTextureReadOnlyId  entity_id;
+			RGTextureReadOnlyId  restir_gi_output;
 			RGTextureReadWriteId output;
 		};
 
@@ -56,21 +57,18 @@ namespace adria
 				{
 					data.ambient_occlusion = builder.ReadTexture(RG_NAME(AmbientOcclusion), ReadAccess_NonPixelShader);
 				}
-				else
-				{
-					data.ambient_occlusion.Invalidate();
-				}
 
 				if (builder.IsTextureDeclared(RG_NAME(VelocityBuffer)))
 				{
 					data.motion_vectors = builder.ReadTexture(RG_NAME(VelocityBuffer), ReadAccess_NonPixelShader);
 				}
-				else
-				{
-					data.motion_vectors.Invalidate();
-				}
 
 				data.entity_id = builder.ReadTexture(RG_NAME(GBufferEntityID), ReadAccess_NonPixelShader);
+
+				if (builder.IsTextureDeclared(RG_NAME(ReSTIR_GI_Output)))
+				{
+					data.restir_gi_output = builder.ReadTexture(RG_NAME(ReSTIR_GI_Output), ReadAccess_NonPixelShader);
+				}
 			},
 			[=, this](RendererDebugViewPassData const& data, RenderGraphContext& context)
 			{
@@ -106,10 +104,12 @@ namespace adria
 				{
 					Float  triangle_overdraw_scale;
 					Uint32 entity_id_idx;
+					Uint32 restir_gi_output_idx;
 				} constants =
 				{
 					.triangle_overdraw_scale = (Float)triangle_overdraw_scale,
-					.entity_id_idx = context.GetReadOnlyTextureIndex(data.entity_id)
+					.entity_id_idx = context.GetReadOnlyTextureIndex(data.entity_id),
+					.restir_gi_output_idx = data.restir_gi_output.IsValid() ? context.GetReadOnlyTextureIndex(data.restir_gi_output) : 0xFFFFFFFFu
 				};
 
 				static std::array<Char const*, (Uint32)RendererDebugView::Count> OutputDefines =

@@ -7,7 +7,6 @@
 #include "Graphics/GfxCommon.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Editor/GUICommand.h"
-#include "Math/Packing.h"
 
 using namespace DirectX;
 
@@ -30,6 +29,7 @@ namespace adria
 			RGTextureReadOnlyId  depth;
 			RGTextureReadOnlyId  ambient_occlusion;
 			RGTextureReadOnlyId  restir_di_output;
+			RGTextureReadOnlyId  restir_gi_output;
 			RGTextureReadWriteId output;
 		};
 
@@ -55,18 +55,15 @@ namespace adria
 				{
 					data.ambient_occlusion = builder.ReadTexture(RG_NAME(AmbientOcclusion), ReadAccess_NonPixelShader);
 				}
-				else
-				{
-					data.ambient_occlusion.Invalidate();
-				}
 
 				if (builder.IsTextureDeclared(RG_NAME(ReSTIR_DI_Output)))
 				{
 					data.restir_di_output = builder.ReadTexture(RG_NAME(ReSTIR_DI_Output), ReadAccess_NonPixelShader);
 				}
-				else
+
+				if (builder.IsTextureDeclared(RG_NAME(ReSTIR_GI_Output)))
 				{
-					data.restir_di_output.Invalidate();
+					data.restir_gi_output = builder.ReadTexture(RG_NAME(ReSTIR_GI_Output), ReadAccess_NonPixelShader);
 				}
 
 				for (RGResourceName shadow_texture : shadow_textures)
@@ -91,7 +88,6 @@ namespace adria
 					Uint32 depth_idx;
 					Uint32 ao_idx;
 					Uint32 output_idx;
-					Int32  restir_di_output_idx;
 				} constants =
 				{
 					.normal_metallic_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_normal),
@@ -100,13 +96,23 @@ namespace adria
 					.custom_idx = ctx.GetReadOnlyTextureIndex(data.gbuffer_custom),
 					.depth_idx = ctx.GetReadOnlyTextureIndex(data.depth),
 					.ao_idx = data.ambient_occlusion.IsValid() ? ctx.GetReadOnlyTextureIndex(data.ambient_occlusion) : GfxCommon::GetCommonViewBindlessIndex(GfxCommonViewType::WhiteTexture2D_SRV),
-					.output_idx = ctx.GetReadWriteTextureIndex(data.output),
-					.restir_di_output_idx = data.restir_di_output.IsValid() ? (Int32)ctx.GetReadOnlyTextureIndex(data.restir_di_output) : -1
+					.output_idx = ctx.GetReadWriteTextureIndex(data.output)
+				};
+
+				struct DeferredLightingRestirConstants
+				{
+					Uint32 restir_di_output_idx;
+					Uint32 restir_gi_output_idx;
+				} restir_constants =
+				{
+					.restir_di_output_idx = data.restir_di_output.IsValid() ? ctx.GetReadOnlyTextureIndex(data.restir_di_output) : 0xFFFFFFFFu,
+					.restir_gi_output_idx = data.restir_gi_output.IsValid() ? ctx.GetReadOnlyTextureIndex(data.restir_gi_output) : 0xFFFFFFFFu
 				};
 
 				cmd_list->SetPipelineState(deferred_lighting_pso->Get());
 				cmd_list->SetRootCBV(0, frame_data.frame_cbuffer_address);
 				cmd_list->SetRootConstants(1, constants);
+				cmd_list->SetRootCBV(2, restir_constants);
 				cmd_list->Dispatch(DivideAndRoundUp(width, 16), DivideAndRoundUp(height, 16), 1);
 			}, RGPassType::Compute);
 

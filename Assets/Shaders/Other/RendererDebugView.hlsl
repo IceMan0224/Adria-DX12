@@ -20,6 +20,7 @@ struct RendererDebugViewConstants
 {
 	float triangleOverdrawScale;
 	uint  entityIdIdx;
+	uint  restirGIOutputIdx;
 };
 
 DECLARE_CBUFFER(RendererDebugViewIndices, RendererDebugViewPassCB, 1);
@@ -116,9 +117,8 @@ void RendererDebugViewCS(CSInput input)
 
 	Texture2D<float> ambientOcclusionTexture = ResourceDescriptorHeap[RendererDebugViewPassCB.aoIdx];
 	float ambientOcclusion = ambientOcclusionTexture.SampleLevel(LinearWrapSampler, uv, 0);
-	outputTexture[input.DispatchThreadId.xy] = float4(ambientOcclusion, ambientOcclusion, ambientOcclusion, 1.0f);
-	float3 indirectLighting = GetIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion);
-	outputTexture[input.DispatchThreadId.xy] = float4(indirectLighting * M_PI / brdfData.Diffuse, 1.0f);
+	float3 indirectLighting = GetIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion, RendererDebugViewPassCB2.restirGIOutputIdx, input.DispatchThreadId.xy);
+	outputTexture[input.DispatchThreadId.xy] = float4(indirectLighting * M_PI / max(brdfData.Diffuse, 1e-4f), 1.0f);
 
 #elif OUTPUT_CUSTOM
 	Texture2D customTexture = ResourceDescriptorHeap[RendererDebugViewPassCB.customIdx];

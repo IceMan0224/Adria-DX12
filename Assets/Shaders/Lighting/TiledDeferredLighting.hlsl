@@ -154,7 +154,7 @@ void TiledDeferredLightingCS(CSInput input)
 
 	Texture2D<float> ambientOcclusionTexture = ResourceDescriptorHeap[TiledLightingPassCB.aoIdx];
 	float ambientOcclusion = ambientOcclusionTexture.Load(int3(input.DispatchThreadId.xy, 0));
-	float3 indirectLighting = GetIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion);
+	float3 indirectLighting = GetIndirectLighting(viewPosition, viewNormal, brdfData.Diffuse, ambientOcclusion, 0xFFFFFFFF, input.DispatchThreadId.xy);
 
 	float4 emissiveData = emissiveRT.Load(int3(input.DispatchThreadId.xy, 0));
 	float3 emissiveColor = emissiveData.rgb * emissiveData.a * 256;
